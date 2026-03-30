@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabulador | RVBALANCE — ONTIME</title>
+    <link rel="icon" type="image/jpeg" href="https://arthurontime01-spec.github.io/Controladoria/favicon.jpg">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Phosphor Icons (único import) -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+
+    <!-- Libs de dados -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+
+    <!-- Tipografia ONTIME: Syne + DM Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── Paleta ONTIME ─────────────────────────────── */
+        :root {
+            --orange:       #FF6E00;
+            --orange-hover: #CC5800;
+            --orange-soft:  rgba(255,110,0,0.12);
+            --purple:       #3C003C;
+            --purple-light: #5A005A;
+            --purple-soft:  rgba(60,0,60,0.08);
+            --font-display: 'Syne', sans-serif;
+            --font-body:    'DM Sans', sans-serif;
+        }
+
+        html, body { font-family: var(--font-body); }
+
+        h1, h2, .font-display { font-family: var(--font-display); }
+
+        /* Utilitários de cor */
+        .bg-ontime-orange  { background-color: var(--orange); }
+        .text-ontime-orange { color: var(--orange); }
+        .border-ontime-orange { border-color: var(--orange); }
+        .bg-ontime-purple  { background-color: var(--purple); }
+        .text-ontime-purple { color: var(--purple); }
+        .border-ontime-purple { border-color: var(--purple); }
+        .hover\:bg-ontime-orange-hover:hover { background-color: var(--orange-hover); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c0c4c8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* Tabs */
+        .tab-active   { border-bottom: 3px solid var(--orange); color: var(--orange); font-weight: 700; }
+        .tab-inactive { color: #6b7280; border-bottom: 3px solid transparent; }
+        .tab-inactive:hover { color: var(--purple); border-bottom-color: #d1d5db; }
+
+        /* Animação de entrada */
+        .fade-in { animation: fadeIn 0.25s ease-in-out; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+        /* Célula truncada com expand on hover */
+        .truncate-cell { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .truncate-cell:hover { white-space: normal; word-break: break-all; background-color: #fefce8; position: relative; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        /* Input editável inline */
+        .editable-input { background: transparent; border: 1px dashed transparent; width: 100%; padding: 2px 4px; border-radius: 4px; font-family: var(--font-body); }
+        .editable-input:hover, .editable-input:focus { border-color: #cbd5e1; background-color: #f8fafc; outline: none; }
+
+        /* Drop zone fiscal */
+        .drag-active { border-color: var(--orange) !important; background-color: #fff7ed !important; }
+
+        /* Progress bar */
+        .progress-transition { transition: width 0.3s ease-out; }
+
+        /* Sticky UF header na tabela fiscal */
+        .uf-header { position: sticky; top: 0; z-index: 5; }
+
+        /* Toast */
+        #toast { transition: transform 0.3s ease; }
+        .toast-hidden { transform: translateY(6rem); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 h-screen flex flex-col overflow-hidden">
+
+<!-- ── HEADER ──────────────────────────────────────────── -->
+<header class="bg-ontime-purple border-b-4 border-ontime-orange shadow-md z-20 flex-none">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+
+        <!-- Esquerda: Voltar + Título -->
+        <div class="flex items-center gap-4 min-w-0">
+            <a href="../" class="flex-none flex items-center gap-2 text-white/60 hover:text-ontime-orange transition-colors font-semibold text-xs uppercase tracking-wide border-r border-white/20 pr-4 mr-1" title="Voltar ao Hub">
+                <i class="ph ph-arrow-left text-base"></i> Voltar
+            </a>
+            <div class="min-w-0">
+                <h1 class="text-lg font-display font-extrabold text-white tracking-tight flex items-center gap-2 leading-tight">
+                    <i class="ph-fill ph-stack text-ontime-orange"></i>
+                    Tabulador <span class="text-ontime-orange">|</span> RVBALANCE
+                </h1>
+                <input type="text" id="companyNameInput"
+                    class="editable-input text-xs text-white/50 font-medium placeholder-white/30 mt-0.5"
+                    placeholder="Nome da empresa..."
+                    value="CONTROLADORIA | CONTABIL SOLUTION"
+                    oninput="app.updateCompanyName(this.value)">
+            </div>
+        </div>
+
+        <!-- Direita: Ações -->
+        <div class="flex gap-2 flex-none">
+            <button onclick="app.exportData('json')"
+                class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors">
+                <i class="ph ph-file-code text-base"></i> JSON
+            </button>
+            <button onclick="document.getElementById('importFile').click()"
+                class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors">
+                <i class="ph ph-upload-simple text-base"></i> Importar
+            </button>
+            <button onclick="app.downloadSelf()"
+                class="flex items-center gap-2 bg-ontime-orange hover:bg-ontime-orange-hover text-white px-3 py-1.5 rounded-md text-xs font-bold transition-colors shadow-sm">
+                <i class="ph ph-download-simple text-base"></i> Baixar App
+            </button>
+            <input type="file" id="importFile" accept=".json" class="hidden" onchange="app.importData(this)">
+        </div>
+    </div>
+</header>
+
+<!-- ── ABAS ─────────────────────────────────────────────── -->
+<nav class="bg-white border-b border-gray-200 flex-none shadow-sm z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="-mb-px flex gap-0">
+            <button onclick="app.switchTab('cte')" id="tab-btn-cte"
+                class="tab-active whitespace-nowrap py-3.5 px-4 font-semibold text-sm flex items-center gap-2">
+                <i class="ph-fill ph-truck-fast text-base"></i> Tabulação CTE
+                <span id="badge-cte" class="bg-ontime-purple text-white py-0.5 px-2 rounded-full text-[10px] font-bold ml-1">0</span>
+            </button>
+            <button onclick="app.switchTab('csv')" id="tab-btn-csv"
+                class="tab-inactive whitespace-nowrap py-3.5 px-4 font-semibold text-sm flex items-center gap-2">
+                <i class="ph-fill ph-file-csv text-base"></i> Tabulação CSV
+                <span id="badge-csv" class="bg-gray-200 text-gray-600 py-0.5 px-2 rounded-full text-[10px] font-bold ml-1">0</span>
+            </button>
+            <button onclick="app.switchTab('fiscal')" id="tab-btn-fiscal"
+                class="tab-inactive whitespace-nowrap py-3.5 px-4 font-semibold text-sm flex items-center gap-2">
+                <i class="ph-fill ph-buildings text-base"></i> Consolidado Fiscal
+                <span id="badge-fiscal" class="bg-gray-200 text-gray-600 py-0.5 px-2 rounded-full text-[10px] font-bold ml-1">0</span>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- ── CONTEÚDO PRINCIPAL ───────────────────────────────── -->
+<main class="flex-1 overflow-auto bg-gray-50 p-4 lg:p-6">
+
+    <!-- ── ABA CTE ── -->
+    <div id="content-cte" class="fade-in h-full flex flex-col">
+
+        <!-- Toolbar CTE -->
+        <div class="bg-white rounded-t-xl border border-gray-200 shadow-sm border-t-4 border-t-ontime-purple">
+
+            <!-- Linha superior -->
+            <div class="p-4 flex justify-between items-center border-b border-gray-100">
+                <div>
+                    <h2 class="text-base font-display font-bold text-gray-800 flex items-center gap-2">
+                        <i class="ph-fill ph-list-checks text-ontime-orange text-lg"></i> Dados Detalhados de CTE
+                    </h2>
+                    <p class="text-xs text-gray-400 mt-0.5">Gestão de fretes e impostos via XML.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="app.downloadTableAsExcel('cte')"
+                        class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition-colors shadow-sm">
+                        <i class="ph-fill ph-file-xls text-sm"></i> Excel
+                    </button>
+                    <button onclick="app.clearData('cte')"
+                        class="flex items-center gap-2 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors border border-transparent hover:border-red-200">
+                        <i class="ph ph-trash text-sm"></i> Limpar
+                    </button>
+                    <label class="cursor-pointer flex items-center gap-2 bg-ontime-orange hover:bg-ontime-orange-hover text-white px-4 py-1.5 rounded-md text-xs font-bold shadow-sm transition-colors">
+                        <i class="ph ph-plus text-sm"></i> Adicionar XMLs
+                        <input type="file" multiple accept=".xml" class="hidden" onchange="app.handleCteUpload(this)">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Linha de filtros -->
+            <div class="p-3 bg-gray-50 flex flex-wrap items-center gap-3 text-xs border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-funnel text-ontime-purple text-sm"></i>
+                    <span class="text-gray-500 font-semibold">Status:</span>
+                    <select id="filter-status" onchange="app.renderCteTable()"
+                        class="border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 outline-none focus:border-ontime-orange shadow-sm">
+                        <option value="">Todos</option>
+                        <option value="Autorizado">Autorizado</option>
+                        <option value="Cancelado">Cancelado</option>
+                        <option value="Rejeição">Rejeição</option>
+                    </select>
+                </div>
+                <div class="w-px h-5 bg-gray-300 hidden md:block"></div>
+                <div class="flex items-center gap-2">
+                    <i class="ph ph-calendar text-ontime-purple text-sm"></i>
+                    <span class="text-gray-500 font-semibold">Período:</span>
+                    <input type="date" id="filter-date-start" onchange="app.renderCteTable()"
+                        class="border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 outline-none focus:border-ontime-orange shadow-sm">
+                    <span class="text-gray-400">até</span>
+                    <input type="date" id="filter-date-end" onchange="app.renderCteTable()"
+                        class="border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 outline-none focus:border-ontime-orange shadow-sm">
+                </div>
+                <div class="w-px h-5 bg-gray-300 hidden md:block"></div>
+                <div class="flex items-center gap-2">
+                    <i class="ph ph-map-pin text-ontime-purple text-sm"></i>
+                    <span class="text-gray-500 font-semibold">UF Origem:</span>
+                    <select id="filter-uf-origem" onchange="app.renderCteTable()"
+                        class="border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 outline-none focus:border-ontime-orange shadow-sm min-w-[80px]">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <button onclick="app.clearFilters()" class="ml-auto text-[11px] text-gray-400 hover:text-ontime-orange underline transition-colors">
+                    Limpar Filtros
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabela CTE -->
+        <div class="flex-1 overflow-auto bg-white border-x border-b border-gray-200 rounded-b-xl shadow-sm">
+            <table id="table-cte" class="min-w-full divide-y divide-gray-200 text-xs">
+                <thead class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                    <tr>
+                        <th class="px-3 py-3 bg-gray-100 text-left font-bold text-gray-600 border-r border-gray-200">ID</th>
+                        <th class="px-3 py-3 text-left font-bold text-ontime-purple uppercase tracking-wider">Número</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Série</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Emissão</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">CFOP</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Operação</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Chave CTE</th>
+                        <th class="px-3 py-3 bg-blue-50 text-left font-bold text-blue-800 border-x border-blue-100">Financeiro</th>
+                        <th class="px-3 py-3 text-left font-bold text-gray-700 uppercase tracking-wider">Total</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Vlr A Receb</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider bg-blue-50/30">Frete Peso</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider bg-blue-50/30">AdV</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider bg-blue-50/30">Gris</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider bg-blue-50/30">Imp</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider bg-orange-50/30">ALQ ICMS</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider bg-orange-50/30">Vlr ICMS</th>
+                        <th class="px-3 py-3 bg-green-50 text-left font-bold text-green-800 border-x border-green-100">Carga</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Vlr Carga</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">PROD</th>
+                        <th class="px-3 py-3 bg-yellow-50 text-left font-bold text-yellow-800 border-x border-yellow-100">Parceiros</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Emitente</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">CNPJ</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Remetente</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">CNPJ</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Destinatário</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">CNPJ/CPF</th>
+                        <th class="px-3 py-3 bg-purple-50 text-left font-bold text-purple-800 border-x border-purple-100">Rota</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Origem</th>
+                        <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Destino</th>
+                        <th class="px-3 py-3 bg-gray-100 text-left font-bold text-gray-700 border-l border-gray-200">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body-cte" class="bg-white divide-y divide-gray-100">
+                    <tr class="text-center">
+                        <td colspan="30" class="px-6 py-16 text-gray-400">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center">
+                                    <i class="ph ph-upload-simple text-3xl text-ontime-orange"></i>
+                                </div>
+                                <p class="text-sm font-semibold text-gray-500">Nenhum CTE encontrado</p>
+                                <p class="text-xs text-gray-400">Adicione arquivos XML usando o botão acima.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot id="table-footer-cte" class="bg-gray-50 sticky bottom-0 z-10 border-t border-gray-200 font-bold text-gray-700 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.08)]">
+                    <tr>
+                        <td colspan="7" class="px-6 py-3 text-right text-gray-400 uppercase text-[10px] tracking-wider">Total Geral:</td>
+                        <td colspan="23" class="px-3 py-3 text-left text-ontime-orange text-sm font-black">0,00</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── ABA CSV ── -->
+    <div id="content-csv" class="hidden fade-in h-full flex flex-col">
+
+        <!-- Toolbar CSV -->
+        <div class="bg-white p-4 rounded-t-xl border border-gray-200 shadow-sm flex justify-between items-center border-t-4 border-t-ontime-purple">
+            <div>
+                <h2 class="text-base font-display font-bold text-gray-800 flex items-center gap-2">
+                    <i class="ph-fill ph-file-csv text-teal-600 text-lg"></i> Dados Importados de CSV
+                </h2>
+                <p class="text-xs text-gray-400 mt-0.5">Importação genérica de dados tabulados.</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="app.downloadTableAsExcel('csv')"
+                    class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold transition-colors shadow-sm">
+                    <i class="ph-fill ph-file-xls text-sm"></i> Excel
+                </button>
+                <button onclick="app.clearData('csv')"
+                    class="flex items-center gap-2 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors border border-transparent hover:border-red-200">
+                    <i class="ph ph-trash text-sm"></i> Limpar
+                </button>
+                <label class="cursor-pointer flex items-center gap-2 bg-ontime-purple hover:bg-purple-800 text-white px-4 py-1.5 rounded-md text-xs font-bold shadow-sm transition-colors">
+                    <i class="ph-fill ph-file-csv text-sm"></i> Abrir CSV
+                    <input type="file" accept=".csv,.txt" class="hidden" onchange="app.handleCsvUpload(this)">
+                </label>
+            </div>
+        </div>
+
+        <!-- Tabela CSV -->
+        <div class="flex-1 overflow-auto bg-white border-x border-b border-gray-200 rounded-b-xl shadow-sm">
+            <table id="table-csv" class="min-w-full divide-y divide-gray-200">
+                <thead id="table-head-csv" class="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body-csv" class="bg-white divide-y divide-gray-100">
+                    <tr class="text-center">
+                        <td class="px-6 py-16 text-gray-400">
+                            <div class="flex flex-col items-center gap-3">
+                                <i class="ph ph-table text-4xl text-gray-300"></i>
+                                <p class="text-sm font-semibold text-gray-500">Aguardando arquivo CSV...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── ABA FISCAL ── -->
+    <div id="content-fiscal" class="hidden fade-in h-full flex flex-col">
+        <div class="max-w-7xl mx-auto w-full space-y-4">
+
+            <!-- Upload + Status -->
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm border-t-4 border-t-ontime-purple mt-2">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-base font-display font-bold text-gray-800 flex items-center gap-2">
+                            <i class="ph-fill ph-buildings text-ontime-orange text-lg"></i> Resumo Fiscal | FILIAIS
+                        </h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Otimizado para grandes volumes (CSV / Excel com múltiplas abas).</p>
+                    </div>
+                    <button onclick="app.fiscal.clearData()"
+                        class="text-xs text-red-500 hover:text-red-700 font-semibold px-3 py-1 border border-transparent hover:border-red-100 rounded-md transition-colors">
+                        <i class="ph ph-trash-simple"></i> Limpar Tudo
+                    </button>
+                </div>
+
+                <!-- Drop Zone -->
+                <div id="fiscal-drop-zone"
+                    class="bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 p-8 text-center transition-all cursor-pointer hover:border-ontime-orange group">
+                    <input type="file" id="fiscal-fileInput" class="hidden" multiple accept=".csv, .xlsx, .xls">
+                    <div class="pointer-events-none space-y-3">
+                        <div class="flex justify-center gap-4">
+                            <i class="ph ph-file-xls text-5xl text-green-600 group-hover:scale-110 transition-transform"></i>
+                            <i class="ph ph-file-csv text-5xl text-blue-500 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <h3 class="text-base font-display font-bold text-slate-700">Arraste a Planilha Mensal</h3>
+                        <p class="text-slate-500 text-sm max-w-md mx-auto">
+                            O sistema detectará todas as abas (Dias 1 a 31).<br>
+                            Processamento otimizado para não travar com 70k linhas/dia.
+                        </p>
+                        <button class="px-6 py-2 bg-ontime-orange hover:bg-ontime-orange-hover text-white rounded-lg transition-colors shadow-sm font-semibold text-sm">
+                            Carregar Arquivo(s)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Barra de progresso -->
+                <div id="fiscal-processing-status" class="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mt-4 hidden">
+                    <div class="flex justify-between text-xs mb-2">
+                        <span id="fiscal-status-text" class="font-semibold text-slate-700">Processando...</span>
+                        <span id="fiscal-file-counter" class="text-slate-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                        <div id="fiscal-progress-bar" class="bg-ontime-purple h-full progress-transition relative" style="width:0%">
+                            <div class="absolute inset-0 bg-white/20 animate-pulse"></div>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-2 text-right">
+                        Linhas processadas: <span id="fiscal-row-counter-display">0</span>
+                    </p>
+                </div>
+
+                <!-- Log de erros -->
+                <div id="fiscal-error-log" class="hidden bg-red-50 p-3 rounded-lg border border-red-200 text-xs text-red-700 space-y-1 max-h-32 overflow-y-auto mt-3"></div>
+            </div>
+
+            <!-- Resultados -->
+            <div id="fiscal-results-area" class="space-y-3 pb-6 hidden">
+                <div class="flex flex-col md:flex-row justify-between items-end gap-3">
+                    <div class="bg-purple-50 px-4 py-2 rounded-lg border border-purple-100 text-xs text-ontime-purple">
+                        <span class="font-bold">Resumo:</span>
+                        <span id="fiscal-summary-files">0</span> abas lidas |
+                        <span id="fiscal-summary-rows">0</span> linhas calculadas
+                    </div>
+                    <button onclick="app.fiscal.exportToExcel()"
+                        class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm font-semibold text-sm w-full md:w-auto justify-center">
+                        <i class="ph ph-file-xls text-lg"></i> Baixar Relatório Consolidado
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto max-h-[65vh]">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead class="bg-slate-100 text-slate-600 uppercase text-xs font-bold sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-4 py-3 border-b border-slate-200 w-1/4">Filial / Data</th>
+                                    <th class="px-4 py-3 border-b border-slate-200 text-right">Receita (R$)</th>
+                                    <th class="px-4 py-3 border-b border-slate-200 text-right">ICMS (R$)</th>
+                                    <th class="px-4 py-3 border-b border-slate-200 text-right">Aliq. Média</th>
+                                    <th class="px-4 py-3 border-b border-slate-200 text-right">Qtd CT-es</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fiscal-result-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- ── TOAST ─────────────────────────────────────────────── -->
+<div id="toast" class="toast-hidden fixed bottom-5 right-5 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg z-50 flex items-center gap-3 border-l-4 border-ontime-orange text-sm font-semibold">
+    <i class="ph-fill ph-check-circle text-green-400 text-lg flex-none"></i>
+    <span id="toast-msg">OK</span>
+</div>
+
+<script>
+'use strict';
+
+const app = {
+    data: {
+        cte: [],
+        csv: { headers: [], rows: [] },
+        meta: { companyName: 'CONTROLADORIA | CONTABIL SOLUTION', logo: null }
+    },
+    currentTab: 'cte',
+
+    // ── MÓDULO FISCAL ──────────────────────────────────────
+    fiscal: {
+        groupedData: {},
+        processedItemsCount: 0,
+        totalRowsGlobal: 0,
+        UF_CODES: {
+            '11':'RO','12':'AC','13':'AM','14':'RR','15':'PA','16':'AP','17':'TO',
+            '21':'MA','22':'PI','23':'CE','24':'RN','25':'PB','26':'PE','27':'AL',
+            '28':'SE','29':'BA','31':'MG','32':'ES','33':'RJ','35':'SP',
+            '41':'PR','42':'SC','43':'RS','50':'MS','51':'MT','52':'GO','53':'DF'
+        },
+
+        init() {
+            const dropZone = document.getElementById('fiscal-drop-zone');
+            const fileInput = document.getElementById('fiscal-fileInput');
+            if (!dropZone || !fileInput) return;
+
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-active'); });
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-active'));
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-active');
+                if (e.dataTransfer.files.length) this.handleFiles(e.dataTransfer.files);
+            });
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) this.handleFiles(e.target.files);
+                fileInput.value = '';
+            });
+        },
+
+        async handleFiles(fileList) {
+            const processingStatus = document.getElementById('fiscal-processing-status');
+            const resultsArea = document.getElementById('fiscal-results-area');
+            const errorLog = document.getElementById('fiscal-error-log');
+
+            processingStatus.classList.remove('hidden');
+            resultsArea.classList.add('hidden');
+            errorLog.classList.add('hidden');
+
+            const files = Array.from(fileList).sort((a, b) => a.name.localeCompare(b.name));
+
+            if (this.processedItemsCount === 0) {
+                this.groupedData = {};
+                this.totalRowsGlobal = 0;
+            }
+
+            for (const file of files) {
+                try {
+                    this.updateStatus(`Carregando: ${file.name}...`, 0);
+                    await new Promise(r => setTimeout(r, 50));
+                    await this.processSingleFile(file);
+                } catch (err) {
+                    this.logError(`Erro em ${file.name}: ${err.message}`);
+                    console.error(err);
+                }
+            }
+
+            this.updateStatus('Finalizando cálculos...', 100);
+            setTimeout(() => {
+                processingStatus.classList.add('hidden');
+                this.renderTable();
+                resultsArea.classList.remove('hidden');
+                document.getElementById('fiscal-summary-files').innerText = this.processedItemsCount;
+                document.getElementById('fiscal-summary-rows').innerText = this.totalRowsGlobal.toLocaleString('pt-BR');
+            }, 400);
+        },
+
+        processSingleFile(file) {
+            return new Promise((resolve, reject) => {
+                const ext = file.name.split('.').pop().toLowerCase();
+                const self = this;
+
+                if (ext === 'csv') {
+                    this.processedItemsCount++;
+                    Papa.parse(file, {
+                        header: true,
+                        skipEmptyLines: true,
+                        step(results) {
+                            self.processRow(results.data);
+                            self.totalRowsGlobal++;
+                            if (self.totalRowsGlobal % 5000 === 0) self.updateRowCounter();
+                        },
+                        complete: resolve,
+                        error: reject
+                    });
+                } else if (ext === 'xlsx' || ext === 'xls') {
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const sheetNames = workbook.SheetNames;
+                            self.updateStatus(`${sheetNames.length} abas encontradas. Processando...`, 0);
+
+                            for (let i = 0; i < sheetNames.length; i++) {
+                                const name = sheetNames[i];
+                                const pct = Math.round(((i + 1) / sheetNames.length) * 100);
+                                self.updateStatus(`Aba ${i+1}/${sheetNames.length}: "${name}"`, pct);
+                                await new Promise(r => setTimeout(r, 10));
+
+                                const ws = workbook.Sheets[name];
+                                const rows = XLSX.utils.sheet_to_json(ws, { raw: false, defval: '' });
+                                for (const row of rows) {
+                                    self.processRow(row);
+                                    self.totalRowsGlobal++;
+                                }
+                                self.updateRowCounter();
+                                self.processedItemsCount++;
+                                rows.length = 0;
+                                workbook.Sheets[name] = null;
+                            }
+                            resolve();
+                        } catch (err) {
+                            reject(new Error('Falha ao processar Excel: ' + err.message));
+                        }
+                    };
+                    reader.onerror = () => reject(new Error('Erro de leitura do arquivo.'));
+                    reader.readAsArrayBuffer(file);
+                } else {
+                    reject(new Error('Formato não suportado. Use .csv ou .xlsx'));
+                }
+            });
+        },
+
+        processRow(row) {
+            const keys = Object.keys(row);
+            const dataKey  = keys.find(k => k.toLowerCase().includes('data cte'));
+            const chaveKey = keys.find(k => k.toLowerCase().includes('chave'));
+            const valorKey = keys.find(k => k.trim() === 'Valor');
+            const icmsKey  = keys.find(k => k.toLowerCase().includes('valor do icms'));
+            if (!dataKey || !chaveKey || !valorKey) return;
+
+            let dataCte = String(row[dataKey] || '').trim();
+            if (!dataCte) return;
+
+            const valor    = this.parseMonetary(row[valorKey]);
+            const valorIcms = this.parseMonetary(row[icmsKey]);
+
+            let ufCode = 'ND';
+            const clean = String(row[chaveKey] || '').replace(/\D/g, '');
+            if (clean.length >= 2) ufCode = clean.substring(0, 2);
+
+            if (!this.groupedData[ufCode]) this.groupedData[ufCode] = {};
+            if (!this.groupedData[ufCode][dataCte]) this.groupedData[ufCode][dataCte] = { valor: 0, icms: 0, count: 0 };
+
+            this.groupedData[ufCode][dataCte].valor += valor;
+            this.groupedData[ufCode][dataCte].icms  += valorIcms;
+            this.groupedData[ufCode][dataCte].count += 1;
+        },
+
+        parseMonetary(val) {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            let str = String(val).trim();
+            if (str.includes(',') && !str.toLowerCase().includes('e')) {
+                str = str.replace(/\./g, '').replace(',', '.');
+            }
+            const n = parseFloat(str);
+            return isNaN(n) ? 0 : n;
+        },
+
+        renderTable() {
+            const tbody = document.getElementById('fiscal-result-table-body');
+            tbody.innerHTML = '';
+            const ufs = Object.keys(this.groupedData).sort();
+
+            if (ufs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500 text-sm">
+                    Nenhum dado válido encontrado. Verifique as colunas: "Data CTe", "Chave do CTe", "Valor" e "Valor do ICMS".
+                </td></tr>`;
+                return;
+            }
+
+            ufs.forEach(uf => {
+                const dates = Object.keys(this.groupedData[uf]).sort();
+                const ufName = this.UF_CODES[uf] ? `${this.UF_CODES[uf]} (${uf})` : `UF: ${uf}`;
+
+                let totValor = 0, totIcms = 0, totCount = 0;
+                dates.forEach(d => {
+                    totValor  += this.groupedData[uf][d].valor;
+                    totIcms   += this.groupedData[uf][d].icms;
+                    totCount  += this.groupedData[uf][d].count;
+                });
+                const avgRate = totValor > 0 ? (totIcms / totValor) * 100 : 0;
+
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="bg-slate-200 font-bold text-slate-800 uf-header sticky top-10">
+                        <td class="px-4 py-3 border-y border-slate-300 flex items-center gap-2">
+                            <i class="ph-fill ph-caret-down text-slate-500"></i> ${ufName}
+                        </td>
+                        <td class="px-4 py-3 border-y border-slate-300 text-right text-indigo-900">${this.fmtCur(totValor)}</td>
+                        <td class="px-4 py-3 border-y border-slate-300 text-right">${this.fmtCur(totIcms)}</td>
+                        <td class="px-4 py-3 border-y border-slate-300 text-right">${avgRate.toFixed(2)}%</td>
+                        <td class="px-4 py-3 border-y border-slate-300 text-right">${totCount.toLocaleString('pt-BR')}</td>
+                    </tr>`);
+
+                dates.forEach(date => {
+                    const d = this.groupedData[uf][date];
+                    const rate = d.valor > 0 ? (d.icms / d.valor) * 100 : 0;
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors text-slate-600">
+                            <td class="px-4 py-2 pl-10 text-xs font-mono">${this.fmtDate(date)}</td>
+                            <td class="px-4 py-2 text-right">${this.fmtCur(d.valor)}</td>
+                            <td class="px-4 py-2 text-right">${this.fmtCur(d.icms)}</td>
+                            <td class="px-4 py-2 text-right ${this.rateColor(rate)} font-medium text-xs">${rate.toFixed(2)}%</td>
+                            <td class="px-4 py-2 text-right text-xs">${d.count.toLocaleString('pt-BR')}</td>
+                        </tr>`);
+                });
+            });
+        },
+
+        updateStatus(msg, pct) {
+            document.getElementById('fiscal-status-text').innerText = msg;
+            document.getElementById('fiscal-file-counter').innerText = `${Math.ceil(pct)}%`;
+            document.getElementById('fiscal-progress-bar').style.width = `${pct}%`;
+        },
+
+        updateRowCounter() {
+            document.getElementById('fiscal-row-counter-display').innerText = this.totalRowsGlobal.toLocaleString('pt-BR');
+        },
+
+        logError(msg) {
+            const el = document.getElementById('fiscal-error-log');
+            el.classList.remove('hidden');
+            const p = document.createElement('p');
+            p.innerText = '• ' + msg;
+            el.appendChild(p);
+        },
+
+        clearData() {
+            this.groupedData = {};
+            this.processedItemsCount = 0;
+            this.totalRowsGlobal = 0;
+            document.getElementById('fiscal-result-table-body').innerHTML = '';
+            document.getElementById('fiscal-results-area').classList.add('hidden');
+            document.getElementById('fiscal-error-log').innerHTML = '';
+            document.getElementById('fiscal-error-log').classList.add('hidden');
+            document.getElementById('fiscal-fileInput').value = '';
+            document.getElementById('badge-fiscal').innerText = '0';
+        },
+
+        fmtCur(val) { return val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+        fmtDate(s) {
+            if (!s) return '-';
+            const p = s.split('-');
+            return p.length === 3 && p[0].length === 4 ? `${p[2]}/${p[1]}/${p[0]}` : s;
+        },
+        rateColor(r) {
+            if (r === 0)  return 'text-slate-400';
+            if (r < 7)    return 'text-green-600';
+            if (r < 12)   return 'text-yellow-600';
+            return 'text-orange-600';
+        },
+
+        exportToExcel() {
+            const exportData = [];
+            Object.keys(this.groupedData).sort().forEach(uf => {
+                const dates = Object.keys(this.groupedData[uf]).sort();
+                const ufName = this.UF_CODES[uf] || `Filial ${uf}`;
+                let totV = 0, totI = 0, totQ = 0;
+                dates.forEach(d => { totV += this.groupedData[uf][d].valor; totI += this.groupedData[uf][d].icms; totQ += this.groupedData[uf][d].count; });
+                exportData.push({ 'Tipo': 'TOTAL UF', 'Filial/UF': ufName, 'Data': '', 'Receita': totV, 'ICMS': totI, 'Aliq Média': totV > 0 ? totI/totV : 0, 'Qtd CTe': totQ });
+                dates.forEach(d => {
+                    const row = this.groupedData[uf][d];
+                    exportData.push({ 'Tipo': 'Dia', 'Filial/UF': ufName, 'Data': this.fmtDate(d), 'Receita': row.valor, 'ICMS': row.icms, 'Aliq Média': row.valor > 0 ? row.icms/row.valor : 0, 'Qtd CTe': row.count });
+                });
+                exportData.push({});
+            });
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            ws['!cols'] = [{wch:10},{wch:20},{wch:12},{wch:15},{wch:15},{wch:12},{wch:10}];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Consolidado');
+            XLSX.writeFile(wb, 'Resumo_Fiscal_Consolidado.xlsx');
+        }
+    },
+
+    // ── INIT ───────────────────────────────────────────────
+    init() {
+        if (window.SAVED_DATA) {
+            this.data = window.SAVED_DATA;
+            if (this.data.meta?.companyName) {
+                document.getElementById('companyNameInput').value = this.data.meta.companyName;
+            }
+            this.renderCteTable();
+            this.renderCsvTable();
+            this.showToast('Ambiente restaurado com sucesso!');
+        }
+        this.fiscal.init();
+        // Abre na aba CTE por padrão
+        this.switchTab('cte');
+    },
+
+    // ── NAVEGAÇÃO ──────────────────────────────────────────
+    switchTab(tab) {
+        this.currentTab = tab;
+        ['cte', 'csv', 'fiscal'].forEach(t => {
+            const btn = document.getElementById(`tab-btn-${t}`);
+            const content = document.getElementById(`content-${t}`);
+            const isActive = t === tab;
+            btn.className = (isActive ? 'tab-active' : 'tab-inactive') + ' whitespace-nowrap py-3.5 px-4 font-semibold text-sm flex items-center gap-2';
+            content.className = isActive ? 'fade-in h-full flex flex-col' : 'hidden';
+        });
+    },
+
+    // ── EMPRESA ────────────────────────────────────────────
+    updateCompanyName(val) { this.data.meta.companyName = val; },
+
+    // ── HELPERS XML ────────────────────────────────────────
+    getXmlVal(parent, tag) {
+        if (!parent) return '';
+        const el = parent.getElementsByTagName(tag)[0];
+        return el ? el.textContent : '';
+    },
+
+    formatDoc(val) {
+        if (!val) return '';
+        const v = val.replace(/\D/g, '');
+        if (v.length === 11) return v.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        if (v.length === 14) return v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+        return val;
+    },
+
+    parseDate(str) {
+        if (!str) return null;
+        const p = str.split('/');
+        return p.length === 3 ? new Date(p[2], p[1] - 1, p[0]) : null;
+    },
+
+    // ── FILTROS CTE ────────────────────────────────────────
+    clearFilters() {
+        ['filter-status', 'filter-date-start', 'filter-date-end', 'filter-uf-origem'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        this.renderCteTable();
+    },
+
+    updateUfFilters() {
+        const sel = document.getElementById('filter-uf-origem');
+        if (!sel) return;
+        const ufs = new Set();
+        this.data.cte.forEach(item => {
+            if (item.origem) {
+                const p = item.origem.split('/');
+                if (p.length > 1) ufs.add(p[1].trim());
+            }
+        });
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">Todas</option>' + Array.from(ufs).sort().map(u => `<option value="${u}">${u}</option>`).join('');
+        sel.value = cur;
+    },
+
+    // ── UPLOAD CTE ─────────────────────────────────────────
+    handleCteUpload(input) {
+        if (!input.files?.length) return;
+        const files = Array.from(input.files);
+        let done = 0;
+
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const xmlDoc = new DOMParser().parseFromString(e.target.result, 'text/xml');
+                    const infCte = xmlDoc.getElementsByTagName('infCte')[0];
+
+                    let statusCTe = 'N/A';
+                    const protCTe = xmlDoc.getElementsByTagName('protCTe')[0];
+                    if (protCTe) {
+                        const infProt = protCTe.getElementsByTagName('infProt')[0];
+                        if (infProt) {
+                            const full = this.getXmlVal(infProt, 'xMotivo').toLowerCase();
+                            if (full.includes('autorizado')) statusCTe = 'Autorizado';
+                            else if (full.includes('cancelad')) statusCTe = 'Cancelado';
+                            else if (full.includes('rejei')) statusCTe = 'Rejeição';
+                            else statusCTe = this.getXmlVal(infProt, 'xMotivo').split(' ')[0];
+                        }
+                    }
+
+                    if (!infCte) return;
+
+                    const ide = infCte.getElementsByTagName('ide')[0];
+                    const nCT   = this.getXmlVal(ide, 'nCT');
+                    const serie = this.getXmlVal(ide, 'serie');
+                    const cfop  = this.getXmlVal(ide, 'CFOP');
+                    const natOp = this.getXmlVal(ide, 'natOp');
+                    let dhEmi = this.getXmlVal(ide, 'dhEmi');
+                    if (dhEmi.includes('T')) dhEmi = dhEmi.split('T')[0].split('-').reverse().join('/');
+
+                    const chCTe = infCte.getAttribute('Id')?.replace('CTe', '') || '';
+
+                    const vPrest   = infCte.getElementsByTagName('vPrest')[0];
+                    const vTPrest  = parseFloat(this.getXmlVal(vPrest, 'vTPrest') || '0');
+                    const vRec     = parseFloat(this.getXmlVal(vPrest, 'vRec') || '0');
+                    const comps    = vPrest ? Array.from(vPrest.getElementsByTagName('Comp')) : [];
+                    const compMap  = { 'FRETE PESO': 0, 'ADVALOREM': 0, 'GRIS': 0, 'IMP REPASSADO': 0 };
+                    comps.forEach(c => {
+                        const nome = this.getXmlVal(c, 'xNome').toUpperCase().trim();
+                        const v    = parseFloat(this.getXmlVal(c, 'vComp') || '0');
+                        if (nome.includes('PESO')) compMap['FRETE PESO'] = v;
+                        else if (nome.includes('VALOREM')) compMap['ADVALOREM'] = v;
+                        else if (nome.includes('GRIS')) compMap['GRIS'] = v;
+                        else if (nome.includes('REPASSADO') || nome.includes('PEDAGIO')) compMap['IMP REPASSADO'] = v;
+                    });
+
+                    let alqICMS = 0, vICMS = 0;
+                    const imp = infCte.getElementsByTagName('imp')[0];
+                    if (imp) {
+                        const icmsTag = imp.getElementsByTagName('ICMS')[0];
+                        if (icmsTag?.children.length > 0) {
+                            alqICMS = parseFloat(this.getXmlVal(icmsTag.children[0], 'pICMS') || '0');
+                            vICMS   = parseFloat(this.getXmlVal(icmsTag.children[0], 'vICMS') || '0');
+                        }
+                    }
+
+                    const infCarga = infCte.getElementsByTagName('infCarga')[0];
+                    const vCarga   = parseFloat(this.getXmlVal(infCarga, 'vCarga') || '0');
+                    const proPred  = this.getXmlVal(infCarga, 'proPred');
+
+                    const emit = infCte.getElementsByTagName('emit')[0];
+                    const rem  = infCte.getElementsByTagName('rem')[0];
+                    const dest = infCte.getElementsByTagName('dest')[0];
+
+                    this.data.cte.push({
+                        nCT, serie, dhEmi, cfop, natOp, chCTe,
+                        vTPrest, vRec,
+                        compFretePeso: compMap['FRETE PESO'],
+                        compAdvalorem: compMap['ADVALOREM'],
+                        compGris: compMap['GRIS'],
+                        compImpRepassado: compMap['IMP REPASSADO'],
+                        alqICMS, vICMS, vCarga, proPred,
+                        emitNome: this.getXmlVal(emit, 'xNome'),
+                        emitCNPJ: this.getXmlVal(emit, 'CNPJ') || this.getXmlVal(emit, 'CPF'),
+                        remNome:  this.getXmlVal(rem,  'xNome'),
+                        remCNPJ:  this.getXmlVal(rem,  'CNPJ') || this.getXmlVal(rem,  'CPF'),
+                        destNome: this.getXmlVal(dest, 'xNome'),
+                        destCNPJ: this.getXmlVal(dest, 'CNPJ') || this.getXmlVal(dest, 'CPF'),
+                        origem:  `${this.getXmlVal(ide,'xMunIni')}/${this.getXmlVal(ide,'UFIni')}`,
+                        destino: `${this.getXmlVal(ide,'xMunFim')}/${this.getXmlVal(ide,'UFFim')}`,
+                        status: statusCTe
+                    });
+                } catch (err) { console.error('Erro XML:', file.name, err); }
+                finally {
+                    done++;
+                    if (done === files.length) {
+                        this.updateUfFilters();
+                        this.renderCteTable();
+                        this.showToast(`${done} arquivo(s) CTE processado(s).`);
+                        input.value = '';
+                    }
+                }
+            };
+            reader.readAsText(file);
+        });
+    },
+
+    // ── RENDER CTE ─────────────────────────────────────────
+    renderCteTable() {
+        const tbody  = document.getElementById('table-body-cte');
+        const tfoot  = document.getElementById('table-footer-cte');
+        const badge  = document.getElementById('badge-cte');
+        const fmt    = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const filterStatus  = document.getElementById('filter-status').value;
+        const filterStart   = document.getElementById('filter-date-start').value;
+        const filterEnd     = document.getElementById('filter-date-end').value;
+        const filterUf      = document.getElementById('filter-uf-origem').value;
+
+        const mkDate = str => { if (!str) return null; const p = str.split('-'); return new Date(p[0], p[1]-1, p[2]); };
+        const start  = mkDate(filterStart);
+        const end    = mkDate(filterEnd);
+
+        let data = this.data.cte;
+        if (filterStatus) data = data.filter(i => (i.status||'').toLowerCase() === filterStatus.toLowerCase());
+        if (filterStart || filterEnd) {
+            data = data.filter(i => {
+                const d = this.parseDate(i.dhEmi);
+                if (!d) return true;
+                d.setHours(0,0,0,0);
+                if (start) { start.setHours(0,0,0,0); if (d < start) return false; }
+                if (end)   { end.setHours(0,0,0,0);   if (d > end)   return false; }
+                return true;
+            });
+        }
+        if (filterUf) {
+            data = data.filter(i => {
+                if (!i.origem) return false;
+                const p = i.origem.split('/');
+                return p.length >= 2 && p[1].trim() === filterUf;
+            });
+        }
+
+        badge.textContent = data.length;
+
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr class="text-center"><td colspan="30" class="px-6 py-16 text-gray-400">
+                <div class="flex flex-col items-center gap-3">
+                    <div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center">
+                        <i class="ph ph-upload-simple text-3xl text-ontime-orange"></i>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-500">Nenhum CTE encontrado</p>
+                    <p class="text-xs text-gray-400">Ajuste os filtros ou adicione XMLs.</p>
+                </div></td></tr>`;
+            tfoot.innerHTML = `<tr><td colspan="7" class="px-6 py-3 text-right text-gray-400 uppercase text-[10px] tracking-wider">Total Geral:</td><td colspan="23" class="px-3 py-3 text-left text-ontime-orange text-sm font-black">0,00</td></tr>`;
+            return;
+        }
+
+        const totals = { vTPrest:0, vRec:0, compFretePeso:0, compAdvalorem:0, compGris:0, compImpRepassado:0, vICMS:0, vCarga:0 };
+        let html = '';
+
+        data.forEach((item, idx) => {
+            Object.keys(totals).forEach(k => { totals[k] += item[k] || 0; });
+
+            let sc = 'text-gray-600 bg-gray-50';
+            const st = (item.status || 'N/A');
+            if (st.toLowerCase() === 'autorizado') sc = 'text-green-700 bg-green-50';
+            else if (st.toLowerCase() === 'cancelado') sc = 'text-red-600 bg-red-50';
+            else if (st.toLowerCase() === 'rejeição') sc = 'text-yellow-800 bg-yellow-100';
+
+            html += `<tr class="hover:bg-orange-50/20 transition-colors border-b border-gray-100 group">
+                <td class="px-3 py-2 text-gray-400 font-bold bg-gray-50 border-r border-gray-200 text-center text-xs">${idx+1}</td>
+                <td class="px-3 py-2 text-ontime-purple font-bold">${item.nCT}</td>
+                <td class="px-3 py-2 text-gray-500">${item.serie}</td>
+                <td class="px-3 py-2 text-gray-500 whitespace-nowrap">${item.dhEmi}</td>
+                <td class="px-3 py-2 text-gray-500">${item.cfop}</td>
+                <td class="px-3 py-2 text-gray-500 truncate-cell text-[10px]" title="${item.natOp}">${item.natOp}</td>
+                <td class="px-3 py-2 text-[10px] font-mono text-gray-400 select-all truncate-cell" title="${item.chCTe}">${item.chCTe}</td>
+                <td class="px-3 py-2 bg-blue-50 border-l border-blue-100"></td>
+                <td class="px-3 py-2 text-ontime-orange font-bold whitespace-nowrap text-right">${fmt(item.vTPrest)}</td>
+                <td class="px-3 py-2 text-gray-700 whitespace-nowrap text-[11px] text-right">${fmt(item.vRec)}</td>
+                <td class="px-3 py-2 text-gray-500 bg-blue-50/10 text-right text-[11px]">${fmt(item.compFretePeso)}</td>
+                <td class="px-3 py-2 text-gray-500 bg-blue-50/10 text-right text-[11px]">${fmt(item.compAdvalorem)}</td>
+                <td class="px-3 py-2 text-gray-500 bg-blue-50/10 text-right text-[11px]">${fmt(item.compGris)}</td>
+                <td class="px-3 py-2 text-gray-500 bg-blue-50/10 text-right text-[11px]">${fmt(item.compImpRepassado)}</td>
+                <td class="px-3 py-2 text-ontime-purple bg-orange-50/10 text-right text-[11px] font-medium">${fmt(item.alqICMS)}%</td>
+                <td class="px-3 py-2 text-ontime-purple bg-orange-50/10 text-right text-[11px] font-medium">${fmt(item.vICMS)}</td>
+                <td class="px-3 py-2 bg-green-50 border-l border-green-100"></td>
+                <td class="px-3 py-2 text-gray-700 whitespace-nowrap text-[11px] text-right">${fmt(item.vCarga)}</td>
+                <td class="px-3 py-2 text-gray-500 truncate-cell text-[10px]" title="${item.proPred}">${item.proPred}</td>
+                <td class="px-3 py-2 bg-yellow-50 border-l border-yellow-100"></td>
+                <td class="px-3 py-2 text-gray-600 truncate-cell text-[10px]" title="${item.emitNome}">${item.emitNome}</td>
+                <td class="px-3 py-2 text-[10px] text-gray-400 whitespace-nowrap">${this.formatDoc(item.emitCNPJ)}</td>
+                <td class="px-3 py-2 text-gray-600 truncate-cell text-[10px]" title="${item.remNome}">${item.remNome}</td>
+                <td class="px-3 py-2 text-[10px] text-gray-400 whitespace-nowrap">${this.formatDoc(item.remCNPJ)}</td>
+                <td class="px-3 py-2 text-gray-600 truncate-cell text-[10px]" title="${item.destNome}">${item.destNome}</td>
+                <td class="px-3 py-2 text-[10px] text-gray-400 whitespace-nowrap">${this.formatDoc(item.destCNPJ)}</td>
+                <td class="px-3 py-2 bg-purple-50 border-l border-purple-100"></td>
+                <td class="px-3 py-2 text-gray-500 whitespace-nowrap text-[10px]">${item.origem}</td>
+                <td class="px-3 py-2 text-gray-500 whitespace-nowrap text-[10px]">${item.destino}</td>
+                <td class="px-3 py-2 border-l border-gray-200 font-bold text-xs truncate-cell ${sc}" title="${st}">${st}</td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = html;
+        tfoot.innerHTML = `<tr>
+            <td colspan="7" class="px-6 py-3 text-right text-gray-400 uppercase text-[10px] tracking-wider font-bold">Total Geral:</td>
+            <td class="bg-blue-50 border-l border-blue-100"></td>
+            <td class="px-3 py-3 text-right text-ontime-orange text-sm font-black whitespace-nowrap">${fmt(totals.vTPrest)}</td>
+            <td class="px-3 py-3 text-right text-gray-700 text-xs font-bold whitespace-nowrap">${fmt(totals.vRec)}</td>
+            <td class="px-3 py-3 text-right text-gray-600 text-xs font-bold bg-blue-50/20">${fmt(totals.compFretePeso)}</td>
+            <td class="px-3 py-3 text-right text-gray-600 text-xs font-bold bg-blue-50/20">${fmt(totals.compAdvalorem)}</td>
+            <td class="px-3 py-3 text-right text-gray-600 text-xs font-bold bg-blue-50/20">${fmt(totals.compGris)}</td>
+            <td class="px-3 py-3 text-right text-gray-600 text-xs font-bold bg-blue-50/20">${fmt(totals.compImpRepassado)}</td>
+            <td class="px-3 py-3 text-right text-gray-400 text-xs bg-orange-50/20">—</td>
+            <td class="px-3 py-3 text-right text-ontime-purple text-xs font-bold bg-orange-50/20">${fmt(totals.vICMS)}</td>
+            <td class="bg-green-50 border-l border-green-100"></td>
+            <td class="px-3 py-3 text-right text-gray-700 text-xs font-bold whitespace-nowrap">${fmt(totals.vCarga)}</td>
+            <td colspan="12"></td>
+        </tr>`;
+    },
+
+    // ── UPLOAD CSV ─────────────────────────────────────────
+    handleCsvUpload(input) {
+        if (!input.files?.length) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target.result;
+            const sep  = text.indexOf(';') > -1 ? ';' : ',';
+            const lines = text.split(/\r?\n/).filter(l => l.trim());
+            if (!lines.length) return;
+            const headers = lines[0].split(sep).map(h => h.trim().replace(/^"|"$/g, ''));
+            const rows = lines.slice(1).map(l => l.split(sep).map(c => c.trim().replace(/^"|"$/g, ''))).filter(r => r.length === headers.length);
+            this.data.csv = { headers, rows };
+            this.renderCsvTable();
+            this.showToast('CSV importado com sucesso.');
+            input.value = '';
+        };
+        reader.readAsText(input.files[0], 'ISO-8859-1');
+    },
+
+    // ── RENDER CSV ─────────────────────────────────────────
+    renderCsvTable() {
+        const thead = document.getElementById('table-head-csv');
+        const tbody = document.getElementById('table-body-csv');
+        document.getElementById('badge-csv').textContent = this.data.csv.rows.length;
+
+        if (!this.data.csv.headers.length) {
+            tbody.innerHTML = `<tr class="text-center"><td class="px-6 py-16 text-gray-400">
+                <div class="flex flex-col items-center gap-3">
+                    <i class="ph ph-table text-4xl text-gray-300"></i>
+                    <p class="text-sm font-semibold text-gray-500">Aguardando arquivo CSV...</p>
+                </div></td></tr>`;
+            return;
+        }
+
+        thead.innerHTML = '<tr>' + this.data.csv.headers.map(h => `<th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">${h}</th>`).join('') + '</tr>';
+        tbody.innerHTML = this.data.csv.rows.map(row =>
+            '<tr class="hover:bg-gray-50 transition-colors border-b border-gray-100">' +
+            row.map(cell => `<td class="px-6 py-2.5 whitespace-nowrap text-sm text-gray-600">${cell}</td>`).join('') +
+            '</tr>'
+        ).join('');
+    },
+
+    // ── DOWNLOAD EXCEL ─────────────────────────────────────
+    downloadTableAsExcel(type) {
+        const hasData = type === 'cte' ? this.data.cte.length > 0 : this.data.csv.rows.length > 0;
+        if (!hasData) { this.showToast('Sem dados para exportar.', 'warn'); return; }
+
+        const table = document.getElementById(type === 'cte' ? 'table-cte' : 'table-csv');
+        const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="UTF-8"><style>td{white-space:nowrap;}</style></head>
+            <body>${table.cloneNode(true).outerHTML}</body></html>`;
+
+        const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+        this.triggerDownload(blob, `Relatorio_${type.toUpperCase()}_${new Date().toISOString().slice(0,10)}.xls`);
+        this.showToast('Download do Excel iniciado!');
+    },
+
+    // ── LIMPAR DADOS ───────────────────────────────────────
+    clearData(type) {
+        if (!confirm('Confirmar limpeza dos dados?')) return;
+        if (type === 'cte') { this.data.cte = []; this.renderCteTable(); }
+        else { this.data.csv = { headers: [], rows: [] }; this.renderCsvTable(); }
+        this.showToast('Dados limpos.');
+    },
+
+    // ── EXPORT / IMPORT JSON ───────────────────────────────
+    exportData(fmt) {
+        if (fmt === 'json') {
+            const blob = new Blob([JSON.stringify(this.data, null, 2)], { type: 'application/json' });
+            this.triggerDownload(blob, `backup_${new Date().toISOString().slice(0,10)}.json`);
+            this.showToast('Backup JSON gerado.');
+        }
+    },
+
+    importData(input) {
+        if (!input.files?.length) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target.result);
+                this.data = imported;
+                if (this.data.meta?.companyName) {
+                    document.getElementById('companyNameInput').value = this.data.meta.companyName;
+                }
+                this.renderCteTable();
+                this.renderCsvTable();
+                this.showToast('Backup restaurado!');
+            } catch {
+                this.showToast('Erro ao importar JSON. Verifique o arquivo.', 'error');
+            }
+            input.value = '';
+        };
+        reader.readAsText(input.files[0]);
+    },
+
+    // ── DOWNLOAD SELF ──────────────────────────────────────
+    downloadSelf() {
+        let html = document.documentElement.outerHTML;
+        const inject = `<script>window.SAVED_DATA = ${JSON.stringify(this.data)};<\/script>`;
+        html = html.includes('window.SAVED_DATA =')
+            ? html.replace(/<script>window\.SAVED_DATA = .*?<\/script>/, inject)
+            : html.replace('</head>', inject + '</head>');
+        const blob = new Blob([html], { type: 'text/html' });
+        this.triggerDownload(blob, `Tabulador_Offline_${new Date().toISOString().slice(0,10)}.html`);
+        this.showToast('App salvo localmente!');
+    },
+
+    // ── HELPERS ────────────────────────────────────────────
+    triggerDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
+
+    showToast(msg, type = 'success') {
+        const toast  = document.getElementById('toast');
+        const icon   = toast.querySelector('i');
+        const msgEl  = document.getElementById('toast-msg');
+
+        msgEl.textContent = msg;
+        icon.className = type === 'error'
+            ? 'ph-fill ph-warning-circle text-red-400 text-lg flex-none'
+            : type === 'warn'
+            ? 'ph-fill ph-warning text-yellow-400 text-lg flex-none'
+            : 'ph-fill ph-check-circle text-green-400 text-lg flex-none';
+
+        toast.classList.remove('toast-hidden');
+        clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => toast.classList.add('toast-hidden'), 3200);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CONTROLE DO BOTÃO VOLTAR ---
+    const botoesVoltar = document.querySelectorAll('a[href="../"]');
+    const referrer = document.referrer;
+    const currentHost = window.location.hostname;
+    
+    if (!referrer || !referrer.includes(currentHost)) {
+        botoesVoltar.forEach(btn => btn.style.display = 'none');
+    }
+    // --------------------------------
+    
+    app.init();
+});
+</script>
+
+</body>
+</html>
