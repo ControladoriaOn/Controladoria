@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hub de Ferramentas | ONTIME</title>
-    <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
+    <link rel="icon" type="image/jpeg" href="https://arthurontime01-spec.github.io/Controladoria/favicon.jpg">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,11 +70,16 @@
             gap: 14px;
         }
 
-        .brand-img {
-            width: 44px;
-            height: 44px;
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--orange), var(--orange-mid));
             border-radius: 10px;
-            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 20px;
             flex-shrink: 0;
             box-shadow: 0 0 0 3px rgba(255,110,0,0.25);
         }
@@ -616,10 +621,9 @@
 </head>
 <body>
 
-<!-- ── HEADER ── -->
 <header>
     <div class="header-brand">
-        <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="brand-img">
+        <div class="brand-icon"><i class="ph-fill ph-squares-four"></i></div>
         <span class="brand-name">ON<span>TIME</span></span>
     </div>
     <div class="header-right">
@@ -627,7 +631,6 @@
     </div>
 </header>
 
-<!-- ── HERO ── -->
 <div class="hero">
     <div class="hero-content">
         <div class="hero-label"><i class="ph-fill ph-lightning"></i> Central de Ferramentas</div>
@@ -637,14 +640,14 @@
             <div class="stat-chip">
                 <i class="ph-fill ph-stack"></i>
                 <div class="stat-chip-info">
-                    <span class="stat-num" id="total-count">3</span>
+                    <span class="stat-num" id="total-count">4</span>
                     <span class="stat-label">Ferramentas</span>
                 </div>
             </div>
             <div class="stat-chip">
                 <i class="ph-fill ph-check-circle"></i>
                 <div class="stat-chip-info">
-                    <span class="stat-num" id="active-count">3</span>
+                    <span class="stat-num" id="active-count">4</span>
                     <span class="stat-label">Online</span>
                 </div>
             </div>
@@ -659,7 +662,6 @@
     </div>
 </div>
 
-<!-- ── MAIN ── -->
 <main>
     <div class="toolbar">
         <div class="search-wrap">
@@ -671,6 +673,7 @@
             <button class="chip" data-filter="Análise">Análise</button>
             <button class="chip" data-filter="Tabulação">Tabulação</button>
             <button class="chip" data-filter="Relatório">Relatório</button>
+            <button class="chip" data-filter="Operacional">Operacional</button>
         </div>
     </div>
 
@@ -720,16 +723,28 @@
             </div>
         </a>
 
+        <a href="./Emissor/" class="tool-card" data-category="Operacional" data-title="Emissor de ND">
+            <div class="card-accent"></div>
+            <div class="card-header">
+                <div class="card-icon"><i class="ph-fill ph-receipt"></i></div>
+                <span class="card-category">Operacional</span>
+            </div>
+            <h3 class="card-title">Emissor de ND</h3>
+            <p class="card-desc">Geração rápida, padronizada e controle eficiente de Notas de Débito (ND).</p>
+            <div class="card-footer">
+                <span class="status-dot"><span class="dot"></span> Online</span>
+                <span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span>
+            </div>
+        </a>
+
     </div>
 </main>
 
-<!-- ── FOOTER (desktop) ── -->
 <footer>
     <span class="footer-copy">&copy; 2026 Ontime Controladoria. Todos os direitos reservados.</span>
     <span class="footer-badge"><i class="ph-fill ph-shield-check"></i> Ambiente interno seguro</span>
 </footer>
 
-<!-- ── MOBILE BOTTOM NAV ── -->
 <nav class="mobile-nav" aria-label="Navegação mobile">
     <button class="nav-item active" onclick="mobileFilter(this, 'all')">
         <i class="ph-fill ph-squares-four"></i>
@@ -746,6 +761,10 @@
     <button class="nav-item" onclick="mobileFilter(this, 'Relatório')">
         <i class="ph-fill ph-chart-pie-slice"></i>
         <span>Relatório</span>
+    </button>
+    <button class="nav-item" onclick="mobileFilter(this, 'Operacional')">
+        <i class="ph-fill ph-receipt"></i>
+        <span>Operacional</span>
     </button>
 </nav>
 
