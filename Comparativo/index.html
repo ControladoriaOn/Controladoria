@@ -13,7 +13,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Roboto:wght@400;500;700;900&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap');
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --ontime-orange: #FF6E00;
@@ -51,8 +50,7 @@
         body.dark-mode {
             --bg: #121212; --bg-card: #1E1E26; --text-primary: #E0E0E0; --text-secondary: #A0A0B0;
             --border-color: #333344; --card-shadow: 0 4px 15px rgba(0,0,0,0.4); --ontime-purple-soft: rgba(255, 255, 255, 0.05);
-            --color-resultado-soft: rgba(13,110,253,0.15);
-            --color-ticket-soft: rgba(15,118,110,0.15);
+            --color-resultado-soft: rgba(13,110,253,0.15); --color-ticket-soft: rgba(15,118,110,0.15);
             --color-margem-soft: rgba(22,101,52,0.15);
         }
         body.dark-mode ::-webkit-scrollbar-thumb { background: #444455; }
@@ -91,12 +89,25 @@
         
         /* HEADER 100% LARGURA */
         header { background: #3C003C; padding: 15px 30px; border-bottom: 4px solid var(--ontime-orange); display: flex; justify-content: flex-start; align-items: center; gap: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; width: 100%; transition: background-color 0.3s; }
+        
+        /* Ajuste do Titulo, Mascote e Margens */
         header h1 { font-family: 'Montserrat', sans-serif; font-size: 24px; font-weight: 800; color: white; margin: 0; }
-        header h1 span { color: var(--ontime-orange); }
+        header h1 span { color: var(--ontime-orange); margin-left: -3px; }
+        .brand-img {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            object-fit: cover;
+            box-shadow: 0 0 0 2px rgba(255,110,0,0.3);
+            vertical-align: middle; 
+            margin-right: 10px; 
+            margin-bottom: 4px; 
+        }
+
         .menu-toggle { display: none; background: transparent; border: none; color: white; font-size: 26px; cursor: pointer; transition: transform 0.2s; }
         .menu-toggle:hover { transform: scale(1.1); color: var(--ontime-orange); }
 
-        /* --- BOTÃO VOLTAR (ADICIONADO) --- */
+        /* --- BOTÃO VOLTAR --- */
         .btn-voltar {
             color: #cbd5e1; text-decoration: none; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s; text-transform: uppercase; letter-spacing: 0.5px; font-family: var(--font-primary); padding-right: 15px; border-right: 1px solid rgba(255,255,255,0.2);
         }
@@ -297,7 +308,7 @@
     <a href="../" class="btn-voltar" title="Voltar ao Menu Principal"><i class="ph ph-arrow-left"></i> Voltar</a>
     
     <button class="menu-toggle" onclick="toggleSidebar()" title="Menu Filtros"><i class="ph ph-list"></i></button>
-    <h1>ON<span>TIME</span> | Resumo Comparativo RB / Custo</h1>
+    <h1><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote" class="brand-img"> ON<span>TIME</span> | Resumo Comparativo RB / Custo</h1>
 </header>
 
 <div class="app-container">
@@ -319,38 +330,47 @@
                 <button class="btn icon-only" onclick="toggleDarkMode()" title="Alternar Modo Escuro"><i class="ph ph-moon"></i></button>
                 <div id="exportButtonsContainer" class="export-buttons"></div>
                 <button class="btn icon-only" id="atualizarBtn" onclick="carregarDados(true)" title="Forçar Atualização (Ignorar Cache)">
-                    <svg id="icone-atualizar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                 
+                   <svg id="icone-atualizar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
                         <path d="M21 3v5h-5"></path>
                     </svg>
+   
                 </button>
             </div>
 
             <div id="page-dashboard" class="page active">
                 <div class="empty-state-msg">
                     <h2>Ops, não há dados!</h2>
-                    <p>Nenhum dado encontrado com a combinação de filtros atuais. Tente limpar os filtros.</p>
+                    
+<p>Nenhum dado encontrado com a combinação de filtros atuais. Tente limpar os filtros.</p>
                 </div>
                 
                 <div id="export-block-1">
                     <div class="kpis">
+                  
                         <div class="kpi-card kpi-rb">
                             <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-trend-up"></i></div><h3>Receita Bruta</h3></div>
                             <div class="valor" id="rbTotal">R$ 0</div>
-                            <div class="variacao" id="varRb">--</div>
+                            
+<div class="variacao" id="varRb">--</div>
                         </div>
                         <div class="kpi-card kpi-custo">
                             <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-receipt"></i></div><h3>Custo Total</h3></div>
-                            <div class="valor" id="custoTotal">R$ 0</div>
+               
+                             <div class="valor" id="custoTotal">R$ 0</div>
                             <div class="variacao" id="varCusto">--</div>
                         </div>
                         <div class="kpi-card kpi-margem">
+    
                             <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-percent"></i></div><h3>Margem Bruta</h3></div>
                             <div class="valor" id="margem">0%</div>
                             <div class="variacao" id="varMargem">--</div>
+           
                         </div>
                         <div class="kpi-card kpi-ticket">
                             <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-users"></i></div><h3>Ticket Médio / Cliente</h3></div>
+                          
                             <div class="valor" id="ticketMedio">R$ 0</div>
                             <div class="variacao" id="varTicket">--</div>
                         </div>
@@ -361,6 +381,7 @@
                 <div id="export-block-2">
                     <div class="graficos">
                         <div class="grafico-card"><h2>Total gerado por Trimestre</h2><canvas id="graficoTrimestre"></canvas></div>
+    
                         <div class="grafico-card"><h2>Soma por Cliente <span style="font-size:10px; font-weight:normal; color:var(--text-secondary);">(Clique para filtrar)</span></h2><canvas id="graficoTop10Horizontal"></canvas></div>
                     </div>
                     <div class="graficos">
@@ -371,10 +392,12 @@
 
                 <div id="export-block-3">
                     <div class="grafico-linha-unica">
+                      
                         <div class="grafico-card">
                             <h2 id="tituloYoY">Comparativo Anual</h2>
                             <div style="height:350px"><canvas id="graficoYoY"></canvas></div>
                         </div>
+             
                     </div>
                     <div class="grafico-linha-unica grafico-margem-container">
                         <div class="grafico-card">
@@ -384,12 +407,14 @@
                     </div>
                 </div>
 
+       
             </div>
 
             <div id="page-relatorio" class="page">
                 <div class="tabela-container">
                     <table id="tabelaRelatorioMensal">
                         <thead id="theadRelatorio"></thead>
+                  
                         <tbody id="tbodyRelatorioMensal"></tbody>
                     </table>
                 </div>
@@ -413,19 +438,20 @@
     window.sortRelatorio = { mes: null, tipo: null, asc: false };
     let graficoMensal, graficoTop10Horizontal, graficoTrimestre, graficoCentroCusto, graficoCCBarras, graficoMargemMensal;
     window.graficoYoYChart = null;
-    
     const auxiliar = [
         { operacao: "LM", cc: "30010101", centro: "OTX B2C", sub: "LM" },
         { operacao: "FM", cc: "30010105", centro: "OT FM", sub: "FM" },
         { operacao: "BULK", cc: "30010101", centro: "OTX B2C", sub: "Bulk" },
         { operacao: "MELIONE", cc: "30010104", centro: "OTX ECO", sub: "MELIONE" },
         { operacao: "OTX_ECO", cc: "30010104", centro: "OTX ECO", sub: "Eco" },
-        { operacao: "RENTALS", cc: "30010107", centro: "FLEET X", sub: "Rentals" },
+       
+         { operacao: "RENTALS", cc: "30010107", centro: "FLEET X", sub: "Rentals" },
         { operacao: "FROTA FIXA", cc: "30010107", centro: "FLEET X", sub: "Frota Fixa" },
         { operacao: "FROTA FIXA II", cc: "30010107", centro: "FLEET X", sub: "FROTA FIXA II" },
         { operacao: "FROTA FIXA III", cc: "30010107", centro: "FLEET X", sub: "FROTA FIXA III" },
         { operacao: "FROTA FIXA IV", cc: "30010107", centro: "FLEET X", sub: "FROTA FIXA IV" },
-        { operacao: "FTL", cc: "30010106", centro: "FTL", sub: "FTL" },
+   
+         { operacao: "FTL", cc: "30010106", centro: "FTL", sub: "FTL" },
         { operacao: "LM_GT", cc: "30010102", centro: "OTX B2B", sub: "LM_GT" },
         { operacao: "LM_KA", cc: "30010102", centro: "OTX B2B", sub: "LM_KA" },
         { operacao: "LM_SW", cc: "30010102", centro: "OTX B2B", sub: "LM_SW" },
@@ -434,23 +460,22 @@
     window.getCCSub = (op) => auxiliar.find(a=>a.operacao===op) || { cc:"00000000", centro:"Outros", sub:op };
     
     // INICIALIZAÇÃO
-document.addEventListener("DOMContentLoaded", () => {
-    if(localStorage.getItem('ontime-theme') === 'dark') document.body.classList.add('dark-mode');
-    
-    // --- CONTROLE DO BOTÃO VOLTAR ---
-    const btnVoltar = document.querySelector('.btn-voltar'); // Pega o botão 
-    const referrer = document.referrer;
-    const currentHost = window.location.hostname;
-    
-    // Se não houver referrer (acesso direto) ou se a origem não for o seu próprio domínio (hub), oculta o botão
-    if (btnVoltar && (!referrer || !referrer.includes(currentHost))) {
-        btnVoltar.style.display = 'none';
-    }
-    // --------------------------------
-    
-    carregarDados();
-});
-    
+    document.addEventListener("DOMContentLoaded", () => {
+        if(localStorage.getItem('ontime-theme') === 'dark') document.body.classList.add('dark-mode');
+        
+        // --- CONTROLE DO BOTÃO VOLTAR ---
+        const botoesVoltar = document.querySelectorAll('.btn-voltar');
+        const referrer = document.referrer;
+        const currentHost = window.location.hostname;
+        
+        if (!referrer || !referrer.includes(currentHost)) {
+            botoesVoltar.forEach(btn => btn.style.display = 'none');
+        }
+        // --------------------------------
+        
+        carregarDados();
+    });
+
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('open');
         document.getElementById('sidebarOverlay').classList.toggle('show');
@@ -468,7 +493,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (wasDarkBeforePrint) { document.body.classList.remove('dark-mode'); aplicarFiltrosDashboard(true); }
         atualizarTituloExportacao();
     });
-    
     window.addEventListener('afterprint', () => {
         if (wasDarkBeforePrint) { document.body.classList.add('dark-mode'); aplicarFiltrosDashboard(); }
     });
@@ -493,6 +517,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 else { inQuote = !inQuote; }
             } else if (ch === ',' && !inQuote) {
                 result.push(cur.trim()); cur = '';
+         
             } else { cur += ch; }
         }
         result.push(cur.trim());
@@ -504,7 +529,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const msgEl = document.getElementById('toastMsg');
         if (!el || !msgEl) return;
         msgEl.textContent = msg;
-        el.className = `toast${tipo === 'success' ? ' success' : ''} show`;
+     
+         el.className = `toast${tipo === 'success' ? ' success' : ''} show`;
         setTimeout(() => el.classList.remove('show'), 4000);
     }
     
@@ -556,17 +582,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (selecionar) mesesDisp.forEach(m => window.filtroMeses.add(m)); else window.filtroMeses.clear();
         construirSidebar(); aplicarFiltrosDashboard();
     };
+    
     window.toggleAllClientes = (selecionar) => {
         const cliDisp = Array.from(getClientesDisponiveis());
         if (selecionar) cliDisp.forEach(c => window.filtroClientes.add(c)); else window.filtroClientes.clear();
         construirSidebar(); aplicarFiltrosDashboard();
     };
+    
     window.toggleAllCentros = (selecionar) => {
         const centroDisp = Array.from(getCentrosDisponiveis());
         if (selecionar) centroDisp.forEach(c => window.filtroCentros.add(c)); else window.filtroCentros.clear();
         construirSidebar(); aplicarFiltrosDashboard();
     };
-
+    
     // CARREGAMENTO DE DADOS
     async function carregarDados(force = false) {
         const btnIcon = document.getElementById('icone-atualizar');
@@ -576,11 +604,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if(btnIcon) btnIcon.classList.add('spin-anim');
         if(btn) btn.disabled = true;
         overlay.classList.remove('hidden');
+        
         try {
             let csvText = '';
             const cacheTime = sessionStorage.getItem('ontime_csv_time');
             const cacheData = sessionStorage.getItem('ontime_csv_data');
             const agora = Date.now();
+            
             if (!force && cacheData && cacheTime && (agora - parseInt(cacheTime)) < 300000) {
                 csvText = cacheData;
             } else {
@@ -604,6 +634,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return {
                     cliente: normalizarTexto(cols[idxCliente] || ''),
                     operacao: normalizarTexto(cols[idxOperacao] || ''),
+                
                     rb: parseFloat((cols[idxRb]||'').replace(',','.')) || 0,
                     custo: parseFloat((cols[idxCusto]||'').replace(',','.')) || 0,
                     mes: normalizarMes(cols[idxMes] || '')
@@ -614,6 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
             window.filtroMeses.clear(); window.filtroClientes.clear(); window.filtroCentros.clear();
             window.currentMode = 'RB';
             construirSidebar(); aplicarFiltrosDashboard(); atualizarRelatorioMensal();
+            
         } catch(e){ 
             console.error(e);
             showToast('Erro ao carregar dados. Verifique sua conexão e tente novamente.');
@@ -654,19 +686,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 <label>Visualização</label>
                 <div class="mode-buttons">
                     <button class="mode-btn ${window.currentMode === 'RB' ? 'active' : ''}" id="modeRB">RB</button>
+  
                     <button class="mode-btn ${window.currentMode === 'Custo' ? 'active' : ''}" id="modeCusto">Custo</button>
                 </div>
             </div>
             <div class="filtro-grupo"><label>Ano</label><div class="buttons-container" id="filtroAnoContainer"></div></div>
             <div class="filtro-grupo">
-                <label>Mês <span class="quick-links"><a onclick="toggleAllMeses(true)">Todos</a><a onclick="toggleAllMeses(false)">Nenhum</a></span></label>
+                <label>Mês 
+ <span class="quick-links"><a onclick="toggleAllMeses(true)">Todos</a><a onclick="toggleAllMeses(false)">Nenhum</a></span></label>
                 <div class="buttons-container" id="filtroMesContainer"></div>
             </div>
             <div class="filtro-grupo">
                 <label>Cliente <span class="quick-links"><a onclick="toggleAllClientes(true)">Todos</a><a onclick="toggleAllClientes(false)">Nenhum</a></span></label>
                 <div class="buttons-container" id="filtroClienteContainer"></div>
             </div>
-            <div class="filtro-grupo">
+    
+         <div class="filtro-grupo">
                 <label>Centro de Custo <span class="quick-links"><a onclick="toggleAllCentros(true)">Todos</a><a onclick="toggleAllCentros(false)">Nenhum</a></span></label>
                 <div class="buttons-container" id="filtroCentroContainer"></div>
             </div>
@@ -691,7 +726,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const btn = document.createElement('button');
                 btn.textContent = mes; btn.classList.add('filter-btn');
                 if(window.filtroMeses.has(mes)) btn.classList.add('active');
-                btn.onclick = () => { if(window.filtroMeses.has(mes)) window.filtroMeses.delete(mes); else window.filtroMeses.add(mes); construirSidebar(); aplicarFiltrosDashboard(); };
+                btn.onclick = () => { if(window.filtroMeses.has(mes)) window.filtroMeses.delete(mes); else window.filtroMeses.add(mes); construirSidebar(); 
+ aplicarFiltrosDashboard(); };
                 mesContainer.appendChild(btn);
             }
         });
@@ -702,7 +738,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const btn = document.createElement('button');
                 btn.textContent = cli; btn.classList.add('filter-btn');
                 if(window.filtroClientes.has(cli)) btn.classList.add('active');
-                btn.onclick = () => { if(window.filtroClientes.has(cli)) window.filtroClientes.delete(cli); else window.filtroClientes.add(cli); construirSidebar(); aplicarFiltrosDashboard(); };
+                btn.onclick = () => { if(window.filtroClientes.has(cli)) window.filtroClientes.delete(cli); else window.filtroClientes.add(cli); construirSidebar(); 
+ aplicarFiltrosDashboard(); };
                 clienteContainer.appendChild(btn);
             }
         });
@@ -713,7 +750,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const btn = document.createElement('button');
                 btn.textContent = centro; btn.classList.add('filter-btn');
                 if(window.filtroCentros.has(centro)) btn.classList.add('active');
-                btn.onclick = () => { if(window.filtroCentros.has(centro)) window.filtroCentros.delete(centro); else window.filtroCentros.add(centro); construirSidebar(); aplicarFiltrosDashboard(); };
+                btn.onclick = () => { if(window.filtroCentros.has(centro)) window.filtroCentros.delete(centro); else window.filtroCentros.add(centro); construirSidebar(); 
+ aplicarFiltrosDashboard(); };
                 centroContainer.appendChild(btn);
             }
         });
@@ -760,7 +798,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const a = partes[1].trim();
 
             const matchMes = mesesFiltrados.includes(m);
-            const matchAno = a === anoAnterior;
+            const matchAno = a 
+ === anoAnterior;
             const matchCliente = window.filtroClientes.size ? window.filtroClientes.has(d.cliente) : true;
             const matchCC = window.filtroCentros.size ? window.filtroCentros.has(window.getCCSub(d.operacao).centro) : true;
             return matchMes && matchAno && matchCliente && matchCC;
@@ -792,6 +831,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         let dadosFiltrados = [...dadosBase];
         const containerPainel = document.getElementById('page-dashboard');
+        
         if (dadosFiltrados.length === 0) {
             containerPainel.classList.add('is-empty');
         } else {
@@ -865,6 +905,7 @@ document.addEventListener("DOMContentLoaded", () => {
             mesesMap[m].rb += d.rb;
             mesesMap[m].custo += d.custo;
         });
+        
         const mesesOrd = Object.keys(mesesMap).sort((a,b) => ordemMeses.indexOf(a) - ordemMeses.indexOf(b));
         const margens = mesesOrd.map(m => {
             const v = mesesMap[m];
@@ -894,32 +935,40 @@ document.addEventListener("DOMContentLoaded", () => {
                 data: {
                     labels: mesesOrd,
                     datasets: [{
+                    
                         label: 'Margem %',
                         data: margens,
                         borderColor: '#166534',
                         backgroundColor: 'rgba(22,101,52,0.08)',
+                   
                         borderWidth: 2.5,
                         pointBackgroundColor: '#166534',
                         pointRadius: 5,
                         pointHoverRadius: 7,
+                   
                         fill: true,
                         tension: 0.35
                     }]
                 },
                 options: {
+                
                     responsive: true, maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { display: false },
+                  
                         tooltip: {
                             backgroundColor: tooltipBg, titleColor: tooltipText, bodyColor: tooltipText,
                             callbacks: { label: ctx => `Margem: ${ctx.raw.toFixed(1)}%` }
                         },
+ 
                         datalabels: { anchor: 'top', align: 'top', offset: 4, formatter: v => `${v.toFixed(1)}%`, color: textColor, font: { weight: 'bold', size: 12 } }
                     },
                     scales: {
+               
                         y: { beginAtZero: false, grace: '10%', grid: { color: gridColor, borderDash: [5,5] }, border: { display: false }, ticks: { callback: v => `${v}%`, color: textColor, font: { size: 11 } } },
                         x: { grid: { display: false }, border: { display: false }, ticks: { color: textColor, font: { weight: '600', size: 11 } } }
+           
                     }
                 }, plugins: [ChartDataLabels]
             });
@@ -963,6 +1012,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 data:{ labels:mesesOrd, datasets:[
                     { label:'Receita', data:receita, backgroundColor:'rgba(60,0,60,0.85)', borderColor: '#2A002A', borderWidth: 1, borderRadius:4 },
                     { label:'Custo', data:custo, backgroundColor:'rgba(255,110,0,0.85)', borderColor: '#D95D00', borderWidth: 1, borderRadius:4 }
+     
                 ] },
                 options:{
                     layout: { padding: { top: 30 } },
@@ -971,6 +1021,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     onHover: chartHoverCursor,
                     onClick: (e, elements, chart) => {
                         if(elements.length > 0) {
+                       
                             const label = chart.data.labels[elements[0].index];
                             if(window.filtroMeses.has(label)) window.filtroMeses.delete(label);
                             else window.filtroMeses.add(label);
@@ -979,11 +1030,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     },
                     plugins:{
                         legend:{display:false},
-                        tooltip:{ backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks:{label:ctx=>`${ctx.dataset.label}: ${formatarNumeroInteiro(ctx.raw)}`} },
+                        tooltip:{ backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks:{label:ctx=>`${ctx.dataset.label}: 
+${formatarNumeroInteiro(ctx.raw)}`} },
                         datalabels:{anchor:'end',align:'top',offset:4,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:13}}
                     },
                     scales:{
                         y:{ beginAtZero:true, grace:'20%', grid:{color:getChartGridColor(), borderDash:[5,5]}, border:{display:false}, ticks:{callback:v=>formatarEixo(v),font:{size:11},color:getChartTextColor()} },
+    
                         x:{ grid:{display:false}, border:{display:false}, ticks:{font:{weight:'600',size:11},color:getChartTextColor()} }
                     }
                 }, plugins:[ChartDataLabels]
@@ -1018,17 +1071,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, layout:{padding:{right:80}},
                     interaction: { mode: 'y', intersect: false },
                     onHover: chartHoverCursor,
+             
                     onClick: (e, elements, chart) => {
                         if(elements.length > 0) {
                             const label = chart.data.labels[elements[0].index];
                             if(window.filtroClientes.has(label)) window.filtroClientes.delete(label);
+ 
                             else window.filtroClientes.add(label);
                             construirSidebar(); aplicarFiltrosDashboard();
                         }
+                   
                     },
                     plugins:{ 
                         legend:{display:false}, 
                         tooltip:{backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks:{label:ctx=>`${window.currentMode==='RB'?'Receita':'Custo'}: ${formatarNumeroInteiro(ctx.raw)}`}}, 
+                     
                         datalabels:{anchor:'end',align:'right',offset:6,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:13}} 
                     },
                     scales:{ x:{ beginAtZero:true, grace:'20%', grid:{color:getChartGridColor(), borderDash:[5,5]}, border:{display:false}, ticks:{callback:v=>formatarEixo(v),font:{size:11},color:getChartTextColor()} }, y:{ grid:{display:false}, border:{display:false}, ticks:{font:{weight:'600',size:10},color:getChartTextColor()} } }
@@ -1046,6 +1103,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const mapa = {JAN:1,FEV:2,MAR:3,ABR:4,MAI:5,JUN:6,JUL:7,AGO:8,SET:9,OUT:10,NOV:11,DEZ:12};
             let num = mapa[mesStr] || 0;
             
+         
             const valor = window.currentMode==='RB'?d.rb:d.custo;
             if(num>=1 && num<=3) trimestres['1º Trim'] += valor;
             else if(num>=4 && num<=6) trimestres['2º Trim'] += valor;
@@ -1076,10 +1134,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 options:{ layout: { padding: { top: 30 } }, responsive:true, maintainAspectRatio:false, barPercentage:0.6, categoryPercentage:0.7,
                     interaction: { mode: 'index', intersect: false },
                     plugins:{ 
+     
                         legend:{display:false}, 
                         tooltip:{backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks:{label:ctx=>`${window.currentMode==='RB'?'Receita':'Custo'}: ${formatarNumeroInteiro(ctx.raw)}`}}, 
                         datalabels:{anchor:'end',align:'top',offset:4,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:13}} 
                     },
+   
                     scales:{ y:{ beginAtZero:true, grace:'20%', grid:{color:getChartGridColor(), borderDash:[5,5]}, border:{display:false}, ticks:{callback:v=>formatarEixo(v),font:{size:11},color:getChartTextColor()} }, x:{ grid:{display:false}, border:{display:false}, ticks:{font:{weight:'600',size:11},color:getChartTextColor()} } }
                 }, plugins:[ChartDataLabels]
             });
@@ -1095,8 +1155,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const ccMap={};
         dados.forEach(d=>{ const{centro}=window.getCCSub(d.operacao); ccMap[centro] = (ccMap[centro]||0) + (window.currentMode==='RB'?d.rb:d.custo); });
-        
         const labels=Object.keys(ccMap), data=Object.values(ccMap);
+        
         const baseColors = window.currentMode === 'RB' 
             ? ['#3C003C','#5A005A','#780078','#960096','#B400B4','#D200D2']
             : ['#FF6E00','#FF8522','#FF9C44','#FFB366','#FFCA88','#FFE1AA'];
@@ -1125,20 +1185,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 options:{ responsive:true, maintainAspectRatio:false, cutout: '65%',
                     onHover: chartHoverCursor,
                     onClick: (e, elements, chart) => {
+              
                         if(elements.length > 0) {
                             const label = chart.data.labels[elements[0].index];
                             if(label !== 'Outros') {
+                         
                                 if(window.filtroCentros.has(label)) window.filtroCentros.delete(label);
                                 else window.filtroCentros.add(label);
                                 construirSidebar(); aplicarFiltrosDashboard();
+                          
                             }
                         }
                     },
                     plugins:{ 
                         legend:{display:false}, 
+        
                         tooltip:{
                             backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), 
                             callbacks:{
+                      
                                 label:ctx => {
                                     let perc = totalReferenciaAbsoluta > 0 ? (ctx.raw / totalReferenciaAbsoluta) * 100 : 0;
                                     return `${ctx.label}: ${formatarNumeroInteiro(ctx.raw)} (${perc.toFixed(1)}%)`;
@@ -1146,6 +1211,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                         }, 
                         datalabels:{ 
+                      
                             formatter:(v,ctx)=> {
                                 let perc = totalReferenciaAbsoluta > 0 ? (v / totalReferenciaAbsoluta) * 100 : 0;
                                 return `${ctx.chart.data.labels[ctx.dataIndex]}\n${perc.toFixed(1)}%`;
@@ -1153,6 +1219,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             color:'#fff', font:{weight:'bold',size:13}, backgroundColor:'rgba(0,0,0,0.6)', borderRadius:4, padding:4, textAlign:'center' 
                         } 
                     }
+           
                 }, plugins:[ChartDataLabels]
             });
         }
@@ -1185,17 +1252,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 options:{ layout: { padding: { top: 30 } }, responsive:true, maintainAspectRatio:false, barPercentage:0.7, categoryPercentage:0.8,
                     interaction: { mode: 'index', intersect: false },
                     onHover: chartHoverCursor,
+     
                     onClick: (e, elements, chart) => {
                         if(elements.length > 0) {
                             const label = chart.data.labels[elements[0].index];
+                      
                             if(window.filtroCentros.has(label)) window.filtroCentros.delete(label);
                             else window.filtroCentros.add(label);
                             construirSidebar(); aplicarFiltrosDashboard();
                         }
+           
                     },
                     plugins:{ 
                         legend:{display:false}, 
                         tooltip:{backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks:{label:ctx=>`${window.currentMode==='RB'?'Receita':'Custo'}: ${formatarNumeroInteiro(ctx.raw)}`}}, 
+             
                         datalabels:{anchor:'end',align:'top',offset:4,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:13}} 
                     },
                     scales:{ y:{ beginAtZero:true, grace:'20%', grid:{color:getChartGridColor(), borderDash:[5,5]}, border:{display:false}, ticks:{callback:v=>formatarEixo(v),font:{size:11},color:getChartTextColor()} }, x:{ grid:{display:false}, border:{display:false}, ticks:{font:{weight:'600',size:11},color:getChartTextColor()} } }
@@ -1220,12 +1291,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const a = partes[1].trim();
             const idx = meses.indexOf(m);
             if(idx === -1) return;
+      
             
             // Lê dinamicamente RB ou Custo baseado no Modo atual
             const valor = window.currentMode === 'RB' ? d.rb : d.custo;
             
             if (a === anoAtual) valAtual[idx] += valor;
             else if (a === anoAnt) valAnt[idx] += valor;
+   
         });
 
         // Atualiza Título
@@ -1266,18 +1339,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 data: {
                     labels: labels,
                     // Ordem Cronológica: Ano Anterior primeiro, Ano Atual depois
+             
                     datasets: [
                         { label: anoAnt, data: valAnt, backgroundColor: corAnt, borderColor: corBorderAnt, borderWidth: 1, borderRadius: 4 },
                         { label: anoAtual, data: valAtual, backgroundColor: corAtual, borderColor: corBorderAtual, borderWidth: 1, borderRadius: 4 }
+                  
                     ]
                 },
                 options: {
                     layout: { padding: { top: 35 } },
                     responsive: true, maintainAspectRatio: false,
+               
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { display: true, position: 'top', labels: { color: getChartTextColor(), font: { size: 12, weight: 'bold' } } },
-                        tooltip: { backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks: { label: ctx => `${ctx.dataset.label}: ${formatarNumeroInteiro(ctx.raw)}` } },
+                        tooltip: { 
+                            backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks: { label: ctx => `${ctx.dataset.label}: ${formatarNumeroInteiro(ctx.raw)}` } },
                         datalabels: { anchor: 'end', align: 'top', offset: 2, formatter: v => v > 0 ? formatarEixo(v) : '', color: getChartTextColor(), font: { weight: 'bold', size: 13 } }
                     },
                     scales: {
@@ -1285,6 +1362,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         x: { grid: { display: false }, border: { display: false }, ticks: { font: { weight: '600' }, color: getChartTextColor() } }
                     }
                 }, plugins: [ChartDataLabels]
+            
             });
         }
     }
@@ -1295,6 +1373,7 @@ document.addEventListener("DOMContentLoaded", () => {
         else { window.sortRelatorio.mes = mes; window.sortRelatorio.tipo = tipo; window.sortRelatorio.asc = false; }
         atualizarRelatorioMensal();
     };
+    
     function atualizarRelatorioMensal() {
         let dados = window.dadosCompletos;
         if(window.filtroAnoRelatorio) dados = dados.filter(d=>(d.mes.split('/')[1] || '').trim()===window.filtroAnoRelatorio);
@@ -1307,11 +1386,13 @@ document.addEventListener("DOMContentLoaded", () => {
         let thead = '<tr><th>Código C.C.</th><th>Centro de Custo</th><th>Cliente</th><th>Subnegócio</th>';
         mesesLista.forEach(m=>thead+=`<th colspan="2" class="mes-header">${m}</th>`);
         thead+=`</tr><tr><th></th><th></th><th></th><th></th>`;
+        
         mesesLista.forEach(m => {
             let setaRB = (window.sortRelatorio.mes === m && window.sortRelatorio.tipo === 'rb') ? (window.sortRelatorio.asc ? ' ▴' : ' ▾') : '';
             let setaCusto = (window.sortRelatorio.mes === m && window.sortRelatorio.tipo === 'custo') ? (window.sortRelatorio.asc ? ' ▴' : ' ▾') : '';
             thead+=`<th class="subcol sortable" onclick="ordenarTabelaRelatorio('${m}', 'rb')" title="Clique para ordenar">RB${setaRB}</th>`;
-            thead+=`<th class="subcol sortable" onclick="ordenarTabelaRelatorio('${m}', 'custo')" title="Clique para ordenar">Custo${setaCusto}</th>`;
+            thead+=`<th class="subcol sortable" onclick="ordenarTabelaRelatorio('${m}', 'custo')" 
+title="Clique para ordenar">Custo${setaCusto}</th>`;
         });
         thead+=`</tr>`;
 
@@ -1331,6 +1412,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const valA = a.meses[window.sortRelatorio.mes] ? a.meses[window.sortRelatorio.mes][window.sortRelatorio.tipo] : 0;
                 const valB = b.meses[window.sortRelatorio.mes] ? b.meses[window.sortRelatorio.mes][window.sortRelatorio.tipo] : 0;
                 return window.sortRelatorio.asc ? (valA - valB) : (valB - valA);
+       
             });
         }
 
@@ -1342,6 +1424,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const classe=idx%2===0?'grupo-mes-par':'grupo-mes-impar';
                 linha+=`<td class="${classe}">${formatarNumeroInteiro(vals.rb)}</td><td class="${classe}">${formatarNumeroInteiro(vals.custo)}</td>`;
             });
+           
             linha+=`</tr>`; tbody+=linha;
         });
         document.getElementById('theadRelatorio').innerHTML = thead;
@@ -1378,6 +1461,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 linha.push(vals.rb.toFixed(2).replace('.',','));
                 linha.push(vals.custo.toFixed(2).replace('.',','));
             });
+   
             linhas.push(linha);
         });
         
@@ -1438,11 +1522,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 const printArea = document.querySelector('.content-body'); 
                 const block1 = document.getElementById('export-block-1');
                 const block2 = document.getElementById('export-block-2');
+            
                 const block3 = document.getElementById('export-block-3');
                 const exportTitleContainer = document.getElementById('export-title-container');
                 
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('landscape', 'mm', 'a4');
+               
                 const pdfWidth = 297; 
                 const pdfHeight = 210; 
 
@@ -1451,12 +1537,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 // PÁGINA 1
                 block2.style.display = 'none'; 
                 block3.style.display = 'none'; 
+ 
                 const canvas1 = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
                 let ratio1 = canvas1.width / canvas1.height;
                 let h1 = pdfWidth / ratio1;
                 let y1 = h1 < pdfHeight ? (pdfHeight - h1) / 2 : 0;
                 pdf.addImage(canvas1.toDataURL('image/png'), 'PNG', 0, y1, pdfWidth, h1, undefined, 'FAST');
-
+                
                 // PÁGINA 2
                 block1.style.display = 'none';
                 block2.style.display = '';     
@@ -1466,7 +1553,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let h2 = pdfWidth / ratio2;
                 let y2 = h2 < pdfHeight ? (pdfHeight - h2) / 2 : 0;
                 pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, y2, pdfWidth, h2, undefined, 'FAST');
-
+                
                 // PÁGINA 3 (Gráfico YoY)
                 block2.style.display = 'none';
                 block3.style.display = '';     
@@ -1476,7 +1563,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let h3 = pdfWidth / ratio3;
                 let y3 = h3 < pdfHeight ? (pdfHeight - h3) / 2 : 0;
                 pdf.addImage(canvas3.toDataURL('image/png'), 'PNG', 0, y3, pdfWidth, h3, undefined, 'FAST');
-
+                
                 // RESTAURA
                 block1.style.display = '';
                 block2.style.display = '';
@@ -1496,11 +1583,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 exportTitleContainer.style.display = 'block';
 
                 const printArea = document.querySelector('.content-body');
+     
                 const canvas = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
                 
                 const link = document.createElement('a');
                 link.download = 'Dashboard_Ontime.png';
                 link.href = canvas.toDataURL('image/png');
+      
                 link.click();
 
                 exportTitleContainer.style.display = '';
@@ -1550,6 +1639,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 btn.textContent = ano; btn.classList.add('filter-btn');
                 if(window.filtroAnoRelatorio === ano) btn.classList.add('active');
                 btn.onclick = () => {
+                   
                     document.querySelectorAll('#filtroAnoRelatorioContainer .filter-btn').forEach(b=>b.classList.remove('active'));
                     btn.classList.add('active'); window.filtroAnoRelatorio = ano; atualizarRelatorioMensal();
                 };
