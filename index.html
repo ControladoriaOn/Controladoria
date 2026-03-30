@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hub de Ferramentas | ONTIME</title>
-    <!-- Favicon PNG -->
     <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -284,36 +283,6 @@
 
         .search-input::placeholder { color: var(--text-3); }
 
-        .filter-chips {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .chip {
-            padding: 8px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            border: 1.5px solid var(--border);
-            background: var(--surface);
-            color: var(--text-2);
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-
-        .chip:hover {
-            border-color: var(--orange);
-            color: var(--orange);
-        }
-
-        .chip.active {
-            background: var(--orange);
-            border-color: var(--orange);
-            color: #fff;
-        }
-
         /* Section Label */
         .section-label {
             font-size: 11px;
@@ -354,7 +323,6 @@
         .tool-card:nth-child(3) { animation-delay: 0.15s; }
         .tool-card:nth-child(4) { animation-delay: 0.20s; }
         .tool-card:nth-child(5) { animation-delay: 0.25s; }
-        .tool-card:nth-child(6) { animation-delay: 0.30s; }
 
         @keyframes cardIn {
             from { opacity: 0; transform: translateY(18px); }
@@ -533,96 +501,19 @@
 
         .footer-badge i { color: var(--orange); font-size: 14px; }
 
-        /* ─── MOBILE BOTTOM NAV ──────────────────────────────── */
-        .mobile-nav {
-            display: none;
-        }
-
         @media (max-width: 768px) {
             header { padding: 0 20px; }
             .hero  { padding: 36px 20px 32px; }
-            main   { padding: 28px 20px 100px; } /* espaço para a nav bar */
-            footer { display: none; } /* footer vira a nav bar no mobile */
+            main   { padding: 28px 20px 60px; }
             .tools-grid { grid-template-columns: 1fr; }
             .stats-row { gap: 12px; }
-
-            /* Chips de filtro: scroll horizontal, sem quebra de linha */
-            .filter-chips {
-                overflow-x: auto;
-                flex-wrap: nowrap;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-            }
-            .filter-chips::-webkit-scrollbar { display: none; }
-
-            /* ── Bottom Nav ── */
-            .mobile-nav {
-                display: flex;
-                position: fixed;
-                bottom: 0; left: 0; right: 0;
-                height: 64px;
-                background: var(--purple);
-                border-top: 2px solid var(--orange);
-                z-index: 200;
-                box-shadow: 0 -4px 20px rgba(60,0,60,0.30);
-                padding: 0 8px;
-                align-items: stretch;
-            }
-
-            .nav-item {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 3px;
-                color: rgba(255,255,255,0.45);
-                text-decoration: none;
-                font-size: 10px;
-                font-weight: 600;
-                letter-spacing: 0.3px;
-                padding: 8px 4px;
-                border-radius: 10px;
-                transition: color 0.2s, background 0.2s;
-                min-width: 0; /* permite shrink correto */
-                cursor: pointer;
-                background: none;
-                border: none;
-            }
-
-            .nav-item i {
-                font-size: 22px;
-                flex-shrink: 0;
-            }
-
-            .nav-item span {
-                /* Em telas muito pequenas some o texto */
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 100%;
-            }
-
-            .nav-item.active,
-            .nav-item:hover {
-                color: var(--orange);
-                background: rgba(255,110,0,0.10);
-            }
-
-            /* Abaixo de 380px: esconde o texto, só ícone */
-            @media (max-width: 380px) {
-                .nav-item span { display: none; }
-                .nav-item { gap: 0; }
-            }
         }
     </style>
 </head>
 <body>
 
-<!-- ── HEADER ── -->
 <header>
     <div class="header-brand">
-        <!-- Imagem do Mascote -->
         <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="brand-img">
         <span class="brand-name">ON<span>TIME</span></span>
     </div>
@@ -631,24 +522,23 @@
     </div>
 </header>
 
-<!-- ── HERO ── -->
 <div class="hero">
     <div class="hero-content">
         <div class="hero-label"><i class="ph-fill ph-lightning"></i> Central de Ferramentas</div>
         <h1>Hub de <em>Controladoria</em></h1>
-        <p>Acesse todas as ferramentas analíticas da equipe em um único lugar. Dados precisos, decisões mais rápidas.</p>
+        <p>Acesse todas as ferramentas analíticas da equipa num único lugar. Dados precisos, decisões mais rápidas.</p>
         <div class="stats-row">
             <div class="stat-chip">
                 <i class="ph-fill ph-stack"></i>
                 <div class="stat-chip-info">
-                    <span class="stat-num" id="total-count">4</span>
+                    <span class="stat-num" id="total-count">5</span>
                     <span class="stat-label">Ferramentas</span>
                 </div>
             </div>
             <div class="stat-chip">
                 <i class="ph-fill ph-check-circle"></i>
                 <div class="stat-chip-info">
-                    <span class="stat-num" id="active-count">4</span>
+                    <span class="stat-num" id="active-count">5</span>
                     <span class="stat-label">Online</span>
                 </div>
             </div>
@@ -663,19 +553,11 @@
     </div>
 </div>
 
-<!-- ── MAIN ── -->
 <main>
     <div class="toolbar">
         <div class="search-wrap">
             <i class="ph ph-magnifying-glass"></i>
-            <input class="search-input" type="text" id="search" placeholder="Buscar ferramenta..." autocomplete="off">
-        </div>
-        <div class="filter-chips">
-            <button class="chip active" data-filter="all">Todas</button>
-            <button class="chip" data-filter="Análise">Análise</button>
-            <button class="chip" data-filter="Tabulação">Tabulação</button>
-            <button class="chip" data-filter="Relatório">Relatório</button>
-            <button class="chip" data-filter="Operacional">Operacional</button>
+            <input class="search-input" type="text" id="search" placeholder="Procurar ferramenta..." autocomplete="off">
         </div>
     </div>
 
@@ -725,7 +607,6 @@
             </div>
         </a>
 
-        <!-- NOVO CARD: Emissor de ND -->
         <a href="./Emissor/" class="tool-card" data-category="Operacional" data-title="Emissor de ND">
             <div class="card-accent"></div>
             <div class="card-header">
@@ -740,68 +621,55 @@
             </div>
         </a>
 
+        <a href="./Pagamentos/" class="tool-card" data-category="Financeiro" data-title="Pagamentos Diários">
+            <div class="card-accent"></div>
+            <div class="card-header">
+                <div class="card-icon"><i class="ph-fill ph-currency-circle-dollar"></i></div>
+                <span class="card-category">Financeiro</span>
+            </div>
+            <h3 class="card-title">Pagamentos Diários</h3>
+            <p class="card-desc">Acompanhamento e controle ágil de saídas, reembolsos e pagamentos diários.</p>
+            <div class="card-footer">
+                <span class="status-dot"><span class="dot"></span> Online</span>
+                <span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span>
+            </div>
+        </a>
+
     </div>
 </main>
 
-<!-- ── FOOTER (desktop) ── -->
 <footer>
     <span class="footer-copy">&copy; 2026 Ontime Controladoria. Todos os direitos reservados.</span>
     <span class="footer-badge"><i class="ph-fill ph-shield-check"></i> Ambiente interno seguro</span>
 </footer>
 
-<!-- ── MOBILE BOTTOM NAV ── -->
-<nav class="mobile-nav" aria-label="Navegação mobile">
-    <button class="nav-item active" onclick="mobileFilter(this, 'all')">
-        <i class="ph-fill ph-squares-four"></i>
-        <span>Todas</span>
-    </button>
-    <button class="nav-item" onclick="mobileFilter(this, 'Análise')">
-        <i class="ph-fill ph-scales"></i>
-        <span>Análise</span>
-    </button>
-    <button class="nav-item" onclick="mobileFilter(this, 'Tabulação')">
-        <i class="ph-fill ph-table"></i>
-        <span>Tabulação</span>
-    </button>
-    <button class="nav-item" onclick="mobileFilter(this, 'Relatório')">
-        <i class="ph-fill ph-chart-pie-slice"></i>
-        <span>Relatório</span>
-    </button>
-    <button class="nav-item" onclick="mobileFilter(this, 'Operacional')">
-        <i class="ph-fill ph-receipt"></i>
-        <span>Operacional</span>
-    </button>
-</nav>
-
 <script>
     const searchInput = document.getElementById('search');
-    const filterChips = document.querySelectorAll('.chip');
     const cards = document.querySelectorAll('.tool-card');
     const grid = document.getElementById('grid');
 
-    let activeFilter = 'all';
-
-    function filterCards() {
+    function searchCards() {
         const query = searchInput.value.toLowerCase();
         let visible = 0;
 
         cards.forEach(card => {
             const title = card.dataset.title.toLowerCase();
-            const category = card.dataset.category;
             const desc = card.querySelector('.card-desc').textContent.toLowerCase();
 
-            const matchesSearch = title.includes(query) || desc.includes(query);
-            const matchesFilter = activeFilter === 'all' || category === activeFilter;
-
-            const show = matchesSearch && matchesFilter;
-            card.style.display = show ? '' : 'none';
-            if (show) visible++;
+            // Se o título ou a descrição incluírem o texto digitado, mostra o card
+            if (title.includes(query) || desc.includes(query)) {
+                card.style.display = '';
+                visible++;
+            } else {
+                card.style.display = 'none';
+            }
         });
 
-        // Empty state
+        // Limpar a mensagem de "vazio" anterior (se houver)
         const existing = grid.querySelector('.empty-state');
         if (existing) existing.remove();
 
+        // Mostrar a mensagem de "vazio" se nada for encontrado
         if (visible === 0) {
             grid.insertAdjacentHTML('beforeend', `
                 <div class="empty-state">
@@ -812,37 +680,8 @@
         }
     }
 
-    searchInput.addEventListener('input', filterCards);
-
-    filterChips.forEach(chip => {
-        chip.addEventListener('click', () => {
-            filterChips.forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
-            activeFilter = chip.dataset.filter;
-            filterCards();
-        });
-    });
-
-    // Mobile bottom nav filter — sincroniza com os chips do desktop
-    function mobileFilter(btn, filter) {
-        // Ativa o botão mobile
-        document.querySelectorAll('.mobile-nav .nav-item').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        // Sincroniza com os chips do desktop
-        filterChips.forEach(c => {
-            c.classList.toggle('active', c.dataset.filter === filter);
-        });
-
-        activeFilter = filter;
-        filterCards();
-
-        // Scroll suave para a grid
-        document.getElementById('grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    // Expõe globalmente para o onclick inline
-    window.mobileFilter = mobileFilter;
+    // Ouve a digitação na barra de pesquisa
+    searchInput.addEventListener('input', searchCards);
 
     // Live clock for last update
     const yearEl = document.getElementById('last-update');
