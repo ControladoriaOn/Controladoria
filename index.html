@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hub de Ferramentas | ONTIME</title>
-    <link rel="icon" type="image/jpeg" href="https://arthurontime01-spec.github.io/Controladoria/favicon.jpg">
+    <!-- Favicon PNG -->
+    <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,16 +71,12 @@
             gap: 14px;
         }
 
-        .brand-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--orange), var(--orange-mid));
+        /* Estilo da Imagem do Mascote no Hub */
+        .brand-img {
+            width: 44px;
+            height: 44px;
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 20px;
+            object-fit: cover;
             flex-shrink: 0;
             box-shadow: 0 0 0 3px rgba(255,110,0,0.25);
         }
@@ -94,6 +91,7 @@
 
         .brand-name span {
             color: var(--orange);
+            margin-left: -3px; /* Aproxima o TIME do ON */
         }
 
         .header-right {
@@ -621,9 +619,11 @@
 </head>
 <body>
 
+<!-- ── HEADER ── -->
 <header>
     <div class="header-brand">
-        <div class="brand-icon"><i class="ph-fill ph-squares-four"></i></div>
+        <!-- Imagem do Mascote -->
+        <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="brand-img">
         <span class="brand-name">ON<span>TIME</span></span>
     </div>
     <div class="header-right">
@@ -631,6 +631,7 @@
     </div>
 </header>
 
+<!-- ── HERO ── -->
 <div class="hero">
     <div class="hero-content">
         <div class="hero-label"><i class="ph-fill ph-lightning"></i> Central de Ferramentas</div>
@@ -662,6 +663,7 @@
     </div>
 </div>
 
+<!-- ── MAIN ── -->
 <main>
     <div class="toolbar">
         <div class="search-wrap">
@@ -723,6 +725,7 @@
             </div>
         </a>
 
+        <!-- NOVO CARD: Emissor de ND -->
         <a href="./Emissor/" class="tool-card" data-category="Operacional" data-title="Emissor de ND">
             <div class="card-accent"></div>
             <div class="card-header">
@@ -740,11 +743,13 @@
     </div>
 </main>
 
+<!-- ── FOOTER (desktop) ── -->
 <footer>
     <span class="footer-copy">&copy; 2026 Ontime Controladoria. Todos os direitos reservados.</span>
     <span class="footer-badge"><i class="ph-fill ph-shield-check"></i> Ambiente interno seguro</span>
 </footer>
 
+<!-- ── MOBILE BOTTOM NAV ── -->
 <nav class="mobile-nav" aria-label="Navegação mobile">
     <button class="nav-item active" onclick="mobileFilter(this, 'all')">
         <i class="ph-fill ph-squares-four"></i>
