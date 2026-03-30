@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>ONTIME CONTROLADORIA</title>
+    <link rel="icon" type="image/jpeg" href="https://arthurontime01-spec.github.io/Controladoria/favicon.jpg">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* Paleta Ontime Premium */
+            --ontime-orange: #FF6E00;
+            --ontime-orange-hover: #e66300;
+            --ontime-orange-light: #fff0e5;
+            --ontime-purple: #3C003C;
+            --ontime-purple-hover: #520052;
+            
+            --bg-body: #f4f5f7;
+            --surface-color: #ffffff;
+            --sidebar-bg: #ffffff;
+            
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --border-color: #e2e8f0;
+            --table-header-bg: #f8fafc;
+            
+            --danger-color: #dc2626;
+            --danger-hover: #b91c1c;
+            
+            --font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-body); color: var(--text-primary);
+            font-family: var(--font-family); margin: 0; padding: 0;
+            display: flex; height: 100vh; overflow: hidden; box-sizing: border-box;
+        }
+
+        * { box-sizing: border-box; }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .main-container { display: flex; width: 100%; height: 100%; }
+
+        /* Sidebar - Estilo Ontime */
+        .sidebar {
+            width: 340px; background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color); display: none;
+            flex-direction: column; flex-shrink: 0; height: 100%;
+            box-shadow: 2px 0 15px rgba(60, 0, 60, 0.05); z-index: 20;
+        }
+        
+        .sidebar-header { 
+            padding: 20px; 
+            background: var(--ontime-purple); 
+            color: #ffffff;
+            border-bottom: 3px solid var(--ontime-orange);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        /* Estilo do botão de voltar */
+        .btn-voltar {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-voltar:hover { color: var(--ontime-orange); }
+        .btn-voltar i { font-size: 14px; }
+
+        .sidebar-header h1 { font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px;}
+        .sidebar-header h1 i { color: var(--ontime-orange); font-size: 20px; }
+        
+        .sidebar-content { padding: 24px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+        
+        .filter-header-wrapper {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 4px;
+        }
+        .filter-header-wrapper h3 { margin: 0; font-size: 13px; color: var(--ontime-purple); text-transform: uppercase; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+        .filter-header-wrapper h3 i { color: var(--ontime-orange); font-size: 16px; }
+        
+        .btn-reset-filters {
+            background: none; border: none; color: var(--text-secondary); font-size: 11px;
+            font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0;
+            transition: color 0.2s; font-family: var(--font-family);
+        }
+        .btn-reset-filters:hover { color: var(--ontime-orange); }
+
+        /* Filtros */
+        .filter-group { display: flex; flex-direction: column; gap: 6px; position: relative; }
+        .filter-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        .filter-group select { 
+            padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; 
+            font-size: 13px; font-family: var(--font-family); color: var(--text-primary); 
+            outline: none; transition: border 0.2s; background: var(--surface-color); cursor: pointer; 
+        }
+        .filter-group select:focus { border-color: var(--ontime-orange); box-shadow: 0 0 0 3px rgba(255, 110, 0, 0.1); }
+        
+        .custom-select { position: relative; width: 100%; }
+        .cs-header { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--surface-color); cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+        .cs-header:hover { border-color: var(--ontime-purple); }
+        .cs-header::after { content: "\25BC"; font-size: 10px; color: #94a3b8; }
+        .cs-header-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+        .cs-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface-color); border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; display: none; flex-direction: column; }
+        .cs-dropdown.show { display: flex; }
+        .cs-search { padding: 10px; border-bottom: 1px solid var(--border-color); }
+        .cs-search input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; outline: none; font-family: var(--font-family); }
+        .cs-search input:focus { border-color: var(--ontime-orange); }
+        .cs-options { max-height: 200px; overflow-y: auto; padding: 5px; }
+        .cs-option { display: flex; align-items: center; gap: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; border-radius: 4px; }
+        .cs-option:hover { background: var(--ontime-orange-light); color: var(--ontime-purple); font-weight: 500;}
+        .cs-select-all { font-weight: 600; border-bottom: 1px solid var(--border-color); margin-bottom: 4px; padding-bottom: 8px; }
+        .cs-actions { padding: 10px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; background: #f8fafc; border-radius: 0 0 6px 6px; }
+        
+        .checkbox-list { display: flex; flex-direction: column; gap: 8px; max-height: 140px; overflow-y: auto; background: var(--surface-color); padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .checkbox-list label { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-primary); }
+        .checkbox-list label:hover { color: var(--ontime-orange); }
+        input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--ontime-orange); }
+
+        /* Botões */
+        .cs-btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: var(--font-family); }
+        .cs-btn-ok { background: var(--ontime-orange); color: white; }
+        .cs-btn-ok:hover { background: var(--ontime-orange-hover); }
+        .cs-btn-cancel { background: #e2e8f0; color: #475569; }
+        
+        .btn { border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-family); }
+        .btn i { font-size: 16px; }
+        .btn:hover { transform: translateY(-1px); }
+        
+        .btn-primary { background-color: var(--ontime-orange); color: white; }
+        .btn-primary:hover { background-color: var(--ontime-orange-hover); box-shadow: 0 4px 10px rgba(255, 110, 0, 0.2); }
+        
+        .btn-dark { background-color: var(--ontime-purple); color: white; }
+        .btn-dark:hover { background-color: var(--ontime-purple-hover); box-shadow: 0 4px 10px rgba(60, 0, 60, 0.2); }
+        
+        .btn-outline { background-color: var(--surface-color); color: var(--text-secondary); border: 1px solid #cbd5e1; }
+        .btn-outline:hover { background-color: #f1f5f9; color: var(--ontime-purple); border-color: var(--ontime-purple); }
+
+        /* Área de Conteúdo */
+        .content-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-body); position: relative; min-width: 0; }
+        
+        .top-header-fallback { padding: 24px 30px; background: var(--ontime-purple); color: white; border-bottom: 3px solid var(--ontime-orange); display: flex; align-items: center; gap: 24px; }
+        .top-header-fallback h1 { margin: 0; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 24px;}
+        .top-header-fallback h1 i { color: var(--ontime-orange); font-size: 24px; }
+        
+        .content-body { padding: 24px; flex: 1; display: flex; flex-direction: column; gap: 20px; min-height: 0; overflow: hidden; }
+
+        /* Upload */
+        .upload-card { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 40px; text-align: center; max-width: 600px; margin: 40px auto; width: 100%; box-shadow: 0 8px 20px rgba(60, 0, 60, 0.04); }
+        .upload-section { padding: 40px 20px; border: 2px dashed #cbd5e1; border-radius: 12px; background-color: #f8fafc; transition: all 0.3s ease; }
+        .upload-section:hover { border-color: var(--ontime-orange); background-color: var(--ontime-orange-light); }
+        .upload-icon { font-size: 48px; color: var(--ontime-orange); margin-bottom: 16px; }
+        .upload-title { font-size: 18px; font-weight: 800; color: var(--ontime-purple); margin: 0 0 8px 0; }
+        .upload-subtitle { color: var(--text-secondary); font-size: 13px; margin: 0 0 24px 0; }
+        .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
+        .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
+
+        /* Actions Bar */
+        .actions-bar { display: none; justify-content: space-between; align-items: center; background-color: var(--surface-color); padding: 12px 20px; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 2px 4px rgba(60,0,60,0.02); }
+        .actions-group { display: flex; gap: 12px; }
+        .record-badge { background: #f1f5f9; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--ontime-purple); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px;}
+        .record-badge i { color: var(--ontime-orange); }
+
+        /* Tabela */
+        .table-wrapper { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(60, 0, 60, 0.04); flex: 1; }
+        .table-container { overflow: auto; flex: 1; width: 100%; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; white-space: nowrap; background-color: white; }
+        th, td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+        
+        table th:nth-child(1), table td:nth-child(1) { position: sticky; left: 0; z-index: 11; background-color: var(--surface-color); border-right: 1px solid #e2e8f0; }
+        table th:nth-child(1) { z-index: 12; background-color: var(--table-header-bg); }
+        tbody tr:nth-child(even) td:nth-child(1) { background-color: #f8fafc; }
+        tbody tr:hover td:nth-child(1) { background-color: #f1f5f9; }
+
+        th { background-color: var(--table-header-bg); position: sticky; top: 0; font-weight: 700; color: var(--ontime-purple); z-index: 10; border-bottom: 2px solid #cbd5e1; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+        table th:nth-child(n+4), table td:nth-child(n+4) { text-align: right; font-variant-numeric: tabular-nums; }
+        table th:nth-child(1), table td:nth-child(1), table th:nth-child(2), table td:nth-child(2), table th:nth-child(3), table td:nth-child(3) { text-align: left; }
+        tbody tr { background-color: #ffffff; }
+        tbody tr:nth-child(even) { background-color: #f8fafc; }
+        tbody tr:hover { background-color: #f1f5f9; }
+        
+        /* Coluna Consolidado com Identidade Ontime */
+        th.consolidado-col { background-color: var(--ontime-orange-light); color: var(--ontime-purple); font-weight: 800; border-left: 2px solid #ffd1a6; }
+        td.consolidado-col { background-color: var(--ontime-orange-light); font-weight: 700; border-left: 2px solid #ffd1a6; color: var(--ontime-purple); }
+        tbody tr:nth-child(even) td.consolidado-col { background-color: #ffe6d1; }
+        
+        .negative-val { color: var(--danger-color); font-weight: 600; }
+        .zero-val { color: #cbd5e1; }
+
+        /* Toast */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: white; border-left: 4px solid var(--ontime-orange); padding: 16px 24px; border-radius: 4px; box-shadow: 0 6px 16px rgba(60,0,60,0.15); display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; color: var(--ontime-purple); animation: slideIn 0.3s ease forwards; }
+        .toast.success { border-left-color: var(--ontime-orange); }
+        .toast.success i { color: var(--ontime-orange); font-size: 20px; }
+        .toast.info { border-left-color: var(--ontime-purple); }
+        .toast.info i { color: var(--ontime-purple); font-size: 20px; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="main-container" id="mainContainer">
+        
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="../" class="btn-voltar"><i class="ph ph-arrow-left"></i> Voltar ao Menu</a>
+                <h1><i class="ph-fill ph-chart-pie-slice"></i> ONTIME CONTROLADORIA</h1>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="filter-header-wrapper">
+                    <h3><i class="ph ph-funnel"></i> Filtros de Visão</h3>
+                    <button class="btn-reset-filters" onclick="resetarFiltrosUI()">Limpar Tudo</button>
+                </div>
+                
+                <div class="filter-group" id="wrap-conta">
+                    <label>Código da Conta</label>
+                    <div class="custom-select">
+                        <div class="cs-header" onclick="toggleDropdown('conta')"><span class="cs-header-text" id="cs-header-text-conta">(Selecionar Tudo)</span></div>
+                        <div class="cs-dropdown" id="cs-dropdown-conta">
+                            <div class="cs-search"><input type="text" id="cs-search-conta" placeholder="Pesquisar..." oninput="renderDropdownOptions('conta')"></div>
+                            <div class="cs-options" id="cs-options-conta"></div>
+                            <div class="cs-actions">
+                                <button class="cs-btn cs-btn-cancel" onclick="closeDropdown('conta')">Cancelar</button>
+                                <button class="cs-btn cs-btn-ok" onclick="applyDropdown('conta')">Aplicar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-group" id="wrap-desc">
+                    <label>Descrição</label>
+                    <div class="custom-select">
+                        <div class="cs-header" onclick="toggleDropdown('desc')"><span class="cs-header-text" id="cs-header-text-desc">(Selecionar Tudo)</span></div>
+                        <div class="cs-dropdown" id="cs-dropdown-desc">
+                            <div class="cs-search"><input type="text" id="cs-search-desc" placeholder="Pesquisar..." oninput="renderDropdownOptions('desc')"></div>
+                            <div class="cs-options" id="cs-options-desc"></div>
+                            <div class="cs-actions">
+                                <button class="cs-btn cs-btn-cancel" onclick="closeDropdown('desc')">Cancelar</button>
+                                <button class="cs-btn cs-btn-ok" onclick="applyDropdown('desc')">Aplicar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Natureza</label>
+                    <select id="filtroTipo" onchange="aplicarFiltros()"><option value="">Todas</option><option value="SINTÉTICA">Sintética</option><option value="ANALÍTICA">Analítica</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Movimentação</label>
+                    <select id="filtroMov" onchange="aplicarFiltros()"><option value="">Todas as Contas</option><option value="sim">Sim (Com saldo no período)</option><option value="nao">Não (Zeradas no período)</option></select>
+                </div>
+                <div class="filter-group">
+                    <label>Categoria</label>
+                    <select id="filtroCategoria" onchange="aplicarFiltros()"><option value="">Todas as Categorias</option><option value="ATIVO">Ativo (Iniciadas com 1)</option><option value="PASSIVO">Passivo (Iniciadas com 2)</option><option value="RESULTADO">Resultado (3 em diante)</option></select>
+                </div>
+
+                <div class="filter-header-wrapper" style="margin-top: 10px;">
+                    <h3><i class="ph ph-calendar-blank"></i> Meses Abertos</h3>
+                </div>
+                <div class="filter-group"><div id="monthCheckboxes" class="checkbox-list"></div></div>
+                
+                <div class="filter-header-wrapper" style="margin-top: 10px;">
+                    <h3><i class="ph ph-list-numbers"></i> Nível de Abertura</h3>
+                </div>
+                <div class="filter-group"><div id="nivelCheckboxes" class="checkbox-list"></div></div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="top-header-fallback" id="fallbackHeader">
+                <a href="../" class="btn-voltar"><i class="ph ph-arrow-left"></i> Voltar ao Menu</a>
+                <h1><i class="ph-fill ph-chart-pie-slice"></i> ONTIME CONTROLADORIA</h1>
+            </div>
+
+            <div class="content-body">
+                <div class="upload-card" id="uploadSection">
+                    <div class="upload-section">
+                        <i class="ph-fill ph-file-arrow-up upload-icon"></i>
+                        <h2 class="upload-title">Análise de DRE Totvs</h2>
+                        <p class="upload-subtitle">Faça o upload do XML gerado pelo sistema para iniciar o processamento em tela.</p>
+                        <div class="file-input-wrapper">
+                            <button class="btn btn-primary"><i class="ph ph-folder-open"></i> Selecionar Arquivo XML</button>
+                            <input type="file" id="fileUpload" accept=".xml">
+                        </div>
+                        <p id="fileName" style="margin-top: 20px; color: var(--ontime-orange); font-weight: 600; font-size: 13px;"></p>
+                    </div>
+                </div>
+
+                <div class="actions-bar" id="actionButtons">
+                    <div class="record-badge" id="recordCount"><i class="ph-fill ph-list-dashes"></i> Exibindo 0 registros</div>
+                    <div class="actions-group">
+                        <button class="btn btn-outline" id="btnClear" onclick="limparDados()"><i class="ph ph-arrow-u-up-left"></i> Voltar / Limpar</button>
+                        <button class="btn btn-dark" id="btnDownload" onclick="downloadExcel()"><i class="ph ph-microsoft-excel-logo"></i> Exportar (.xlsx)</button>
+                    </div>
+                </div>
+
+                <div class="table-wrapper" id="tableWrapper">
+                    <div class="table-container" id="tableContainer">
+                        <table id="previewTable">
+                            <thead id="tableHead"></thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let fullHeaders = []; let fullData = []; let currentDisplayHeaders = []; let currentDisplayData = [];
+        let dropdownState = { conta: { allItems: [], currentChecked: new Set(), appliedChecked: new Set() }, desc: { allItems: [], currentChecked: new Set(), appliedChecked: new Set() } };
+        
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#wrap-conta')) closeDropdown('conta');
+            if (!e.target.closest('#wrap-desc')) closeDropdown('desc');
+        });
+
+        function escapeHtml(text) { return text.replace(/"/g, '&quot;'); }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? 'ph-check-circle' : 'ph-info';
+            toast.innerHTML = `<i class="ph-fill ${icon}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.getElementById('fileUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('fileName').textContent = "Processando arquivo...";
+            const reader = new FileReader();
+            reader.onload = function(e) { processData(e.target.result); };
+            reader.readAsText(file);
+        });
+
+        function processData(xmlText) {
+            const parser = new DOMParser(); const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+            const rows = xmlDoc.getElementsByTagName("Row"); let headerFound = false;
+            fullHeaders = []; fullData = [];
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i]; const cells = row.getElementsByTagName("Cell");
+                if (!cells || cells.length === 0) continue;
+                const firstDataNode = cells[0].getElementsByTagName("Data")[0];
+                let codigoOriginal = firstDataNode ? firstDataNode.textContent.trim() : "";
+                let codigoTratado = codigoOriginal;
+
+                if (codigoOriginal === "CODIGO") {
+                    if (!headerFound) {
+                        headerFound = true;
+                        for(let j = 0; j < cells.length; j++) {
+                            let dNode = cells[j].getElementsByTagName("Data")[0];
+                            let headerText = dNode ? dNode.textContent : "";
+                            const matchPeriodo = headerText.match(/PERIODO\s+0?(\d+)/i);
+                            if (matchPeriodo) {
+                                const mesNum = parseInt(matchPeriodo[1], 10);
+                                const mesesArr = ["", "JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+                                if (mesNum >= 1 && mesNum <= 12) headerText = `${mesesArr[mesNum]}/26`;
+                            }
+                            fullHeaders.push(headerText);
+                        }
+                    }
+                    continue;
+                }
+
+                if (!codigoOriginal) continue;
+                codigoTratado = codigoOriginal.replace(/\./g, '');
+                let isResultado = codigoTratado.length > 0 && parseInt(codigoTratado.charAt(0)) >= 3;
+                let prevAccumVal = 0; let rowData = [];
+                for (let j = 0; j < cells.length; j++) {
+                    let dataNode = cells[j].getElementsByTagName("Data")[0];
+                    let valStr = dataNode ? dataNode.textContent : "";
+                    if (j === 0) valStr = codigoTratado;
+                    if (j >= 3) {
+                        if (isResultado) {
+                            let currentAccum = parseRawToFloat(valStr, codigoTratado);
+                            let monthlyVal = currentAccum - prevAccumVal;
+                            prevAccumVal = currentAccum;
+                            valStr = formatFloatBR(monthlyVal);
+                        } else {
+                            if (valStr.trim() === "") valStr = "0";
+                            else valStr = formatarValorOriginal(valStr, codigoTratado);
+                        }
+                    }
+                    rowData.push(valStr);
+                }
+                fullData.push(rowData);
+            }
+
+            renderMonthCheckboxes(); inicializarDropdownsMultiplos(); popularNiveis();
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('fallbackHeader').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('actionButtons').style.display = 'flex';
+            document.getElementById('tableWrapper').style.display = 'flex';
+            aplicarFiltros();
+            showToast("DRE processado com sucesso!", "success");
+        }
+
+        function inicializarDropdownsMultiplos() {
+            const contasUnicas = [...new Set(fullData.map(r => r[0]))].filter(Boolean).sort();
+            const descUnicas = [...new Set(fullData.map(r => r[1]))].filter(Boolean).sort();
+            dropdownState.conta.allItems = contasUnicas; dropdownState.conta.appliedChecked = new Set(contasUnicas);
+            dropdownState.desc.allItems = descUnicas; dropdownState.desc.appliedChecked = new Set(descUnicas);
+            updateHeaderText('conta'); updateHeaderText('desc');
+        }
+
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(`cs-dropdown-${id}`);
+            const isOpen = dropdown.classList.contains('show');
+            closeDropdown('conta'); closeDropdown('desc');
+            if (!isOpen) {
+                dropdownState[id].currentChecked = new Set(dropdownState[id].appliedChecked);
+                document.getElementById(`cs-search-${id}`).value = ''; 
+                renderDropdownOptions(id); dropdown.classList.add('show');
+            }
+        }
+
+        function closeDropdown(id) { document.getElementById(`cs-dropdown-${id}`).classList.remove('show'); }
+
+        function renderDropdownOptions(id) {
+            const state = dropdownState[id]; const container = document.getElementById(`cs-options-${id}`);
+            const searchVal = document.getElementById(`cs-search-${id}`).value.toLowerCase();
+            let html = `<label class="cs-option cs-select-all"><input type="checkbox" id="cs-all-${id}" onchange="toggleSelectAll('${id}', this.checked)"> (Selecionar Tudo)</label>`;
+            let allFilteredChecked = true; let filteredCount = 0;
+            state.allItems.forEach(item => {
+                if(item.toLowerCase().includes(searchVal)) {
+                    filteredCount++; const isChecked = state.currentChecked.has(item);
+                    if(!isChecked) allFilteredChecked = false;
+                    html += `<label class="cs-option"><input type="checkbox" value="${escapeHtml(item)}" ${isChecked ? 'checked' : ''} onchange="toggleItem('${id}', this.value, this.checked)"> ${item}</label>`;
+                }
+            });
+            container.innerHTML = html;
+            const allCb = document.getElementById(`cs-all-${id}`);
+            if(filteredCount === 0) { allCb.checked = false; allCb.disabled = true; } else { allCb.checked = allFilteredChecked; allCb.disabled = false; }
+        }
+
+        function toggleSelectAll(id, checked) {
+            const state = dropdownState[id]; const searchVal = document.getElementById(`cs-search-${id}`).value.toLowerCase();
+            state.allItems.forEach(item => { if (item.toLowerCase().includes(searchVal)) { checked ? state.currentChecked.add(item) : state.currentChecked.delete(item); } });
+            renderDropdownOptions(id);
+        }
+
+        function toggleItem(id, value, checked) {
+            const state = dropdownState[id]; checked ? state.currentChecked.add(value) : state.currentChecked.delete(value);
+            renderDropdownOptions(id);
+        }
+
+        function applyDropdown(id) { dropdownState[id].appliedChecked = new Set(dropdownState[id].currentChecked); updateHeaderText(id); closeDropdown(id); aplicarFiltros(); }
+
+        function updateHeaderText(id) {
+            const state = dropdownState[id]; const textEl = document.getElementById(`cs-header-text-${id}`);
+            if (state.appliedChecked.size === state.allItems.length) textEl.textContent = "(Selecionar Tudo)";
+            else if (state.appliedChecked.size === 0) textEl.textContent = "Nenhum selecionado";
+            else if (state.appliedChecked.size === 1) textEl.textContent = Array.from(state.appliedChecked)[0];
+            else textEl.textContent = `${state.appliedChecked.size} selecionados`;
+        }
+
+        function popularNiveis() {
+            const containerNivel = document.getElementById('nivelCheckboxes'); containerNivel.innerHTML = '';
+            const tamanhos = [...new Set(fullData.map(r => (r[0] || "").length))].filter(l => l > 0).sort((a, b) => a - b);
+            let html = `<label style="font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 4px;"><input type="checkbox" id="cb-nivel-all" checked onchange="toggleTodosNiveis(this.checked)"> (Selecionar Todos)</label>`;
+            tamanhos.forEach((t, i) => { html += `<label><input type="checkbox" class="nivel-cb" value="${t}" checked onchange="updateNiveisSelectAll(); aplicarFiltros()"> Nível ${i + 1} (${t} dígito${t > 1 ? 's' : ''})</label>`; });
+            containerNivel.innerHTML = html;
+        }
+
+        function toggleTodosNiveis(checked) { document.querySelectorAll('.nivel-cb').forEach(cb => cb.checked = checked); aplicarFiltros(); }
+        function updateNiveisSelectAll() {
+            const allChecked = Array.from(document.querySelectorAll('.nivel-cb')).every(cb => cb.checked);
+            const selectAllCb = document.getElementById('cb-nivel-all'); if (selectAllCb) selectAllCb.checked = allChecked;
+        }
+
+        function renderMonthCheckboxes() {
+            const cbContainer = document.getElementById('monthCheckboxes'); let html = '';
+            for(let i = 3; i < fullHeaders.length; i++) html += `<label><input type="checkbox" class="month-cb" value="${i}" checked onchange="aplicarFiltros()"> ${fullHeaders[i]}</label>`;
+            cbContainer.innerHTML = html;
+        }
+
+        function resetarFiltrosUI() {
+            document.getElementById('filtroTipo').value = '';
+            document.getElementById('filtroMov').value = '';
+            document.getElementById('filtroCategoria').value = '';
+            
+            document.querySelectorAll('.month-cb, .nivel-cb').forEach(cb => cb.checked = true);
+            const selectAllCb = document.getElementById('cb-nivel-all');
+            if (selectAllCb) selectAllCb.checked = true;
+
+            dropdownState.conta.appliedChecked = new Set(dropdownState.conta.allItems);
+            dropdownState.desc.appliedChecked = new Set(dropdownState.desc.allItems);
+            updateHeaderText('conta'); updateHeaderText('desc');
+
+            aplicarFiltros();
+            showToast("Filtros redefinidos ao padrão.", "info");
+        }
+
+        function parseRawToFloat(valStr, codigo) {
+            if (!valStr || valStr.trim() === "") return 0;
+            let trimmed = valStr.trim(); const lastChar = trimmed.slice(-1).toUpperCase();
+            let numStr = trimmed; let isNegative = false;
+            if (lastChar === 'D' || lastChar === 'C') {
+                numStr = trimmed.slice(0, -1).trim();
+                isNegative = codigo.startsWith('1') ? (lastChar === 'C') : (lastChar === 'D');
+            } else if (numStr.startsWith('(') && numStr.endsWith(')')) { isNegative = true; numStr = numStr.slice(1, -1).trim(); }
+            numStr = numStr.includes(',') ? numStr.replace(/\./g, '').replace(',', '.') : numStr.replace(/\./g, '');
+            let num = parseFloat(numStr); return isNaN(num) ? 0 : (isNegative ? -num : num);
+        }
+
+        function formatarValorOriginal(valStr, codigo) {
+            let trimmed = valStr.trim(); const lastChar = trimmed.slice(-1).toUpperCase();
+            if (lastChar !== 'D' && lastChar !== 'C') return valStr;
+            let numStr = trimmed.slice(0, -1).trim();
+            let isNegative = codigo.startsWith('1') ? (lastChar === 'C') : (lastChar === 'D');
+            return isNegative ? `(${numStr})` : numStr;
+        }
+
+        function parseFloatBR(valStr) {
+            if (!valStr || valStr === "0") return 0;
+            let str = String(valStr).trim(); let isNegative = str.startsWith('(') && str.endsWith(')');
+            if (isNegative) str = str.slice(1, -1).trim();
+            str = str.includes(',') ? str.replace(/\./g, '').replace(',', '.') : str.replace(/\./g, '');
+            let num = parseFloat(str); return isNaN(num) ? 0 : (isNegative ? -num : num);
+        }
+
+        function formatFloatBR(num) {
+            if (num === 0) return "0";
+            let str = Math.abs(num).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return num < 0 ? `(${str})` : str;
+        }
+
+        function aplicarFiltros() {
+            const filtroTipo = document.getElementById('filtroTipo').value.toUpperCase();
+            const filtroMov = document.getElementById('filtroMov').value;
+            const filtroCategoria = document.getElementById('filtroCategoria').value;
+
+            const selectedMonthIdxs = Array.from(document.querySelectorAll('.month-cb:checked')).map(cb => parseInt(cb.value));
+            const selectedNiveis = new Set(Array.from(document.querySelectorAll('.nivel-cb:checked')).map(cb => parseInt(cb.value)));
+
+            currentDisplayHeaders = [fullHeaders[0], fullHeaders[1], fullHeaders[2], ...selectedMonthIdxs.map(idx => fullHeaders[idx]), "CONSOLIDADO"]; 
+            currentDisplayData = [];
+
+            const selectedContas = dropdownState.conta.appliedChecked; const selectedDescs = dropdownState.desc.appliedChecked;
+
+            fullData.forEach(row => {
+                const conta = row[0] || ""; const desc = row[1] || ""; const tipo = (row[2] || "").toUpperCase();
+
+                let matchCategoria = true;
+                if (filtroCategoria !== "" && conta.length > 0) {
+                    const digito = parseInt(conta.charAt(0), 10);
+                    matchCategoria = filtroCategoria === "ATIVO" ? digito === 1 : (filtroCategoria === "PASSIVO" ? digito === 2 : digito >= 3);
+                }
+
+                if(!selectedContas.has(conta) || !selectedDescs.has(desc) || (filtroTipo !== "" && !tipo.includes(filtroTipo)) || !matchCategoria || (conta.length > 0 && !selectedNiveis.has(conta.length))) return;
+
+                let consolidadoVal = 0; let hasMov = false; let newRow = [row[0], row[1], row[2]];
+                
+                selectedMonthIdxs.forEach(idx => {
+                    let vStr = row[idx] || "0"; newRow.push(vStr);
+                    consolidadoVal += parseFloatBR(vStr);
+                    let cleanStr = vStr.replace(/[()]/g, '').trim();
+                    if (cleanStr !== "" && cleanStr !== "0" && cleanStr !== "0,00" && cleanStr !== "0.00") hasMov = true;
+                });
+                
+                if ((filtroMov === "sim" && !hasMov) || (filtroMov === "nao" && hasMov)) return;
+
+                newRow.push(formatFloatBR(consolidadoVal)); currentDisplayData.push(newRow);
+            });
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const thead = document.getElementById('tableHead'); const tbody = document.getElementById('tableBody');
+            thead.innerHTML = ''; tbody.innerHTML = '';
+            document.getElementById('recordCount').innerHTML = `<i class="ph-fill ph-list-dashes"></i> Exibindo ${currentDisplayData.length} registros`;
+            
+            if (currentDisplayData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${currentDisplayHeaders.length || 1}" style="text-align: center; padding: 20px;">Nenhum resultado encontrado.</td></tr>`;
+                return;
+            }
+
+            const trHead = document.createElement('tr');
+            currentDisplayHeaders.forEach((col, idx) => {
+                const th = document.createElement('th'); th.textContent = col;
+                if(idx === currentDisplayHeaders.length - 1) th.className = 'consolidado-col';
+                trHead.appendChild(th);
+            });
+            thead.appendChild(trHead);
+
+            currentDisplayData.forEach((row) => {
+                const tr = document.createElement('tr');
+                row.forEach((col, index) => {
+                    const td = document.createElement('td'); td.textContent = col;
+                    if (index === currentDisplayHeaders.length - 1) {
+                        td.className = 'consolidado-col';
+                        if (col.startsWith('(') && col.endsWith(')')) td.style.color = "var(--danger-color)";
+                    } else if (col.startsWith('(') && col.endsWith(')')) td.className = 'negative-val';
+                    else if (col === "0" && index >= 3) td.className = 'zero-val';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        function downloadExcel() {
+            if (currentDisplayData.length === 0) { showToast("Não há dados para exportar", "info"); return; }
+            const exportArray = [currentDisplayHeaders];
+            currentDisplayData.forEach(row => {
+                exportArray.push(row.map((cell, index) => index >= 3 ? parseFloatBR(cell) : cell));
+            });
+            const worksheet = XLSX.utils.aoa_to_sheet(exportArray); const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "DRE_Tratado");
+            XLSX.writeFile(workbook, "BP-DRE-12M.xlsx");
+            showToast("Planilha exportada com sucesso!", "success");
+        }
+
+        function limparDados() {
+            document.getElementById('fileUpload').value = ''; document.getElementById('fileName').textContent = '';
+            document.getElementById('uploadSection').style.display = 'block'; document.getElementById('fallbackHeader').style.display = 'flex';
+            document.getElementById('sidebar').style.display = 'none'; document.getElementById('actionButtons').style.display = 'none';
+            document.getElementById('tableWrapper').style.display = 'none';
+            document.getElementById('tableHead').innerHTML = ''; document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('filtroTipo').value = ''; document.getElementById('filtroMov').value = ''; document.getElementById('filtroCategoria').value = ''; 
+            document.getElementById('monthCheckboxes').innerHTML = '';
+            if (document.getElementById('nivelCheckboxes')) document.getElementById('nivelCheckboxes').innerHTML = '';
+            fullHeaders = []; fullData = []; currentDisplayHeaders = []; currentDisplayData = [];
+            dropdownState = { conta: { allItems: [], currentChecked: new Set(), appliedChecked: new Set() }, desc: { allItems: [], currentChecked: new Set(), appliedChecked: new Set() } };
+        }
+        // --- CONTROLE DO BOTÃO VOLTAR ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const botoesVoltar = document.querySelectorAll('a[href="../"]');
+            const referrer = document.referrer;
+            const currentHost = window.location.hostname;
+            
+            if (!referrer || !referrer.includes(currentHost)) {
+                botoesVoltar.forEach(btn => btn.style.display = 'none');
+            }
+        });
+        // --------------------------------
+    </script>
+</body>
+</html>
