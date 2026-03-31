@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de ND - On Time Express</title>
+    <title>Gerador de ND - ONTIME</title>
     
     <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
     
@@ -20,57 +20,30 @@
 
     <style>
         /* Tipografia Padrão Solicitada */
-        body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f3f4f6;
-            color: #000;
-        }
-
+        body { font-family: 'Arial', sans-serif; background-color: #f3f4f6; color: #000; }
         /* Cor da Marca On Time Express */
         .bg-brand { background-color: rgb(255, 110, 0); }
         .text-brand { color: rgb(255, 110, 0); }
         .border-brand { border-color: rgb(255, 110, 0); }
         .hover-brand:hover { background-color: rgb(204, 88, 0); }
-
+        
         /* Estilos do Papel A4 para Visualização e PDF */
-        .a4-paper {
-            width: 210mm;
-            min-height: 297mm;
-            background: white;
-            padding: 15mm;
-            margin: 0 auto;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            font-size: 11pt; /* Tamanho 11 conforme solicitado */
-            position: relative;
+        .a4-paper { 
+            width: 210mm; min-height: 297mm; background: white; 
+            padding: 15mm; margin: 0 auto; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
+            font-size: 11pt; position: relative; 
         }
-
+        
         /* Estilos de Tabela do PDF */
-        .nd-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            margin-bottom: 20px;
-        }
-        .nd-table th, .nd-table td {
-            border: 1px solid #000;
-            padding: 6px 8px;
-            text-align: left;
-            font-size: 10pt;
-        }
-        .nd-table th {
-            background-color: #eee;
-            font-weight: bold;
-            text-align: center;
-        }
-        .section-title {
-            background-color: rgb(255, 110, 0);
-            color: white;
-            padding: 4px 8px;
-            font-weight: bold;
-            margin-top: 15px;
-            border: 1px solid #000;
-            text-transform: uppercase;
-            font-size: 10pt;
+        .nd-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
+        .nd-table th, .nd-table td { border: 1px solid #000; padding: 6px 8px; text-align: left; font-size: 10pt; }
+        .nd-table th { background-color: #eee; font-weight: bold; text-align: center; }
+        
+        .section-title { 
+            background-color: rgb(255, 110, 0); color: white; 
+            padding: 4px 8px; font-weight: bold; margin-top: 15px; 
+            border: 1px solid #000; text-transform: uppercase; font-size: 10pt; 
         }
 
         /* Esconder elementos na hora da impressão nativa do browser */
@@ -82,10 +55,7 @@
         }
 
         /* Inputs estilizados */
-        input, select, textarea {
-            font-family: 'Arial', sans-serif;
-            font-size: 14px;
-        }
+        input, select, textarea { font-family: 'Arial', sans-serif; font-size: 14px; }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
@@ -138,7 +108,7 @@
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1">Número ND</label>
                             <div class="flex">
-                                <input type="text" id="ndNumber" class="w-full border rounded-l p-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Automático" value="">
+                                <input type="text" id="ndNumber" class="w-full border rounded-l p-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Automático">
                                 <button onclick="document.getElementById('ndNumber').value = app.generateAutoND(); app.updatePreview()" class="bg-gray-200 border border-l-0 rounded-r px-3 text-gray-600 hover:bg-gray-300" title="Gerar Novo Número Agora">
                                     <i class="fas fa-sync-alt"></i>
                                 </button>
@@ -194,8 +164,9 @@
                             <i class="fas fa-plus"></i> Add Item
                         </button>
                     </div>
-                    <div id="itemsContainer" class="space-y-2">
-                        </div>
+                    
+                    <div id="itemsContainer" class="space-y-2"></div>
+                    
                     <div class="bg-gray-100 p-3 rounded text-right">
                         <span class="text-sm font-bold text-gray-600">Total: </span>
                         <span class="text-xl font-bold text-brand" id="formTotal">R$&nbsp;0,00</span>
@@ -216,195 +187,192 @@
         </div>
 
         <div class="flex-1 bg-gray-200 overflow-y-auto p-4 md:p-8 flex justify-center items-start">
+            
             <div id="printable-area" class="a4-paper">
                 
                 <div class="flex justify-between items-start mb-4 border-b-2 border-black pb-4">
                     <div class="w-1/2 flex items-center gap-4">
                         </div>
                     <div class="w-1/2 text-right">
-                        <h2 class="text-2xl font-bold uppercase tracking-wider">Nota de Débito</h2>
-                        <p class="text-gray-600 mt-1 font-bold text-sm">Nº <span id="view-nd-number" class="text-black">...</span></p>
-                        <p class="text-gray-600 text-sm">Emissão: <span id="view-nd-date" class="text-black">...</span></p>
-                        <p class="text-gray-600 text-sm mt-2 font-bold bg-gray-100 inline-block px-2 py-1 border border-gray-300">C.C. / Placa: <span id="view-ccusto" class="text-black uppercase">...</span></p>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <div class="section-title">Pagador / Destinatário</div>
-                    <div class="border border-black p-3 mt-1 bg-gray-50">
-                        <p class="font-bold text-sm">ON TIME EXPRESS LTDA</p>
-                        <p class="text-sm">CNPJ: 04.996.643/0001-38</p>
-                        <p class="text-sm">Rua João Soares de Oliveira, 91 - Galpão 3 - Parque Jaguari</p>
-                        <p class="text-sm">Santana de Parnaíba - SP | CEP: 06533-010</p>
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <div class="section-title">Recebedor / Fornecedor do Serviço</div>
-                    <div class="border border-black p-3 mt-1">
-                        <p class="font-bold text-sm uppercase" id="view-provider-name">...</p>
-                        <div class="grid grid-cols-2 gap-2 mt-1">
-                            <p class="text-sm">CNPJ/CPF: <span id="view-provider-doc" class="font-semibold">...</span></p>
-                            <p class="text-sm">Telefone: <span id="view-provider-phone" class="font-semibold">...</span></p>
+                        <h2 class="text-xl font-bold uppercase">Nota de Débito</h2>
+                        <div class="mt-2 text-sm">
+                            <span class="font-bold">Nº Documento:</span> <span id="view-ndNumber" class="text-red-600 font-bold text-lg">---</span>
                         </div>
-                        <p class="text-sm mt-1 uppercase" id="view-provider-address">...</p>
-                        <p class="text-sm uppercase"><span id="view-provider-city">...</span> - <span id="view-provider-uf">...</span></p>
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <div class="section-title">Descritivo dos Serviços/Despesas</div>
+                <div class="mb-2">
+                    <table class="w-full text-sm" style="border: none;">
+                        <tbody>
+                            <tr>
+                                <td class="font-bold w-24">Emissão:</td>
+                                <td id="view-ndDate">--/--/----</td>
+                                <td class="font-bold text-right w-32">Tipo:</td>
+                                <td class="text-right">Pagamento / Serviço </td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold">C. Custo: Área</td>
+                                <td id="view-ccusto" colspan="3"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex gap-4 mt-4">
+                    <div class="w-1/2">
+                        <div class="section-title">PRESTADOR / FORNECEDOR</div>
+                        <div class="p-2 border border-t-0 border-black h-full text-sm leading-snug">
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">RAZÃO SOCIAL / NOME:</span> <span id="view-providerName" class="uppercase"></span></p>
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">CNPJ / CPF:</span> <span id="view-providerDoc"></span></p>
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">ENDEREÇO:</span> <span id="view-providerAddress" class="uppercase"></span></p>
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">CIDADE / UF:</span> <span id="view-providerCityUF" class="uppercase"> </span></p>
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">TELEFONE:</span> <span id="view-providerPhone"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="w-1/2">
+                        <div class="section-title">TOMADOR / SOLICITANTE</div>
+                        <div class="p-2 border border-t-0 border-black h-full text-sm leading-snug bg-gray-50">
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">RAZÃO SOCIAL:</span> ON TIME EXPRESS LOGISTICA E TRANSPORTE S.A</p>
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">CNPJ:</span> 09.329.143/0001-16</p>
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">ENDEREÇO:</span> ALPHAVILLE CENTRO INDUSTRIAL E EMPRESARIAL</p>
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">CIDADE / UF:</span> BARUERI / SP</p>
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">E-MAIL:</span> PortariaFiscal@OntimeLogistica.com.br</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-12">
+                    <div class="section-title">DISCRIMINAÇÃO DOS SERVIÇOS / PRODUTOS</div>
                     <table class="nd-table">
                         <thead>
                             <tr>
-                                <th style="width: 50%;">Descrição</th>
-                                <th style="width: 15%;">Qtd</th>
-                                <th style="width: 15%;">V. Unitário</th>
-                                <th style="width: 20%;">V. Total</th>
+                                <th style="width: 50px;">Item</th>
+                                <th>Descrição / Serviço Realizado</th>
+                                <th style="width: 60px;">Qtd.</th>
+                                <th style="width: 100px;">Vlr. Unit.</th>
+                                <th style="width: 100px;">Total</th>
                             </tr>
                         </thead>
-                        <tbody id="view-items-body">
-                            </tbody>
+                        <tbody id="view-itemsBody"></tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="3" class="text-right font-bold" style="background-color: #eee;">TOTAL GERAL:</td>
-                                <td class="font-bold text-center" style="background-color: #eee; font-size: 11pt;" id="view-total">R$ 0,00</td>
+                                <td colspan="4" class="text-right font-bold bg-gray-100">VALOR TOTAL DO DOCUMENTO</td>
+                                <td class="font-bold bg-gray-100" id="view-grandTotal">R$&nbsp;0,00</td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
 
-                <div class="mt-8 border-t border-black pt-4">
-                    <p class="text-sm text-justify leading-relaxed">
-                        Declaro para os devidos fins que os serviços/despesas descritos acima foram prestados/fornecidos,
-                        não sendo possível a emissão de nota fiscal correspondente, servindo o presente documento
-                        para fins de reembolso e prestação de contas.
-                    </p>
-                </div>
+                <div class="mt-8 border border-black p-4">
+                    <p class="text-xs font-bold mb-8">Declaro que os serviços acima descritos foram prestados e/ou os produtos entregues, servindo este documento como comprovante de débito e recibo de pagamento.</p>
 
-                <div class="mt-16 flex justify-between px-8">
-                    <div class="text-center w-5/12 border-t border-black pt-1">
-                        <p class="text-sm font-bold uppercase" id="view-sign-provider">Fornecedor</p>
-                        <p class="text-xs">Assinatura / Carimbo</p>
-                    </div>
-                    <div class="text-center w-5/12 border-t border-black pt-1">
-                        <p class="text-sm font-bold">ON TIME EXPRESS</p>
-                        <p class="text-xs">Responsável / Aprovação</p>
+                    <div class="flex justify-between mt-16 px-4">
+                        <div class="text-center w-5/12 border-t border-black pt-2">
+                            <span id="view-sigProvider" class="font-bold text-xs uppercase block"></span>
+                            <span class="text-[10px] text-gray-500">Assinatura do Prestador</span>
+                        </div>
+                        <div class="text-center w-5/12 border-t border-black pt-2">
+                            <span class="font-bold text-xs uppercase block">ON TIME EXPRESS</span>
+                            <span class="text-[10px] text-gray-500">Assinatura do Responsável / Motorista</span>
+                        </div>
                     </div>
                 </div>
 
+                <div class="absolute bottom-4 left-0 w-full text-center text-[10px] text-gray-400">
+                    Sistema Gerador de ND - Uso Interno - Controladoria - On Time Express
+                </div>
             </div>
         </div>
     </main>
 
+    <template id="itemRowTemplate">
+        <div class="grid grid-cols-12 gap-2 mb-2 p-2 bg-gray-50 rounded border item-row animate-fade-in">
+            <div class="col-span-6">
+                <input type="text" class="item-desc w-full border rounded p-1 text-xs uppercase" placeholder="Descrição (Ex: Troca de Pneu)">
+            </div>
+            <div class="col-span-2">
+                <input type="number" class="item-qty w-full border rounded p-1 text-xs" placeholder="Qtd" min="1" value="1" oninput="app.calcTotals()">
+            </div>
+            <div class="col-span-3">
+                <input type="text" class="item-price money w-full border rounded p-1 text-xs" placeholder="R$ 0,00" oninput="app.calcTotals()">
+            </div>
+            <div class="col-span-1 flex items-center justify-center">
+                <button onclick="app.removeItem(this)" class="text-red-500 hover:text-red-700">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
     <script>
         const app = {
             init: function() {
-                // Máscaras dos campos
-                $('#providerDoc').mask('00.000.000/0000-00', {
-                    onKeyPress: function(val, e, field, options) {
-                        const masks = ['000.000.000-000', '00.000.000/0000-00'];
-                        const mask = (val.length > 14) ? masks[1] : masks[0];
-                        $('#providerDoc').mask(mask, options);
-                    }
-                });
-                $('#providerPhone').mask('(00) 00000-0000');
-                $('#providerUF').mask('AA');
+                // Configurar data atual
+                document.getElementById('ndDate').valueAsDate = new Date();
                 
-                this.setupMoneyMask();
-                
-                // Eventos de digitação para atualização do preview em tempo real
-                const inputs = ['providerName', 'providerDoc', 'providerPhone', 'providerAddress', 'providerCity', 'providerUF', 'ndNumber', 'ndDate', 'ccusto'];
-                inputs.forEach(id => {
-                    document.getElementById(id).addEventListener('input', () => this.updatePreview());
-                });
-
-                // Setar data de hoje por padrão se estiver vazio
-                if(!document.getElementById('ndDate').value) {
-                    document.getElementById('ndDate').valueAsDate = new Date();
-                }
-
-                // Gerar ND inicial
+                // Gerar ND Automática Inicial (Apenas se o campo estiver vazio)
                 if(!document.getElementById('ndNumber').value) {
                     document.getElementById('ndNumber').value = this.generateAutoND();
                 }
 
-                // Adicionar primeiro item
-                if(document.querySelectorAll('.item-row').length === 0) {
-                    this.addItem();
+                // Carregar máscaras
+                $('.money').mask('#.##0,00', {reverse: true});
+                $('#providerDoc').mask('000.000.000-00', {
+                    onKeyPress: function(cep, e, field, options){
+                        const masks = ['000.000.000-000', '00.000.000/0000-00'];
+                        const mask = (cep.length > 14) ? masks[1] : masks[0];
+                        $('#providerDoc').mask(mask, options);
+                    }
+                });
+                $('#providerPhone').mask('(00) 00000-0000');
+                
+                // Adicionar primeiro item se vazio
+                if(document.getElementById('itemsContainer').children.length === 0) {
+                   this.addItem();
                 }
 
-                // Recuperar rascunho salvo (se houver)
-                this.loadDraft();
+                // Listeners para atualizar preview em tempo real
+                document.querySelectorAll('input').forEach(input => {
+                    input.addEventListener('input', () => this.updatePreview());
+                });
 
-                // Salvar rascunho a cada mudança
-                document.getElementById('ndForm').addEventListener('input', () => this.saveDraft());
-
+                // Tentar carregar backup local automático
+                this.loadFromLocalStorage();
                 this.updatePreview();
-            },
-
-            setupMoneyMask: function() {
-                $('.money').mask('#.##0,00', {reverse: true});
             },
 
             generateAutoND: function() {
-                const date = new Date();
-                const year = date.getFullYear().toString().slice(-2);
-                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                const random = Math.floor(Math.random() * 9000) + 1000;
-                return `ND${year}${month}-${random}`;
+                const now = new Date();
+                const d = String(now.getDate()).padStart(2, '0');
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                const y = String(now.getFullYear()).slice(-2);
+                const h = String(now.getHours()).padStart(2, '0');
+                const min = String(now.getMinutes()).padStart(2, '0');
+                return `${d}${m}${y}${h}${min}`;
             },
 
             addItem: function() {
-                const container = document.getElementById('itemsContainer');
-                const row = document.createElement('div');
-                row.className = 'grid grid-cols-12 gap-2 mb-2 p-2 bg-gray-50 rounded border item-row animate-fade-in';
-                row.innerHTML = `
-                    <div class="col-span-6">
-                        <input type="text" class="item-desc w-full border rounded p-1 text-xs uppercase" placeholder="Descrição (Ex: Troca de Pneu)">
-                    </div>
-                    <div class="col-span-2">
-                        <input type="number" class="item-qty w-full border rounded p-1 text-xs" placeholder="Qtd" min="1" value="1" oninput="app.calcTotals()">
-                    </div>
-                    <div class="col-span-3">
-                        <input type="text" class="item-price money w-full border rounded p-1 text-xs" placeholder="R$ 0,00" oninput="app.calcTotals()">
-                    </div>
-                    <div class="col-span-1 flex items-center justify-center">
-                        <button onclick="app.removeItem(this)" class="text-red-500 hover:text-red-700">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-                container.appendChild(row);
+                const template = document.getElementById('itemRowTemplate').content.cloneNode(true);
+                document.getElementById('itemsContainer').appendChild(template);
                 
-                // Reaplicar máscaras e eventos no novo item
-                this.setupMoneyMask();
-                const newInputs = row.querySelectorAll('input');
-                newInputs.forEach(input => {
-                    input.addEventListener('input', () => {
-                        this.calcTotals();
-                        this.updatePreview();
+                $('.money').mask('#.##0,00', {reverse: true});
+                
+                const newRow = document.getElementById('itemsContainer').lastElementChild;
+                if(newRow) { 
+                     newRow.querySelectorAll('input').forEach(input => {
+                        input.addEventListener('input', () => {
+                            this.calcTotals();
+                            this.updatePreview();
+                        });
                     });
-                });
-                
-                this.updatePreview();
+                }
             },
 
             removeItem: function(btn) {
                 btn.closest('.item-row').remove();
                 this.calcTotals();
                 this.updatePreview();
-                this.saveDraft();
-            },
-
-            parseMoney: function(str) {
-                if(!str) return 0;
-                str = str.replace(/\./g, '').replace(',', '.');
-                return parseFloat(str) || 0;
-            },
-
-            formatMoney: function(num) {
-                return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             },
 
             calcTotals: function() {
@@ -412,121 +380,247 @@
                 const rows = document.querySelectorAll('.item-row');
                 
                 rows.forEach(row => {
-                    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                    const price = this.parseMoney(row.querySelector('.item-price').value);
+                    let qty = parseFloat(row.querySelector('.item-qty').value);
+                    if(isNaN(qty)) qty = 0;
+
+                    const priceStr = row.querySelector('.item-price').value || '0';
+                    let price = parseFloat(priceStr.replace(/\./g, '').replace(',', '.'));
+                    if(isNaN(price)) price = 0;
+                    
                     total += (qty * price);
                 });
 
-                document.getElementById('formTotal').innerHTML = `R$&nbsp;${this.formatMoney(total)}`;
+                const totalFormatted = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('formTotal').innerText = totalFormatted;
+                document.getElementById('view-grandTotal').innerText = totalFormatted;
+                
                 return total;
             },
 
             updatePreview: function() {
-                // Atualizar Cabeçalho e Fornecedor
-                document.getElementById('view-nd-number').textContent = document.getElementById('ndNumber').value || '...';
-                document.getElementById('view-ccusto').textContent = document.getElementById('ccusto').value || '...';
-                
-                const dateVal = document.getElementById('ndDate').value;
-                if(dateVal) {
-                    const [y, m, d] = dateVal.split('-');
-                    document.getElementById('view-nd-date').textContent = `${d}/${m}/${y}`;
+                const fields = [
+                    { src: 'ndNumber', dest: 'view-ndNumber' },
+                    { src: 'ccusto', dest: 'view-ccusto' },
+                    { src: 'providerName', dest: 'view-providerName' },
+                    { src: 'providerName', dest: 'view-sigProvider' }, 
+                    { src: 'providerDoc', dest: 'view-providerDoc' },
+                    { src: 'providerAddress', dest: 'view-providerAddress' },
+                    { src: 'providerPhone', dest: 'view-providerPhone' }
+                ];
+
+                fields.forEach(f => {
+                    const elSrc = document.getElementById(f.src);
+                    const elDest = document.getElementById(f.dest);
+                    if(elSrc && elDest) {
+                        elDest.innerText = elSrc.value || (f.dest === 'view-ndNumber' ? '---' : '');
+                    }
+                });
+
+                const dateRaw = document.getElementById('ndDate').value;
+                if(dateRaw) {
+                    const [y, m, d] = dateRaw.split('-');
+                    document.getElementById('view-ndDate').innerText = `${d}/${m}/${y}`;
                 } else {
-                    document.getElementById('view-nd-date').textContent = '...';
+                    document.getElementById('view-ndDate').innerText = '--/--/----';
                 }
 
-                const pName = document.getElementById('providerName').value;
-                document.getElementById('view-provider-name').textContent = pName || '...';
-                document.getElementById('view-sign-provider').textContent = pName || 'Fornecedor';
+                const city = document.getElementById('providerCity').value;
+                const uf = document.getElementById('providerUF').value;
+                document.getElementById('view-providerCityUF').innerText = `${city} ${uf ? '/ ' + uf : ''}`;
 
-                document.getElementById('view-provider-doc').textContent = document.getElementById('providerDoc').value || '...';
-                document.getElementById('view-provider-phone').textContent = document.getElementById('providerPhone').value || '...';
-                document.getElementById('view-provider-address').textContent = document.getElementById('providerAddress').value || '...';
-                document.getElementById('view-provider-city').textContent = document.getElementById('providerCity').value || '...';
-                document.getElementById('view-provider-uf').textContent = document.getElementById('providerUF').value || '...';
-
-                // Atualizar Tabela de Itens
-                const tbody = document.getElementById('view-items-body');
+                const tbody = document.getElementById('view-itemsBody');
                 tbody.innerHTML = '';
                 
                 const rows = document.querySelectorAll('.item-row');
-                rows.forEach(row => {
-                    const desc = row.querySelector('.item-desc').value.toUpperCase() || '-';
-                    const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                    const priceText = row.querySelector('.item-price').value || '0,00';
-                    const priceNum = this.parseMoney(priceText);
-                    const lineTotal = qty * priceNum;
+                rows.forEach((row, index) => {
+                    const desc = row.querySelector('.item-desc').value;
+                    const qty = row.querySelector('.item-qty').value;
+                    const priceStr = row.querySelector('.item-price').value || '0,00';
+                   
+                    let q = parseFloat(qty); if(isNaN(q)) q = 0;
+                    let p = parseFloat(priceStr.replace(/\./g, '').replace(',', '.')); if(isNaN(p)) p = 0;
+                    
+                    const totalRow = (q * p).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${desc}</td>
-                        <td class="text-center">${qty}</td>
-                        <td class="text-center">R$ ${priceText}</td>
-                        <td class="text-center font-semibold">R$ ${this.formatMoney(lineTotal)}</td>
-                    `;
-                    tbody.appendChild(tr);
+                    if(desc || q > 0) {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="text-center">${index + 1}</td>
+                            <td class="uppercase">${desc}</td>
+                            <td class="text-center">${qty}</td>
+                            <td class="text-right">R$ ${priceStr}</td>
+                            <td class="text-right">${totalRow}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    }
                 });
 
-                // Atualizar Total Geral
-                const total = this.calcTotals();
-                document.getElementById('view-total').textContent = `R$ ${this.formatMoney(total)}`;
+                this.saveToLocalStorage();
             },
 
             generatePDF: function() {
                 const element = document.getElementById('printable-area');
-                const ndNum = document.getElementById('ndNumber').value || 'S_N';
-                const pName = document.getElementById('providerName').value.trim() || 'Fornecedor';
-                const filename = `ND_${ndNum}_${pName.substring(0, 15).replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-
+                const ndNum = document.getElementById('ndNumber').value || 'SEM_NUMERO';
+                
                 const opt = {
                     margin:       0,
-                    filename:     filename,
+                    filename:     `ND_${ndNum}_OnTime.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
                     html2canvas:  { scale: 2, useCORS: true },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
                 const btn = document.querySelector('button[onclick="app.generatePDF()"]');
-                const originalText = btn.innerHTML;
+                const oldText = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
-                btn.disabled = true;
-
+                
                 html2pdf().set(opt).from(element).save().then(() => {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
+                    btn.innerHTML = oldText;
                 });
             },
 
-            // Lógica de Backup/Rascunho e Download de HTML
-            saveDraft: function() {
-                // Implementação padrão de rascunho
+            downloadHTML: function() {
+                const docClone = document.documentElement.cloneNode(true);
+                const originalInputs = document.querySelectorAll('input, textarea, select');
+                const cloneInputs = docClone.querySelectorAll('input, textarea, select');
+                
+                originalInputs.forEach((input, index) => {
+                    if (input.type === 'checkbox' || input.type === 'radio') {
+                        if (input.checked) cloneInputs[index].setAttribute('checked', 'checked');
+                    } else if (input.type !== 'file') { 
+                        cloneInputs[index].setAttribute('value', input.value);
+                        if (input.tagName === 'TEXTAREA') cloneInputs[index].innerHTML = input.value;
+                    }
+                });
+
+                const htmlContent = "<!DOCTYPE html>\n" + docClone.outerHTML;
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                const ndNum = document.getElementById('ndNumber').value || 'Nova';
+                a.download = `ND_${ndNum}_Backup.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
             },
 
-            loadDraft: function() {
-                // Implementação padrão de carregamento
+            getFormData: function() {
+                const rows = [];
+                document.querySelectorAll('.item-row').forEach(row => {
+                    rows.push({
+                        desc: row.querySelector('.item-desc').value,
+                        qty: row.querySelector('.item-qty').value,
+                        price: row.querySelector('.item-price').value
+                    });
+                });
+
+                return {
+                    ndNumber: document.getElementById('ndNumber').value,
+                    ndDate: document.getElementById('ndDate').value,
+                    ccusto: document.getElementById('ccusto').value,
+                    providerName: document.getElementById('providerName').value,
+                    providerDoc: document.getElementById('providerDoc').value,
+                    providerPhone: document.getElementById('providerPhone').value,
+                    providerAddress: document.getElementById('providerAddress').value,
+                    providerCity: document.getElementById('providerCity').value,
+                    providerUF: document.getElementById('providerUF').value,
+                    items: rows
+                };
             },
 
-            resetForm: function() {
-                if(confirm('Tem certeza que deseja limpar todos os dados preenchidos?')) {
-                    document.getElementById('ndForm').reset();
-                    document.getElementById('ndNumber').value = this.generateAutoND();
-                    document.getElementById('ndDate').valueAsDate = new Date();
-                    document.getElementById('itemsContainer').innerHTML = '';
+            setFormData: function(data) {
+                if(!data) return;
+                
+                document.getElementById('ndNumber').value = data.ndNumber || '';
+                document.getElementById('ndDate').value = data.ndDate || '';
+                document.getElementById('ccusto').value = data.ccusto || '';
+                document.getElementById('providerName').value = data.providerName || '';
+                document.getElementById('providerDoc').value = data.providerDoc || '';
+                document.getElementById('providerPhone').value = data.providerPhone || '';
+                document.getElementById('providerAddress').value = data.providerAddress || '';
+                document.getElementById('providerCity').value = data.providerCity || '';
+                document.getElementById('providerUF').value = data.providerUF || '';
+
+                document.getElementById('itemsContainer').innerHTML = '';
+                if(data.items && data.items.length > 0) {
+                    data.items.forEach(item => {
+                        this.addItem();
+                        const lastRow = document.getElementById('itemsContainer').lastElementChild;
+                        lastRow.querySelector('.item-desc').value = item.desc;
+                        lastRow.querySelector('.item-qty').value = item.qty;
+                        lastRow.querySelector('.item-price').value = item.price;
+                    });
+                } else {
                     this.addItem();
-                    this.calcTotals();
-                    this.updatePreview();
+                }
+
+                this.calcTotals();
+                this.updatePreview();
+            },
+
+            saveToLocalStorage: function() {
+                const data = this.getFormData();
+                localStorage.setItem('nd_ontime_draft', JSON.stringify(data));
+            },
+
+            loadFromLocalStorage: function() {
+                const dataStr = localStorage.getItem('nd_ontime_draft');
+                if(dataStr) {
+                    this.setFormData(JSON.parse(dataStr));
                 }
             },
 
-            downloadHTML: function() {
-                alert('Função desabilitada na pré-visualização.');
-            },
-            
             saveBackup: function() {
-                alert('Função desabilitada na pré-visualização.');
+                const data = this.getFormData();
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "backup_nd_" + (data.ndNumber || 'draft') + ".json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
             },
-            
-            loadBackupFromFile: function() {
-                alert('Função desabilitada na pré-visualização.');
+
+            loadBackupFromFile: function(input) {
+                const file = input.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        this.setFormData(data);
+                        alert('Backup carregado com sucesso!');
+                    } catch(err) {
+                        alert('Erro ao ler arquivo de backup.');
+                    }
+                };
+                reader.readAsText(file);
+            },
+
+            resetForm: function() {
+                if(confirm('Tem certeza que deseja limpar os dados do formulário?')) {
+                    document.getElementById('ndNumber').value = this.generateAutoND();
+                    document.getElementById('ccusto').value = '';
+                    document.getElementById('providerName').value = '';
+                    document.getElementById('providerDoc').value = '';
+                    document.getElementById('providerPhone').value = '';
+                    document.getElementById('providerAddress').value = '';
+                    document.getElementById('providerCity').value = '';
+                    document.getElementById('providerUF').value = '';
+                    document.getElementById('ndDate').valueAsDate = new Date();
+                    
+                    document.getElementById('itemsContainer').innerHTML = '';
+                    this.addItem();
+                    
+                    this.calcTotals();
+                    this.updatePreview();
+                    
+                    localStorage.removeItem('nd_ontime_draft');
+                }
             }
         };
 
@@ -544,6 +638,27 @@
             // --------------------------------
         });
 
+        // Lógica de PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('installBtn');
+            installBtn.classList.remove('hidden');
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        document.getElementById('installBtn').classList.add('hidden');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
     </script>
+
 </body>
 </html>
