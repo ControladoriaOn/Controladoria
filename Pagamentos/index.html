@@ -74,7 +74,7 @@
         .nav-item:hover, .nav-item.active { background: rgba(255,110,0,0.15); color: var(--orange); }
         .sidebar-footer { padding: 20px 16px; border-top: 1px solid rgba(255,255,255,0.1); }
         
-        .btn-back-hub { display: none; width: 100%; justify-content: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
+        .btn-back-hub { width: 100%; justify-content: center; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); }
         .btn-back-hub:hover { background: var(--orange); color: white; border-color: var(--orange); }
 
         /* ── CONTEÚDO PRINCIPAL ── */
@@ -180,7 +180,7 @@
 <!-- Loader de Nuvem -->
 <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
-    <p style="margin-top: 16px; font-weight: 600; color: var(--purple);">A sincronizar com a nuvem...</p>
+    <p style="margin-top: 16px; font-weight: 600; color: var(--purple);">A processar dados...</p>
 </div>
 
 <!-- ── SIDEBAR ── -->
@@ -195,7 +195,7 @@
     </div>
 
     <div class="sidebar-footer">
-        <button id="btn-back-hub" class="nav-item btn-back-hub" onclick="history.back()">
+        <button id="btn-back-hub" class="nav-item btn-back-hub" onclick="window.location.href='../'">
             <i class="ph ph-arrow-left"></i> Voltar ao Hub
         </button>
     </div>
@@ -307,7 +307,6 @@
 </div>
 
 <!-- ── MODAL (Lançamento Manual) ── -->
-<!-- Lista de sugestões de Natureza (Baseada no Desc. Nat.csv) -->
 <datalist id="natureza-list">
     <option value="OUTRAS DESPESAS">
     <option value="DESPESAS BANCARIAS">
@@ -378,15 +377,15 @@
         else document.getElementById('loadingOverlay').classList.remove('active');
     };
 
-    // Botão Voltar Inteligente
+    // Botão Voltar Inteligente: Esconde-se se não viermos do domínio da ONTIME
     (function initBackButton() {
         const btn = document.getElementById('btn-back-hub');
-        if (!btn || !document.referrer) return;
-        try {
-            const refHost = new URL(document.referrer).hostname;
-            const curHost = new URL(window.location.href).hostname;
-            if (refHost === curHost) btn.style.display = 'flex';
-        } catch (_) {}
+        const referrer = document.referrer;
+        const currentHost = window.location.hostname;
+        
+        if (btn && (!referrer || !referrer.includes(currentHost))) {
+            btn.style.display = 'none';
+        }
     })();
 
     // Exibir Datas no Topo
@@ -448,6 +447,18 @@
         });
     }
 
+    // Função de Reset Visual da Tabela (usado quando limpamos a BD)
+    function resetTableVisuals() {
+        document.getElementById('tbody-totvs').innerHTML = `<tr class="empty-state"><td colspan="5" style="text-align:center; padding:40px; color:#9ca3af;">Sem dados na nuvem.</td></tr>`;
+        document.getElementById('tbody-preview').innerHTML = `<tr class="empty-state"><td colspan="5" style="text-align:center; padding:40px; color:#9ca3af;">Sem dados na nuvem.</td></tr>`;
+        document.getElementById('kpi-totvs-total').innerHTML = fmtCurr(0);
+        document.getElementById('kpi-totvs-count').innerHTML = `<i class="ph-bold ph-files"></i> 0 registos`;
+        document.getElementById('kpi-preview-total').innerHTML = fmtCurr(0);
+        document.getElementById('kpi-preview-count').innerHTML = `<i class="ph-bold ph-files"></i> 0 registos`;
+        document.getElementById('kpi-manual-total').innerHTML = fmtCurr(0);
+        document.getElementById('kpi-manual-count').innerHTML = `<i class="ph-bold ph-keyboard"></i> 0 inserções`;
+    }
+
     // Renderizar Tabelas
     function renderTableData(items) {
         const tbodyTotvs = document.getElementById('tbody-totvs');
@@ -466,8 +477,8 @@
         items.sort((a, b) => b.timestamp - a.timestamp);
 
         if (items.length === 0) {
-            tbodyTotvs.innerHTML = `<tr class="empty-state"><td colspan="5" style="text-align:center; padding:40px; color:#9ca3af;">Sem dados efetivados.</td></tr>`;
-            tbodyPreview.innerHTML = `<tr class="empty-state"><td colspan="5" style="text-align:center; padding:40px; color:#9ca3af;">Sem dados de prévia.</td></tr>`;
+            resetTableVisuals();
+            return;
         }
 
         items.forEach(item => {
@@ -530,7 +541,7 @@
     // Salvar Lançamento Manual na Nuvem
     window.saveManualToCloud = async (e) => {
         e.preventDefault();
-        if (!currentUser) return alert('Autenticação a ser processada. Aguarde.');
+        if (!currentUser) return alert('Aguarde a conexão com a nuvem...');
 
         const payload = {
             type: document.getElementById('m-type').value,
@@ -555,18 +566,32 @@
         }
     };
 
-    // Limpar Todo o Banco de Dados
+    // Limpar Todo o Banco de Dados (Corrigido)
     window.clearCloudData = async () => {
-        if (!currentUser) return;
+        if (!currentUser) {
+            alert("Aguarde a conexão com a nuvem...");
+            return;
+        }
+        
         if (!confirm("Tem a certeza que deseja limpar TODOS os pagamentos e recomeçar do zero? Esta ação não pode ser desfeita.")) return;
         
         window.showLoader(true);
         try {
-            const q = await fb.getDocs(fb.collection(fb.db, 'artifacts', fb.appId, 'public', 'data', 'payments'));
-            const promises = q.docs.map(d => fb.deleteDoc(fb.doc(fb.db, 'artifacts', fb.appId, 'public', 'data', 'payments', d.id)));
+            const colRef = fb.collection(fb.db, 'artifacts', fb.appId, 'public', 'data', 'payments');
+            const snapshot = await fb.getDocs(colRef);
+            
+            const promises = [];
+            snapshot.forEach(docSnap => {
+                promises.push(fb.deleteDoc(fb.doc(fb.db, 'artifacts', fb.appId, 'public', 'data', 'payments', docSnap.id)));
+            });
+            
             await Promise.all(promises);
+            
+            resetTableVisuals();
+            alert("Dados apagados com sucesso!");
         } catch(error) {
-            console.error(error);
+            console.error("Erro ao limpar dados:", error);
+            alert("Erro ao limpar os dados: " + error.message);
         } finally {
             window.showLoader(false);
         }
