@@ -5,547 +5,705 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Financeiro | ONTIME</title>
 
+    <!-- Favicon Padronizado ONTIME -->
     <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
 
+    <!-- Bibliotecas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 
     <style>
-        /* ── TOKENS ──────────────────────────────────────────── */
+        /* ── TOKENS (Estilo BI Moderno) ── */
         :root {
             --purple:       #3C003C;
-            --purple-mid:   #5a005a;
-            --purple-soft:  rgba(60,0,60,0.08);
+            --purple-light: #5a005a;
             --orange:       #FF6E00;
             --orange-dark:  #CC5800;
-            --orange-soft:  rgba(255,110,0,0.10);
-            --bg:           #f0f2f7;
-            --surface:      #ffffff;
-            --text-1:       #1e1e2e;
-            --text-2:       #6b7280;
-            --text-3:       #9ca3af;
-            --border:       #e5e7eb;
-            --radius:       14px;
-            --shadow-sm:    0 1px 4px rgba(60,0,60,0.06), 0 4px 12px rgba(60,0,60,0.04);
-            --shadow-md:    0 4px 16px rgba(60,0,60,0.10);
+            --bg-body:      #F3F4F6;
+            --surface:      #FFFFFF;
+            --text-main:    #111827;
+            --text-muted:   #6B7280;
+            --border:       #E5E7EB;
+            --radius-lg:    16px;
+            --radius-md:    12px;
+            --shadow-card:  0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --font-main:    'Inter', sans-serif;
             --font-display: 'Syne', sans-serif;
-            --font-body:    'DM Sans', sans-serif;
+            --sidebar-w:    260px;
         }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: var(--font-body);
-            background: var(--bg);
-            color: var(--text-1);
+            font-family: var(--font-main);
+            background: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* ── SCROLLBAR ───────────────────────────────────────── */
+        /* ── SCROLLBAR ── */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* ── HEADER ──────────────────────────────────────────── */
-        .header {
+        /* ── SIDEBAR (Menu Lateral) ── */
+        .sidebar {
+            width: var(--sidebar-w);
             background: var(--purple);
-            border-bottom: 3px solid var(--orange);
-            padding: 0 40px;
-            height: 68px;
+            color: white;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-brand {
+            height: 80px;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .brand-img {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            box-shadow: 0 0 0 2px rgba(255,110,0,0.5);
+        }
+
+        .brand-text {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+        .brand-text span { color: var(--orange); margin-left: -2px; }
+
+        .nav-menu {
+            padding: 24px 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,110,0,0.15);
+            color: var(--orange);
+        }
+        .nav-item i { font-size: 20px; }
+
+        .sidebar-footer {
+            padding: 20px 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #back-btn {
+            display: none; /* Controlado via JS */
+            width: 100%;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        #back-btn:hover { background: var(--orange); color: white; border-color: var(--orange); }
+
+        /* ── CONTEÚDO PRINCIPAL ── */
+        .main-wrapper {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Header */
+        .top-header {
+            height: 80px;
+            background: var(--surface);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            padding: 0 40px;
+            border-bottom: 1px solid var(--border);
             position: sticky;
             top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(60,0,60,0.3);
+            z-index: 40;
         }
 
-        .header-left { display: flex; align-items: center; gap: 0; }
-
-        /* Smart back button — hidden by default, JS reveals if from same origin */
-        #back-btn {
-            display: none;
-            align-items: center;
-            gap: 6px;
-            color: rgba(255,255,255,0.55);
-            font-size: 11px;
+        .page-title {
+            font-size: 20px;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            background: none;
-            border: none;
-            border-right: 1px solid rgba(255,255,255,0.15);
-            padding: 0 18px 0 0;
-            margin-right: 18px;
-            cursor: pointer;
-            transition: color 0.2s;
-            height: 68px;
+            color: var(--text-main);
+            transition: opacity 0.3s;
         }
-        #back-btn:hover { color: var(--orange); }
-        #back-btn i { font-size: 16px; }
 
-        .header-brand {
+        .header-actions {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 16px;
         }
 
-        /* Estilo da Imagem do Mascote no Cabeçalho */
-        .brand-img {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            object-fit: cover;
-            flex-shrink: 0;
-            box-shadow: 0 0 0 3px rgba(255,110,0,0.25);
-        }
-
-        .brand-name {
-            font-family: var(--font-display);
-            font-size: 19px;
-            font-weight: 800;
-            color: #fff;
-            letter-spacing: 0.3px;
-        }
-
-        .brand-name span { 
-            color: var(--orange); 
-            margin-left: -3px; /* Padronização: Aproxima o TIME do ON */
-        }
-
-        .date-badge {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.13);
-            color: rgba(255,255,255,0.75);
-            padding: 6px 16px;
-            border-radius: 20px;
+        .date-display {
             font-size: 13px;
+            color: var(--text-muted);
             font-weight: 500;
-            white-space: nowrap;
         }
 
-        /* ── MAIN ────────────────────────────────────────────── */
-        .main { padding: 32px 40px; max-width: 1700px; margin: 0 auto; }
+        .btn-primary {
+            background: var(--orange);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(255,110,0,0.2);
+        }
+        .btn-primary:hover { background: var(--orange-dark); transform: translateY(-1px); }
+        .btn-primary i { font-size: 16px; }
 
-        /* ── UPLOAD CARD ─────────────────────────────────────── */
-        .upload-card {
+        .content {
+            padding: 32px 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* ── TABS LOGIC ── */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── DRAG AND DROP ── */
+        .upload-section {
             background: var(--surface);
-            border-radius: var(--radius);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+            margin-bottom: 24px;
             border: 1px solid var(--border);
-            border-left: 5px solid var(--purple);
-            padding: 28px;
-            margin-bottom: 28px;
-            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 24px;
         }
-
-        .upload-title {
-            font-family: var(--font-display);
-            font-size: 16px;
-            color: var(--purple);
-            margin-bottom: 4px;
-            display: flex; align-items: center; gap: 8px;
-        }
-
-        .upload-desc { color: var(--text-2); font-size: 13.5px; margin-bottom: 18px; }
 
         .drop-zone {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
-            padding: 30px 24px;
+            flex: 1;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: var(--radius-md);
+            padding: 16px 24px;
             text-align: center;
-            background: #fafbfc;
+            background: #f8fafc;
             cursor: pointer;
-            transition: border-color 0.2s, background 0.2s;
             position: relative;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
         }
-
         .drop-zone:hover, .drop-zone.dragover {
             border-color: var(--orange);
-            background: var(--orange-soft);
+            background: rgba(255,110,0,0.05);
         }
-
         .drop-zone input[type="file"] {
-            position: absolute;
-            inset: 0;
-            opacity: 0; cursor: pointer;
-            width: 100%; height: 100%;
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
         }
+        .dz-text h4 { font-size: 14px; color: var(--text-main); font-weight: 600; }
+        .dz-text p { font-size: 12px; color: var(--text-muted); }
 
-        .dz-icons { display: flex; justify-content: center; gap: 14px; margin-bottom: 12px; }
-        .dz-icons i { font-size: 38px; transition: transform 0.2s; }
-        .drop-zone:hover .dz-icons i { transform: scale(1.1); }
+        .files-loaded { display: flex; flex-direction: column; gap: 8px; min-width: 200px; }
+        .file-badge { font-size: 12px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+        .file-badge.totvs { background: #f3e8ff; color: #6b21a8; }
+        .file-badge.preview { background: #ffedd5; color: #9a3412; }
 
-        .dz-title { font-family: var(--font-display); font-size: 15px; color: var(--text-1); margin-bottom: 4px; }
-        .dz-sub { font-size: 12.5px; color: var(--text-2); }
-
-        /* ── LOADED FILE BADGES ──────────────────────────────── */
-        .files-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; min-height: 0; }
-
-        .file-badge {
-            display: inline-flex;
-            align-items: center; gap: 6px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px; font-weight: 600;
-            animation: fadeUp 0.3s ease both;
-        }
-        .file-badge.totvs   { background: var(--purple-soft); color: var(--purple); border: 1px solid rgba(60,0,60,0.15); }
-        .file-badge.preview { background: var(--orange-soft); color: var(--orange-dark); border: 1px solid rgba(255,110,0,0.2); }
-        .file-badge i { font-size: 14px; }
-
-        @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-
-        /* ── KPI GRID ────────────────────────────────────────── */
+        /* ── KPIs (CORREÇÃO DE OVERFLOW) ── */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }
 
         .kpi-card {
             background: var(--surface);
-            border-radius: var(--radius);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-card);
             border: 1px solid var(--border);
-            padding: 22px;
-            box-shadow: var(--shadow-sm);
-            position: relative;
-            overflow: hidden;
-            animation: kpiIn 0.45s ease both;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 140px; /* Garante altura mínima */
+            justify-content: space-between;
         }
 
-        .kpi-card:nth-child(1) { animation-delay: 0.05s; }
-        .kpi-card:nth-child(2) { animation-delay: 0.10s; }
-        .kpi-card:nth-child(3) { animation-delay: 0.15s; }
-        .kpi-card:nth-child(4) { animation-delay: 0.20s; }
-
-        @keyframes kpiIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; height: 3px;
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-
-        .kpi-card.k-purple::before { background: var(--purple); }
-        .kpi-card.k-purple-2::before { background: linear-gradient(90deg, var(--purple-mid), var(--purple)); }
-        .kpi-card.k-orange::before { background: var(--orange); }
-        .kpi-card.k-orange-2::before { background: linear-gradient(90deg, var(--orange), #ff9a33); }
-
+        .kpi-title { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .kpi-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 19px;
-            margin-bottom: 14px;
+            width: 36px; height: 36px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+        .c-purple .kpi-icon { background: rgba(60,0,60,0.08); color: var(--purple); }
+        .c-orange .kpi-icon { background: rgba(255,110,0,0.1); color: var(--orange); }
+
+        .kpi-value { 
+            font-family: var(--font-display); 
+            /* Uso de clamp para diminuir a fonte se o número for gigante */
+            font-size: clamp(20px, 2.5vw, 28px); 
+            font-weight: 800; 
+            color: var(--text-main);
+            line-height: 1.2;
+            word-break: break-all;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Estilo para o símbolo R$ ficar menor que o número */
+        .kpi-value small {
+            font-size: 0.6em;
+            margin-right: 4px;
+            color: var(--text-muted);
+            font-weight: 600;
         }
 
-        .k-purple   .kpi-icon { background: var(--purple-soft);  color: var(--purple); }
-        .k-purple-2 .kpi-icon { background: var(--purple-soft);  color: var(--purple-mid); }
-        .k-orange   .kpi-icon { background: var(--orange-soft);  color: var(--orange-dark); }
-        .k-orange-2 .kpi-icon { background: var(--orange-soft);  color: var(--orange-dark); }
+        .kpi-sub { font-size: 12px; color: #10b981; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+        .kpi-sub.neutral { color: var(--text-muted); }
 
-        .kpi-label {
-            font-size: 10.5px;
-            font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.8px;
-            color: var(--text-2); margin-bottom: 5px;
-        }
-
-        .kpi-value {
-            font-family: var(--font-display);
-            font-size: 26px; font-weight: 800; line-height: 1;
-        }
-
-        .k-purple   .kpi-value { color: var(--purple); }
-        .k-purple-2 .kpi-value { color: var(--purple-mid); }
-        .k-orange   .kpi-value { color: var(--orange); }
-        .k-orange-2 .kpi-value { color: var(--orange-dark); }
-
-        .kpi-sub { font-size: 12px; color: var(--text-3); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* ── TABLE SECTION ───────────────────────────────────── */
-        .table-section {
+        /* ── TABLES ── */
+        .table-card {
             background: var(--surface);
-            border-radius: var(--radius);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card);
             border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 28px;
+            margin-bottom: 24px;
             overflow: hidden;
         }
 
-        .table-header {
-            padding: 18px 24px 14px;
+        .table-toolbar {
+            padding: 20px 24px;
             border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            flex-wrap: wrap; gap: 12px;
-        }
-
-        .th-left h2 {
-            font-family: var(--font-display);
-            font-size: 15px; margin-bottom: 2px;
-        }
-        .th-left h2.purple { color: var(--purple); }
-        .th-left h2.orange { color: var(--orange-dark); }
-        .th-left p { font-size: 12px; color: var(--text-2); }
-
-        .search-wrap { position: relative; }
-        .search-wrap i {
-            position: absolute;
-            left: 10px; top: 50%; transform: translateY(-50%);
-            color: var(--text-3); font-size: 16px; pointer-events: none;
-        }
-        .search-input {
-            padding: 8px 14px 8px 34px;
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            font-family: var(--font-body); font-size: 13px;
-            color: var(--text-1); background: #fafbfc;
-            outline: none; width: 230px;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        .search-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-soft); }
-
-        .table-scroll { overflow-x: auto; max-height: 520px; }
-
-        table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-
-        thead { position: sticky; top: 0; z-index: 5; }
-
-        th {
-            padding: 11px 14px;
-            font-size: 10.5px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.5px;
-            color: white; white-space: nowrap; text-align: left;
-        }
-
-        .thead-purple th { background: var(--purple); }
-        .thead-orange  th { background: #8b3300; }
-
-        td {
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--border);
-            white-space: nowrap;
-            vertical-align: middle;
-        }
-
-        tr:hover td { background: #fdf9f7; }
-        tbody tr:last-child td { border-bottom: none; }
-
-        .val-purple { color: var(--purple); font-weight: 700; }
-        .val-orange { color: var(--orange-dark); font-weight: 700; }
-
-        .cell-trunc {
-            max-width: 200px;
-            white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis;
-        }
-
-        /* Origin badges */
-        .orig-badge {
-            display: inline-block;
-            padding: 2px 8px; border-radius: 4px;
-            font-size: 10.5px; font-weight: 700;
-        }
-        .orig-badge.reembolso { background: #fef3c7; color: #92400e; }
-        .orig-badge.notas     { background: #dbeafe; color: #1e40af; }
-        .orig-badge.contas    { background: #d1fae5; color: #065f46; }
-        .orig-badge.other     { background: var(--border); color: var(--text-1); }
-
-        /* Empty state */
-        .empty-state td {
-            text-align: center;
-            padding: 52px 20px;
-            color: var(--text-3); font-size: 13px;
-        }
-        .empty-state i { display: block; font-size: 36px; margin: 0 auto 10px; }
-
-        /* Table footer */
-        .table-foot {
-            padding: 11px 24px;
-            background: #fafbfc;
-            border-top: 1px solid var(--border);
             display: flex; justify-content: space-between; align-items: center;
-            font-size: 12.5px; color: var(--text-2);
-            flex-wrap: wrap; gap: 8px;
         }
-        .table-foot strong { color: var(--text-1); }
+        .table-toolbar h3 { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 
-        /* ── RESPONSIVE ──────────────────────────────────────── */
-        @media (max-width: 900px) {
-            .header { padding: 0 20px; }
-            .main   { padding: 20px; }
-            .kpi-value { font-size: 22px; }
-            .date-badge { display: none; }
+        .search-box {
+            position: relative;
+        }
+        .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-box input {
+            padding: 8px 16px 8px 36px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px; outline: none; width: 260px;
+            transition: border-color 0.2s;
+        }
+        .search-box input:focus { border-color: var(--orange); }
+
+        .table-scroll { overflow-x: auto; max-height: 400px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead { position: sticky; top: 0; background: #f8fafc; z-index: 10; }
+        th {
+            padding: 14px 20px;
+            font-weight: 600; color: var(--text-muted);
+            text-transform: uppercase; font-size: 11px;
+            text-align: left; border-bottom: 1px solid var(--border);
+        }
+        td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-main);
+            white-space: nowrap;
+        }
+        tr:hover td { background: #f8fafc; }
+        
+        .val-col { font-weight: 600; color: var(--text-main); }
+        
+        /* Badges de Tabela */
+        .status-badge {
+            padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+        }
+        .status-badge.manual { background: #e0f2fe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .status-badge.totvs { background: #f3e8ff; color: #6b21a8; }
+        .status-badge.previa { background: #ffedd5; color: #9a3412; }
+
+        /* ── MODAL (Lançamento Manual) ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; z-index: 999;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .modal-card {
+            background: var(--surface); width: 100%; max-width: 500px;
+            border-radius: var(--radius-lg); box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            transform: translateY(20px); transition: transform 0.3s;
+            overflow: hidden;
+        }
+        .modal-overlay.active .modal-card { transform: translateY(0); }
+        
+        .modal-header {
+            padding: 20px 24px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h2 { font-size: 18px; font-weight: 600; }
+        .btn-close { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
+        .btn-close:hover { color: #ef4444; }
+
+        .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+        .input-group input, .input-group select {
+            padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none;
+        }
+        .input-group input:focus, .input-group select:focus { border-color: var(--orange); }
+
+        .modal-footer {
+            padding: 20px 24px; background: #f8fafc; border-top: 1px solid var(--border);
+            display: flex; justify-content: flex-end; gap: 12px;
+        }
+        .btn-cancel { padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 13px; border: 1px solid var(--border); background: white; cursor: pointer; }
+        .btn-cancel:hover { background: #f1f5f9; }
+
+        /* Estilos para placeholders vazios das abas secundárias */
+        .empty-tab-view {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            text-align: center;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-card);
+        }
+        .empty-tab-view i { font-size: 64px; margin-bottom: 20px; opacity: 0.8; }
+        .empty-tab-view h2 { font-size: 22px; margin-bottom: 12px; color: var(--text-main); font-weight: 700; }
+        .empty-tab-view p { color: var(--text-muted); max-width: 400px; font-size: 14px; line-height: 1.6; }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+            .main-wrapper { margin-left: 0; }
+            .upload-section { flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
-<header class="header">
-    <div class="header-left">
-        <button id="back-btn" onclick="history.back()" title="Voltar ao Menu Principal">
-            <i class="ph ph-arrow-left"></i> Voltar
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="ONTIME" class="brand-img">
+        <div class="brand-text">ON<span>TIME</span></div>
+    </div>
+    
+    <div class="nav-menu">
+        <a class="nav-item active" onclick="switchTab('visao', this)"><i class="ph ph-squares-four"></i> Visão Geral</a>
+        <a class="nav-item" onclick="switchTab('relatorios', this)"><i class="ph ph-chart-line-up"></i> Relatórios</a>
+        <a class="nav-item" onclick="switchTab('conciliacao', this)"><i class="ph ph-file-text"></i> Conciliação</a>
+    </div>
+
+    <div class="sidebar-footer">
+        <button id="back-btn" class="nav-item" onclick="history.back()">
+            <i class="ph ph-arrow-left"></i> Voltar ao Hub
         </button>
-        <div class="header-brand">
-            <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="brand-img">
-            <span class="brand-name">ON<span>TIME</span> &nbsp;|&nbsp; Dashboard Financeiro</span>
-        </div>
     </div>
-    <div class="date-badge" id="date-display">—</div>
-</header>
+</nav>
 
-<main class="main">
-
-    <div class="upload-card">
-        <h2 class="upload-title"><i class="ph-fill ph-upload-simple" style="color:var(--orange)"></i> Importar Planilhas</h2>
-        <p class="upload-desc">Selecione simultaneamente o <strong>Totvs.csv</strong> (pagamentos de hoje) e as prévias <strong>Reembolso, Notas e Contas (.xlsx)</strong>. Processamento 100% local — nenhum dado é enviado.</p>
-        <div class="drop-zone" id="drop-zone">
-            <input type="file" id="fileInput" multiple accept=".csv,.xlsx,.xls">
-            <div class="dz-icons">
-                <i class="ph ph-file-csv" style="color:#3b82f6"></i>
-                <i class="ph ph-file-xls" style="color:#16a34a"></i>
-            </div>
-            <div class="dz-title">Arraste os arquivos ou clique para selecionar</div>
-            <div class="dz-sub">Totvs.csv &nbsp;+&nbsp; Reembolso.xlsx &nbsp;+&nbsp; Notas.xlsx &nbsp;+&nbsp; Contas.xlsx</div>
+<!-- ── MAIN CONTENT ── -->
+<div class="main-wrapper">
+    
+    <!-- Top Header -->
+    <header class="top-header">
+        <h1 class="page-title" id="page-title-text">Dashboard Financeiro</h1>
+        <div class="header-actions">
+            <span class="date-display" id="date-display">...</span>
+            <button class="btn-primary" onclick="openModal()" id="btn-add-manual">
+                <i class="ph-bold ph-plus"></i> Lançamento Manual
+            </button>
         </div>
-        <div class="files-row" id="files-row"></div>
+    </header>
+
+    <main class="content">
+        
+        <!-- ========================================== -->
+        <!-- TAB 1: VISÃO GERAL (Dashboard Principal)   -->
+        <!-- ========================================== -->
+        <div id="tab-visao" class="tab-content active">
+            
+            <!-- Upload Section -->
+            <div class="upload-section">
+                <div class="drop-zone" id="drop-zone">
+                    <input type="file" id="fileInput" multiple accept=".csv,.xlsx,.xls">
+                    <i class="ph ph-cloud-arrow-up" style="font-size: 32px; color: var(--orange);"></i>
+                    <div class="dz-text">
+                        <h4>Importar Planilhas (Totvs / Prévia)</h4>
+                        <p>Arraste os arquivos ou clique aqui.</p>
+                    </div>
+                </div>
+                <div class="files-loaded" id="files-row">
+                    <!-- Badges aparecerão aqui -->
+                </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi-card c-purple">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Efetivado (Hoje)</span>
+                        <div class="kpi-icon"><i class="ph-fill ph-check-circle"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-totvs-total"><small>R$</small>0,00</div>
+                    <div class="kpi-sub neutral" id="kpi-totvs-count"><i class="ph-bold ph-files"></i> 0 títulos via Totvs</div>
+                </div>
+
+                <div class="kpi-card c-orange">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Prévia Futura</span>
+                        <div class="kpi-icon"><i class="ph-fill ph-calendar-check"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-preview-total"><small>R$</small>0,00</div>
+                    <div class="kpi-sub neutral" id="kpi-preview-count"><i class="ph-bold ph-files"></i> 0 títulos pendentes</div>
+                </div>
+
+                <div class="kpi-card c-purple">
+                    <div class="kpi-header">
+                        <span class="kpi-title">Total Manual Add</span>
+                        <div class="kpi-icon"><i class="ph-fill ph-hand-pointing"></i></div>
+                    </div>
+                    <div class="kpi-value" id="kpi-manual-total" style="color: #1e40af;"><small>R$</small>0,00</div>
+                    <div class="kpi-sub neutral" id="kpi-manual-count"><i class="ph-bold ph-keyboard"></i> 0 inserções</div>
+                </div>
+            </div>
+
+            <!-- Tabela Totvs + Manuais Efetivados -->
+            <div class="table-card">
+                <div class="table-toolbar">
+                    <h3 style="color: var(--purple);"><i class="ph-fill ph-currency-circle-dollar"></i> Efetivados (Totvs + Manuais)</h3>
+                    <div class="search-box">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" id="search-totvs" placeholder="Pesquisar..." oninput="filterTable('tbody-totvs', this.value)">
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Origem</th>
+                                <th>Nº Título</th>
+                                <th>Natureza</th>
+                                <th>Fornecedor / Descrição</th>
+                                <th>Vencimento</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-totvs">
+                            <tr class="empty-state"><td colspan="6" style="text-align:center; padding: 40px; color: #9ca3af;">Aguardando dados...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tabela Prévia + Manuais Futuros -->
+            <div class="table-card">
+                <div class="table-toolbar">
+                    <h3 style="color: var(--orange);"><i class="ph-fill ph-clock-countdown"></i> Prévias (Futuras + Manuais)</h3>
+                    <div class="search-box">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" id="search-preview" placeholder="Pesquisar..." oninput="filterTable('tbody-preview', this.value)">
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Origem</th>
+                                <th>ID / Ref</th>
+                                <th>Natureza</th>
+                                <th>Fornecedor / Descrição</th>
+                                <th>Vencimento</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-preview">
+                            <tr class="empty-state"><td colspan="6" style="text-align:center; padding: 40px; color: #9ca3af;">Aguardando dados...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+        </div>
+        <!-- FIM TAB 1 -->
+
+        <!-- ========================================== -->
+        <!-- TAB 2: RELATÓRIOS (Placeholder)            -->
+        <!-- ========================================== -->
+        <div id="tab-relatorios" class="tab-content">
+            <div class="empty-tab-view">
+                <i class="ph-fill ph-chart-line-up" style="color: var(--orange);"></i>
+                <h2>Módulo de Relatórios</h2>
+                <p>Esta secção de geração e exportação de relatórios avançados encontra-se atualmente em fase de desenvolvimento. Em breve poderá consolidar os seus pagamentos aqui!</p>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: CONCILIAÇÃO (Placeholder)           -->
+        <!-- ========================================== -->
+        <div id="tab-conciliacao" class="tab-content">
+            <div class="empty-tab-view">
+                <i class="ph-fill ph-file-text" style="color: var(--purple);"></i>
+                <h2>Módulo de Conciliação</h2>
+                <p>O ambiente para conciliação automática bancária contra os lançamentos do Totvs ERP estará disponível na próxima atualização do sistema.</p>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ── MODAL DE LANÇAMENTO MANUAL ── -->
+<div class="modal-overlay" id="manualModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h2>Adicionar Lançamento Manual</h2>
+            <button class="btn-close" onclick="closeModal()"><i class="ph ph-x"></i></button>
+        </div>
+        <form id="manualForm" onsubmit="addManualEntry(event)">
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>Tipo de Lançamento</label>
+                    <select id="man-origem" required>
+                        <option value="totvs">Efetivado Hoje (Soma no Totvs)</option>
+                        <option value="preview">Prévia Futura (Soma nas Prévias)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Fornecedor / Descrição</label>
+                    <input type="text" id="man-forn" placeholder="Ex: TAXA BANCÁRIA" required style="text-transform: uppercase;">
+                </div>
+                <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="input-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" id="man-valor" step="0.01" min="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Vencimento</label>
+                        <input type="date" id="man-venc" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Natureza Contábil</label>
+                    <input type="text" id="man-nat" placeholder="Ex: DESPESAS BANCARIAS" style="text-transform: uppercase;">
+                    <span style="font-size: 11px; color: #9ca3af; margin-top:2px;">*Utilize os termos da planilha 'Desc. Nat' se possível.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button type="submit" class="btn-primary">Salvar Lançamento</button>
+            </div>
+        </form>
     </div>
-
-    <div class="kpi-grid">
-        <div class="kpi-card k-purple">
-            <div class="kpi-icon"><i class="ph-fill ph-check-circle"></i></div>
-            <div class="kpi-label">Total Efetivado (Hoje)</div>
-            <div class="kpi-value" id="kpi-totvs-total">R$ 0,00</div>
-            <div class="kpi-sub" id="kpi-totvs-count">0 títulos</div>
-        </div>
-        <div class="kpi-card k-purple-2">
-            <div class="kpi-icon"><i class="ph-fill ph-users"></i></div>
-            <div class="kpi-label">Fornecedores Totvs</div>
-            <div class="kpi-value" id="kpi-totvs-suppliers">0</div>
-            <div class="kpi-sub">fornecedores únicos</div>
-        </div>
-        <div class="kpi-card k-orange">
-            <div class="kpi-icon"><i class="ph-fill ph-calendar-check"></i></div>
-            <div class="kpi-label">Prévia Futura (Amanhã / Seg)</div>
-            <div class="kpi-value" id="kpi-preview-total">R$ 0,00</div>
-            <div class="kpi-sub" id="kpi-preview-count">0 títulos</div>
-        </div>
-        <div class="kpi-card k-orange-2">
-            <div class="kpi-icon"><i class="ph-fill ph-stack"></i></div>
-            <div class="kpi-label">Origens Carregadas</div>
-            <div class="kpi-value" id="kpi-origins">0</div>
-            <div class="kpi-sub" id="kpi-origins-names">–</div>
-        </div>
-    </div>
-
-    <div class="table-section">
-        <div class="table-header">
-            <div class="th-left">
-                <h2 class="purple"><i class="ph-fill ph-currency-circle-dollar"></i> Consolidado Efetivado — Totvs</h2>
-                <p>Títulos processados hoje pelo ERP</p>
-            </div>
-            <div class="search-wrap">
-                <i class="ph ph-magnifying-glass"></i>
-                <input type="text" class="search-input" id="search-totvs" placeholder="Buscar…" oninput="filterTable('tbody-totvs', this.value)">
-            </div>
-        </div>
-        <div class="table-scroll">
-            <table>
-                <thead class="thead-purple">
-                    <tr>
-                        <th>Prefixo</th><th>N. Título</th><th>Parcela</th><th>Tipo</th>
-                        <th>Natureza</th><th>Fornecedor</th><th>Nome Fornecedor</th>
-                        <th>Dt. Emissão</th><th>Vencimento</th><th>Valor Total</th>
-                        <th>Histórico</th><th>IDFluig</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody-totvs">
-                    <tr class="empty-state"><td colspan="12">
-                        <i class="ph ph-file-csv"></i>
-                        Aguardando arquivo Totvs.csv…
-                    </td></tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="table-foot">
-            <span id="foot-totvs-count">0 registros</span>
-            <span>Total: <strong id="foot-totvs-total">R$ 0,00</strong></span>
-        </div>
-    </div>
-
-    <div class="table-section">
-        <div class="table-header">
-            <div class="th-left">
-                <h2 class="orange"><i class="ph-fill ph-clock-countdown"></i> Consolidado Prévia — Reembolso / Notas / Contas</h2>
-                <p>Pagamentos previstos para a próxima data útil</p>
-            </div>
-            <div class="search-wrap">
-                <i class="ph ph-magnifying-glass"></i>
-                <input type="text" class="search-input" id="search-preview" placeholder="Buscar…" oninput="filterTable('tbody-preview', this.value)">
-            </div>
-        </div>
-        <div class="table-scroll">
-            <table>
-                <thead class="thead-orange">
-                    <tr>
-                        <th>Origem</th><th>ID</th><th>N. Título / NF</th><th>Natureza</th>
-                        <th>Desc. Fornecedor</th><th>Vencimento</th><th>Valor Total</th><th>Aprovador</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody-preview">
-                    <tr class="empty-state"><td colspan="8">
-                        <i class="ph ph-files"></i>
-                        Aguardando prévias (Reembolso, Notas, Contas)…
-                    </td></tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="table-foot">
-            <span id="foot-preview-count">0 registros</span>
-            <span>Total: <strong id="foot-preview-total">R$ 0,00</strong></span>
-        </div>
-    </div>
-
-</main>
+</div>
 
 <script>
 'use strict';
 
-/* ── DATAS ──────────────────────────────────────────────── */
+/* ── DATAS ── */
 const today = new Date();
 const isFriday = today.getDay() === 5;
 const previewDate = new Date(today);
 previewDate.setDate(today.getDate() + (isFriday ? 3 : 1));
 
-document.getElementById('date-display').textContent =
-    `Hoje: ${today.toLocaleDateString('pt-BR')}  |  Prévia: ${previewDate.toLocaleDateString('pt-BR')}`;
+document.getElementById('date-display').innerHTML =
+    `<strong>Hoje:</strong> ${today.toLocaleDateString('pt-BR')} &nbsp;|&nbsp; <strong>Prévia:</strong> ${previewDate.toLocaleDateString('pt-BR')}`;
 
-/* ── BOTÃO VOLTAR INTELIGENTE ───────────────────────────────
-   Mostra o botão apenas se o usuário veio do mesmo domínio
-   (ex: hub de ferramentas).
-   Se acessou pelo link direto,
-   document.referrer é vazio ou externo → botão permanece oculto.
-────────────────────────────────────────────────────────── */
+/* ── BOTÃO VOLTAR INTELIGENTE ── */
 (function initBackButton() {
     const btn = document.getElementById('back-btn');
     if (!btn || !document.referrer) return;
     try {
         const refHost = new URL(document.referrer).hostname;
         const curHost = new URL(window.location.href).hostname;
-        if (refHost === curHost) btn.style.display = 'inline-flex';
+        if (refHost === curHost) btn.style.display = 'flex';
     } catch (_) {}
 })();
 
-/* ── DRAG & DROP ────────────────────────────────────────── */
+/* ── NAVEGAÇÃO ENTRE SEPARADORES (TABS) ── */
+function switchTab(tabId, element) {
+    document.querySelectorAll('.nav-menu .nav-item').forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+    const titulos = {
+        'visao': 'Dashboard Financeiro',
+        'relatorios': 'Relatórios Financeiros',
+        'conciliacao': 'Conciliação Bancária'
+    };
+    document.getElementById('page-title-text').innerText = titulos[tabId];
+    const btnAdd = document.getElementById('btn-add-manual');
+    if(tabId === 'visao') {
+        btnAdd.style.display = 'flex';
+    } else {
+        btnAdd.style.display = 'none';
+    }
+}
+
+/* ── MODAL LÓGICA ── */
+function openModal() {
+    document.getElementById('manualModal').classList.add('active');
+    if(!document.getElementById('man-venc').value) {
+        document.getElementById('man-venc').valueAsDate = new Date();
+    }
+}
+function closeModal() {
+    document.getElementById('manualModal').classList.remove('active');
+    document.getElementById('manualForm').reset();
+}
+
+/* ── DRAG & DROP ── */
 const dropZone = document.getElementById('drop-zone');
 dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragover'));
@@ -554,29 +712,29 @@ dropZone.addEventListener('drop', e => {
     dropZone.classList.remove('dragover');
     if (e.dataTransfer.files.length) startProcessing(e.dataTransfer.files);
 });
-
 document.getElementById('fileInput').addEventListener('change', e => {
     if (e.target.files.length) startProcessing(e.target.files);
 });
 
-/* ── STATE ──────────────────────────────────────────────── */
+/* ── STATE ── */
 let state = {
-    totvs:     { total: 0, count: 0, suppliers: new Set() },
-    preview:   { total: 0, count: 0, origins: new Set() }
+    totvs:   { total: 0, count: 0, suppliers: new Set(), supplierTotals: {} },
+    preview: { total: 0, count: 0, origins: new Set(), originTotals: {} },
+    manual:  { total: 0, count: 0 }
 };
 
-/* ── RESET ──────────────────────────────────────────────── */
 function resetState() {
     state = {
-        totvs:   { total: 0, count: 0, suppliers: new Set() },
-        preview: { total: 0, count: 0, origins: new Set() }
+        totvs:   { total: 0, count: 0, suppliers: new Set(), supplierTotals: {} },
+        preview: { total: 0, count: 0, origins: new Set(), originTotals: {} },
+        manual:  { total: 0, count: 0 }
     };
     document.getElementById('tbody-totvs').innerHTML   = '';
     document.getElementById('tbody-preview').innerHTML = '';
     document.getElementById('files-row').innerHTML     = '';
 }
 
-/* ── START PROCESSING ───────────────────────────────────── */
+/* ── PROCESSAMENTO ARQUIVOS ── */
 function startProcessing(fileList) {
     resetState();
     Array.from(fileList).forEach(file => {
@@ -586,49 +744,27 @@ function startProcessing(fileList) {
     });
 }
 
-/* ── FILE BADGE ─────────────────────────────────────────── */
 function addFileBadge(file) {
     const row  = document.getElementById('files-row');
     const isTotvs = file.name.toLowerCase().includes('totvs') || /\.csv$/i.test(file.name);
-    const icon = /\.csv$/i.test(file.name) ? 'file-csv' : 'file-xls';
     const badge = document.createElement('div');
     badge.className = `file-badge ${isTotvs ? 'totvs' : 'preview'}`;
-    badge.innerHTML = `<i class="ph-fill ph-${icon}"></i> ${file.name}`;
+    badge.innerHTML = `<i class="ph-fill ${isTotvs ? 'ph-file-csv' : 'ph-file-xls'}"></i> ${file.name}`;
     row.appendChild(badge);
 }
 
-/* ── CURRENCY PARSER ────────────────────────────────────────
-   Handles:
-   • Number from XLSX  → already float, return as-is
-   • BR string         → "2.350,50" → 2350.50
-   • US string         → "2350.50"  → 2350.50
-   • Quoted strings    → strip quotes first
-────────────────────────────────────────────────────────── */
 function parseCurrency(val) {
     if (val === null || val === undefined || val === '') return 0;
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     let s = String(val).replace(/"/g, '').trim();
     if (!s || s === '-') return 0;
-    // BR format: has comma as decimal separator (possibly dots as thousand sep)
-    if (s.includes(',')) {
-        s = s.replace(/\./g, '').replace(',', '.');
-    }
+    if (s.includes(',')) { s = s.replace(/\./g, '').replace(',', '.'); }
     return parseFloat(s) || 0;
 }
 
-/* ── KEY NORMALIZER ─────────────────────────────────────────
-   Strips accents, trims and uppercases header keys so that
-   "CÓD. NATUREZA" === "COD. NATUREZA"
-   "VALOR TOTAL SERVIÇO" === "VALOR TOTAL SERVICO"
-────────────────────────────────────────────────────────── */
 function normalizeKey(key) {
-    return String(key || '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')   // strip combining diacritics
-        .trim()
-        .toUpperCase();
+    return String(key || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
 }
-
 function normalizeRow(rawRow) {
     const out = {};
     for (const k in rawRow) {
@@ -638,33 +774,26 @@ function normalizeRow(rawRow) {
     return out;
 }
 
-/* ── FILE TYPE DETECTION ────────────────────────────────── */
 function detectIsTotvs(fileName, firstRowNormalized) {
     if (fileName.toLowerCase().includes('totvs')) return true;
     if (firstRowNormalized && Object.keys(firstRowNormalized).some(k => k.includes('PREFIXO'))) return true;
     return false;
 }
 
-/* ── READ CSV ───────────────────────────────────────────── */
 function readCsv(file) {
     const reader = new FileReader();
     reader.onload = e => {
         const content = e.target.result;
         const lines   = content.split(/\r?\n/);
-
-        // Find header line by scanning for keywords
         let headerIdx = 0;
         for (let i = 0; i < Math.min(lines.length, 20); i++) {
             const upper = lines[i].toUpperCase().replace(/^"/, '').trim();
-            if (upper.includes('PREFIXO') || upper.includes('SOLICITANTE') ||
-                upper.startsWith('ID;') || upper.startsWith('ID,') || upper.startsWith('"ID"')) {
+            if (upper.includes('PREFIXO') || upper.includes('SOLICITANTE') || upper.startsWith('ID;') || upper.startsWith('ID,')) {
                 headerIdx = i; break;
             }
         }
-
-        const slice     = lines.slice(headerIdx).join('\n');
+        const slice = lines.slice(headerIdx).join('\n');
         const delimiter = lines[headerIdx].includes(';') ? ';' : ',';
-
         Papa.parse(slice, {
             header: true, skipEmptyLines: true, delimiter,
             complete: r => { if (r.data.length) processData(r.data, file.name); }
@@ -673,167 +802,158 @@ function readCsv(file) {
     reader.readAsText(file, 'ISO-8859-1');
 }
 
-/* ── READ EXCEL ─────────────────────────────────────────── */
 function readExcel(file) {
     const reader = new FileReader();
     reader.onload = e => {
-        const wb    = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+        const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const rows  = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-
-        // Find header row (first row whose first cell equals 'ID' or contains PREFIXO/SOLICITANTE)
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
         let headerIdx = 0;
         for (let i = 0; i < Math.min(rows.length, 10); i++) {
-            const first  = String(rows[i][0] || '').toUpperCase().trim();
+            const first = String(rows[i][0] || '').toUpperCase().trim();
             const rowStr = rows[i].map(c => String(c || '')).join('').toUpperCase();
             if (first === 'ID' || rowStr.includes('PREFIXO') || rowStr.includes('SOLICITANTE')) {
                 headerIdx = i; break;
             }
         }
-
         const data = XLSX.utils.sheet_to_json(sheet, { range: headerIdx, defval: '' });
         if (data.length) processData(data, file.name);
     };
     reader.readAsArrayBuffer(file);
 }
 
-/* ── PROCESS DATA ───────────────────────────────────────── */
-function processData(rawData, fileName) {
-    const fmtBRL = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+// FORMATADOR PADRÃO BI: R$ menor que o número
+function fmtBRL_BI(v) {
+    const num = v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `<small>R$</small>${num}`;
+}
+const fmtBRL = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    // Use first row to detect file type
+function processData(rawData, fileName) {
     const firstNorm  = normalizeRow(rawData[0]);
     const isTotvsFile = detectIsTotvs(fileName, firstNorm);
-
     const tbodyTotvs   = document.getElementById('tbody-totvs');
     const tbodyPreview = document.getElementById('tbody-preview');
-
-    // Clear empty-state placeholder on first real data
     if (isTotvsFile && tbodyTotvs.querySelector('.empty-state')) tbodyTotvs.innerHTML = '';
     if (!isTotvsFile && tbodyPreview.querySelector('.empty-state')) tbodyPreview.innerHTML = '';
 
     rawData.forEach(rawRow => {
         const row = normalizeRow(rawRow);
-
-        /* ── TOTVS ── */
         if (isTotvsFile) {
-            // Columns mapped to actual Totvs CSV headers (after normalization)
-            const prefixo   = String(row['PREFIXO'] || '').trim();
-            const nTitulo   = String(row['NO. TITULO'] || row['N. TITULO'] || '').trim();
-            const parcela   = row['PARCELA']   || '—';
-            const tipo      = row['TIPO']      || '—';
-            const natureza  = row['NATUREZA']  || row['COD. NAT.'] || '—';
-            const fornecedor = row['FORNECEDOR'] || '—';
-            const nomeForn  = String(row['NOME FORNECE'] || row['NOME FORNECEDOR'] || '—');
-            const dtEmissao = row['DT EMISSAO'] || '—';
-            // Prefer Vencto Real > Vencimento Real > Vencimento
+            const nTitulo = String(row['NO. TITULO'] || row['N. TITULO'] || '').trim();
+            const natureza = row['NATUREZA'] || row['COD. NAT.'] || '—';
+            const nomeForn = String(row['NOME FORNECE'] || row['NOME FORNECEDOR'] || '—');
             const vencimento = row['VENCTO REAL'] || row['VENCIMENTO REAL'] || row['VENCIMENTO'] || '—';
-            const historico  = String(row['HISTORICO'] || '—');
-            const idFluig    = row['IDFLUIG'] || row['IDENT. LANC.'] || '—';
-            const valor      = parseCurrency(row['VLR.TITULO'] || row['VALOR TOTAL'] || 0);
-
-            // Filter: nTitulo must be filled, valor > 0 (prefixo can be empty — ex: folha)
+            const valor = parseCurrency(row['VLR.TITULO'] || row['VALOR TOTAL'] || 0);
             if (!nTitulo || valor <= 0) return;
-
             state.totvs.total += valor;
             state.totvs.count++;
-            if (fornecedor !== '—') state.totvs.suppliers.add(fornecedor);
-
+            if (nomeForn !== '—') {
+                state.totvs.suppliers.add(nomeForn);
+                if (!state.totvs.supplierTotals[nomeForn]) state.totvs.supplierTotals[nomeForn] = 0;
+                state.totvs.supplierTotals[nomeForn] += valor;
+            }
             const tr = document.createElement('tr');
-            tr.dataset.search = `${prefixo} ${nTitulo} ${nomeForn} ${natureza} ${historico} ${fornecedor}`.toLowerCase();
+            tr.dataset.search = `totvs ${nTitulo} ${nomeForn} ${natureza}`.toLowerCase();
             tr.innerHTML = `
-                <td>${prefixo || '—'}</td>
+                <td><span class="status-badge totvs">TOTVS ERP</span></td>
                 <td><strong>${nTitulo}</strong></td>
-                <td>${parcela}</td>
-                <td>${tipo}</td>
                 <td>${natureza}</td>
-                <td style="font-size:11px">${fornecedor}</td>
-                <td class="cell-trunc" title="${nomeForn}">${nomeForn}</td>
-                <td>${dtEmissao}</td>
+                <td>${nomeForn}</td>
                 <td>${vencimento}</td>
-                <td class="val-purple">${fmtBRL(valor)}</td>
-                <td class="cell-trunc" title="${historico}">${historico}</td>
-                <td style="font-size:11px">${idFluig}</td>
+                <td class="val-col" style="color:var(--purple)">${fmtBRL(valor)}</td>
             `;
             tbodyTotvs.appendChild(tr);
-
-        /* ── PRÉVIA (Reembolso / Notas / Contas) ── */
         } else {
             const origemRaw = fileName.replace(/\.(xlsx|xls|csv)$/i, '').replace(/ - Sheet\d+/i, '').trim();
             state.preview.origins.add(origemRaw);
-
-            const id    = String(row['ID'] || '').trim();
+            const id = String(row['ID'] || '').trim();
             if (!id || id.toUpperCase() === 'ID' || id === '') return;
-
-            // N. Titulo exists in Contas; N. NF in Notas; neither in Reembolso
-            const nTituloNf  = String(row['N. TITULO'] || row['N. NF'] || '—');
-            
-            // Natureza: Notas/Contas use NATUREZA; Reembolso uses COD. NATUREZA (after strip: COD. NATUREZA)
-            const natureza   = String(row['NATUREZA'] || row['COD. NATUREZA'] || '—');
-            const descForn   = String(row['DESC FORNECEDOR'] || '—');
+            const natureza = String(row['NATUREZA'] || row['COD. NATUREZA'] || '—');
+            const descForn = String(row['DESC FORNECEDOR'] || '—');
             const vencimento = String(row['VENCIMENTO'] || '—');
-            const aprovador  = String(row['APROVADOR'] || '—');
-            // Value column varies by file:
-            // Reembolso → VALOR TOTAL
-            // Notas     → VALOR TOTAL SERVICO (after normalize: accent-stripped)
-            // Contas    → VALOR TOTAL
-            const valor = parseCurrency(
-                row['VALOR TOTAL'] || row['VALOR TOTAL SERVICO'] || 0
-            );
-            
+            const valor = parseCurrency(row['VALOR TOTAL'] || row['VALOR TOTAL SERVICO'] || 0);
             if (valor <= 0) return;
-
             state.preview.total += valor;
             state.preview.count++;
-
-            // Assign color class to origin badge
+            if (!state.preview.originTotals[origemRaw]) state.preview.originTotals[origemRaw] = 0;
+            state.preview.originTotals[origemRaw] += valor;
             const oLow = origemRaw.toLowerCase();
-            let badgeClass = 'other';
-            if (oLow.includes('reembolso')) badgeClass = 'reembolso';
-            else if (oLow.includes('nota'))  badgeClass = 'notas';
-            else if (oLow.includes('conta')) badgeClass = 'contas';
-
+            let badgeClass = oLow.includes('reembolso') ? 'reembolso' : (oLow.includes('nota') ? 'notas' : 'contas');
             const tr = document.createElement('tr');
-            tr.dataset.search = `${origemRaw} ${id} ${descForn} ${natureza} ${vencimento}`.toLowerCase();
+            tr.dataset.search = `${origemRaw} ${id} ${descForn} ${natureza}`.toLowerCase();
             tr.innerHTML = `
-                <td><span class="orig-badge ${badgeClass}">${origemRaw.toUpperCase()}</span></td>
+                <td><span class="status-badge ${badgeClass}" style="background:#fef3c7; color:#92400e; border: 1px solid #fde68a;">${origemRaw.toUpperCase()}</span></td>
                 <td>${id}</td>
-                <td>${nTituloNf}</td>
                 <td>${natureza}</td>
-                <td class="cell-trunc" title="${descForn}">${descForn}</td>
+                <td>${descForn}</td>
                 <td>${vencimento}</td>
-                <td class="val-orange">${fmtBRL(valor)}</td>
-                <td>${aprovador}</td>
+                <td class="val-col" style="color:var(--orange-dark)">${fmtBRL(valor)}</td>
             `;
             tbodyPreview.appendChild(tr);
         }
     });
-
     updateKPIs();
 }
 
-/* ── UPDATE KPIs ────────────────────────────────────────── */
-function updateKPIs() {
-    const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    const { totvs, preview } = state;
-
-    document.getElementById('kpi-totvs-total').textContent      = fmt(totvs.total);
-    document.getElementById('kpi-totvs-count').textContent      = `${totvs.count} título${totvs.count !== 1 ? 's' : ''}`;
-    document.getElementById('kpi-totvs-suppliers').textContent  = totvs.suppliers.size;
-    document.getElementById('kpi-preview-total').textContent    = fmt(preview.total);
-    document.getElementById('kpi-preview-count').textContent    = `${preview.count} título${preview.count !== 1 ? 's' : ''}`;
-    document.getElementById('kpi-origins').textContent          = preview.origins.size;
-    document.getElementById('kpi-origins-names').textContent    = preview.origins.size
-        ? Array.from(preview.origins).join(', ')
-        : '–';
-
-    document.getElementById('foot-totvs-count').textContent   = `${totvs.count} registro${totvs.count !== 1 ? 's' : ''}`;
-    document.getElementById('foot-totvs-total').textContent   = fmt(totvs.total);
-    document.getElementById('foot-preview-count').textContent = `${preview.count} registro${preview.count !== 1 ? 's' : ''}`;
-    document.getElementById('foot-preview-total').textContent = fmt(preview.total);
+function addManualEntry(e) {
+    e.preventDefault();
+    const tipo = document.getElementById('man-origem').value;
+    const forn = document.getElementById('man-forn').value.toUpperCase();
+    const valor = parseFloat(document.getElementById('man-valor').value) || 0;
+    const rawDate = document.getElementById('man-venc').value;
+    const venc = rawDate ? rawDate.split('-').reverse().join('/') : '—';
+    const nat = document.getElementById('man-nat').value.toUpperCase() || 'MANUAL';
+    if(valor <= 0) { alert('Valor inválido!'); return; }
+    state.manual.total += valor;
+    state.manual.count++;
+    if (tipo === 'totvs') {
+        const tbody = document.getElementById('tbody-totvs');
+        if (tbody.querySelector('.empty-state')) tbody.innerHTML = '';
+        state.totvs.total += valor;
+        state.totvs.count++;
+        const tr = document.createElement('tr');
+        tr.dataset.search = `manual extra ${forn} ${nat}`.toLowerCase();
+        tr.innerHTML = `
+            <td><span class="status-badge manual"><i class="ph-bold ph-hand-pointing"></i> MANUAL</span></td>
+            <td><strong>EXTRA</strong></td>
+            <td>${nat}</td>
+            <td>${forn}</td>
+            <td>${venc}</td>
+            <td class="val-col" style="color: #1e40af;">${fmtBRL(valor)}</td>
+        `;
+        tbody.insertBefore(tr, tbody.firstChild);
+    } else {
+        const tbody = document.getElementById('tbody-preview');
+        if (tbody.querySelector('.empty-state')) tbody.innerHTML = '';
+        state.preview.total += valor;
+        state.preview.count++;
+        const tr = document.createElement('tr');
+        tr.dataset.search = `manual extra ${forn} ${nat}`.toLowerCase();
+        tr.innerHTML = `
+            <td><span class="status-badge manual"><i class="ph-bold ph-hand-pointing"></i> MANUAL</span></td>
+            <td>EXTRA</td>
+            <td>${nat}</td>
+            <td>${forn}</td>
+            <td>${venc}</td>
+            <td class="val-col" style="color: #1e40af;">${fmtBRL(valor)}</td>
+        `;
+        tbody.insertBefore(tr, tbody.firstChild);
+    }
+    closeModal();
+    updateKPIs();
 }
 
-/* ── TABLE SEARCH ───────────────────────────────────────── */
+function updateKPIs() {
+    const { totvs, preview, manual } = state;
+    document.getElementById('kpi-totvs-total').innerHTML   = fmtBRL_BI(totvs.total);
+    document.getElementById('kpi-totvs-count').innerHTML     = `<i class="ph-bold ph-files"></i> ${totvs.count} títulos via Totvs`;
+    document.getElementById('kpi-preview-total').innerHTML = fmtBRL_BI(preview.total);
+    document.getElementById('kpi-preview-count').innerHTML   = `<i class="ph-bold ph-files"></i> ${preview.count} títulos pendentes`;
+    document.getElementById('kpi-manual-total').innerHTML  = fmtBRL_BI(manual.total);
+    document.getElementById('kpi-manual-count').innerHTML    = `<i class="ph-bold ph-keyboard"></i> ${manual.count} inserções`;
+}
+
 function filterTable(tbodyId, query) {
     const q  = query.toLowerCase().trim();
     document.querySelectorAll(`#${tbodyId} tr[data-search]`).forEach(tr => {
@@ -841,6 +961,5 @@ function filterTable(tbodyId, query) {
     });
 }
 </script>
-
 </body>
 </html>
