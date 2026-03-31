@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de ND - ONTIME</title>
+    <title>Gerador de ND - On Time Express</title>
     
     <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
     
@@ -20,30 +20,57 @@
 
     <style>
         /* Tipografia Padrão Solicitada */
-        body { font-family: 'Arial', sans-serif; background-color: #f3f4f6; color: #000; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f3f4f6;
+            color: #000;
+        }
+
         /* Cor da Marca On Time Express */
         .bg-brand { background-color: rgb(255, 110, 0); }
         .text-brand { color: rgb(255, 110, 0); }
         .border-brand { border-color: rgb(255, 110, 0); }
         .hover-brand:hover { background-color: rgb(204, 88, 0); }
-        
+
         /* Estilos do Papel A4 para Visualização e PDF */
-        .a4-paper { 
-            width: 210mm; min-height: 297mm; background: white; 
-            padding: 15mm; margin: 0 auto; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
-            font-size: 11pt; position: relative; 
+        .a4-paper {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            padding: 15mm;
+            margin: 0 auto;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            font-size: 11pt; /* Tamanho 11 conforme solicitado */
+            position: relative;
         }
-        
+
         /* Estilos de Tabela do PDF */
-        .nd-table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
-        .nd-table th, .nd-table td { border: 1px solid #000; padding: 6px 8px; text-align: left; font-size: 10pt; }
-        .nd-table th { background-color: #eee; font-weight: bold; text-align: center; }
-        
-        .section-title { 
-            background-color: rgb(255, 110, 0); color: white; 
-            padding: 4px 8px; font-weight: bold; margin-top: 15px; 
-            border: 1px solid #000; text-transform: uppercase; font-size: 10pt; 
+        .nd-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .nd-table th, .nd-table td {
+            border: 1px solid #000;
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 10pt;
+        }
+        .nd-table th {
+            background-color: #eee;
+            font-weight: bold;
+            text-align: center;
+        }
+        .section-title {
+            background-color: rgb(255, 110, 0);
+            color: white;
+            padding: 4px 8px;
+            font-weight: bold;
+            margin-top: 15px;
+            border: 1px solid #000;
+            text-transform: uppercase;
+            font-size: 10pt;
         }
 
         /* Esconder elementos na hora da impressão nativa do browser */
@@ -55,7 +82,10 @@
         }
 
         /* Inputs estilizados */
-        input, select, textarea { font-family: 'Arial', sans-serif; font-size: 14px; }
+        input, select, textarea {
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden">
@@ -102,13 +132,14 @@
             </div>
 
             <form id="ndForm" onsubmit="return false;">
+                
                 <div class="space-y-3 mb-6 bg-orange-50 p-4 rounded-lg border border-orange-100">
                     <h3 class="font-bold text-gray-700 text-sm"><i class="fas fa-file-invoice mr-2 text-brand"></i>Informações do Documento</h3>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1">Número ND</label>
                             <div class="flex">
-                                <input type="text" id="ndNumber" class="w-full border rounded-l p-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Automático">
+                                <input type="text" id="ndNumber" class="w-full border rounded-l p-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Automático" value="">
                                 <button onclick="document.getElementById('ndNumber').value = app.generateAutoND(); app.updatePreview()" class="bg-gray-200 border border-l-0 rounded-r px-3 text-gray-600 hover:bg-gray-300" title="Gerar Novo Número Agora">
                                     <i class="fas fa-sync-alt"></i>
                                 </button>
@@ -121,7 +152,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 mb-1">Centro de Custo / Placa</label>
-                        <input type="text" id="ccusto" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Ex: MANUTENÇÃO / ABC-1234">
+                        <input type="text" id="ccusto" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="Ex: MANUTENÇÃO / ABC-1234" value="">
                     </div>
                 </div>
 
@@ -129,30 +160,30 @@
                     <h3 class="font-bold text-gray-700 text-sm border-b pb-1">Prestador (Borracharia/Fornecedor)</h3>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 mb-1">Razão Social / Nome</label>
-                        <input type="text" id="providerName" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none uppercase" placeholder="JOÃO DA BORRACHARIA">
+                        <input type="text" id="providerName" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none uppercase" placeholder="JOÃO DA BORRACHARIA" value="">
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1">CNPJ / CPF</label>
-                            <input type="text" id="providerDoc" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="000.000.000-00" maxlength="14">
+                            <input type="text" id="providerDoc" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none" placeholder="000.000.000-00" maxlength="14" value="">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1">Telefone/Contato</label>
-                            <input type="text" id="providerPhone" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none" maxlength="15">
+                            <input type="text" id="providerPhone" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none" maxlength="15" value="">
                         </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-600 mb-1">Endereço Completo</label>
-                        <input type="text" id="providerAddress" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none uppercase" placeholder="RUA X, 123 - BAIRRO">
+                        <input type="text" id="providerAddress" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none uppercase" placeholder="RUA X, 123 - BAIRRO" value="">
                     </div>
                     <div class="grid grid-cols-3 gap-3">
                         <div class="col-span-2">
                             <label class="block text-xs font-bold text-gray-600 mb-1">Cidade</label>
-                            <input type="text" id="providerCity" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none uppercase">
+                            <input type="text" id="providerCity" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none uppercase" value="">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-600 mb-1">UF</label>
-                            <input type="text" id="providerUF" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none uppercase" maxlength="2">
+                            <input type="text" id="providerUF" class="w-full border rounded p-2 focus:ring-2 focus:ring-orange-500 outline-none uppercase" maxlength="2" value="">
                         </div>
                     </div>
                 </div>
@@ -165,7 +196,8 @@
                         </button>
                     </div>
                     
-                    <div id="itemsContainer" class="space-y-2"></div>
+                    <div id="itemsContainer" class="space-y-2">
+                        </div>
                     
                     <div class="bg-gray-100 p-3 rounded text-right">
                         <span class="text-sm font-bold text-gray-600">Total: </span>
@@ -183,6 +215,7 @@
                     </label>
                     <input type="file" id="importFile" class="hidden" onchange="app.loadBackupFromFile(this)">
                 </div>
+
             </form>
         </div>
 
@@ -203,19 +236,17 @@
 
                 <div class="mb-2">
                     <table class="w-full text-sm" style="border: none;">
-                        <tbody>
-                            <tr>
-                                <td class="font-bold w-24">Emissão:</td>
-                                <td id="view-ndDate">--/--/----</td>
-                                <td class="font-bold text-right w-32">Tipo:</td>
-                                <td class="text-right">Pagamento / Serviço </td>
-                            </tr>
-                            <tr>
-                                <td class="font-bold">C. Custo: Área</td>
-                                <td id="view-ccusto" colspan="3"></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                        <tbody><tr>
+                            <td class="font-bold w-24">Emissão:</td>
+                            <td id="view-ndDate">--/--/----</td>
+                            <td class="font-bold text-right w-32">Tipo:</td>
+                            <td class="text-right">Pagamento / Serviço </td>
+                        </tr>
+                        <tr>
+                            <td class="font-bold">C. Custo: Área</td>
+                            <td id="view-ccusto" colspan="3"></td>
+                        </tr>
+                    </tbody></table>
                 </div>
 
                 <div class="flex gap-4 mt-4">
@@ -234,7 +265,7 @@
                         <div class="section-title">TOMADOR / SOLICITANTE</div>
                         <div class="p-2 border border-t-0 border-black h-full text-sm leading-snug bg-gray-50">
                             <p class="mb-1"><span class="font-bold block text-xs text-gray-500">RAZÃO SOCIAL:</span> ON TIME EXPRESS LOGISTICA E TRANSPORTE S.A</p>
-                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">CNPJ:</span> 09.329.143/0001-16</p>
+                            <p class="mb-1"><span class="font-bold block text-xs text-gray-500">CNPJ:</span> 09.329.143.0001-16</p>
                             <p class="mb-1"><span class="font-bold block text-xs text-gray-500">ENDEREÇO:</span> ALPHAVILLE CENTRO INDUSTRIAL E EMPRESARIAL</p>
                             <p class="mb-1"><span class="font-bold block text-xs text-gray-500">CIDADE / UF:</span> BARUERI / SP</p>
                             <p class="mb-1"><span class="font-bold block text-xs text-gray-500">E-MAIL:</span> PortariaFiscal@OntimeLogistica.com.br</p>
@@ -283,6 +314,7 @@
                     Sistema Gerador de ND - Uso Interno - Controladoria - On Time Express
                 </div>
             </div>
+
         </div>
     </main>
 
@@ -306,12 +338,14 @@
     </template>
 
     <script>
+        // Configuração do App
         const app = {
             init: function() {
                 // Configurar data atual
                 document.getElementById('ndDate').valueAsDate = new Date();
-                
-                // Gerar ND Automática Inicial (Apenas se o campo estiver vazio)
+
+                // Gerar ND Automática Inicial (ddMMyyHHmm)
+                // Apenas se o campo estiver vazio (evita sobrescrever se o navegador já tiver um valor no cache do input)
                 if(!document.getElementById('ndNumber').value) {
                     document.getElementById('ndNumber').value = this.generateAutoND();
                 }
@@ -339,16 +373,18 @@
 
                 // Tentar carregar backup local automático
                 this.loadFromLocalStorage();
-                this.updatePreview();
             },
 
+            // FUNÇÃO PARA GERAR O ID AUTOMÁTICO
             generateAutoND: function() {
                 const now = new Date();
                 const d = String(now.getDate()).padStart(2, '0');
                 const m = String(now.getMonth() + 1).padStart(2, '0');
                 const y = String(now.getFullYear()).slice(-2);
+                // Pegar os últimos 2 dígitos
                 const h = String(now.getHours()).padStart(2, '0');
                 const min = String(now.getMinutes()).padStart(2, '0');
+                
                 return `${d}${m}${y}${h}${min}`;
             },
 
@@ -356,11 +392,13 @@
                 const template = document.getElementById('itemRowTemplate').content.cloneNode(true);
                 document.getElementById('itemsContainer').appendChild(template);
                 
+                // Re-aplicar máscara no novo elemento
                 $('.money').mask('#.##0,00', {reverse: true});
-                
+
+                // Adicionar listener nos novos inputs
                 const newRow = document.getElementById('itemsContainer').lastElementChild;
                 if(newRow) { 
-                     newRow.querySelectorAll('input').forEach(input => {
+                     document.querySelectorAll('.item-row:last-child input').forEach(input => {
                         input.addEventListener('input', () => {
                             this.calcTotals();
                             this.updatePreview();
@@ -398,6 +436,7 @@
             },
 
             updatePreview: function() {
+                // Mapeamento simples de IDs
                 const fields = [
                     { src: 'ndNumber', dest: 'view-ndNumber' },
                     { src: 'ccusto', dest: 'view-ccusto' },
@@ -458,6 +497,8 @@
                 this.saveToLocalStorage();
             },
 
+            // --- FUNÇÕES DE ARQUIVO E PDF ---
+
             generatePDF: function() {
                 const element = document.getElementById('printable-area');
                 const ndNum = document.getElementById('ndNumber').value || 'SEM_NUMERO';
@@ -473,7 +514,7 @@
                 const btn = document.querySelector('button[onclick="app.generatePDF()"]');
                 const oldText = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando...';
-                
+
                 html2pdf().set(opt).from(element).save().then(() => {
                     btn.innerHTML = oldText;
                 });
@@ -483,7 +524,7 @@
                 const docClone = document.documentElement.cloneNode(true);
                 const originalInputs = document.querySelectorAll('input, textarea, select');
                 const cloneInputs = docClone.querySelectorAll('input, textarea, select');
-                
+
                 originalInputs.forEach((input, index) => {
                     if (input.type === 'checkbox' || input.type === 'radio') {
                         if (input.checked) cloneInputs[index].setAttribute('checked', 'checked');
@@ -533,7 +574,7 @@
 
             setFormData: function(data) {
                 if(!data) return;
-                
+
                 document.getElementById('ndNumber').value = data.ndNumber || '';
                 document.getElementById('ndDate').value = data.ndDate || '';
                 document.getElementById('ccusto').value = data.ccusto || '';
@@ -603,7 +644,8 @@
 
             resetForm: function() {
                 if(confirm('Tem certeza que deseja limpar os dados do formulário?')) {
-                    document.getElementById('ndNumber').value = this.generateAutoND();
+                    // Limpar inputs manualmente
+                    document.getElementById('ndNumber').value = this.generateAutoND(); // GERA NOVO NÚMERO
                     document.getElementById('ccusto').value = '';
                     document.getElementById('providerName').value = '';
                     document.getElementById('providerDoc').value = '';
@@ -611,11 +653,15 @@
                     document.getElementById('providerAddress').value = '';
                     document.getElementById('providerCity').value = '';
                     document.getElementById('providerUF').value = '';
+                    
+                    // Resetar data
                     document.getElementById('ndDate').valueAsDate = new Date();
                     
+                    // Resetar itens
                     document.getElementById('itemsContainer').innerHTML = '';
                     this.addItem();
                     
+                    // Resetar totais e preview
                     this.calcTotals();
                     this.updatePreview();
                     
@@ -659,6 +705,5 @@
             }
         }
     </script>
-
 </body>
 </html>
