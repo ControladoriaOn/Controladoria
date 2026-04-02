@@ -765,8 +765,8 @@ function renderAll() {
   D.kpiTotalCount.textContent = filtered.length.toLocaleString("pt-BR");
   D.kpiTotalValue.textContent = fm
 /* ══ RENDER ALL — continuação ════════════════════════════════ */
-  D.kpiTotalValue.textContent = fmtCur(total);
-  D.kpiTotvsSub.textContent   = `${S.totvs.length} Totvs · ${S.previa.length} Prévia`;
+  tCur(total);
+  D.kpiTotvsSub.textContent = `${S.totvs.length} Totvs · ${S.previa.length} Prévia`;
 
   renderApprovers(filtered);
   renderTotvsTable(filtered.filter(r => r.isTotvs));
@@ -783,9 +783,7 @@ function renderApprovers(filtered) {
   filtered.forEach(r => {
     if (!r.isTotvs) {
       hasPrevia = true;
-      if (r.aprovador && r.aprovador !== "-") {
-        map[r.aprovador] = (map[r.aprovador] || 0) + r.valor;
-      }
+      if (r.aprovador && r.aprovador !== "-") map[r.aprovador] = (map[r.aprovador] || 0) + r.valor;
     }
   });
   const list = Object.entries(map).map(([n,v]) => ({n,v})).sort((a,b) => b.v - a.v);
@@ -811,7 +809,7 @@ function renderApprovers(filtered) {
   });
 }
 
-/* ══ TABELA TOTVS ════════════════════════════════════════════ */
+/* ══ TABELA TOTVS ═════════════════════════════════════════════ */
 function renderTotvsTable(records) {
   clearEl(D.tbodyTotvs);
   if (!records.length) {
@@ -836,7 +834,7 @@ function renderTotvsTable(records) {
   });
 }
 
-/* ══ TABELA PRÉVIA ═══════════════════════════════════════════ */
+/* ══ TABELA PRÉVIA ════════════════════════════════════════════ */
 function renderPreviewTable(records) {
   clearEl(D.tbodyPreview);
   if (!records.length) {
@@ -862,27 +860,27 @@ function renderPreviewTable(records) {
   });
 }
 
-/* ══ SEARCH ══════════════════════════════════════════════════ */
+/* ══ SEARCH ═══════════════════════════════════════════════════ */
 function applySearch(type) {
-  const isT       = type === "totvs";
-  const tbody     = isT ? D.tbodyTotvs    : D.tbodyPreview;
-  const input     = isT ? D.searchTotvs   : D.searchPreview;
-  const footCount = isT ? D.footTotvsCount : D.footPrevCount;
-  const footTotal = isT ? D.footTotvsTotal : D.footPrevTotal;
+  const isT   = type === "totvs";
+  const tbody = isT ? D.tbodyTotvs    : D.tbodyPreview;
+  const input = isT ? D.searchTotvs   : D.searchPreview;
+  const fCount= isT ? D.footTotvsCount: D.footPrevCount;
+  const fTotal= isT ? D.footTotvsTotal: D.footPrevTotal;
   const rows  = Array.from(tbody.querySelectorAll("tr[data-search]"));
-  const query = input.value.toLowerCase().trim();
-  if (!rows.length) { footCount.textContent = "0 registros"; footTotal.textContent = fmtCur(0); return; }
+  const q     = input.value.toLowerCase().trim();
+  if (!rows.length) { fCount.textContent = "0 registros"; fTotal.textContent = fmtCur(0); return; }
   let cnt = 0, tot = 0;
   rows.forEach(row => {
-    const show = !query || row.dataset.search.includes(query);
+    const show = !q || row.dataset.search.includes(q);
     row.style.display = show ? "" : "none";
     if (show) { cnt++; tot += Number(row.dataset.value || 0); }
   });
-  footCount.textContent = `${cnt} de ${rows.length} registro(s)`;
-  footTotal.textContent = fmtCur(tot);
+  fCount.textContent = `${cnt} de ${rows.length} registro(s)`;
+  fTotal.textContent = fmtCur(tot);
 }
 
-/* ══ CHARTS ══════════════════════════════════════════════════ */
+/* ══ CHARTS ═══════════════════════════════════════════════════ */
 function txtColor()  { return document.documentElement.dataset.theme === "dark" ? "#9ca3af" : "#374151"; }
 function gridColor() { return document.documentElement.dataset.theme === "dark" ? "#2a2e40" : "#f1f5f9"; }
 
@@ -896,50 +894,40 @@ function initCharts() {
 }
 
 function updateCharts(all, filtered) {
-  updateNaturezaChart(all);
-  updatePrevisaoChart(filtered);
-  updateStatusChart(filtered);
-}
-
-function updateNaturezaChart(all) {
+  /* Natureza */
   const map = {};
-  all.forEach(r => { map[r.naturezaFinal] = (map[r.naturezaFinal] || 0) + r.valor; });
+  all.forEach(i => { map[i.naturezaFinal] = (map[i.naturezaFinal] || 0) + i.valor; });
   const arr = Object.entries(map).map(([x,y]) => ({x,y})).sort((a,b) => b.y - a.y).slice(0, 15);
   S.charts.natureza.updateSeries([{ data: arr }], false);
   S.charts.natureza.updateOptions({ xaxis: { categories: arr.map(i => i.x) } }, false, true, false);
-}
 
-function updatePrevisaoChart(filtered) {
+  /* Previsão */
   let hoje = 0, amanha = 0;
-  filtered.forEach(r => {
-    if (r.vencimento === DATE_CTX.strHoje)   hoje   += r.valor;
-    else if (r.vencimento === DATE_CTX.strAmanha) amanha += r.valor;
+  filtered.forEach(i => {
+    if (i.vencimento === DATE_CTX.strHoje) hoje += i.valor;
+    else if (i.vencimento === DATE_CTX.strAmanha) amanha += i.valor;
   });
   S.charts.previsao.updateSeries([{ name: "Valor", data: [hoje, amanha] }], false);
-}
 
-function updateStatusChart(filtered) {
+  /* Status */
   let aprovado = 0, pendente = 0;
-  filtered.forEach(r => {
-    if (!r.isTotvs) {
-      if (r.aprovador && r.aprovador !== "-") pendente += r.valor;
-      else aprovado += r.valor;
+  filtered.forEach(i => {
+    if (!i.isTotvs) {
+      if (i.aprovador && i.aprovador !== "-") pendente += i.valor;
+      else aprovado += i.valor;
     }
   });
-  const total = aprovado + pendente, hasData = total > 0;
+  const hasData = (aprovado + pendente) > 0;
   S.charts.status.updateSeries(hasData ? [aprovado, pendente] : [1, 0], false);
   S.charts.status.updateOptions({ labels: hasData ? ["Aprovados", "Pendentes"] : ["Sem dados", ""] }, false, true, false);
 }
 
-/* ══ CHART OPTIONS ═══════════════════════════════════════════ */
 function optNatureza() {
   return {
     series: [{ data: [] }],
     chart: {
-      type: "bar", height: 360,
-      toolbar: { show: false },
-      animations: { speed: 280 },
-      background: "transparent",
+      type: "bar", height: 360, toolbar: { show: false },
+      animations: { speed: 280 }, background: "transparent",
       events: {
         dataPointSelection: (_e, _ctx, cfg) => {
           const point = cfg.w.config.series[0].data[cfg.dataPointIndex];
