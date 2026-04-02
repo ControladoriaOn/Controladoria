@@ -79,7 +79,6 @@
     .date-badge{background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap}
     .sync-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);transition:all var(--transition);white-space:nowrap;cursor:pointer}
     .sync-btn:hover{border-color:var(--green);color:#059669;background:var(--green-soft)}
-    .sync-btn i{font-size:15px}
     .sync-btn.syncing i{animation:spin 0.8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .theme-toggle{width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-2);transition:all var(--transition)}
@@ -648,9 +647,10 @@ async function loadAll(manual) {
     console.error(e);
     D.loadingOverlay.classList.remove("show");
     D.errorBanner.classList.add("show");
-    D.errorMsg.textContent = `${e.message} — Certifique-se que a planilha está publicada em Arquivo → Compartilhar → Publicar na web.`;
+    // Mensagem de erro mais específica para o usuário
+    D.errorMsg.textContent = `${e.message} — Verifique o console do navegador para detalhes.`;
     setSyncState("error", "Erro ao carregar", e.message.slice(0, 50));
-    if (manual) showToast("error", "Falha ao carregar", "Verifique se a planilha está publicada publicamente.");
+    if (manual) showToast("error", "Falha ao carregar", "Verifique o console do navegador para mais informações.");
   }
 }
 
@@ -658,10 +658,39 @@ async function loadAll(manual) {
 async function fetchSheet(name) {
   const res = await fetch(sheetUrl(name));
   if (!res.ok) throw new Error(`HTTP ${res.status} — aba "${name}"`);
+
   const text = await res.text();
-  const clean = text.replace(/^\/\*O_o\*\/\s*google\.visualization\.Query\.setResponse|$/, "").replace(/$|;\s*$/, "");
-  const json = JSON.parse(clean);
-  if (json.status === "error") throw new Error(json.errors?.[0]?.detailed_message || `Erro na aba "${name}"`);
+
+  // Remove o wrapper do gviz de forma segura
+  const prefix = "google.visualization.Query.setResponse(";
+  const prefixIndex = text.indexOf(prefix);
+
+  if (prefixIndex === -1) {
+    // Não veio no formato esperado – mostra primeiro pedaço para debug
+    throw new Error(`Resposta inesperada da planilha "${name}" (prefixo não encontrado)`);
+  }
+
+  const start = prefixIndex + prefix.length;
+  const end   = text.lastIndexOf(");");
+
+  if (end === -1 || end <= start) {
+    throw new Error(`Conteúdo JSON não encontrado na aba "${name}" (sufixo não encontrado)`);
+  }
+
+  const jsonStr = text.substring(start, end).trim();
+
+  let json;
+  try {
+    json = JSON.parse(jsonStr);
+  } catch (err) {
+    console.error("Erro ao fazer JSON.parse da aba", name, err, jsonStr.slice(0, 200));
+    throw new Error(`Falha ao interpretar dados da aba "${name}" (JSON inválido)`);
+  }
+
+  if (json.status === "error") {
+    throw new Error(json.errors?.[0]?.detailed_message || `Erro na aba "${name}"`);
+  }
+
   return json.table;
 }
 
@@ -725,7 +754,7 @@ function parsePrevia(table) {
   const iId     = findCol(h,["ID"]);
   const iTit    = findCol(h,["N. TITULO","N. NF","TITULO"]);
   const iNat    = findCol(h,["NATUREZA","COD. NAT","CÓD. NATUREZA"]);
-  const iForn   = findCol(h,["DESC FORNECEDOR","FORNE NOVO","FORNECEDOR"]);
+  const iForn   = findCol(h,["DESC FORNECEDOR","FORNEC NOVO","FORNECEDOR"]);
   const iVal    = findCol(h,["VALOR TOTAL SERVICO","VALOR TOTAL","VALOR"]);
   const iVenc   = findCol(h,["VENCIMENTO"]);
   const iAprov  = findCol(h,["APROVADOR"]);
@@ -763,9 +792,7 @@ function renderAll() {
 
   const total = filtered.reduce((a,r) => a + r.valor, 0);
   D.kpiTotalCount.textContent = filtered.length.toLocaleString("pt-BR");
-  D.kpiTotalValue.textContent = fm
-/* ══ RENDER ALL — continuação ════════════════════════════════ */
-  tCur(total);
+  D.kpiTotalValue.textContent = fmtCur(total);
   D.kpiTotvsSub.textContent = `${S.totvs.length} Totvs · ${S.previa.length} Prévia`;
 
   renderApprovers(filtered);
