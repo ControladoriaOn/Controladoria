@@ -70,7 +70,6 @@
             gap: 14px;
         }
 
-        /* Estilo da Imagem do Mascote no Hub */
         .brand-img {
             width: 44px;
             height: 44px;
@@ -90,13 +89,7 @@
 
         .brand-name span {
             color: var(--orange);
-            margin-left: -3px; /* Aproxima o TIME do ON */
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            margin-left: -3px;
         }
 
         .header-pill {
@@ -117,26 +110,6 @@
             padding: 56px 48px 48px;
             position: relative;
             overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -60px; right: -60px;
-            width: 320px; height: 320px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,110,0,0.18) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .hero::after {
-            content: '';
-            position: absolute;
-            bottom: -80px; left: 30%;
-            width: 240px; height: 240px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,140,51,0.10) 0%, transparent 70%);
-            pointer-events: none;
         }
 
         .hero-content {
@@ -162,8 +135,6 @@
             margin-bottom: 20px;
         }
 
-        .hero-label i { font-size: 13px; }
-
         .hero h1 {
             font-family: var(--font-display);
             font-size: clamp(28px, 4vw, 42px);
@@ -186,7 +157,6 @@
             margin-bottom: 32px;
         }
 
-        /* Stats Row */
         .stats-row {
             display: flex;
             gap: 24px;
@@ -207,11 +177,6 @@
         .stat-chip i {
             font-size: 18px;
             color: var(--orange);
-        }
-
-        .stat-chip-info {
-            display: flex;
-            flex-direction: column;
         }
 
         .stat-num {
@@ -238,7 +203,6 @@
             width: 100%;
         }
 
-        /* Toolbar */
         .toolbar {
             display: flex;
             align-items: center;
@@ -281,9 +245,6 @@
             box-shadow: 0 0 0 3px rgba(255,110,0,0.12);
         }
 
-        .search-input::placeholder { color: var(--text-3); }
-
-        /* Section Label */
         .section-label {
             font-size: 11px;
             font-weight: 700;
@@ -293,14 +254,12 @@
             margin-bottom: 16px;
         }
 
-        /* ─── GRID ───────────────────────────────────────────── */
         .tools-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 24px;
         }
 
-        /* ─── CARD ───────────────────────────────────────────── */
         .tool-card {
             background: var(--surface);
             border: 1.5px solid var(--border);
@@ -318,24 +277,9 @@
             animation: cardIn 0.4s ease both;
         }
 
-        .tool-card:nth-child(1) { animation-delay: 0.05s; }
-        .tool-card:nth-child(2) { animation-delay: 0.10s; }
-        .tool-card:nth-child(3) { animation-delay: 0.15s; }
-        .tool-card:nth-child(4) { animation-delay: 0.20s; }
-
         @keyframes cardIn {
             from { opacity: 0; transform: translateY(18px); }
             to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .tool-card::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: var(--radius);
-            background: linear-gradient(135deg, rgba(255,110,0,0.03), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
         }
 
         .tool-card:hover {
@@ -344,9 +288,6 @@
             border-color: var(--orange);
         }
 
-        .tool-card:hover::after { opacity: 1; }
-
-        /* Accent top bar */
         .card-accent {
             position: absolute;
             top: 0; left: 0; right: 0;
@@ -443,13 +384,6 @@
             50% { box-shadow: 0 0 0 5px rgba(34,197,94,0.08); }
         }
 
-        .status-dot.offline { color: var(--text-3); }
-        .status-dot.offline .dot {
-            background: var(--border-strong);
-            box-shadow: none;
-            animation: none;
-        }
-
         .btn-access {
             display: flex;
             align-items: center;
@@ -462,16 +396,12 @@
 
         .tool-card:hover .btn-access { gap: 8px; }
 
-        /* Empty state */
         .empty-state {
             grid-column: 1 / -1;
             text-align: center;
             padding: 60px 20px;
             color: var(--text-3);
         }
-
-        .empty-state i { font-size: 48px; margin-bottom: 12px; display: block; }
-        .empty-state p { font-size: 15px; }
 
         /* ─── FOOTER ─────────────────────────────────────────── */
         footer {
@@ -530,14 +460,14 @@
             <div class="stat-chip">
                 <i class="ph-fill ph-stack"></i>
                 <div class="stat-chip-info">
-                    <span class="stat-num" id="total-count">4</span>
+                    <span class="stat-num" id="total-count">5</span>
                     <span class="stat-label">Ferramentas</span>
                 </div>
             </div>
             <div class="stat-chip">
                 <i class="ph-fill ph-check-circle"></i>
                 <div class="stat-chip-info">
-                    <span class="stat-num" id="active-count">4</span>
+                    <span class="stat-num" id="active-count">5</span>
                     <span class="stat-label">Online</span>
                 </div>
             </div>
@@ -564,7 +494,7 @@
 
     <div class="tools-grid" id="grid">
 
-        <a href="./Comparativo/" class="tool-card" data-category="Análise" data-title="Comparativo RB / Custo">
+        <a href="./Comparativo/" class="tool-card" data-title="Comparativo RB / Custo">
             <div class="card-accent"></div>
             <div class="card-header">
                 <div class="card-icon"><i class="ph-fill ph-scales"></i></div>
@@ -578,7 +508,7 @@
             </div>
         </a>
 
-        <a href="./Tabulador/" class="tool-card" data-category="Tabulação" data-title="Tabulador RVBALANCE">
+        <a href="./Tabulador/" class="tool-card" data-title="Tabulador RVBALANCE">
             <div class="card-accent"></div>
             <div class="card-header">
                 <div class="card-icon"><i class="ph-fill ph-table"></i></div>
@@ -592,7 +522,7 @@
             </div>
         </a>
 
-        <a href="./DRE/" class="tool-card" data-category="Relatório" data-title="DRE Totvs">
+        <a href="./DRE/" class="tool-card" data-title="DRE Totvs">
             <div class="card-accent"></div>
             <div class="card-header">
                 <div class="card-icon"><i class="ph-fill ph-chart-pie-slice"></i></div>
@@ -606,7 +536,7 @@
             </div>
         </a>
 
-        <a href="./Emissor/" class="tool-card" data-category="Operacional" data-title="Emissor de ND">
+        <a href="./Emissor/" class="tool-card" data-title="Emissor de ND">
             <div class="card-accent"></div>
             <div class="card-header">
                 <div class="card-icon"><i class="ph-fill ph-receipt"></i></div>
@@ -614,6 +544,20 @@
             </div>
             <h3 class="card-title">Emissor de ND</h3>
             <p class="card-desc">Geração rápida, padronizada e controle eficiente de Notas de Débito (ND).</p>
+            <div class="card-footer">
+                <span class="status-dot"><span class="dot"></span> Online</span>
+                <span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span>
+            </div>
+        </a>
+
+        <a href="./Pagamentos/" class="tool-card" data-title="Pagamentos Diários">
+            <div class="card-accent"></div>
+            <div class="card-header">
+                <div class="card-icon"><i class="ph-fill ph-currency-circle-dollar"></i></div>
+                <span class="card-category">Financeiro</span>
+            </div>
+            <h3 class="card-title">Pagamentos Diários</h3>
+            <p class="card-desc">Acompanhamento e controle ágil de saídas, reembolsos e pagamentos diários.</p>
             <div class="card-footer">
                 <span class="status-dot"><span class="dot"></span> Online</span>
                 <span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span>
@@ -641,7 +585,6 @@
             const title = card.dataset.title.toLowerCase();
             const desc = card.querySelector('.card-desc').textContent.toLowerCase();
 
-            // Se o título ou a descrição incluírem o texto digitado, mostra o card
             if (title.includes(query) || desc.includes(query)) {
                 card.style.display = '';
                 visible++;
@@ -650,11 +593,9 @@
             }
         });
 
-        // Limpar a mensagem de "vazio" anterior (se houver)
         const existing = grid.querySelector('.empty-state');
         if (existing) existing.remove();
 
-        // Mostrar a mensagem de "vazio" se nada for encontrado
         if (visible === 0) {
             grid.insertAdjacentHTML('beforeend', `
                 <div class="empty-state">
@@ -665,10 +606,8 @@
         }
     }
 
-    // Ouve a digitação na barra de pesquisa
     searchInput.addEventListener('input', searchCards);
 
-    // Live clock for last update
     const yearEl = document.getElementById('last-update');
     yearEl.textContent = new Date().getFullYear();
 </script>
