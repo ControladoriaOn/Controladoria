@@ -93,6 +93,7 @@
     .sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--sidebar-bg);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:200;transition:transform var(--transition);overflow:hidden;border-right:1px solid rgba(255,255,255,0.06);box-shadow:inset -1px 0 0 rgba(255,255,255,0.03)}
     .sidebar::after{content:"";position:absolute;inset:auto -50px -120px auto;width:220px;height:220px;background:radial-gradient(circle, rgba(255,110,0,0.16) 0%, rgba(255,110,0,0) 68%);pointer-events:none}
     .sidebar-brand{min-height:var(--header-h);padding:0 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0}
+    
     .mascot-wrap{width:38px;height:38px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.10);border:1.5px solid rgba(255,255,255,0.14);box-shadow:0 0 18px rgba(255,110,0,0.18);flex-shrink:0}
     .mascot-wrap img{width:100%;height:100%;object-fit:cover;display:block}
     .brand-name{font-family:var(--font-display);font-size:17px;font-weight:800;color:#fff;letter-spacing:0.8px}
@@ -130,6 +131,7 @@
     .theme-toggle:hover{color:var(--orange);border-color:var(--orange);background:var(--orange-soft)}
 
     .main{padding:32px;max-width:1680px;width:100%;margin:0 auto}
+   
     .view-section{display:none;animation:fadeUp .3s ease}
     .view-section.active{display:block}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
@@ -170,6 +172,7 @@
     .k-purple .kpi-icon{background:linear-gradient(180deg,var(--purple-soft) 0%, rgba(60,0,60,0.12) 100%);color:var(--purple)}
     .k-orange .kpi-icon{background:linear-gradient(180deg,var(--orange-soft) 0%, rgba(255,110,0,0.14) 100%);color:var(--orange-dark)}
     [data-theme="dark"] .k-orange .kpi-icon{color:var(--orange)}
+    
     .kpi-content{flex:1;min-width:0}
     .kpi-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text-2);margin-bottom:6px}
     .kpi-value{font-family:var(--font-display);font-size:clamp(24px,2.5vw,32px);font-weight:800;line-height:1.1;overflow:hidden;text-overflow:ellipsis}
@@ -189,6 +192,7 @@
     .filter-text small{color:var(--text-2);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
     .filter-name-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .filter-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:linear-gradient(135deg,var(--orange) 0%, #e06000 100%);color:#fff;border-radius:999px;font-size:12px;font-weight:800;box-shadow:0 8px 18px rgba(255,110,0,0.18)}
+    
     .btn-secondary{display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;color:var(--text-1);background:var(--surface);border:1px solid var(--border);transition:all var(--transition);box-shadow:var(--shadow-xs)}
     .btn-secondary:hover{background:var(--surface-2);color:var(--purple);border-color:var(--purple-soft-2)}
 
@@ -209,6 +213,7 @@
     .chart-kicker{display:inline-flex;align-items:center;gap:6px;width:max-content;padding:5px 10px;border-radius:999px;background:var(--surface-3);color:var(--text-2);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;border:1px solid transparent}
     .chart-card.chart-primary .chart-kicker,.chart-card.chart-status .chart-kicker{background:var(--purple-soft);border-color:var(--purple-soft-2);color:var(--purple-strong)}
     .chart-card.chart-highlight .chart-kicker{background:var(--orange-soft);border-color:var(--orange-soft-2);color:var(--orange-dark)}
+    
     .chart-card.chart-approvers .chart-kicker{background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.16);color:#dc2626}
     [data-theme="dark"] .chart-card.chart-highlight .chart-kicker{color:var(--orange)}
     [data-theme="dark"] .chart-card.chart-primary .chart-kicker,[data-theme="dark"] .chart-card.chart-status .chart-kicker{color:var(--purple)}
@@ -228,6 +233,7 @@
 
     .table-section{margin-bottom:24px;overflow:hidden;border-radius:16px}
     .table-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;background:linear-gradient(180deg,var(--surface) 0%, var(--surface-2) 100%)}
+ 
     .th-left h2{font-family:var(--font-display);font-size:16px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px}
     .th-left h2.purple{color:var(--purple-strong)}
     .th-left h2.orange{color:var(--orange-dark)}
@@ -245,6 +251,7 @@
     table.data-table th{padding:14px 16px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.55px;background:var(--surface-2);color:var(--text-2);border-bottom:1px solid var(--border);text-align:left}
     table.data-table td{padding:14px 16px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle;background:var(--surface);transition:background var(--transition)}
     table.data-table tr:hover td{background:var(--surface-2)}
+  
     .orig-badge{display:inline-flex;padding:4px 10px;border-radius:999px;font-size:10.5px;font-weight:800;background:var(--surface-3);color:var(--text-1);text-transform:uppercase;border:1px solid var(--border)}
     .empty-state td{text-align:center;padding:60px 20px;color:var(--text-3);font-size:14px}
     .empty-state i{font-size:28px;display:block;margin-bottom:12px;opacity:.5}
@@ -283,6 +290,10 @@
       <button type="button" class="nav-link" data-view="reports" aria-pressed="false">
         <i class="ph ph-table"></i><span>Relatórios Detalhados</span>
       </button>
+      
+      <a href="../" class="nav-link" id="btn-back-hub" style="margin-top: auto;" title="Voltar ao Hub">
+        <i class="ph ph-arrow-left"></i><span>Voltar ao Hub</span>
+      </a>
     </nav>
     <div class="sync-badge">
       <div class="sync-dot loading" id="sync-dot"></div>
@@ -505,6 +516,19 @@
 
 <script>
 "use strict";
+
+// ─── BOTÃO VOLTAR INTELIGENTE ───
+(function initBackButton() {
+    const btn = document.getElementById('btn-back-hub');
+    const referrer = document.referrer;
+    const currentHost = window.location.hostname;
+    
+    // Oculta o botão se o utilizador aceder por link direto ou de outro domínio
+    if (btn && (!referrer || !referrer.includes(currentHost))) {
+        btn.style.display = 'none';
+    }
+})();
+
 /* CONFIG */
 const SHEET_ID        = "1RpTnINmHO3--7JvCMrN5_GU4eo6T9Kdc7lxJhZgCJTw";
 const SHEET_TOTVS     = "Totvs_Historico";
@@ -601,9 +625,13 @@ const PAGE_TITLES = {
 
 function bindNav() {
   D.navLinks.forEach(btn => btn.addEventListener("click", () => {
+    // Ignorar comportamento se for o botão de voltar ao hub (ele tem href)
+    if(btn.id === 'btn-back-hub') return;
+    
     const v = btn.dataset.view;
     D.views.forEach(s => s.classList.toggle("active", s.id === `view-${v}`));
     D.navLinks.forEach(b => {
+      if(b.id === 'btn-back-hub') return;
       b.classList.toggle("active", b.dataset.view === v);
       b.setAttribute("aria-pressed", b.dataset.view === v ? "true" : "false");
     });
@@ -702,7 +730,8 @@ async function fetchSheet(name) {
   if (end === -1 || end <= start) throw new Error(`Sem JSON na aba "${name}"`);
   const jsonStr = text.substring(start, end).trim();
   let json;
-  try { json = JSON.parse(jsonStr); } catch (err) { throw new Error(`JSON inválido: "${name}"`); }
+  try { json = JSON.parse(jsonStr); } catch (err) { throw new Error(`JSON inválido: "${name}"`);
+  }
   if (json.status === "error") throw new Error(json.errors?.[0]?.detailed_message || `Erro "${name}"`);
   return json.table;
 }
@@ -757,7 +786,8 @@ function parseTotvs(table) {
     return {
       isTotvs: true, origem: "Totvs", dataImport: get(iData) || "-", prefixoId: get(iPref) || "-",
       nTitulo: get(iTit) || "-", naturezaFinal: (get(iNat) || "S/N").toUpperCase(),
-      fornecedorNome: get(iForn) || "-", vencimento: get(iVenc) || "-", valor
+      fornecedorNome: get(iForn) || "-", vencimento: get(iVenc) || "-", 
+      valor
     };
   }).filter(r => r.valor > 0 && r.nTitulo !== "-");
 }
@@ -767,7 +797,8 @@ function parsePrevia(table) {
   const h = gvizLabels(table);
   const iOrigem = findCol(h,["ORIGEM"]); const iId = findCol(h,["ID"]);
   const iTit = findCol(h,["N. TITULO","N. NF","TITULO"]); const iNat = findCol(h,["NATUREZA","COD. NAT","CÓD. NATUREZA"]);
-  const iForn = findCol(h,["DESC FORNECEDOR","FORNEC NOVO","FORNECEDOR"]); const iVal = findCol(h,["VALOR TOTAL SERVICO","VALOR TOTAL","VALOR"]);
+  const iForn = findCol(h,["DESC FORNECEDOR","FORNEC NOVO","FORNECEDOR"]);
+  const iVal = findCol(h,["VALOR TOTAL SERVICO","VALOR TOTAL","VALOR"]);
   const iVenc = findCol(h,["VENCIMENTO"]); const iAprov = findCol(h,["APROVADOR"]);
   return (table.rows || []).map(row => {
     const c = row.c || []; const get = i => i >= 0 ? gvizVal(c[i]) : "";
@@ -817,9 +848,10 @@ function renderApprovers(filtered) {
     }
   });
   const list = Object.entries(map).map(([n,d]) => ({n, valor:d.valor, count:d.count})).sort((a,b) => b.valor - a.valor);
-  
-  if (!hasPrevia) { D.tbodyApprovers.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-3);padding:24px;">Sem prévia carregada.</td></tr>`; return; }
-  if (!list.length) { D.tbodyApprovers.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--green);padding:24px;">✓ Tudo Aprovado</td></tr>`; return; }
+  if (!hasPrevia) { D.tbodyApprovers.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-3);padding:24px;">Sem prévia carregada.</td></tr>`; return;
+  }
+  if (!list.length) { D.tbodyApprovers.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--green);padding:24px;">✓ Tudo Aprovado</td></tr>`; return;
+  }
 
   list.forEach(({n,valor,count}) => {
     const tr = document.createElement("tr");
@@ -830,7 +862,8 @@ function renderApprovers(filtered) {
 
 function renderTotvsTable(records) {
   clearEl(D.tbodyTotvs);
-  if (!records.length) { D.tbodyTotvs.innerHTML = `<tr class="empty-state"><td colspan="7">Sem dados</td></tr>`; return; }
+  if (!records.length) { D.tbodyTotvs.innerHTML = `<tr class="empty-state"><td colspan="7">Sem dados</td></tr>`; return;
+  }
   records.forEach(r => {
     const tr = document.createElement("tr");
     tr.dataset.search = [r.dataImport, r.prefixoId, r.nTitulo, r.naturezaFinal, r.fornecedorNome].join(" ").toLowerCase();
@@ -842,7 +875,8 @@ function renderTotvsTable(records) {
 
 function renderPreviewTable(records) {
   clearEl(D.tbodyPreview);
-  if (!records.length) { D.tbodyPreview.innerHTML = `<tr class="empty-state"><td colspan="8">Sem dados</td></tr>`; return; }
+  if (!records.length) { D.tbodyPreview.innerHTML = `<tr class="empty-state"><td colspan="8">Sem dados</td></tr>`; return;
+  }
   records.forEach(r => {
     const tr = document.createElement("tr");
     tr.dataset.search = [r.origem, r.prefixoId, r.nTitulo, r.naturezaFinal, r.fornecedorNome, r.aprovador].join(" ").toLowerCase();
@@ -860,7 +894,8 @@ function applySearch(type) {
   const fTotal= isT ? D.footTotvsTotal: D.footPrevTotal;
   const rows = Array.from(tbody.querySelectorAll("tr[data-search]"));
   const q = input.value.toLowerCase().trim();
-  if (!rows.length) { fCount.textContent = "0 registros"; fTotal.textContent = fmtCurSemCentavos(0); return; }
+  if (!rows.length) { fCount.textContent = "0 registros"; fTotal.textContent = fmtCurSemCentavos(0); return;
+  }
   let cnt = 0, tot = 0;
   rows.forEach(row => {
     const show = !q || row.dataset.search.includes(q);
@@ -871,8 +906,10 @@ function applySearch(type) {
 }
 
 /* CHARTS Configuración ONTIME Brand */
-function txtColor()  { return document.documentElement.dataset.theme === "dark" ? "#cbd5e1" : "#475467"; }
-function gridColor() { return document.documentElement.dataset.theme === "dark" ? "#324156" : "#e4e7ec"; }
+function txtColor()  { return document.documentElement.dataset.theme === "dark" ?
+"#cbd5e1" : "#475467"; }
+function gridColor() { return document.documentElement.dataset.theme === "dark" ? "#324156" : "#e4e7ec";
+}
 
 function initCharts() {
   S.charts.natureza = new ApexCharts(document.getElementById("chart-natureza"), optNatureza());
@@ -953,8 +990,11 @@ function optStatus() {
     chart: { type: "donut", height: 320, background: "transparent", foreColor: txtColor() },
     colors: ["#ff6e00", "#3c003c"],
     stroke: { width: 0 },
-    dataLabels: { enabled: true, formatter: (val, opts) => { const label = opts.w.globals.labels[opts.seriesIndex]; return (!label || label === "Sem dados") ? "" : `${val.toFixed(1)}%`; }, style: { fontSize: "13px", fontWeight: "bold", colors: ["#fff"] }, dropShadow: { enabled: false } },
-    plotOptions: { pie: { donut: { size: "76%", labels: { show: true, name: { offsetY: 20, color: txtColor(), fontSize: "12px", fontWeight: 700 }, value: { offsetY: -10, color: txtColor(), fontSize: "24px", fontWeight: 800, formatter: val => fmtCurSemCentavos(val) }, total: { show: true, label: "Volume base", color: txtColor(), fontSize: "12px", fontWeight: 700, formatter: w => { const t = w.globals.seriesTotals.reduce((a,b)=>a+b,0); return t <= 1 ? "Sem dados" : fmtCur(t); } } } } } },
+    dataLabels: { enabled: true, formatter: (val, opts) => { const label = opts.w.globals.labels[opts.seriesIndex];
+    return (!label || label === "Sem dados") ? "" : `${val.toFixed(1)}%`;
+    }, style: { fontSize: "13px", fontWeight: "bold", colors: ["#fff"] }, dropShadow: { enabled: false } },
+    plotOptions: { pie: { donut: { size: "76%", labels: { show: true, name: { offsetY: 20, color: txtColor(), fontSize: "12px", fontWeight: 700 }, value: { offsetY: -10, color: txtColor(), fontSize: "24px", fontWeight: 800, formatter: val => fmtCurSemCentavos(val) }, total: { show: true, label: "Volume base", color: txtColor(), fontSize: "12px", fontWeight: 700, formatter: w => { const t = w.globals.seriesTotals.reduce((a,b)=>a+b,0);
+    return t <= 1 ? "Sem dados" : fmtCur(t); } } } } } },
     legend: { position: "bottom", fontSize: "12px", fontWeight: 700, markers: { width: 10, height: 10, radius: 10 }, itemMargin: { horizontal: 10, vertical: 4 } },
     tooltip: { enabled: false }
   };
