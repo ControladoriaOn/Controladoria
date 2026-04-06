@@ -4,13 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ONTIME | Painel Financeiro de Pagamentos</title>
-  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
-  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <!-- Ícones Phosphor Icons - Carregamento assíncrono para não bloquear a renderização inicial -->
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.1" async></script>
+  <!-- ApexCharts - Carregamento assíncrono -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts" async></script>
+  <!-- Pré-conexão para fontes do Google para otimizar o carregamento -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Fontes Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  
+
   <style>
+    /* Variáveis CSS para temas claro e escuro */
     :root {
       --purple:#3c003c;
       --purple-strong:#2b002b;
@@ -75,12 +80,14 @@
       --shadow-md:0 18px 38px rgba(0,0,0,0.34),0 6px 14px rgba(0,0,0,0.24);
     }
 
+    /* Reset CSS básico */
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html{scroll-behavior:smooth}
     body{font-family:var(--font-body);background:radial-gradient(circle at top right, rgba(255,110,0,0.04), transparent 24%),linear-gradient(180deg,var(--bg) 0%, var(--bg) 100%);color:var(--text-1);min-height:100vh;transition:background var(--transition),color var(--transition)}
     button,input,select,textarea{font:inherit}
     button{cursor:pointer;border:none;background:none}
     a{color:inherit;text-decoration:none}
+    /* Estilos da barra de rolagem */
     ::-webkit-scrollbar{width:7px;height:7px}
     ::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:999px}
@@ -88,12 +95,13 @@
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
     .app-container{display:flex;min-height:100vh}
 
+    /* Estilos do Sidebar e Overlay */
     .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(16,24,40,0.5);backdrop-filter:blur(4px);z-index:199}
     .sidebar-overlay.show{display:block}
     .sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--sidebar-bg);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:200;transition:transform var(--transition);overflow:hidden;border-right:1px solid rgba(255,255,255,0.06);box-shadow:inset -1px 0 0 rgba(255,255,255,0.03)}
     .sidebar::after{content:"";position:absolute;inset:auto -50px -120px auto;width:220px;height:220px;background:radial-gradient(circle, rgba(255,110,0,0.16) 0%, rgba(255,110,0,0) 68%);pointer-events:none}
     .sidebar-brand{min-height:var(--header-h);padding:0 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0}
-    
+
     .mascot-wrap{width:38px;height:38px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,0.10);border:1.5px solid rgba(255,255,255,0.14);box-shadow:0 0 18px rgba(255,110,0,0.18);flex-shrink:0}
     .mascot-wrap img{width:100%;height:100%;object-fit:cover;display:block}
     .brand-name{font-family:var(--font-display);font-size:17px;font-weight:800;color:#fff;letter-spacing:0.8px}
@@ -113,6 +121,7 @@
     .user-name{font-size:13.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .user-role{font-size:11.5px;color:rgba(255,255,255,0.56)}
 
+    /* Estilos do Conteúdo Principal e Header */
     .content-wrapper{flex:1;min-width:0;display:flex;flex-direction:column}
     .header{background:rgba(255,255,255,0.78);backdrop-filter:blur(10px);border-bottom:1px solid rgba(208,213,221,0.65);padding:0 32px;min-height:var(--header-h);display:flex;align-items:center;justify-content:space-between;gap:16px;position:sticky;top:0;z-index:100;transition:background var(--transition),border-color var(--transition),box-shadow var(--transition);box-shadow:0 1px 0 rgba(16,24,40,0.02)}
     [data-theme="dark"] .header{background:rgba(24,34,48,0.82);border-bottom-color:rgba(50,65,86,0.8)}
@@ -131,14 +140,17 @@
     .theme-toggle:hover{color:var(--orange);border-color:var(--orange);background:var(--orange-soft)}
 
     .main{padding:32px;max-width:1680px;width:100%;margin:0 auto}
-   
+
+    /* Seções de visualização */
     .view-section{display:none;animation:fadeUp .3s ease}
     .view-section.active{display:block}
     @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
+    /* Card genérico */
     .card{background:linear-gradient(180deg,var(--surface) 0%,var(--surface) 100%);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:background var(--transition),border-color var(--transition),box-shadow var(--transition),transform var(--transition)}
     .card:hover{box-shadow:var(--shadow-md)}
 
+    /* Overlay de carregamento */
     .loading-overlay{display:none;position:fixed;inset:0;background:rgba(244,246,251,0.80);backdrop-filter:blur(6px);z-index:9998;flex-direction:column;align-items:center;justify-content:center;gap:16px}
     [data-theme="dark"] .loading-overlay{background:rgba(15,23,42,0.78)}
     .loading-overlay.show{display:flex}
@@ -146,11 +158,13 @@
     .loading-title{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text-1)}
     .loading-sub{font-size:13px;color:var(--text-3)}
 
+    /* Banner de erro */
     .error-banner{display:none;margin-bottom:24px;padding:16px 20px;border-radius:14px;background:#fff1f2;border:1px solid #fecdd3;color:#b42318;gap:14px;align-items:flex-start}
     .error-banner.show{display:flex}
     [data-theme="dark"] .error-banner{background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.20);color:#f87171}
     .error-banner i{font-size:22px;flex-shrink:0;margin-top:2px}
 
+    /* Badge de sincronização */
     .sync-badge{margin:0 16px 16px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12px}
     .sync-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.5);flex-shrink:0;transition:background var(--transition)}
     .sync-dot.ok{background:var(--green);box-shadow:0 0 8px rgba(16,185,129,0.6)}
@@ -160,6 +174,7 @@
     .sync-text strong{color:rgba(255,255,255,0.92);display:block;font-size:12px}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
+    /* Grid de KPIs */
     .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-bottom:24px}
     .kpi-card{padding:24px 24px 24px 22px;display:flex;align-items:center;gap:18px;min-height:124px;position:relative;overflow:hidden}
     .kpi-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:transparent}
@@ -172,7 +187,7 @@
     .k-purple .kpi-icon{background:linear-gradient(180deg,var(--purple-soft) 0%, rgba(60,0,60,0.12) 100%);color:var(--purple)}
     .k-orange .kpi-icon{background:linear-gradient(180deg,var(--orange-soft) 0%, rgba(255,110,0,0.14) 100%);color:var(--orange-dark)}
     [data-theme="dark"] .k-orange .kpi-icon{color:var(--orange)}
-    
+
     .kpi-content{flex:1;min-width:0}
     .kpi-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text-2);margin-bottom:6px}
     .kpi-value{font-family:var(--font-display);font-size:clamp(24px,2.5vw,32px);font-weight:800;line-height:1.1;overflow:hidden;text-overflow:ellipsis}
@@ -182,6 +197,7 @@
     [data-theme="dark"] .k-orange .kpi-value{color:var(--orange)}
     .kpi-sub{font-size:12.5px;color:var(--text-3);margin-top:6px;font-weight:500}
 
+    /* Barra de ferramentas e filtro */
     .toolbar-row{margin-bottom:20px}
     .filter-alert{display:none;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;border-radius:14px;background:linear-gradient(180deg,var(--surface) 0%, var(--surface-2) 100%);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
     .filter-alert.show{display:flex}
@@ -192,10 +208,11 @@
     .filter-text small{color:var(--text-2);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px}
     .filter-name-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .filter-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:linear-gradient(135deg,var(--orange) 0%, #e06000 100%);color:#fff;border-radius:999px;font-size:12px;font-weight:800;box-shadow:0 8px 18px rgba(255,110,0,0.18)}
-    
+
     .btn-secondary{display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;color:var(--text-1);background:var(--surface);border:1px solid var(--border);transition:all var(--transition);box-shadow:var(--shadow-xs)}
     .btn-secondary:hover{background:var(--surface-2);color:var(--purple);border-color:var(--purple-soft-2)}
 
+    /* Layout dos gráficos */
     .charts-row-1,.charts-row-2{display:grid;gap:20px;margin-bottom:20px;align-items:stretch}
     .charts-row-1{grid-template-columns:1.45fr .95fr}
     .charts-row-2{grid-template-columns:.95fr 1.45fr;margin-bottom:32px}
@@ -213,7 +230,7 @@
     .chart-kicker{display:inline-flex;align-items:center;gap:6px;width:max-content;padding:5px 10px;border-radius:999px;background:var(--surface-3);color:var(--text-2);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;border:1px solid transparent}
     .chart-card.chart-primary .chart-kicker,.chart-card.chart-status .chart-kicker{background:var(--purple-soft);border-color:var(--purple-soft-2);color:var(--purple-strong)}
     .chart-card.chart-highlight .chart-kicker{background:var(--orange-soft);border-color:var(--orange-soft-2);color:var(--orange-dark)}
-    
+
     .chart-card.chart-approvers .chart-kicker{background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.16);color:#dc2626}
     [data-theme="dark"] .chart-card.chart-highlight .chart-kicker{color:var(--orange)}
     [data-theme="dark"] .chart-card.chart-primary .chart-kicker,[data-theme="dark"] .chart-card.chart-status .chart-kicker{color:var(--purple)}
@@ -222,6 +239,7 @@
     .chart-helper{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text-3)}
     .chart-holder{flex:1;min-height:308px;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1}
 
+    /* Tabela de aprovadores */
     .approver-table-wrap{flex:1;overflow:auto;max-height:322px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(180deg,var(--surface) 0%, var(--surface-2) 100%);position:relative;z-index:1}
     .approver-table{width:100%;border-collapse:collapse;font-size:13px}
     .approver-table th{position:sticky;top:0;background:var(--surface-2);text-align:left;padding:14px 16px;border-bottom:1px solid var(--border);color:var(--text-2);font-weight:800;text-transform:uppercase;font-size:10.5px;letter-spacing:.55px;z-index:1}
@@ -231,9 +249,10 @@
     .approver-table .td-val{font-weight:800;text-align:right}
     .approver-table th.th-right{text-align:right}
 
+    /* Seção de tabelas de dados */
     .table-section{margin-bottom:24px;overflow:hidden;border-radius:16px}
     .table-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;background:linear-gradient(180deg,var(--surface) 0%, var(--surface-2) 100%)}
- 
+
     .th-left h2{font-family:var(--font-display);font-size:16px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px}
     .th-left h2.purple{color:var(--purple-strong)}
     .th-left h2.orange{color:var(--orange-dark)}
@@ -251,13 +270,14 @@
     table.data-table th{padding:14px 16px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.55px;background:var(--surface-2);color:var(--text-2);border-bottom:1px solid var(--border);text-align:left}
     table.data-table td{padding:14px 16px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle;background:var(--surface);transition:background var(--transition)}
     table.data-table tr:hover td{background:var(--surface-2)}
-  
+
     .orig-badge{display:inline-flex;padding:4px 10px;border-radius:999px;font-size:10.5px;font-weight:800;background:var(--surface-3);color:var(--text-1);text-transform:uppercase;border:1px solid var(--border)}
     .empty-state td{text-align:center;padding:60px 20px;color:var(--text-3);font-size:14px}
     .empty-state i{font-size:28px;display:block;margin-bottom:12px;opacity:.5}
     .table-foot{padding:14px 24px;background:var(--surface-2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--text-2);font-weight:500}
     .table-foot strong{color:var(--text-1);font-weight:800;font-size:14px}
 
+    /* Media Queries para responsividade */
     @media(max-width:1200px){.charts-row-1,.charts-row-2{grid-template-columns:1fr}}
     @media(max-width:960px){.sidebar{position:fixed;top:0;left:0;transform:translateX(-100%);height:100vh}.sidebar.open{transform:translateX(0)}.hamburgerBtn,.hamburger-btn{display:flex}.header{padding:0 20px}.main{padding:20px}.date-badge{display:none}}
     @media(max-width:640px){.chart-card,.kpi-card{padding:20px}.search-input{width:100%}.table-controls,.search-wrap{width:100%}.filter-alert{align-items:flex-start;flex-direction:column}.header-page-title{font-size:14px}}
@@ -290,7 +310,7 @@
       <button type="button" class="nav-link" data-view="reports" aria-pressed="false">
         <i class="ph ph-table"></i><span>Relatórios Detalhados</span>
       </button>
-      
+
       <a href="../" class="nav-link" id="btn-back-hub" style="margin-top: auto;" title="Voltar ao Hub">
         <i class="ph ph-arrow-left"></i><span>Voltar ao Hub</span>
       </a>
@@ -517,57 +537,91 @@
 <script>
 "use strict";
 
+/**
+ * @file Script principal para o Painel Financeiro ONTIME.
+ * @author [Seu Nome/Equipe]
+ * @version 1.1.0
+ * @license MIT
+ */
+
 // ─── BOTÃO VOLTAR INTELIGENTE ───
+/**
+ * Inicializa o comportamento do botão "Voltar ao Hub".
+ * Oculta o botão se o usuário acessou a página diretamente ou de um domínio diferente.
+ */
 (function initBackButton() {
     const btn = document.getElementById('btn-back-hub');
+    // Verifica se o botão existe antes de tentar manipulá-lo
+    if (!btn) return;
+
     const referrer = document.referrer;
     const currentHost = window.location.hostname;
-    
-    // Oculta o botão se o utilizador aceder por link direto ou de outro domínio
-    if (btn && (!referrer || !referrer.includes(currentHost))) {
+
+    // Oculta o botão se não houver referrer ou se o referrer for de outro domínio
+    if (!referrer || !referrer.includes(currentHost)) {
         btn.style.display = 'none';
     }
 })();
 
-/* CONFIG */
-const SHEET_ID        = "1RpTnINmHO3--7JvCMrN5_GU4eo6T9Kdc7lxJhZgCJTw";
-const SHEET_TOTVS     = "Totvs_Historico";
-const SHEET_PREVIA    = "Previa_Hoje";
-const AUTO_REFRESH_MS = 5 * 60 * 1000;
+/* CONFIGURAÇÕES GLOBAIS */
+const CONFIG = {
+  SHEET_ID:        "1RpTnINmHO3--7JvCMrN5_GU4eo6T9Kdc7lxJhZgCJTw",
+  SHEET_TOTVS:     "Totvs_Historico",
+  SHEET_PREVIA:    "Previa_Hoje",
+  AUTO_REFRESH_MS: 5 * 60 * 1000, // 5 minutos
+  // Adicionado para facilitar a gestão de URLs de planilhas
+  sheetUrl: (sheetName) => `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}&t=${Date.now()}`
+};
 
-function sheetUrl(name) {
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(name)}&t=${Date.now()}`;
-}
-
-/* STATE */
-const S = {
-  totvs: [], previa: [],
+/* ESTADO GLOBAL DA APLICAÇÃO */
+const STATE = {
+  totvs: [],
+  previa: [],
   currentFilter: null,
   charts: { natureza: null, previsao: null, status: null }
 };
 
-/* DOM */
-const D = {
+/* REFERÊNCIAS DO DOM */
+// Agrupamento de elementos DOM para melhor organização e acesso
+const DOM = {
+  // Navegação e Layout
   navLinks:       Array.from(document.querySelectorAll(".nav-link")),
   views:          Array.from(document.querySelectorAll(".view-section")),
   pageTitle:      document.getElementById("page-title"),
   dateDisplay:    document.getElementById("date-display"),
+  sidebar:        document.getElementById("sidebar"),
+  sidebarOverlay: document.getElementById("sidebar-overlay"),
+  hamburgerBtn:   document.getElementById("hamburger-btn"),
+  themeToggle:    document.getElementById("theme-toggle"),
+  themeIcon:      document.getElementById("theme-icon"),
+  toastContainer: document.getElementById("toast-container"),
+
+  // Overlays e Mensagens
   loadingOverlay: document.getElementById("loading-overlay"),
   loadingSub:     document.getElementById("loading-sub"),
   errorBanner:    document.getElementById("error-banner"),
   errorMsg:       document.getElementById("error-msg"),
+
+  // Sincronização
   syncDot:        document.getElementById("sync-dot"),
   syncTitle:      document.getElementById("sync-title"),
   syncSub:        document.getElementById("sync-sub"),
   syncBtn:        document.getElementById("sync-btn"),
   syncBtnText:    document.getElementById("sync-btn-text"),
+
+  // Filtros
   filterAlert:    document.getElementById("filter-alert"),
   filterName:     document.getElementById("filter-name"),
   filterCount:    document.getElementById("filter-count"),
   btnClearFilter: document.getElementById("btn-clear-filter"),
+
+  // KPIs
   kpiTotalCount:  document.getElementById("kpi-total-count"),
   kpiTotalValue:  document.getElementById("kpi-total-value"),
   kpiTotvsSub:    document.getElementById("kpi-totvs-sub"),
+  kpiPreviaSub:   document.getElementById("kpi-previa-sub"), // Adicionado para consistência
+
+  // Tabelas
   tbodyApprovers: document.getElementById("tbody-approvers"),
   tbodyTotvs:     document.getElementById("tbody-totvs"),
   tbodyPreview:   document.getElementById("tbody-preview"),
@@ -576,427 +630,853 @@ const D = {
   footPrevCount:  document.getElementById("foot-preview-count"),
   footPrevTotal:  document.getElementById("foot-preview-total"),
   searchTotvs:    document.getElementById("search-totvs"),
-  searchPreview:  document.getElementById("search-preview"),
-  sidebar:        document.getElementById("sidebar"),
-  sidebarOverlay: document.getElementById("sidebar-overlay"),
-  hamburgerBtn:   document.getElementById("hamburger-btn"),
-  themeToggle:    document.getElementById("theme-toggle"),
-  themeIcon:      document.getElementById("theme-icon"),
-  toastContainer: document.getElementById("toast-container")
+  searchPreview:  document.getElementById("search-preview")
 };
 
-const DATE_CTX = buildDateContext();
-init();
+// Contexto de datas para exibição
+const DATE_CONTEXT = buildDateContext();
 
-/* INIT */
+// Inicializa a aplicação
+document.addEventListener('DOMContentLoaded', init);
+
+/* FUNÇÕES DE INICIALIZAÇÃO */
+
+/**
+ * Constrói o contexto de datas para "Hoje" e "Próximo dia útil".
+ * @returns {object} Objeto com as datas formatadas.
+ */
+function buildDateContext() {
+  const today = new Date();
+  const preview = new Date(today);
+  const day = today.getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+
+  // Ajusta a data da prévia para o próximo dia útil
+  if (day === 5) preview.setDate(today.getDate() + 3); // Sexta -> Segunda
+  else if (day === 6) preview.setDate(today.getDate() + 2); // Sábado -> Segunda
+  else preview.setDate(today.getDate() + 1); // Outros dias -> Próximo dia
+
+  return { strHoje: formatDateBR(today), strAmanha: formatDateBR(preview) };
+}
+
+/**
+ * Renderiza o badge de data no cabeçalho.
+ */
+function renderDateBadge() {
+  DOM.dateDisplay.textContent = `Hoje: ${DATE_CONTEXT.strHoje}  |  Prévia: ${DATE_CONTEXT.strAmanha}`;
+}
+
+/**
+ * Inicializa todos os listeners de eventos e carrega os dados.
+ */
 async function init() {
   renderDateBadge();
   bindNav();
   bindSidebar();
   bindTheme();
-  D.btnClearFilter.addEventListener("click", () => { S.currentFilter = null; renderAll(); });
-  D.searchTotvs.addEventListener("input",   () => applySearch("totvs"));
-  D.searchPreview.addEventListener("input", () => applySearch("preview"));
-  D.syncBtn.addEventListener("click", () => loadAll(true));
+  bindEventListeners();
   initCharts();
-  await loadAll(false);
-  setInterval(() => loadAll(false), AUTO_REFRESH_MS);
+  await loadAll(false); // Carregamento inicial
+  setInterval(() => loadAll(false), CONFIG.AUTO_REFRESH_MS); // Auto-refresh
 }
 
-/* DATE */
-function buildDateContext() {
-  const today = new Date();
-  const preview = new Date(today);
-  const day = today.getDay();
-  if (day === 5) preview.setDate(today.getDate() + 3);
-  else if (day === 6) preview.setDate(today.getDate() + 2);
-  else preview.setDate(today.getDate() + 1);
-  return { strHoje: fmtBR(today), strAmanha: fmtBR(preview) };
-}
-function renderDateBadge() {
-  D.dateDisplay.textContent = `Hoje: ${DATE_CTX.strHoje}  |  Prévia: ${DATE_CTX.strAmanha}`;
+/**
+ * Associa os listeners de eventos aos elementos DOM.
+ */
+function bindEventListeners() {
+  DOM.btnClearFilter.addEventListener("click", () => { STATE.currentFilter = null; renderAll(); });
+  DOM.searchTotvs.addEventListener("input",   () => applySearch("totvs"));
+  DOM.searchPreview.addEventListener("input", () => applySearch("preview"));
+  DOM.syncBtn.addEventListener("click", () => loadAll(true));
 }
 
-/* NAV */
+/* NAVEGAÇÃO */
 const PAGE_TITLES = {
   dash: "Painel Financeiro ONTIME",
   reports: "Base Analítica e Relatórios"
 };
 
+/**
+ * Associa os listeners de clique aos links de navegação.
+ */
 function bindNav() {
-  D.navLinks.forEach(btn => btn.addEventListener("click", () => {
+  DOM.navLinks.forEach(btn => btn.addEventListener("click", (event) => {
+    // Previne o comportamento padrão para botões de navegação
+    event.preventDefault();
+
     // Ignorar comportamento se for o botão de voltar ao hub (ele tem href)
-    if(btn.id === 'btn-back-hub') return;
-    
-    const v = btn.dataset.view;
-    D.views.forEach(s => s.classList.toggle("active", s.id === `view-${v}`));
-    D.navLinks.forEach(b => {
-      if(b.id === 'btn-back-hub') return;
-      b.classList.toggle("active", b.dataset.view === v);
-      b.setAttribute("aria-pressed", b.dataset.view === v ? "true" : "false");
+    if(btn.id === 'btn-back-hub') {
+      window.location.href = btn.href; // Redireciona manualmente
+      return;
+    }
+
+    const viewId = btn.dataset.view;
+    DOM.views.forEach(section => section.classList.toggle("active", section.id === `view-${viewId}`));
+    DOM.navLinks.forEach(navBtn => {
+      if(navBtn.id === 'btn-back-hub') return; // Ignora o botão de voltar
+      const isActive = navBtn.dataset.view === viewId;
+      navBtn.classList.toggle("active", isActive);
+      navBtn.setAttribute("aria-pressed", isActive ? "true" : "false");
     });
-    D.pageTitle.textContent = PAGE_TITLES[v] || "";
-    if (v === "dash") {
-      setTimeout(() => Object.values(S.charts).forEach(c => c?.updateOptions({}, false, true, false)), 50);
+    DOM.pageTitle.textContent = PAGE_TITLES[viewId] || "";
+
+    // Atualiza os gráficos quando a view do dashboard é ativada para garantir responsividade
+    if (viewId === "dash") {
+      // Pequeno atraso para garantir que a seção esteja visível antes de atualizar
+      setTimeout(() => Object.values(STATE.charts).forEach(chart => chart?.updateOptions({}, false, true, false)), 50);
     }
     closeSidebar();
   }));
 }
 
 /* SIDEBAR */
+/**
+ * Associa os listeners para abrir e fechar o sidebar.
+ */
 function bindSidebar() {
-  D.hamburgerBtn.addEventListener("click", () => {
-    D.sidebar.classList.toggle("open");
-    D.sidebarOverlay.classList.toggle("show");
+  DOM.hamburgerBtn.addEventListener("click", () => {
+    DOM.sidebar.classList.toggle("open");
+    DOM.sidebarOverlay.classList.toggle("show");
   });
-  D.sidebarOverlay.addEventListener("click", closeSidebar);
-}
-function closeSidebar() {
-  D.sidebar.classList.remove("open");
-  D.sidebarOverlay.classList.remove("show");
+  DOM.sidebarOverlay.addEventListener("click", closeSidebar);
 }
 
-/* THEME */
+/**
+ * Fecha o sidebar e o overlay.
+ */
+function closeSidebar() {
+  DOM.sidebar.classList.remove("open");
+  DOM.sidebarOverlay.classList.remove("show");
+}
+
+/* TEMA */
+/**
+ * Associa os listeners para alternar o tema.
+ */
 function bindTheme() {
   applyTheme(localStorage.getItem("ontime_theme") || "light");
-  D.themeToggle.addEventListener("click", () => {
-    const current = document.documentElement.dataset.theme;
-    applyTheme(current === "dark" ? "light" : "dark");
+  DOM.themeToggle.addEventListener("click", () => {
+    const currentTheme = document.documentElement.dataset.theme;
+    applyTheme(currentTheme === "dark" ? "light" : "dark");
   });
 }
-function applyTheme(t) {
-  document.documentElement.dataset.theme = t;
-  D.themeIcon.className = t === "dark" ? "ph ph-sun" : "ph ph-moon";
-  localStorage.setItem("ontime_theme", t);
+
+/**
+ * Aplica o tema especificado e atualiza os gráficos.
+ * @param {string} theme - O tema a ser aplicado ('light' ou 'dark').
+ */
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  DOM.themeIcon.className = theme === "dark" ? "ph ph-sun" : "ph ph-moon";
+  localStorage.setItem("ontime_theme", theme);
+
+  // Atualiza as opções dos gráficos para refletir o novo tema
   setTimeout(() => {
-    Object.values(S.charts).forEach(c => {
-      if (!c || typeof c.updateOptions !== "function") return;
-      c.updateOptions({
-        theme: { mode: t },
-        chart: { foreColor: txtColor() },
-        yaxis: { labels: { style: { colors: txtColor() } } },
-        xaxis: { labels: { style: { colors: txtColor() } } },
-        grid:  { borderColor: gridColor() }
+    Object.values(STATE.charts).forEach(chart => {
+      if (!chart || typeof chart.updateOptions !== "function") return;
+      chart.updateOptions({
+        theme: { mode: theme },
+        chart: { foreColor: getTextColor() },
+        yaxis: { labels: { style: { colors: [getTextColor()] } } },
+        xaxis: { labels: { style: { colors: [getTextColor()] } } },
+        grid:  { borderColor: getGridColor() }
       }, false, true, false);
     });
-  }, 80);
+  }, 80); // Pequeno atraso para garantir que as variáveis CSS sejam aplicadas
 }
 
-/* SYNC STATE */
+/* ESTADO DE SINCRONIZAÇÃO */
+/**
+ * Atualiza o estado visual da sincronização.
+ * @param {string} state - O estado da sincronização ('loading', 'ok', 'error').
+ * @param {string} [title] - Título a ser exibido.
+ * @param {string} [sub] - Subtítulo a ser exibido.
+ */
 function setSyncState(state, title, sub) {
-  D.syncDot.className = `sync-dot ${state}`;
-  if (title) D.syncTitle.textContent = title;
-  if (sub)   D.syncSub.textContent   = sub;
+  DOM.syncDot.className = `sync-dot ${state}`;
+  if (title) DOM.syncTitle.textContent = title;
+  if (sub)   DOM.syncSub.textContent   = sub;
   const syncing = state === "loading";
-  D.syncBtn.classList.toggle("syncing", syncing);
-  D.syncBtnText.textContent = syncing ? "Atualizando…" : "Atualizar";
+  DOM.syncBtn.classList.toggle("syncing", syncing);
+  DOM.syncBtnText.textContent = syncing ? "Atualizando…" : "Atualizar";
 }
 
-/* LOAD FROM SHEETS */
+/* CARREGAMENTO DE DADOS DAS PLANILHAS */
+/**
+ * Carrega todos os dados das planilhas do Google Sheets.
+ * @param {boolean} manual - Indica se o carregamento foi acionado manualmente.
+ */
 async function loadAll(manual) {
   setSyncState("loading");
-  if (!manual) D.loadingOverlay.classList.add("show");
-  D.errorBanner.classList.remove("show");
+  if (!manual) DOM.loadingOverlay.classList.add("show");
+  DOM.errorBanner.classList.remove("show");
+
   try {
-    D.loadingSub.textContent = "Sincronizando bases analíticas da ONTIME...";
-    const [tRaw, pRaw] = await Promise.all([
-      fetchSheet(SHEET_TOTVS),
-      fetchSheet(SHEET_PREVIA)
+    DOM.loadingSub.textContent = "Sincronizando bases analíticas da ONTIME...";
+    const [totvsRaw, previaRaw] = await Promise.all([
+      fetchSheet(CONFIG.SHEET_TOTVS),
+      fetchSheet(CONFIG.SHEET_PREVIA)
     ]);
-    S.totvs  = parseTotvs(tRaw);
-    S.previa = parsePrevia(pRaw);
-    const total = S.totvs.length + S.previa.length;
-    setSyncState("ok", `${total} registros`, `Atualizado: ${new Date().toLocaleTimeString("pt-BR")}`);
-    D.loadingOverlay.classList.remove("show");
+
+    STATE.totvs  = parseTotvs(totvsRaw);
+    STATE.previa = parsePrevia(previaRaw);
+
+    const totalRecords = STATE.totvs.length + STATE.previa.length;
+    setSyncState("ok", `${totalRecords} registros`, `Atualizado: ${new Date().toLocaleTimeString("pt-BR")}`);
+    DOM.loadingOverlay.classList.remove("show");
     renderAll();
-  } catch (e) {
-    console.error(e);
-    D.loadingOverlay.classList.remove("show");
-    D.errorBanner.classList.add("show");
-    D.errorMsg.textContent = `${e.message} — Verifique o console.`;
+  } catch (error) {
+    console.error("Erro ao carregar dados:", error);
+    DOM.loadingOverlay.classList.remove("show");
+    DOM.errorBanner.classList.add("show");
+    DOM.errorMsg.textContent = `Erro ao carregar dados: ${error.message}. Verifique o console para mais detalhes.`;
     setSyncState("error", "Erro de Conexão", "Falha ao puxar dados");
   }
 }
 
-async function fetchSheet(name) {
-  const res = await fetch(sheetUrl(name));
-  if (!res.ok) throw new Error(`HTTP ${res.status} — aba "${name}"`);
-  const text = await res.text();
-  const prefix = "google.visualization.Query.setResponse(";
-  const iPrefix = text.indexOf(prefix);
-  if (iPrefix === -1) throw new Error(`Erro na planilha "${name}"`);
-  const start = iPrefix + prefix.length;
-  const end = text.lastIndexOf(");");
-  if (end === -1 || end <= start) throw new Error(`Sem JSON na aba "${name}"`);
-  const jsonStr = text.substring(start, end).trim();
-  let json;
-  try { json = JSON.parse(jsonStr); } catch (err) { throw new Error(`JSON inválido: "${name}"`);
+/**
+ * Busca dados de uma planilha do Google Sheets.
+ * @param {string} sheetName - O nome da aba da planilha.
+ * @returns {Promise<object>} Os dados da tabela.
+ * @throws {Error} Se a requisição falhar ou os dados forem inválidos.
+ */
+async function fetchSheet(sheetName) {
+  const response = await fetch(CONFIG.sheetUrl(sheetName));
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} - Falha ao buscar dados da aba "${sheetName}".`);
   }
-  if (json.status === "error") throw new Error(json.errors?.[0]?.detailed_message || `Erro "${name}"`);
-  return json.table;
+  const text = await response.text();
+  const prefix = "google.visualization.Query.setResponse(";
+  const startIndex = text.indexOf(prefix);
+
+  if (startIndex === -1) {
+    throw new Error(`Formato de resposta inesperado para a planilha "${sheetName}".`);
+  }
+
+  const jsonString = text.substring(startIndex + prefix.length, text.lastIndexOf(");")).trim();
+  let jsonData;
+  try {
+    jsonData = JSON.parse(jsonString);
+  } catch (parseError) {
+    throw new Error(`JSON inválido na resposta da planilha "${sheetName}": ${parseError.message}`);
+  }
+
+  if (jsonData.status === "error") {
+    throw new Error(jsonData.errors?.[0]?.detailed_message || `Erro desconhecido na planilha "${sheetName}".`);
+  }
+  return jsonData.table;
 }
 
-/* PARSERS */
-function gvizLabels(table) { return (table.cols || []).map(c => norm(c.label || c.id || "")); }
-function gvizVal(cell) { if (!cell || cell.v == null) return ""; return cell.f != null ? String(cell.f) : String(cell.v); }
-function norm(s) { return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toUpperCase(); }
-function findCol(headers, candidates) {
-  for (const c of candidates) {
-    const i = headers.findIndex(h => h.includes(norm(c)));
-    if (i >= 0) return i;
+/* FUNÇÕES DE PARSE E FORMATAÇÃO */
+
+/**
+ * Extrai os rótulos das colunas de uma tabela Gviz.
+ * @param {object} table - Objeto da tabela Gviz.
+ * @returns {string[]} Array de rótulos normalizados.
+ */
+function getGvizLabels(table) {
+  return (table.cols || []).map(col => normalizeString(col.label || col.id || ""));
+}
+
+/**
+ * Extrai o valor de uma célula Gviz, preferindo o valor formatado.
+ * @param {object} cell - Objeto da célula Gviz.
+ * @returns {string} O valor da célula como string.
+ */
+function getGvizCellValue(cell) {
+  if (!cell || cell.v == null) return "";
+  return cell.f != null ? String(cell.f) : String(cell.v);
+}
+
+/**
+ * Normaliza uma string removendo acentos, espaços extras e convertendo para maiúsculas.
+ * @param {string} str - A string a ser normalizada.
+ * @returns {string} A string normalizada.
+ */
+function normalizeString(str) {
+  return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toUpperCase();
+}
+
+/**
+ * Encontra o índice de uma coluna com base em uma lista de nomes candidatos.
+ * @param {string[]} headers - Array de cabeçalhos normalizados.
+ * @param {string[]} candidates - Array de nomes candidatos para a coluna.
+ * @returns {number} O índice da coluna encontrada ou -1 se não for encontrada.
+ */
+function findColumnIndex(headers, candidates) {
+  for (const candidate of candidates) {
+    const normalizedCandidate = normalizeString(candidate);
+    const index = headers.findIndex(header => header.includes(normalizedCandidate));
+    if (index >= 0) return index;
   }
   return -1;
 }
-function parseCur(v) {
-  if (!v && v !== 0) return 0;
-  if (typeof v === "number") return isFinite(v) ? v : 0;
-  let s = String(v).replace(/[^\d,.-]/g,"").trim();
-  if (!s) return 0;
-  if (s.includes(",") && s.includes(".")) s = s.replace(/\./g,"").replace(",",".");
-  else if (s.includes(",")) s = s.replace(",",".");
-  const n = parseFloat(s);
-  return isFinite(n) ? n : 0;
-}
-function fmtCurSemCentavos(v) {
-  const n = Math.round(Number(v) || 0);
-  return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL",minimumFractionDigits:0,maximumFractionDigits:0}).format(n);
-}
-function fmtCur(v) {
-  return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(v)||0);
-}
-function fmtBR(d) { return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"}); }
-function sanitize(v) { return String(v ?? "-").trim() || "-"; }
-function clearEl(el) { while (el.firstChild) el.removeChild(el.firstChild); }
 
+/**
+ * Converte um valor para um número monetário.
+ * @param {*} value - O valor a ser convertido.
+ * @returns {number} O valor numérico.
+ */
+function parseCurrency(value) {
+  if (typeof value === "number") return isFinite(value) ? value : 0;
+  if (!value && value !== 0) return 0;
+
+  let s = String(value).replace(/[^\d,.-]/g,"").trim();
+  if (!s) return 0;
+
+  // Lida com formatos de milhar e decimal
+  if (s.includes(",") && s.includes(".")) {
+    s = s.replace(/\./g,"").replace(",",".");
+  } else if (s.includes(",")) {
+    s = s.replace(",",".");
+  }
+  const num = parseFloat(s);
+  return isFinite(num) ? num : 0;
+}
+
+/**
+ * Formata um valor monetário sem centavos.
+ * @param {number} value - O valor a ser formatado.
+ * @returns {string} O valor formatado como moeda.
+ */
+function formatCurrencyNoCents(value) {
+  const num = Math.round(Number(value) || 0);
+  return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL",minimumFractionDigits:0,maximumFractionDigits:0}).format(num);
+}
+
+/**
+ * Formata um valor monetário com centavos.
+ * @param {number} value - O valor a ser formatado.
+ * @returns {string} O valor formatado como moeda.
+ */
+function formatCurrency(value) {
+  return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(Number(value)||0);
+}
+
+/**
+ * Formata uma data para o padrão brasileiro (DD/MM/AAAA).
+ * @param {Date} date - O objeto Date a ser formatado.
+ * @returns {string} A data formatada.
+ */
+function formatDateBR(date) {
+  return date.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"});
+}
+
+/**
+ * Sanitiza um valor para exibição, substituindo nulos/vazios por "-".
+ * @param {*} value - O valor a ser sanitizado.
+ * @returns {string} O valor sanitizado.
+ */
+function sanitizeValue(value) {
+  return String(value ?? "-").trim() || "-";
+}
+
+/**
+ * Limpa todos os filhos de um elemento DOM.
+ * @param {HTMLElement} element - O elemento a ser limpo.
+ */
+function clearElementChildren(element) {
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
+}
+
+/**
+ * Analisa os dados da planilha "Totvs_Historico".
+ * @param {object} table - Os dados brutos da tabela.
+ * @returns {object[]} Array de objetos de registro Totvs.
+ */
 function parseTotvs(table) {
   if (!table?.rows) return [];
-  const h = gvizLabels(table);
-  const iData = findCol(h,["DATA IMPORT","DATA"]);
-  const iPref = findCol(h,["PREFIXO"]);
-  const iTit  = findCol(h,["NO. TITULO","N. TITULO","TITULO"]);
-  const iNat  = findCol(h,["NATUREZA"]);
-  const iForn = findCol(h,["NOME FORNECE","FORNECEDOR"]);
-  const iVenc = findCol(h,["VENCTO REAL","VENCIMENTO REAL","VENCIMENTO"]);
-  const iVal  = findCol(h,["VLR.TITULO","VALOR TOTAL","VALOR"]);
+  const headers = getGvizLabels(table);
+
+  // Mapeamento de índices de colunas
+  const colMap = {
+    dataImport: findColumnIndex(headers, ["DATA IMPORT", "DATA"]),
+    prefixoId:  findColumnIndex(headers, ["PREFIXO"]),
+    nTitulo:    findColumnIndex(headers, ["NO. TITULO", "N. TITULO", "TITULO"]),
+    natureza:   findColumnIndex(headers, ["NATUREZA"]),
+    fornecedor: findColumnIndex(headers, ["NOME FORNECE", "FORNECEDOR"]),
+    vencimento: findColumnIndex(headers, ["VENCTO REAL", "VENCIMENTO REAL", "VENCIMENTO"]),
+    valor:      findColumnIndex(headers, ["VLR.TITULO", "VALOR TOTAL", "VALOR"])
+  };
+
   return (table.rows || []).map(row => {
-    const c = row.c || [];
-    const get = i => i >= 0 ? gvizVal(c[i]) : "";
-    const rawVal = c[iVal >= 0 ? iVal : 12];
-    const valor = parseCur(rawVal?.v ?? rawVal?.f);
+    const cells = row.c || [];
+    const getVal = (idx) => idx >= 0 ? getGvizCellValue(cells[idx]) : "";
+    const rawValueCell = cells[colMap.valor];
+    const valor = parseCurrency(rawValueCell?.v ?? rawValueCell?.f);
+
     return {
-      isTotvs: true, origem: "Totvs", dataImport: get(iData) || "-", prefixoId: get(iPref) || "-",
-      nTitulo: get(iTit) || "-", naturezaFinal: (get(iNat) || "S/N").toUpperCase(),
-      fornecedorNome: get(iForn) || "-", vencimento: get(iVenc) || "-", 
-      valor
+      isTotvs: true,
+      origem: "Totvs",
+      dataImport: getVal(colMap.dataImport) || "-",
+      prefixoId: getVal(colMap.prefixoId) || "-",
+      nTitulo: getVal(colMap.nTitulo) || "-",
+      naturezaFinal: (getVal(colMap.natureza) || "S/N").toUpperCase(),
+      fornecedorNome: getVal(colMap.fornecedor) || "-",
+      vencimento: getVal(colMap.vencimento) || "-",
+      valor: valor
     };
-  }).filter(r => r.valor > 0 && r.nTitulo !== "-");
+  }).filter(record => record.valor > 0 && record.nTitulo !== "-"); // Filtra registros inválidos
 }
 
+/**
+ * Analisa os dados da planilha "Previa_Hoje".
+ * @param {object} table - Os dados brutos da tabela.
+ * @returns {object[]} Array de objetos de registro Prévia.
+ */
 function parsePrevia(table) {
   if (!table?.rows) return [];
-  const h = gvizLabels(table);
-  const iOrigem = findCol(h,["ORIGEM"]); const iId = findCol(h,["ID"]);
-  const iTit = findCol(h,["N. TITULO","N. NF","TITULO"]); const iNat = findCol(h,["NATUREZA","COD. NAT","CÓD. NATUREZA"]);
-  const iForn = findCol(h,["DESC FORNECEDOR","FORNEC NOVO","FORNECEDOR"]);
-  const iVal = findCol(h,["VALOR TOTAL SERVICO","VALOR TOTAL","VALOR"]);
-  const iVenc = findCol(h,["VENCIMENTO"]); const iAprov = findCol(h,["APROVADOR"]);
+  const headers = getGvizLabels(table);
+
+  // Mapeamento de índices de colunas
+  const colMap = {
+    origem:     findColumnIndex(headers, ["ORIGEM"]),
+    id:         findColumnIndex(headers, ["ID"]),
+    nTitulo:    findColumnIndex(headers, ["N. TITULO", "N. NF", "TITULO"]),
+    natureza:   findColumnIndex(headers, ["NATUREZA", "COD. NAT", "CÓD. NATUREZA"]),
+    fornecedor: findColumnIndex(headers, ["DESC FORNECEDOR", "FORNEC NOVO", "FORNECEDOR"]),
+    valor:      findColumnIndex(headers, ["VALOR TOTAL SERVICO", "VALOR TOTAL", "VALOR"]),
+    vencimento: findColumnIndex(headers, ["VENCIMENTO"]),
+    aprovador:  findColumnIndex(headers, ["APROVADOR"])
+  };
+
   return (table.rows || []).map(row => {
-    const c = row.c || []; const get = i => i >= 0 ? gvizVal(c[i]) : "";
-    const rawVal = c[iVal >= 0 ? iVal : 7]; const valor = parseCur(rawVal?.v ?? rawVal?.f);
+    const cells = row.c || [];
+    const getVal = (idx) => idx >= 0 ? getGvizCellValue(cells[idx]) : "";
+    const rawValueCell = cells[colMap.valor];
+    const valor = parseCurrency(rawValueCell?.v ?? rawValueCell?.f);
+
     return {
-      isTotvs: false, origem: get(iOrigem) || "Prévia", prefixoId: get(iId) || "-",
-      nTitulo: get(iTit) || "-", naturezaFinal: (get(iNat) || "S/N").toUpperCase(),
-      fornecedorNome: get(iForn) || "-", vencimento: get(iVenc) || "-", aprovador: get(iAprov) || "-", valor
+      isTotvs: false,
+      origem: getVal(colMap.origem) || "Prévia",
+      prefixoId: getVal(colMap.id) || "-",
+      nTitulo: getVal(colMap.nTitulo) || "-",
+      naturezaFinal: (getVal(colMap.natureza) || "S/N").toUpperCase(),
+      fornecedorNome: getVal(colMap.fornecedor) || "-",
+      vencimento: getVal(colMap.vencimento) || "-",
+      aprovador: getVal(colMap.aprovador) || "-",
+      valor: valor
     };
-  }).filter(r => r.valor > 0);
+  }).filter(record => record.valor > 0); // Filtra registros com valor > 0
 }
 
-/* RENDER ALL */
+/* RENDERIZAÇÃO GERAL */
+/**
+ * Renderiza todos os componentes da interface do usuário com base nos dados atuais.
+ */
 function renderAll() {
-  const all = [...S.totvs, ...S.previa];
-  const filteredDash = S.currentFilter ? all.filter(r => r.naturezaFinal === S.currentFilter) : all;
-  if (S.currentFilter) {
-    D.filterAlert.classList.add("show");
-    D.filterName.textContent  = S.currentFilter;
-    D.filterCount.textContent = `${filteredDash.length} registro(s)`;
+  const allRecords = [...STATE.totvs, ...STATE.previa];
+  const filteredDashboardRecords = STATE.currentFilter
+    ? allRecords.filter(record => record.naturezaFinal === STATE.currentFilter)
+    : allRecords;
+
+  // Atualiza o alerta de filtro
+  if (STATE.currentFilter) {
+    DOM.filterAlert.classList.add("show");
+    DOM.filterName.textContent  = STATE.currentFilter;
+    DOM.filterCount.textContent = `${filteredDashboardRecords.length} registro(s)`;
   } else {
-    D.filterAlert.classList.remove("show");
+    DOM.filterAlert.classList.remove("show");
   }
 
-  const total = filteredDash.reduce((a,r) => a + r.valor, 0);
-  D.kpiTotalCount.textContent = filteredDash.length.toLocaleString("pt-BR");
-  D.kpiTotalValue.textContent = fmtCurSemCentavos(total);
-  D.kpiTotvsSub.textContent = `${S.totvs.length} Totvs · ${S.previa.length} Prévia`;
+  // Atualiza os KPIs
+  const totalValue = filteredDashboardRecords.reduce((acc, record) => acc + record.valor, 0);
+  DOM.kpiTotalCount.textContent = filteredDashboardRecords.length.toLocaleString("pt-BR");
+  DOM.kpiTotalValue.textContent = formatCurrencyNoCents(totalValue);
+  DOM.kpiTotvsSub.textContent = `${STATE.totvs.length} Totvs · ${STATE.previa.length} Prévia`;
 
-  renderApprovers(filteredDash);
-  renderTotvsTable(S.totvs);
-  renderPreviewTable(S.previa);
-  updateCharts(all, filteredDash);
-  applySearch("totvs"); applySearch("preview");
+  // Renderiza tabelas e gráficos
+  renderApproversTable(filteredDashboardRecords);
+  renderTotvsTable(STATE.totvs);
+  renderPreviewTable(STATE.previa);
+  updateCharts(allRecords, filteredDashboardRecords);
+
+  // Aplica a pesquisa nas tabelas após a renderização
+  applySearch("totvs");
+  applySearch("preview");
 }
 
-function renderApprovers(filtered) {
-  clearEl(D.tbodyApprovers);
-  const map = {}; let hasPrevia = false;
-  filtered.forEach(r => {
-    if (!r.isTotvs) {
-      hasPrevia = true;
-      if (r.aprovador && r.aprovador !== "-") {
-        map[r.aprovador] = map[r.aprovador] || { valor:0, count:0 };
-        map[r.aprovador].valor += r.valor; map[r.aprovador].count += 1;
+/**
+ * Renderiza a tabela de aprovadores.
+ * @param {object[]} records - Registros filtrados para o dashboard.
+ */
+function renderApproversTable(records) {
+  clearElementChildren(DOM.tbodyApprovers);
+  const approversMap = {};
+  let hasPreviaData = false;
+
+  records.forEach(record => {
+    if (!record.isTotvs) { // Apenas registros de "Prévia"
+      hasPreviaData = true;
+      if (record.aprovador && record.aprovador !== "-") {
+        approversMap[record.aprovador] = approversMap[record.aprovador] || { valor: 0, count: 0 };
+        approversMap[record.aprovador].valor += record.valor;
+        approversMap[record.aprovador].count += 1;
       }
     }
   });
-  const list = Object.entries(map).map(([n,d]) => ({n, valor:d.valor, count:d.count})).sort((a,b) => b.valor - a.valor);
-  if (!hasPrevia) { D.tbodyApprovers.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-3);padding:24px;">Sem prévia carregada.</td></tr>`; return;
-  }
-  if (!list.length) { D.tbodyApprovers.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--green);padding:24px;">✓ Tudo Aprovado</td></tr>`; return;
+
+  const approversList = Object.entries(approversMap)
+    .map(([name, data]) => ({ name, valor: data.valor, count: data.count }))
+    .sort((a, b) => b.valor - a.valor); // Ordena por valor retido (decrescente)
+
+  if (!hasPreviaData) {
+    DOM.tbodyApprovers.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-3);padding:24px;">Sem dados de prévia carregados.</td></tr>`;
+    return;
   }
 
-  list.forEach(({n,valor,count}) => {
+  if (!approversList.length) {
+    DOM.tbodyApprovers.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--green);padding:24px;">✓ Tudo Aprovado</td></tr>`;
+    return;
+  }
+
+  approversList.forEach(({ name, valor, count }) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${n}</td><td class="td-val">${count}</td><td class="td-val" style="color:var(--text-1)">${fmtCur(valor)}</td>`;
-    D.tbodyApprovers.appendChild(tr);
+    tr.innerHTML = `<td>${sanitizeValue(name)}</td><td class="td-val">${count}</td><td class="td-val" style="color:var(--text-1)">${formatCurrency(valor)}</td>`;
+    DOM.tbodyApprovers.appendChild(tr);
   });
 }
 
+/**
+ * Renderiza a tabela de dados Totvs.
+ * @param {object[]} records - Registros Totvs.
+ */
 function renderTotvsTable(records) {
-  clearEl(D.tbodyTotvs);
-  if (!records.length) { D.tbodyTotvs.innerHTML = `<tr class="empty-state"><td colspan="7">Sem dados</td></tr>`; return;
+  clearElementChildren(DOM.tbodyTotvs);
+  if (!records.length) {
+    DOM.tbodyTotvs.innerHTML = `<tr class="empty-state"><td colspan="7"><i class="ph ph-table"></i>Sem dados</td></tr>`;
+    return;
   }
-  records.forEach(r => {
+  records.forEach(record => {
     const tr = document.createElement("tr");
-    tr.dataset.search = [r.dataImport, r.prefixoId, r.nTitulo, r.naturezaFinal, r.fornecedorNome].join(" ").toLowerCase();
-    tr.dataset.value  = r.valor;
-    tr.innerHTML = `<td>${sanitize(r.dataImport)}</td><td>${sanitize(r.prefixoId)}</td><td><strong>${sanitize(r.nTitulo)}</strong></td><td>${sanitize(r.naturezaFinal)}</td><td>${sanitize(r.fornecedorNome)}</td><td>${sanitize(r.vencimento)}</td><td style="font-weight:700">${fmtCur(r.valor)}</td>`;
-    D.tbodyTotvs.appendChild(tr);
+    tr.dataset.search = [record.dataImport, record.prefixoId, record.nTitulo, record.naturezaFinal, record.fornecedorNome].join(" ").toLowerCase();
+    tr.dataset.value  = record.valor;
+    tr.innerHTML = `
+      <td>${sanitizeValue(record.dataImport)}</td>
+      <td>${sanitizeValue(record.prefixoId)}</td>
+      <td><strong>${sanitizeValue(record.nTitulo)}</strong></td>
+      <td>${sanitizeValue(record.naturezaFinal)}</td>
+      <td>${sanitizeValue(record.fornecedorNome)}</td>
+      <td>${sanitizeValue(record.vencimento)}</td>
+      <td style="font-weight:700">${formatCurrency(record.valor)}</td>
+    `;
+    DOM.tbodyTotvs.appendChild(tr);
   });
 }
 
+/**
+ * Renderiza a tabela de dados Prévia.
+ * @param {object[]} records - Registros Prévia.
+ */
 function renderPreviewTable(records) {
-  clearEl(D.tbodyPreview);
-  if (!records.length) { D.tbodyPreview.innerHTML = `<tr class="empty-state"><td colspan="8">Sem dados</td></tr>`; return;
+  clearElementChildren(DOM.tbodyPreview);
+  if (!records.length) {
+    DOM.tbodyPreview.innerHTML = `<tr class="empty-state"><td colspan="8"><i class="ph ph-table"></i>Sem dados</td></tr>`;
+    return;
   }
-  records.forEach(r => {
+  records.forEach(record => {
     const tr = document.createElement("tr");
-    tr.dataset.search = [r.origem, r.prefixoId, r.nTitulo, r.naturezaFinal, r.fornecedorNome, r.aprovador].join(" ").toLowerCase();
-    tr.dataset.value  = r.valor;
-    tr.innerHTML = `<td><span class="orig-badge">${sanitize(r.origem)}</span></td><td>${sanitize(r.prefixoId)}</td><td><strong>${sanitize(r.nTitulo)}</strong></td><td>${sanitize(r.naturezaFinal)}</td><td>${sanitize(r.fornecedorNome)}</td><td>${sanitize(r.vencimento)}</td><td>${sanitize(r.aprovador)}</td><td style="font-weight:700">${fmtCur(r.valor)}</td>`;
-    D.tbodyPreview.appendChild(tr);
+    tr.dataset.search = [record.origem, record.prefixoId, record.nTitulo, record.naturezaFinal, record.fornecedorNome, record.aprovador].join(" ").toLowerCase();
+    tr.dataset.value  = record.valor;
+    tr.innerHTML = `
+      <td><span class="orig-badge">${sanitizeValue(record.origem)}</span></td>
+      <td>${sanitizeValue(record.prefixoId)}</td>
+      <td><strong>${sanitizeValue(record.nTitulo)}</strong></td>
+      <td>${sanitizeValue(record.naturezaFinal)}</td>
+      <td>${sanitizeValue(record.fornecedorNome)}</td>
+      <td>${sanitizeValue(record.vencimento)}</td>
+      <td>${sanitizeValue(record.aprovador)}</td>
+      <td style="font-weight:700">${formatCurrency(record.valor)}</td>
+    `;
+    DOM.tbodyPreview.appendChild(tr);
   });
 }
 
+/**
+ * Aplica o filtro de pesquisa em uma tabela específica.
+ * @param {'totvs'|'preview'} type - O tipo de tabela a ser pesquisada.
+ */
 function applySearch(type) {
-  const isT = type === "totvs";
-  const tbody = isT ? D.tbodyTotvs : D.tbodyPreview;
-  const input = isT ? D.searchTotvs : D.searchPreview;
-  const fCount= isT ? D.footTotvsCount: D.footPrevCount;
-  const fTotal= isT ? D.footTotvsTotal: D.footPrevTotal;
+  const isTotvsTable = type === "totvs";
+  const tbody = isTotvsTable ? DOM.tbodyTotvs : DOM.tbodyPreview;
+  const input = isTotvsTable ? DOM.searchTotvs : DOM.searchPreview;
+  const footerCount = isTotvsTable ? DOM.footTotvsCount : DOM.footPrevCount;
+  const footerTotal = isTotvsTable ? DOM.footTotvsTotal : DOM.footPrevTotal;
+
   const rows = Array.from(tbody.querySelectorAll("tr[data-search]"));
-  const q = input.value.toLowerCase().trim();
-  if (!rows.length) { fCount.textContent = "0 registros"; fTotal.textContent = fmtCurSemCentavos(0); return;
+  const query = input.value.toLowerCase().trim();
+
+  if (!rows.length) {
+    footerCount.textContent = "0 registros";
+    footerTotal.textContent = formatCurrencyNoCents(0);
+    return;
   }
-  let cnt = 0, tot = 0;
+
+  let visibleCount = 0;
+  let visibleTotal = 0;
+
   rows.forEach(row => {
-    const show = !q || row.dataset.search.includes(q);
-    row.style.display = show ? "" : "none";
-    if (show) { cnt++; tot += Number(row.dataset.value || 0); }
-  });
-  fCount.textContent = `${cnt} registro(s)`; fTotal.textContent = fmtCurSemCentavos(tot);
-}
-
-/* CHARTS Configuración ONTIME Brand */
-function txtColor()  { return document.documentElement.dataset.theme === "dark" ?
-"#cbd5e1" : "#475467"; }
-function gridColor() { return document.documentElement.dataset.theme === "dark" ? "#324156" : "#e4e7ec";
-}
-
-function initCharts() {
-  S.charts.natureza = new ApexCharts(document.getElementById("chart-natureza"), optNatureza());
-  S.charts.previsao = new ApexCharts(document.getElementById("chart-previsao"), optPrevisao());
-  S.charts.status   = new ApexCharts(document.getElementById("chart-status"),   optStatus());
-  S.charts.natureza.render(); S.charts.previsao.render(); S.charts.status.render();
-}
-
-function updateCharts(allData, filteredDash) {
-  const mapNatureza = {};
-  allData.forEach(i => { mapNatureza[i.naturezaFinal] = (mapNatureza[i.naturezaFinal] || 0) + i.valor; });
-  const arrNatureza = Object.entries(mapNatureza).map(([x,y]) => ({x,y})).sort((a,b) => b.y - a.y).slice(0, 15);
-  S.charts.natureza.updateSeries([{ data: arrNatureza }], false);
-  S.charts.natureza.updateOptions({ xaxis: { categories: arrNatureza.map(i => i.x) } }, false, true, false);
-  
-  let hoje = 0, amanha = 0;
-  filteredDash.forEach(i => {
-    if (i.vencimento === DATE_CTX.strHoje) hoje += i.valor;
-    else if (i.vencimento === DATE_CTX.strAmanha) amanha += i.valor;
-  });
-  S.charts.previsao.updateSeries([{ name: "Valor", data: [hoje, amanha] }], false);
-
-  let aprovado = 0, pendente = 0;
-  filteredDash.forEach(i => {
-    if (!i.isTotvs) {
-      if (i.aprovador && i.aprovador !== "-") pendente += i.valor;
-      else aprovado += i.valor;
+    const showRow = !query || row.dataset.search.includes(query);
+    row.style.display = showRow ? "" : "none";
+    if (showRow) {
+      visibleCount++;
+      visibleTotal += Number(row.dataset.value || 0);
     }
   });
-  const hasData = (aprovado + pendente) > 0;
-  S.charts.status.updateSeries(hasData ? [aprovado, pendente] : [1, 0], false);
-  S.charts.status.updateOptions({ labels: hasData ? ["Aprovados", "Pendentes"] : ["Sem dados", ""] }, false, true, false);
+
+  footerCount.textContent = `${visibleCount} registro(s)`;
+  footerTotal.textContent = formatCurrencyNoCents(visibleTotal);
 }
 
-function optNatureza() {
+/* CONFIGURAÇÃO E ATUALIZAÇÃO DE GRÁFICOS (ApexCharts) */
+
+/**
+ * Retorna a cor do texto baseada no tema atual.
+ * @returns {string} Cor do texto.
+ */
+function getTextColor() {
+  return document.documentElement.dataset.theme === "dark" ? "#cbd5e1" : "#475467";
+}
+
+/**
+ * Retorna a cor da borda da grade baseada no tema atual.
+ * @returns {string} Cor da borda da grade.
+ */
+function getGridColor() {
+  return document.documentElement.dataset.theme === "dark" ? "#324156" : "#e4e7ec";
+}
+
+/**
+ * Inicializa as instâncias dos gráficos ApexCharts.
+ */
+function initCharts() {
+  // Verifica se os elementos existem antes de tentar criar os gráficos
+  if (document.getElementById("chart-natureza")) {
+    STATE.charts.natureza = new ApexCharts(document.getElementById("chart-natureza"), getNaturezaChartOptions());
+    STATE.charts.natureza.render();
+  }
+  if (document.getElementById("chart-previsao")) {
+    STATE.charts.previsao = new ApexCharts(document.getElementById("chart-previsao"), getPrevisaoChartOptions());
+    STATE.charts.previsao.render();
+  }
+  if (document.getElementById("chart-status")) {
+    STATE.charts.status   = new ApexCharts(document.getElementById("chart-status"),   getStatusChartOptions());
+    STATE.charts.status.render();
+  }
+}
+
+/**
+ * Atualiza os dados dos gráficos.
+ * @param {object[]} allData - Todos os registros (Totvs + Prévia).
+ * @param {object[]} filteredDashboardRecords - Registros filtrados para o dashboard.
+ */
+function updateCharts(allData, filteredDashboardRecords) {
+  // Gráfico de Natureza
+  const naturezaMap = {};
+  allData.forEach(item => {
+    naturezaMap[item.naturezaFinal] = (naturezaMap[item.naturezaFinal] || 0) + item.valor;
+  });
+  const naturezaData = Object.entries(naturezaMap)
+    .map(([category, value]) => ({ x: category, y: value }))
+    .sort((a, b) => b.y - a.y)
+    .slice(0, 15); // Top 15 naturezas
+
+  STATE.charts.natureza?.updateSeries([{ data: naturezaData }], false);
+  STATE.charts.natureza?.updateOptions({ xaxis: { categories: naturezaData.map(item => item.x) } }, false, true, false);
+
+  // Gráfico de Previsão
+  let hojeValue = 0;
+  let amanhaValue = 0;
+  filteredDashboardRecords.forEach(item => {
+    if (item.vencimento === DATE_CONTEXT.strHoje) hojeValue += item.valor;
+    else if (item.vencimento === DATE_CONTEXT.strAmanha) amanhaValue += item.valor;
+  });
+  STATE.charts.previsao?.updateSeries([{ name: "Valor", data: [hojeValue, amanhaValue] }], false);
+
+  // Gráfico de Status de Aprovação
+  let aprovadoValue = 0;
+  let pendenteValue = 0;
+  filteredDashboardRecords.forEach(item => {
+    if (!item.isTotvs) { // Apenas registros de "Prévia"
+      if (item.aprovador && item.aprovador !== "-") pendenteValue += item.valor;
+      else aprovadoValue += item.valor;
+    }
+  });
+  const hasStatusData = (aprovadoValue + pendenteValue) > 0;
+  STATE.charts.status?.updateSeries(hasStatusData ? [aprovadoValue, pendenteValue] : [1, 0], false);
+  STATE.charts.status?.updateOptions({ labels: hasStatusData ? ["Aprovados", "Pendentes"] : ["Sem dados", ""] }, false, true, false);
+}
+
+/**
+ * Retorna as opções de configuração para o gráfico de Natureza.
+ * @returns {object} Opções do gráfico.
+ */
+function getNaturezaChartOptions() {
   return {
     series: [{ data: [] }],
-    chart: { type: "bar", height: 350, toolbar: { show: false }, background: "transparent", foreColor: txtColor(),
+    chart: {
+      type: "bar",
+      height: 350,
+      toolbar: { show: false },
+      background: "transparent",
+      foreColor: getTextColor(),
       events: {
-        dataPointSelection: (_e, _ctx, cfg) => {
-          const point = cfg.w.config.series[0].data[cfg.dataPointIndex];
+        dataPointSelection: (_event, _chartContext, config) => {
+          const point = config.w.config.series[0].data[config.dataPointIndex];
           if (!point?.x) return;
-          S.currentFilter = S.currentFilter === point.x ? null : point.x;
+          STATE.currentFilter = STATE.currentFilter === point.x ? null : point.x;
           renderAll();
         }
       }
     },
-    plotOptions: { bar: { horizontal: true, barHeight: "58%", borderRadius: 6, borderRadiusApplication: "end" } },
+    plotOptions: {
+      bar: {
+        horizontal: true,
+        barHeight: "58%",
+        borderRadius: 6,
+        borderRadiusApplication: "end"
+      }
+    },
     colors: ["#3c003c"],
-    states: { hover: { filter: { type: "darken", value: 0.1 } }, active: { allowMultipleDataPointsSelection: false } },
-    dataLabels: { enabled: true, textAnchor: "start", offsetX: 10, style: { colors: [txtColor()], fontSize: "11px", fontWeight: 700 }, formatter: v => fmtCurSemCentavos(v), background: { enabled: false } },
-    xaxis: { labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
-    yaxis: { labels: { maxWidth: 200, style: { fontSize: "12px", fontWeight: 600, colors: [txtColor()] } } },
-    grid: { borderColor: gridColor(), strokeDashArray: 4, padding: { left: 6, right: 10 }, xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
-    tooltip: { theme: document.documentElement.dataset.theme, y: { formatter: v => fmtCur(v) } },
+    states: {
+      hover: { filter: { type: "darken", value: 0.1 } },
+      active: { allowMultipleDataPointsSelection: false }
+    },
+    dataLabels: {
+      enabled: true,
+      textAnchor: "start",
+      offsetX: 10,
+      style: { colors: [getTextColor()], fontSize: "11px", fontWeight: 700 },
+      formatter: value => formatCurrencyNoCents(value),
+      background: { enabled: false }
+    },
+    xaxis: {
+      labels: { show: false },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
+    yaxis: {
+      labels: { maxWidth: 200, style: { fontSize: "12px", fontWeight: 600, colors: [getTextColor()] } }
+    },
+    grid: {
+      borderColor: getGridColor(),
+      strokeDashArray: 4,
+      padding: { left: 6, right: 10 },
+      xaxis: { lines: { show: false } },
+      yaxis: { lines: { show: true } }
+    },
+    tooltip: {
+      theme: document.documentElement.dataset.theme,
+      y: { formatter: value => formatCurrency(value) }
+    },
   };
 }
 
-function optPrevisao() {
+/**
+ * Retorna as opções de configuração para o gráfico de Previsão.
+ * @returns {object} Opções do gráfico.
+ */
+function getPrevisaoChartOptions() {
   return {
     series: [{ name: "Valor", data: [0, 0] }],
-    chart: { type: "bar", height: 350, toolbar: { show: false }, background: "transparent", foreColor: txtColor() },
-    plotOptions: { bar: { columnWidth: "38%", distributed: true, borderRadius: 8, borderRadiusApplication: "end", dataLabels: { position: "top" } } },
+    chart: {
+      type: "bar",
+      height: 350,
+      toolbar: { show: false },
+      background: "transparent",
+      foreColor: getTextColor()
+    },
+    plotOptions: {
+      bar: {
+        columnWidth: "38%",
+        distributed: true,
+        borderRadius: 8,
+        borderRadiusApplication: "end",
+        dataLabels: { position: "top" }
+      }
+    },
     colors: ["#3c003c", "#ff6e00"],
     fill: { type: "solid", opacity: 0.96 },
-    dataLabels: { enabled: true, offsetY: -22, style: { fontSize: "13px", fontWeight: 800, colors: [txtColor()] }, formatter: v => fmtCurSemCentavos(v), background: { enabled: false } },
-    xaxis: { categories: ["Hoje", "Próx. dia útil"], labels: { style: { fontWeight: 800, fontSize: "12px" }, offsetY: 4 }, axisBorder: { show: false }, axisTicks: { show: false } },
+    dataLabels: {
+      enabled: true,
+      offsetY: -22,
+      style: { fontSize: "13px", fontWeight: 800, colors: [getTextColor()] },
+      formatter: value => formatCurrencyNoCents(value),
+      background: { enabled: false }
+    },
+    xaxis: {
+      categories: ["Hoje", "Próx. dia útil"],
+      labels: { style: { fontWeight: 800, fontSize: "12px" }, offsetY: 4 },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
     yaxis: { show: false },
     legend: { show: false },
     grid: { show: false, padding: { left: 0, right: 0, top: 6, bottom: 0 } },
-    tooltip: { theme: document.documentElement.dataset.theme, y: { formatter: v => fmtCur(v) } },
+    tooltip: {
+      theme: document.documentElement.dataset.theme,
+      y: { formatter: value => formatCurrency(value) }
+    },
   };
 }
 
-function optStatus() {
+/**
+ * Retorna as opções de configuração para o gráfico de Status de Aprovação.
+ * @returns {object} Opções do gráfico.
+ */
+function getStatusChartOptions() {
   return {
-    series: [1, 0], labels: ["Sem dados", ""],
-    chart: { type: "donut", height: 320, background: "transparent", foreColor: txtColor() },
+    series: [1, 0], // Valores iniciais para "Sem dados"
+    labels: ["Sem dados", ""],
+    chart: {
+      type: "donut",
+      height: 320,
+      background: "transparent",
+      foreColor: getTextColor()
+    },
     colors: ["#ff6e00", "#3c003c"],
     stroke: { width: 0 },
-    dataLabels: { enabled: true, formatter: (val, opts) => { const label = opts.w.globals.labels[opts.seriesIndex];
-    return (!label || label === "Sem dados") ? "" : `${val.toFixed(1)}%`;
-    }, style: { fontSize: "13px", fontWeight: "bold", colors: ["#fff"] }, dropShadow: { enabled: false } },
-    plotOptions: { pie: { donut: { size: "76%", labels: { show: true, name: { offsetY: 20, color: txtColor(), fontSize: "12px", fontWeight: 700 }, value: { offsetY: -10, color: txtColor(), fontSize: "24px", fontWeight: 800, formatter: val => fmtCurSemCentavos(val) }, total: { show: true, label: "Volume base", color: txtColor(), fontSize: "12px", fontWeight: 700, formatter: w => { const t = w.globals.seriesTotals.reduce((a,b)=>a+b,0);
-    return t <= 1 ? "Sem dados" : fmtCur(t); } } } } } },
-    legend: { position: "bottom", fontSize: "12px", fontWeight: 700, markers: { width: 10, height: 10, radius: 10 }, itemMargin: { horizontal: 10, vertical: 4 } },
-    tooltip: { enabled: false }
+    dataLabels: {
+      enabled: true,
+      formatter: (val, opts) => {
+        const label = opts.w.globals.labels[opts.seriesIndex];
+        return (!label || label === "Sem dados") ? "" : `${val.toFixed(1)}%`;
+      },
+      style: { fontSize: "13px", fontWeight: "bold", colors: ["#fff"] },
+      dropShadow: { enabled: false }
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "76%",
+          labels: {
+            show: true,
+            name: { offsetY: 20, color: getTextColor(), fontSize: "12px", fontWeight: 700 },
+            value: { offsetY: -10, color: getTextColor(), fontSize: "24px", fontWeight: 800, formatter: val => formatCurrencyNoCents(val) },
+            total: {
+              show: true,
+              label: "Volume base",
+              color: getTextColor(),
+              fontSize: "12px",
+              fontWeight: 700,
+              formatter: w => {
+                const totalSum = w.globals.seriesTotals.reduce((a,b)=>a+b,0);
+                return totalSum <= 1 ? "Sem dados" : formatCurrency(totalSum);
+              }
+            }
+          }
+        }
+      }
+    },
+    legend: {
+      position: "bottom",
+      fontSize: "12px",
+      fontWeight: 700,
+      markers: { width: 10, height: 10, radius: 10 },
+      itemMargin: { horizontal: 10, vertical: 4 }
+    },
+    tooltip: { enabled: false } // Desabilitado conforme original
   };
 }
 </script>
