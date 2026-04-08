@@ -32,6 +32,7 @@
             --radius: 14px;
             --radius-sm: 8px;
             --shadow-sm: 0 1px 4px rgba(60,0,60,0.06), 0 4px 12px rgba(60,0,60,0.04);
+            --shadow-md: 0 8px 24px rgba(60,0,60,0.10);
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,11 +49,11 @@
         /* ─── LAYOUT LATERAL (SIDEBAR) ─── */
         .sidebar {
             width: 260px;
-            background: var(--purple);
+            background: var(--surface);
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
-            box-shadow: 4px 0 12px rgba(60,0,60,0.1);
+            border-right: 1px solid var(--border);
             z-index: 10;
         }
 
@@ -61,11 +62,11 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid var(--border);
         }
 
         .brand-img { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; box-shadow: 0 0 0 2px rgba(255,110,0,0.3); }
-        .brand-name { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+        .brand-name { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--purple); letter-spacing: 1px; }
         .brand-name span { color: var(--orange); margin-left: -2px; }
 
         .sidebar-nav {
@@ -82,7 +83,7 @@
             gap: 12px;
             background: transparent;
             border: none;
-            color: rgba(255,255,255,0.6);
+            color: var(--text-2);
             padding: 14px 16px;
             border-radius: var(--radius-sm);
             cursor: pointer;
@@ -93,17 +94,18 @@
             text-align: left;
         }
 
-        .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
-        .nav-item.active { background: var(--orange); color: #fff; }
+        .nav-item:hover { background: var(--bg); color: var(--purple); }
+        .nav-item.active { background: var(--purple-light); color: var(--purple); font-weight: 700; border-left: 4px solid var(--orange); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;}
+        .nav-item.active i { color: var(--orange); }
         .nav-item i { font-size: 20px; }
 
         .sidebar-footer {
             padding: 24px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid var(--border);
         }
 
         .back-link {
-            color: rgba(255,255,255,0.6);
+            color: var(--text-2);
             display: flex;
             align-items: center;
             gap: 8px;
@@ -112,7 +114,7 @@
             font-weight: 600;
             transition: color 0.2s;
         }
-        .back-link:hover { color: #fff; }
+        .back-link:hover { color: var(--purple); }
 
         /* ─── MAIN CONTENT ─── */
         .main-content {
@@ -123,19 +125,51 @@
             background: var(--bg);
         }
 
+        /* ─── NOVO CABEÇALHO (HEADER EXECUTIVO) ─── */
         header {
-            background: var(--surface);
-            padding: 24px 48px;
-            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, var(--purple) 0%, var(--purple-mid) 100%);
+            padding: 28px 48px;
+            border-bottom: 3px solid var(--orange);
             display: flex;
             align-items: center;
             justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(60,0,60,0.15);
+            color: #fff;
         }
 
-        .page-title h1 { font-family: var(--font-display); font-size: 28px; color: var(--purple); margin-bottom: 4px; }
-        .page-title p { color: var(--text-2); font-size: 14px; }
+        .page-title h1 { font-family: var(--font-display); font-size: 28px; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.5px;}
+        .page-title p { color: rgba(255,255,255,0.7); font-size: 14px; font-weight: 500;}
         
-        .header-pill { background: var(--purple-light); color: var(--purple); font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px; text-transform: uppercase; }
+        .header-pill { 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.1); 
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; 
+            font-size: 12px; 
+            font-weight: 700; 
+            padding: 8px 16px; 
+            border-radius: 30px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(4px);
+        }
+
+        .header-pill .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
 
         .content-area {
             padding: 40px 48px;
@@ -150,13 +184,14 @@
 
         /* ─── CARDS E GRÁFICOS (DASHBOARD) ─── */
         .kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 32px; }
-        .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow-sm); border-left: 5px solid var(--orange); }
+        .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden; }
+        .kpi-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--orange); }
         .kpi-title { font-size: 13px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-        .kpi-value { font-family: var(--font-display); font-size: 32px; font-weight: 800; color: var(--purple); }
+        .kpi-value { font-family: var(--font-display); font-size: 34px; font-weight: 800; color: var(--purple); }
 
         .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow-sm); }
-        .chart-header { font-family: var(--font-display); font-size: 18px; color: var(--purple); margin-bottom: 20px; font-weight: 700; }
+        .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; box-shadow: var(--shadow-sm); }
+        .chart-header { font-family: var(--font-display); font-size: 18px; color: var(--purple); margin-bottom: 24px; font-weight: 700; }
         .chart-container { position: relative; height: 320px; width: 100%; }
 
         /* ─── TABELAS ─── */
@@ -171,7 +206,7 @@
         tr:hover td { background: var(--purple-light); }
         
         .val-destaque { color: var(--orange); font-weight: 700; }
-        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
         .status-active { background: #dcfce7; color: #16a34a; }
         .status-inactive { background: #fee2e2; color: #dc2626; }
 
@@ -212,13 +247,15 @@
             <h1>Gestão de Parcelamentos</h1>
             <p>Acompanhamento e controle de passivos financeiros</p>
         </div>
-        <span class="header-pill">Sincronizado com Sheets</span>
+        <div class="header-pill">
+            <span class="status-dot"></span> Sincronizado com Sheets
+        </div>
     </header>
 
     <div class="content-area">
         <div id="loader">
             <div class="spinner"></div>
-            <p>Consolidando parcelas do servidor...</p>
+            <p>Processando inteligência de dados...</p>
         </div>
 
         <div id="app-content" style="display: none;">
@@ -262,7 +299,7 @@
                                 <th>Qtd Parcela</th>
                                 <th>Atraso</th>
                                 <th>Total da Dívida</th>
-                                <th>Parcela</th>
+                                <th>Valor Parcela</th>
                             </tr>
                         </thead>
                         <tbody id="bodySintetico"></tbody>
@@ -301,9 +338,28 @@
     let rawData = [];
     let consolidatedData = [];
 
+    // Formatador de Moeda Visual
     const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
     const formatDate = (dateStr) => dateStr ? new Date(dateStr).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '-';
 
+    // PARSER RIGOROSO: Transforma número brasileiro em número matemático do JavaScript
+    function parseNumber(val) {
+        if (val === null || val === undefined || val === '') return 0;
+        if (typeof val === 'number') return val;
+        
+        // Remove símbolos de moeda e espaços
+        let str = String(val).replace(/[R$\s]/g, '').trim();
+        
+        // Se tem vírgula e NÃO é o separador de milhar (ex: 1.500,50 ou 50,00)
+        if (str.includes(',')) {
+            str = str.replace(/\./g, ''); // Remove todos os pontos
+            str = str.replace(',', '.'); // Troca a vírgula decimal por ponto
+        }
+        
+        return parseFloat(str) || 0;
+    }
+
+    // Alternar Abas
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -316,8 +372,14 @@
             const response = await fetch(API_URL);
             const raw = await response.json();
             
-            // Filtra linhas totalmente em branco (separadores)
-            rawData = raw.filter(row => row[' Número '] || row['Negociação']);
+            // LIMPEZA: Remove espaços em branco do nome das colunas
+            rawData = raw.map(row => {
+                const cleanRow = {};
+                for (let key in row) {
+                    cleanRow[key.trim()] = row[key];
+                }
+                return cleanRow;
+            }).filter(row => row['Número'] || row['Negociação']);
             
             processConsolidation();
             updateDashboard();
@@ -328,35 +390,34 @@
             document.getElementById('app-content').style.display = 'block';
         } catch (error) {
             console.error(error);
-            document.getElementById('loader').innerHTML = `<p style="color: red;">Erro ao acessar servidor.</p>`;
+            document.getElementById('loader').innerHTML = `<p style="color: #dc2626; font-weight: bold;">Erro ao acessar servidor do Sheets.</p>`;
         }
     }
 
-    // Agrupa as parcelas em contratos unificados
+    // Agrupa as parcelas
     function processConsolidation() {
         const mapContratos = {};
 
         rawData.forEach(row => {
-            const id = row[' Número '] || row['Negociação'] || 'S/N';
+            const id = row['Número'] || row['Negociação'] || 'S/N';
             
             if (!mapContratos[id]) {
                 mapContratos[id] = {
                     natureza: row['Natureza'] || '-',
-                    tributo: row[' Tributo '] || '-',
+                    tributo: row['Tributo'] || '-',
                     numero: id,
                     orgao: row['Orgão'] || '-',
                     qtdParcela: 0,
                     atraso: 0,
                     totalDivida: 0,
-                    parcelaUnit: Number(row[' Valor Original '] || 0),
-                    ativo: String(row['ATIVO']).toUpperCase().includes('SIM')
+                    parcelaUnit: parseNumber(row['Valor Original']),
+                    ativo: String(row['ATIVO']).toUpperCase().includes('SIM') || String(row['ATIVO']).toUpperCase().includes('ATIVO')
                 };
             }
 
             mapContratos[id].qtdParcela++;
-            mapContratos[id].totalDivida += Number(row[' Saldo Devedor '] || 0);
+            mapContratos[id].totalDivida += parseNumber(row['Saldo Devedor']);
             
-            // Lógica base de atraso baseada na coluna Status
             if (String(row['Status']).toLowerCase().includes('atraso')) {
                 mapContratos[id].atraso++;
             }
@@ -371,7 +432,6 @@
         const orgaoMap = {};
         const naturezaMap = {};
 
-        // Usa os dados consolidados para os KPIs de totais
         consolidatedData.forEach(contrato => {
             totalSaldo += contrato.totalDivida;
             if (contrato.ativo) ativas++;
@@ -418,15 +478,15 @@
     function renderDetalhado(data) {
         const tbody = document.getElementById('bodyDetalhado');
         tbody.innerHTML = data.map(r => {
-            const isAtivo = String(r['ATIVO']).toUpperCase().includes('SIM');
+            const isAtivo = String(r['ATIVO']).toUpperCase().includes('SIM') || String(r['ATIVO']).toUpperCase().includes('ATIVO');
             return `
             <tr>
                 <td>${formatDate(r['Data'])}</td>
-                <td><strong>${r[' Número '] || r['Negociação'] || '-'}</strong></td>
+                <td><strong>${r['Número'] || r['Negociação'] || '-'}</strong></td>
                 <td>${r['Orgão'] || '-'}</td>
                 <td>${r['Natureza'] || '-'}</td>
-                <td>${formatCurrency(r[' Valor Original '])}</td>
-                <td class="val-destaque">${formatCurrency(r[' Saldo Devedor '])}</td>
+                <td>${formatCurrency(parseNumber(r['Valor Original']))}</td>
+                <td class="val-destaque">${formatCurrency(parseNumber(r['Saldo Devedor']))}</td>
                 <td><span class="status-badge ${isAtivo ? 'status-active' : 'status-inactive'}">${r['Status'] || '-'}</span></td>
             </tr>
         `}).join('');
@@ -437,7 +497,8 @@
         const filtered = consolidatedData.filter(c => 
             c.numero.toLowerCase().includes(term) || 
             c.orgao.toLowerCase().includes(term) || 
-            c.natureza.toLowerCase().includes(term)
+            c.natureza.toLowerCase().includes(term) ||
+            c.tributo.toLowerCase().includes(term)
         );
         renderSintetico(filtered);
     }
@@ -445,7 +506,7 @@
     function filterDetalhado() {
         const term = document.getElementById('searchDetalhado').value.toLowerCase();
         const filtered = rawData.filter(r => 
-            String(r[' Número ']).toLowerCase().includes(term) || 
+            String(r['Número']).toLowerCase().includes(term) || 
             String(r['Orgão']).toLowerCase().includes(term) || 
             String(r['Natureza']).toLowerCase().includes(term)
         );
