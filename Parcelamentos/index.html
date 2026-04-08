@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,13 +18,14 @@
            DESIGN TOKENS
            ═══════════════════════════════════════════════════════════════ */
         :root {
+            /* Paleta ONTIME adaptada para Dark Theme */
             --purple-deep: #1a0a2e;
             --purple-base: #220e3b;
             --purple-raised: #2c1448;
-            --purple-mid: #3C003C;
+            --purple-mid: #3C003C; /* Roxo ONTIME */
             --purple-light: #5a2d7a;
 
-            --orange: #FF6E00;
+            --orange: #FF6E00; /* Laranja ONTIME */
             --orange-soft: #ff8c33;
             --orange-dim: rgba(255, 110, 0, 0.12);
             --orange-glow: rgba(255, 110, 0, 0.30);
@@ -47,6 +48,8 @@
             --color-success-dim: rgba(52, 211, 153, 0.12);
             --color-danger: #f87171;
             --color-danger-dim: rgba(248, 113, 113, 0.12);
+            --color-neutral: #9ca3af;
+            --color-neutral-dim: rgba(156, 163, 175, 0.15);
 
             --font-display: 'Syne', sans-serif;
             --font-body: 'Outfit', sans-serif;
@@ -71,7 +74,7 @@
             display: flex;
         }
 
-        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--purple-light); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--orange); }
@@ -92,9 +95,7 @@
 
         .sidebar-brand {
             padding: 28px 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            display: flex; align-items: center; gap: 12px;
             border-bottom: 1px solid var(--surface-border);
         }
 
@@ -104,8 +105,7 @@
         }
 
         .brand-name {
-            font-family: var(--font-display);
-            font-size: 21px; font-weight: 800;
+            font-family: var(--font-display); font-size: 21px; font-weight: 800;
             color: var(--text-0); letter-spacing: 1.5px;
         }
         .brand-name span { color: var(--orange); }
@@ -119,8 +119,8 @@
             display: flex; align-items: center; gap: 12px;
             background: transparent; border: none; color: var(--text-2);
             padding: 13px 16px; border-radius: var(--radius-sm);
-            cursor: pointer; font-family: var(--font-body);
-            font-size: 14px; font-weight: 500; transition: all 0.25s ease; text-align: left; position: relative;
+            cursor: pointer; font-family: var(--font-body); font-size: 14px;
+            font-weight: 500; transition: all 0.25s ease; text-align: left; position: relative;
         }
         .nav-item:hover { background: rgba(255, 255, 255, 0.04); color: var(--text-0); }
         .nav-item.active { background: var(--orange-dim); color: var(--text-0); font-weight: 600; }
@@ -161,7 +161,7 @@
             background: linear-gradient(135deg, var(--purple-base) 0%, var(--purple-raised) 100%);
             padding: 20px 48px; border-bottom: 1px solid var(--surface-border);
             display: flex; align-items: center; justify-content: space-between;
-            position: sticky; top: 0; z-index: 50; backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); gap: 16px; flex-wrap: wrap;
+            position: sticky; top: 0; z-index: 50; backdrop-filter: blur(24px); gap: 16px; flex-wrap: wrap;
         }
         header::after {
             content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px;
@@ -194,7 +194,6 @@
             color: var(--text-2); font-size: 11px; font-weight: 500;
             padding: 7px 14px; border-radius: 30px; letter-spacing: 0.3px;
         }
-        .timestamp-pill i { font-size: 14px; color: var(--text-3); }
 
         @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.5); } 70% { box-shadow: 0 0 0 5px rgba(52, 211, 153, 0); } 100%{ box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); } }
 
@@ -221,11 +220,13 @@
         .kpi-card {
             background: var(--bg-card); border: 1px solid var(--surface-border);
             border-radius: var(--radius); padding: 28px 30px; position: relative; overflow: hidden;
-            backdrop-filter: blur(16px); transition: border-color 0.3s, background 0.3s, transform 0.3s;
+            backdrop-filter: blur(16px); transition: border-color 0.3s, transform 0.3s;
         }
         .kpi-card:hover { border-color: var(--surface-border-hover); background: var(--bg-card-hover); transform: translateY(-2px); }
-        .kpi-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--orange) 0%, var(--purple-light) 100%); border-radius: 0 2px 2px 0; }
-        .kpi-card::after { content: ''; position: absolute; top: -1px; left: 15%; right: 15%; height: 1px; background: linear-gradient(90deg, transparent, var(--orange-glow), transparent); }
+        .kpi-card::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+            background: linear-gradient(180deg, var(--orange) 0%, var(--purple-light) 100%); border-radius: 0 2px 2px 0;
+        }
 
         .kpi-title { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
         .kpi-value { font-family: var(--font-display); font-size: 32px; font-weight: 800; color: var(--text-0); }
@@ -242,7 +243,6 @@
             border-radius: var(--radius); padding: 28px; backdrop-filter: blur(16px); transition: border-color 0.3s;
         }
         .chart-card:hover { border-color: var(--surface-border-hover); }
-
         .chart-header { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 24px; }
         .chart-container { position: relative; height: 300px; width: 100%; }
 
@@ -251,15 +251,34 @@
            ═══════════════════════════════════════════════════════════════ */
         .table-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
 
+        /* Estilo unificado para inputs (texto e data) */
         .search-input {
-            width: 100%; max-width: 380px; padding: 11px 16px 11px 42px;
+            width: 100%; max-width: 380px; padding: 11px 16px;
             border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
-            font-family: var(--font-body); font-size: 13px; color: var(--text-0);
-            background: var(--bg-raised) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%235a4d6e" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>') no-repeat 14px center;
+            font-family: var(--font-body); font-size: 13px; color: var(--text-0); background: var(--bg-raised);
             outline: none; transition: border-color 0.25s, box-shadow 0.25s;
+        }
+        .search-input.icon-search {
+            padding-left: 42px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%235a4d6e" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>');
+            background-repeat: no-repeat;
+            background-position: 14px center;
+        }
+        /* Para o input de mês não ter background esquisito e manter o fundo */
+        .search-input[type="month"] {
+            max-width: 200px;
+            color: var(--text-1);
+        }
+        .search-input[type="month"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
         }
         .search-input::placeholder { color: var(--text-3); }
         .search-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-dim); }
+
+        .toolbar-group {
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+        }
 
         .table-container { background: var(--bg-card); border: 1px solid var(--surface-border); border-radius: var(--radius); overflow-x: auto; backdrop-filter: blur(16px); }
 
@@ -276,6 +295,7 @@
         .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .status-active { background: var(--color-success-dim); color: var(--color-success); }
         .status-inactive { background: var(--color-danger-dim); color: var(--color-danger); }
+        .status-vencer { background: var(--color-neutral-dim); color: var(--color-neutral); }
 
         .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--surface-border); font-size: 12px; color: var(--text-2); flex-wrap: wrap; gap: 8px; }
         .pagination-info { font-weight: 500; }
@@ -312,12 +332,6 @@
             header { padding: 16px 24px; }
             .kpi-grid, .charts-grid { grid-template-columns: 1fr; }
             .chart-full { grid-column: auto; }
-        }
-        @media (max-width: 640px) {
-            .content-area { padding: 20px 16px 100px; gap: 40px; }
-            header { padding: 14px 16px; }
-            .header-right { width: 100%; justify-content: flex-end; }
-            .timestamp-pill { display: none; }
         }
     </style>
 </head>
@@ -401,7 +415,7 @@
                         <div class="chart-container"><canvas id="chartAbertura"></canvas></div>
                     </div>
                     <div class="chart-card">
-                        <div class="chart-header">Efeito Caixa — Jan/2023 vs Mês Atual</div>
+                        <div class="chart-header">Efeito Caixa — Jan/2023 vs Mês Atual (A Vencer)</div>
                         <div class="chart-container"><canvas id="chartCaixa"></canvas></div>
                     </div>
                 </div>
@@ -410,7 +424,7 @@
             <div id="sintetico" class="scroll-section">
                 <h2 class="section-title"><i class="ph-fill ph-list-numbers"></i> Resumo Sintético</h2>
                 <div class="table-toolbar">
-                    <input type="text" id="searchSintetico" class="search-input"
+                    <input type="text" id="searchSintetico" class="search-input icon-search"
                            placeholder="Pesquisar contrato, órgão ou natureza..." oninput="App.filterSintetico()">
                 </div>
                 <div class="table-container">
@@ -429,10 +443,16 @@
 
             <div id="detalhado" class="scroll-section">
                 <h2 class="section-title"><i class="ph-fill ph-table"></i> Detalhamento</h2>
+                
                 <div class="table-toolbar">
-                    <input type="text" id="searchDetalhado" class="search-input"
+                    <input type="text" id="searchDetalhado" class="search-input icon-search"
                            placeholder="Pesquisar em todas as linhas..." oninput="App.filterDetalhado()">
+                    
+                    <div class="toolbar-group">
+                        <input type="month" id="filterMesAno" class="search-input" title="Filtrar por Mês e Ano" onchange="App.filterDetalhado()">
+                    </div>
                 </div>
+
                 <div class="table-container">
                     <table>
                         <thead>
@@ -456,12 +476,9 @@
     // CONFIGURAÇÃO
     // ═══════════════════════════════════════════════════════════════════
     const API_URL = 'https://script.google.com/macros/s/AKfycbwfu8_ghCZFSs3yvcXtuTchwo6nfQ62di-jk0qNF0suhe1egMYvNZzrL9THDt7fx8h2hg/exec';
-    const CAIXA_JAN_2023 = 421634; // Valor fixo de Jan/2023
+    const CAIXA_JAN_2023 = 421634; // Base fixa de Jan/2023 (opcionalmente pode ser dinâmico caso os dados existam)
     const ROWS_PER_PAGE = 20;
 
-    // ═══════════════════════════════════════════════════════════════════
-    // MÓDULO PRINCIPAL DA APLICAÇÃO
-    // ═══════════════════════════════════════════════════════════════════
     const App = (() => {
         let rawData = [];
         let consolidatedData = [];
@@ -491,6 +508,7 @@
             bodyDetalhado: document.getElementById('bodyDetalhado'),
             paginationDetalhado: document.getElementById('paginationDetalhado'),
             searchDetalhado: document.getElementById('searchDetalhado'),
+            filterMesAno: document.getElementById('filterMesAno'),
             navItems: document.querySelectorAll('.nav-item'),
             scrollSections: document.querySelectorAll('.scroll-section')
         };
@@ -517,7 +535,7 @@
             },
             isAtivo: v => {
                 const u = String(v || '').toUpperCase();
-                return u.includes('SIM') || u.includes('ATIVO');
+                return u.includes('SIM') || u.includes('ATIVO') || u.includes('PAGO');
             },
             debounce: (fn, ms = 250) => {
                 let t;
@@ -560,15 +578,13 @@
             return p.data.slice(start, start + ROWS_PER_PAGE);
         };
 
-        const totalPages = (key) => {
-            return Math.max(1, Math.ceil(pagination[key].data.length / ROWS_PER_PAGE));
-        };
+        const totalPages = (key) => Math.max(1, Math.ceil(pagination[key].data.length / ROWS_PER_PAGE));
 
         const renderPagination = (key, containerEl) => {
             const total = totalPages(key);
             const current = pagination[key].page;
             const count = pagination[key].data.length;
-            const start = (current - 1) * ROWS_PER_PAGE + 1;
+            const start = count === 0 ? 0 : (current - 1) * ROWS_PER_PAGE + 1;
             const end = Math.min(current * ROWS_PER_PAGE, count);
 
             let btns = '';
@@ -583,7 +599,7 @@
             btns += `<button onclick="App.goPage('${key}', ${current + 1})" ${current >= total ? 'disabled' : ''}><i class="ph-bold ph-caret-right"></i></button>`;
 
             containerEl.innerHTML = `
-                <span class="pagination-info">${count === 0 ? '0' : start}–${end} de ${count} registos</span>
+                <span class="pagination-info">${start}–${end} de ${count} registos</span>
                 <div class="pagination-btns">${btns}</div>
             `;
         };
@@ -621,7 +637,7 @@
                 initScrollSpy();
             } catch (e) {
                 console.error("Erro ao carregar dados:", e);
-                DOM.loader.innerHTML = `<p style="color:var(--color-danger);font-weight:600;">Erro ao aceder aos dados.<br><small style="color:var(--text-3);font-weight:400;">${e.message}. Por favor, tente novamente mais tarde.</small></p>`;
+                DOM.loader.innerHTML = `<p style="color:var(--color-danger);font-weight:600;">Erro ao aceder aos dados.<br><small style="color:var(--text-3);font-weight:400;">${e.message}.</small></p>`;
             }
         };
 
@@ -635,7 +651,7 @@
                     map[id] = {
                         natureza: row['Natureza'] || '-', tributo: row['Tributo'] || '-', numero: id, orgao: row['Orgão'] || '-',
                         qtdParcela: 0, atraso: 0, totalDivida: 0, parcelaUnit: Utils.parseNumber(row['Valor Original']), ativo: Utils.isAtivo(row['ATIVO']),
-                        isEncerrado: true // Assumimos que está encerrado até encontrar uma parcela ativa
+                        isEncerrado: true // Assumimos true, até encontrar um que não seja
                     };
                 }
                 map[id].qtdParcela++;
@@ -650,8 +666,9 @@
         const getFilteredSintetico = (term = '') => {
             const lowerTerm = term.toLowerCase();
             return consolidatedData.filter(c => {
-                if (c.totalDivida <= 0 || c.parcelaUnit === 0) return false; // Filtra parcela e saldo zeros
-                if (c.isEncerrado) return false; // Filtra completamente os Encerrados
+                // REGRA SINTÉTICA 1 e 2: Ocultar zerados e ocultar "Encerrados"
+                if (c.totalDivida <= 0 || c.parcelaUnit === 0) return false;
+                if (c.isEncerrado) return false;
                 
                 if (lowerTerm) {
                     return c.numero.toLowerCase().includes(lowerTerm) || c.orgao.toLowerCase().includes(lowerTerm) || c.natureza.toLowerCase().includes(lowerTerm) || c.tributo.toLowerCase().includes(lowerTerm);
@@ -699,19 +716,20 @@
                 const d = new Date(row['Data']);
                 const status = String(row['Status'] || '').trim().toLowerCase();
 
-                if (status === 'a vencer') {
-                    const orgao = row['Orgão'] || '-';
-                    orgaoMap[orgao] = (orgaoMap[orgao] || 0) + saldoDev;
-                }
-
                 if (!isNaN(d.getTime())) {
                     const y = d.getUTCFullYear(), m = d.getUTCMonth();
-                    
-                    // Quitação Prevista (Soma apenas o Saldo Devedor do que falta pagar no ano)
-                    quitacaoMap[y] = (quitacaoMap[y] || 0) + saldoDev;
-                    
-                    // Efeito Caixa (Calculo Dinâmico se houver caixa no rawData no futuro)
-                    if (y === currYear && m === currMonth) caixaMesAtual += valOriginal;
+
+                    // Efeito Caixa: Apenas valor a ser pago (SaldoDev) no Mês Atual SE for "A Vencer"
+                    if (y === currYear && m === currMonth && status === 'a vencer') {
+                        caixaMesAtual += saldoDev; 
+                    }
+
+                    // Débitos e Quitação previstos (apenas do que falta pagar, "a vencer")
+                    if (status === 'a vencer') {
+                        const orgao = row['Orgão'] || '-';
+                        orgaoMap[orgao] = (orgaoMap[orgao] || 0) + saldoDev;
+                        quitacaoMap[y] = (quitacaoMap[y] || 0) + saldoDev;
+                    }
                 }
             });
 
@@ -730,37 +748,40 @@
             Chart.register(ChartDataLabels);
             Object.values(charts).forEach(c => c?.destroy());
 
-            // 1. Quitação Prevista (Apenas a Pagar)
+            // 1. Quitação Prevista (Sem Legenda, apenas a Pagar)
             charts.quitacao = new Chart(DOM.chartQuitacaoCanvas, {
                 type: 'bar',
                 data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: Utils.makeGradient('chartQuitacao', '#FF6E00', '#ff9544'), borderRadius: 6, maxBarThickness: 60 }] },
                 options: { ...chartOpts(), scales: { x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#8a7aa0', font: { family: "'Outfit'", size: 12 } } }, y: { display: false } } }
             });
 
-            // 2. Débitos por Órgão ("A Vencer")
+            // 2. Débitos por Órgão (Evitar corte da label adicionando margem / grace)
             const orgaoEntries = Object.entries(orgaoMap).sort((a, b) => b[1] - a[1]);
             charts.abertura = new Chart(DOM.chartAberturaCanvas, {
                 type: 'bar',
                 data: { labels: orgaoEntries.map(e => e[0]), datasets: [{ data: orgaoEntries.map(e => e[1]), backgroundColor: '#3C003C', borderRadius: 5, maxBarThickness: 28 }] },
                 options: {
-                    ...chartOpts(), indexAxis: 'y',
-                    scales: { x: { display: false }, y: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#8a7aa0', font: { family: "'Outfit'", size: 11, weight: 500 }, padding: 8 } } }
+                    ...chartOpts(), 
+                    indexAxis: 'y',
+                    layout: { padding: { right: 80, top: 20, bottom: 10 } }, // Protege o texto de ser cortado
+                    scales: { 
+                        x: { display: false, grace: '15%' }, // Dá 15% de espaço no fim da maior barra
+                        y: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#8a7aa0', font: { family: "'Outfit'", size: 11, weight: 500 }, padding: 8 } } 
+                    }
                 }
             });
 
-            // 3. Efeito Caixa (Dataset Unificado para evitar Duplos Rótulos)
+            // 3. Efeito Caixa (Sem Legenda)
             charts.caixa = new Chart(DOM.chartCaixaCanvas, {
                 type: 'bar',
                 data: {
                     labels: ['Jan/2023', `${monthNames[currMonth]}/${currYear}`],
-                    datasets: [
-                        {
-                            data: [CAIXA_JAN_2023, caixaMesAtual],
-                            backgroundColor: ['#5a2d7a', '#FF6E00'],
-                            borderRadius: 6,
-                            maxBarThickness: 72
-                        }
-                    ]
+                    datasets: [{
+                        data: [CAIXA_JAN_2023, caixaMesAtual],
+                        backgroundColor: ['#5a2d7a', '#FF6E00'],
+                        borderRadius: 6,
+                        maxBarThickness: 72
+                    }]
                 },
                 options: { ...chartOpts(), scales: { x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#8a7aa0', font: { family: "'Outfit'", size: 12 } } }, y: { display: false } } }
             });
@@ -777,14 +798,20 @@
 
         const renderDetalhadoRows = (data) => {
             DOM.bodyDetalhado.innerHTML = data.map(r => {
-                const ativo = Utils.isAtivo(r['ATIVO']);
+                const statusLabel = String(r['Status'] || '-').trim();
+                const statusLower = statusLabel.toLowerCase();
+                let badgeClass = 'status-inactive'; 
+                
+                if (statusLower === 'a vencer') badgeClass = 'status-vencer';
+                else if (Utils.isAtivo(statusLabel)) badgeClass = 'status-active';
+                
                 return `
                 <tr>
                     <td>${Utils.formatDate(r['Data'])}</td><td><strong>${r['Número'] || r['Negociação'] || '-'}</strong></td>
                     <td>${r['Orgão'] || '-'}</td><td>${r['Natureza'] || '-'}</td>
                     <td>${Utils.fmtCurrency(Utils.parseNumber(r['Valor Original']))}</td>
                     <td class="val-destaque">${Utils.fmtCurrency(Utils.parseNumber(r['Saldo Devedor']))}</td>
-                    <td><span class="status-badge ${ativo ? 'status-active' : 'status-inactive'}">${r['Status'] || '-'}</span></td>
+                    <td><span class="status-badge ${badgeClass}">${statusLabel}</span></td>
                 </tr>`;
             }).join('');
         };
@@ -807,15 +834,37 @@
             renderSintetico(getFilteredSintetico(DOM.searchSintetico.value));
         });
 
+        // ═══════════════════════════════════════════════════════════════════
+        // Filtro Detalhado com Mês/Ano
+        // ═══════════════════════════════════════════════════════════════════
         const filterDetalhado = Utils.debounce(() => {
             const t = DOM.searchDetalhado.value.toLowerCase();
-            renderDetalhado(rawData.filter(r =>
-                String(r['Número'] || '').toLowerCase().includes(t) ||
-                String(r['Orgão'] || '').toLowerCase().includes(t) ||
-                String(r['Natureza'] || '').toLowerCase().includes(t) ||
-                String(r['Tributo'] || '').toLowerCase().includes(t) ||
-                String(r['Status'] || '').toLowerCase().includes(t)
-            ));
+            const filterDate = DOM.filterMesAno.value; // Formato esperado "YYYY-MM"
+            
+            let filtered = rawData.filter(r => {
+                // 1. Check text search
+                const textMatch = String(r['Número'] || '').toLowerCase().includes(t) ||
+                                  String(r['Orgão'] || '').toLowerCase().includes(t) ||
+                                  String(r['Natureza'] || '').toLowerCase().includes(t) ||
+                                  String(r['Tributo'] || '').toLowerCase().includes(t) ||
+                                  String(r['Status'] || '').toLowerCase().includes(t);
+                
+                if (!textMatch) return false;
+
+                // 2. Check Date Filter
+                if (filterDate) {
+                    const [fYear, fMonth] = filterDate.split('-');
+                    const d = new Date(r['Data']);
+                    if (isNaN(d.getTime())) return false; // Exclui se não tem data válida e o filtro está ativo
+                    if (d.getUTCFullYear() !== parseInt(fYear) || (d.getUTCMonth() + 1) !== parseInt(fMonth)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            renderDetalhado(filtered);
         });
 
         document.addEventListener('DOMContentLoaded', init);
