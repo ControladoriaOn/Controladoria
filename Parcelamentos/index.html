@@ -249,14 +249,28 @@
         /* ═══════════════════════════════════════════════════════════════
            TABLES & PAGINATION
            ═══════════════════════════════════════════════════════════════ */
-        .table-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+        .table-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+            flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas menores */
+        }
 
-        /* Estilo unificado para inputs (texto e data) */
-        .search-input {
-            width: 100%; max-width: 380px; padding: 11px 16px;
-            border: 1px solid var(--surface-border); border-radius: var(--radius-sm);
-            font-family: var(--font-body); font-size: 13px; color: var(--text-0); background: var(--bg-raised);
-            outline: none; transition: border-color 0.25s, box-shadow 0.25s;
+        /* Estilo unificado para inputs (texto e data) e selects */
+        .search-input, .filter-select {
+            flex-grow: 1; /* Permite que cresçam para preencher o espaço */
+            min-width: 150px; /* Largura mínima para não ficarem muito pequenos */
+            padding: 11px 16px;
+            border: 1px solid var(--surface-border);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-body);
+            font-size: 13px;
+            color: var(--text-0);
+            background: var(--bg-raised);
+            outline: none;
+            transition: border-color 0.25s, box-shadow 0.25s;
         }
         .search-input.icon-search {
             padding-left: 42px;
@@ -266,7 +280,7 @@
         }
         /* Para o input de mês não ter background esquisito e manter o fundo */
         .search-input[type="month"] {
-            max-width: 200px;
+            max-width: 180px; /* Ajustado para ser mais compacto */
             color: var(--text-1);
         }
         .search-input[type="month"]::-webkit-calendar-picker-indicator {
@@ -274,11 +288,37 @@
             cursor: pointer;
         }
         .search-input::placeholder { color: var(--text-3); }
-        .search-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-dim); }
+        .search-input:focus, .filter-select:focus { border-color: var(--orange); box-shadow: 0 0 0 3px var(--orange-dim); }
+
+        .filter-select {
+            max-width: 200px; /* Largura máxima para selects */
+            -webkit-appearance: none; /* Remove default arrow */
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%238a7aa0" viewBox="0 0 256 256"><path d="M208.49,104.49l-72,72a12,12,0,0,1-17,0l-72-72a12,12,0,0,1,17-17L128,159l63.51-63.52a12,12,0,0,1,17,17Z"></path></svg>');
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px; /* Make space for the arrow */
+            cursor: pointer;
+        }
 
         .toolbar-group {
-            display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            flex-grow: 1; /* Permite que o grupo de filtros cresça */
+            justify-content: flex-end; /* Alinha os filtros à direita */
         }
+        /* Ajuste para o grupo de filtros no detalhamento, para que o search input fique à esquerda */
+        #detalhado .table-toolbar {
+            justify-content: flex-start; /* Alinha tudo à esquerda */
+        }
+        #detalhado .table-toolbar .toolbar-group {
+            flex-grow: 0; /* Não cresce, mantém o tamanho dos selects */
+            justify-content: flex-start; /* Alinha os selects à esquerda */
+        }
+
 
         .table-container { background: var(--bg-card); border: 1px solid var(--surface-border); border-radius: var(--radius); overflow-x: auto; backdrop-filter: blur(16px); }
 
@@ -293,9 +333,11 @@
         .val-destaque { color: var(--orange); font-weight: 600; }
 
         .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .status-active { background: var(--color-success-dim); color: var(--color-success); }
-        .status-inactive { background: var(--color-danger-dim); color: var(--color-danger); }
+        .status-quitada, .status-encerrado { background: var(--color-success-dim); color: var(--color-success); }
+        .status-atraso { background: var(--color-danger-dim); color: var(--color-danger); }
         .status-vencer { background: var(--color-neutral-dim); color: var(--color-neutral); }
+        .status-default { background: rgba(156, 163, 175, 0.1); color: #9ca3af; } /* Para outros status não mapeados */
+
 
         .pagination { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-top: 1px solid var(--surface-border); font-size: 12px; color: var(--text-2); flex-wrap: wrap; gap: 8px; }
         .pagination-info { font-weight: 500; }
@@ -332,6 +374,9 @@
             header { padding: 16px 24px; }
             .kpi-grid, .charts-grid { grid-template-columns: 1fr; }
             .chart-full { grid-column: auto; }
+            .table-toolbar { flex-direction: column; align-items: flex-start; } /* Empilha a barra de ferramentas em telas pequenas */
+            .toolbar-group { width: 100%; justify-content: flex-start; } /* Garante que os grupos de filtros também se ajustem */
+            .search-input, .filter-select { max-width: 100%; } /* Ocupa a largura total */
         }
     </style>
 </head>
@@ -395,11 +440,11 @@
 
                 <div class="kpi-grid">
                     <div class="kpi-card">
-                        <div class="kpi-title">Saldo Devedor Total</div>
+                        <div class="kpi-title">Saldo Devedor Total (A Vencer)</div>
                         <div class="kpi-value" id="kpi-saldo">R$ 0</div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-title">Contratos Ativos</div>
+                        <div class="kpi-title">Contratos Ativos (A Vencer)</div>
                         <div class="kpi-value" id="kpi-ativas">0</div>
                         <div class="kpi-sub" id="kpi-ativas-sub"></div>
                     </div>
@@ -407,7 +452,7 @@
 
                 <div class="charts-grid">
                     <div class="chart-card chart-full">
-                        <div class="chart-header">Quitação Prevista — A Pagar por Ano</div>
+                        <div class="chart-header">Quitação Prevista — Saldo Devedor Acumulado (Fim de Ano)</div>
                         <div class="chart-container"><canvas id="chartQuitacao"></canvas></div>
                     </div>
                     <div class="chart-card">
@@ -425,7 +470,15 @@
                 <h2 class="section-title"><i class="ph-fill ph-list-numbers"></i> Resumo Sintético</h2>
                 <div class="table-toolbar">
                     <input type="text" id="searchSintetico" class="search-input icon-search"
-                           placeholder="Pesquisar contrato, órgão ou natureza..." oninput="App.filterSintetico()">
+                           placeholder="Pesquisar contrato, número..." oninput="App.filterSintetico()">
+                    <div class="toolbar-group">
+                        <select id="filterSinteticoNatureza" class="filter-select" onchange="App.filterSintetico()">
+                            <option value="">Todas as Naturezas</option>
+                        </select>
+                        <select id="filterSinteticoOrgao" class="filter-select" onchange="App.filterSintetico()">
+                            <option value="">Todos os Órgãos</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table>
@@ -443,13 +496,27 @@
 
             <div id="detalhado" class="scroll-section">
                 <h2 class="section-title"><i class="ph-fill ph-table"></i> Detalhamento</h2>
-                
+
                 <div class="table-toolbar">
                     <input type="text" id="searchDetalhado" class="search-input icon-search"
                            placeholder="Pesquisar em todas as linhas..." oninput="App.filterDetalhado()">
-                    
                     <div class="toolbar-group">
-                        <input type="month" id="filterMesAno" class="search-input" title="Filtrar por Mês e Ano" onchange="App.filterDetalhado()">
+                        <select id="filterDetalhadoOrgao" class="filter-select" onchange="App.filterDetalhado()">
+                            <option value="">Todos os Órgãos</option>
+                        </select>
+                        <select id="filterDetalhadoNatureza" class="filter-select" onchange="App.filterDetalhado()">
+                            <option value="">Todas as Naturezas</option>
+                        </select>
+                        <select id="filterDetalhadoStatus" class="filter-select" onchange="App.filterDetalhado()">
+                            <option value="">Todos os Status</option>
+                            <option value="A Vencer">A Vencer</option>
+                            <option value="Quitada">Quitada</option>
+                            <option value="Encerrado">Encerrado</option>
+                            <option value="Em Atraso">Em Atraso</option>
+                        </select>
+                        <select id="filterDetalhadoMesAno" class="filter-select" onchange="App.filterDetalhado()">
+                            <option value="">Todos os Meses/Anos</option>
+                        </select>
                     </div>
                 </div>
 
@@ -505,10 +572,15 @@
             bodySintetico: document.getElementById('bodySintetico'),
             paginationSintetico: document.getElementById('paginationSintetico'),
             searchSintetico: document.getElementById('searchSintetico'),
+            filterSinteticoNatureza: document.getElementById('filterSinteticoNatureza'),
+            filterSinteticoOrgao: document.getElementById('filterSinteticoOrgao'),
             bodyDetalhado: document.getElementById('bodyDetalhado'),
             paginationDetalhado: document.getElementById('paginationDetalhado'),
             searchDetalhado: document.getElementById('searchDetalhado'),
-            filterMesAno: document.getElementById('filterMesAno'),
+            filterDetalhadoOrgao: document.getElementById('filterDetalhadoOrgao'),
+            filterDetalhadoNatureza: document.getElementById('filterDetalhadoNatureza'),
+            filterDetalhadoStatus: document.getElementById('filterDetalhadoStatus'),
+            filterDetalhadoMesAno: document.getElementById('filterDetalhadoMesAno'),
             navItems: document.querySelectorAll('.nav-item'),
             scrollSections: document.querySelectorAll('.scroll-section')
         };
@@ -623,11 +695,12 @@
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const raw = await res.json();
                 rawData = raw.map(row => { const c = {}; for (const k in row) c[k.trim()] = row[k]; return c; }).filter(r => r['Número'] || r['Negociação']);
-                
+
                 const syncTime = new Date();
                 DOM.lastSyncSpan.textContent = syncTime.toLocaleDateString('pt-BR') + ' ' + syncTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
                 processConsolidation();
+                populateFilters(); // Nova função para preencher os selects
                 updateDashboard();
                 renderSintetico(getFilteredSintetico());
                 renderDetalhado(rawData);
@@ -656,24 +729,71 @@
                 }
                 map[id].qtdParcela++;
                 map[id].totalDivida += Utils.parseNumber(row['Saldo Devedor']);
-                
+
                 if (status.includes('atraso')) map[id].atraso++;
                 if (!status.includes('encerrado')) map[id].isEncerrado = false;
             });
             consolidatedData = Object.values(map);
         };
 
-        const getFilteredSintetico = (term = '') => {
+        const populateFilters = () => {
+            const naturezas = new Set();
+            const orgaos = new Set();
+            const mesesAnos = new Set(); // Para o novo filtro de Mês/Ano
+
+            rawData.forEach(row => {
+                if (row['Natureza']) naturezas.add(row['Natureza']);
+                if (row['Orgão']) orgaos.add(row['Orgão']);
+                const d = new Date(row['Data']);
+                if (!isNaN(d.getTime())) {
+                    mesesAnos.add(`${monthNames[d.getUTCMonth()]}/${d.getUTCFullYear()}`);
+                }
+            });
+
+            // Sintético
+            DOM.filterSinteticoNatureza.innerHTML = '<option value="">Todas as Naturezas</option>' +
+                Array.from(naturezas).sort().map(n => `<option value="${n}">${n}</option>`).join('');
+            DOM.filterSinteticoOrgao.innerHTML = '<option value="">Todos os Órgãos</option>' +
+                Array.from(orgaos).sort().map(o => `<option value="${o}">${o}</option>`).join('');
+
+            // Detalhado
+            DOM.filterDetalhadoOrgao.innerHTML = '<option value="">Todos os Órgãos</option>' +
+                Array.from(orgaos).sort().map(o => `<option value="${o}">${o}</option>`).join('');
+            DOM.filterDetalhadoNatureza.innerHTML = '<option value="">Todas as Naturezas</option>' +
+                Array.from(naturezas).sort().map(n => `<option value="${n}">${n}</option>`).join('');
+
+            // Novo filtro de Mês/Ano para o detalhamento
+            DOM.filterDetalhadoMesAno.innerHTML = '<option value="">Todos os Meses/Anos</option>' +
+                Array.from(mesesAnos).sort((a, b) => {
+                    const [mA, yA] = a.split('/');
+                    const [mB, yB] = b.split('/');
+                    const dateA = new Date(yA, monthNames.indexOf(mA));
+                    const dateB = new Date(yB, monthNames.indexOf(mB));
+                    return dateA - dateB;
+                }).map(ma => `<option value="${ma}">${ma}</option>`).join('');
+        };
+
+        const getFilteredSintetico = (term = '', natureza = '', orgao = '') => {
             const lowerTerm = term.toLowerCase();
+            const lowerNatureza = natureza.toLowerCase();
+            const lowerOrgao = orgao.toLowerCase();
+
             return consolidatedData.filter(c => {
                 // REGRA SINTÉTICA 1 e 2: Ocultar zerados e ocultar "Encerrados"
                 if (c.totalDivida <= 0 || c.parcelaUnit === 0) return false;
                 if (c.isEncerrado) return false;
-                
-                if (lowerTerm) {
-                    return c.numero.toLowerCase().includes(lowerTerm) || c.orgao.toLowerCase().includes(lowerTerm) || c.natureza.toLowerCase().includes(lowerTerm) || c.tributo.toLowerCase().includes(lowerTerm);
-                }
-                return true;
+
+                const matchesSearch = lowerTerm ? (
+                    c.numero.toLowerCase().includes(lowerTerm) ||
+                    c.orgao.toLowerCase().includes(lowerTerm) ||
+                    c.natureza.toLowerCase().includes(lowerTerm) ||
+                    c.tributo.toLowerCase().includes(lowerTerm)
+                ) : true;
+
+                const matchesNatureza = lowerNatureza ? c.natureza.toLowerCase() === lowerNatureza : true;
+                const matchesOrgao = lowerOrgao ? c.orgao.toLowerCase() === lowerOrgao : true;
+
+                return matchesSearch && matchesNatureza && matchesOrgao;
             });
         };
 
@@ -690,7 +810,8 @@
                     },
                     datalabels: {
                         color: '#d0c4e0', font: { family: "'Outfit'", size: 11, weight: 600 },
-                        formatter: v => v > 0 ? Utils.fmtCurrencyDash(v) : '', anchor: 'end', align: 'end', ...(overrides.datalabels || {})
+                        formatter: v => Utils.fmtCurrencyDash(v), // Sempre mostra o rótulo, mesmo se for 0
+                        anchor: 'end', align: 'end', ...(overrides.datalabels || {})
                     }
                 },
                 scales: { x: { display: false }, y: { display: false } },
@@ -699,19 +820,29 @@
         };
 
         const updateDashboard = () => {
-            let totalSaldo = 0, ativas = 0, totalContratos = 0;
+            let totalSaldoA_Vencer = 0; // Saldo devedor apenas de contratos "A Vencer"
+            let contratosAtivosA_Vencer = 0; // Contratos ativos apenas com status "A Vencer"
             const orgaoMap = {};
-            const quitacaoMap = {};
+            const pagamentosPrevistosPorAno = {}; // Armazena o total a ser pago (status 'a vencer') por ano
             let caixaMesAtual = 0;
 
-            consolidatedData.forEach(c => {
-                totalContratos++;
-                totalSaldo += c.totalDivida;
-                if (c.ativo) ativas++;
-            });
-
+            // Calcula os KPIs considerando apenas títulos "A Vencer"
+            const contratosA_Vencer_Set = new Set(); // Para contar contratos únicos "A Vencer"
             rawData.forEach(row => {
-                const valOriginal = Utils.parseNumber(row['Valor Original']);
+                const saldoDev = Utils.parseNumber(row['Saldo Devedor']);
+                const status = String(row['Status'] || '').trim().toLowerCase();
+                const id = row['Número'] || row['Negociação'] || 'S/N';
+
+                if (status === 'a vencer') {
+                    totalSaldoA_Vencer += saldoDev;
+                    contratosA_Vencer_Set.add(id); // Adiciona o ID do contrato para contagem única
+                }
+            });
+            contratosAtivosA_Vencer = contratosA_Vencer_Set.size;
+
+
+            // Preenche o mapa de pagamentos previstos por ano e o mapa de débitos por órgão
+            rawData.forEach(row => {
                 const saldoDev = Utils.parseNumber(row['Saldo Devedor']);
                 const d = new Date(row['Data']);
                 const status = String(row['Status'] || '').trim().toLowerCase();
@@ -721,34 +852,80 @@
 
                     // Efeito Caixa: Apenas valor a ser pago (SaldoDev) no Mês Atual SE for "A Vencer"
                     if (y === currYear && m === currMonth && status === 'a vencer') {
-                        caixaMesAtual += saldoDev; 
+                        caixaMesAtual += saldoDev;
                     }
 
-                    // Débitos e Quitação previstos (apenas do que falta pagar, "a vencer")
+                    // Débitos por Órgão e Pagamentos Previstos por Ano: Apenas o que está "a vencer"
                     if (status === 'a vencer') {
                         const orgao = row['Orgão'] || '-';
                         orgaoMap[orgao] = (orgaoMap[orgao] || 0) + saldoDev;
-                        quitacaoMap[y] = (quitacaoMap[y] || 0) + saldoDev;
+
+                        // Soma o saldo devedor dos títulos "a vencer" para o ano de vencimento
+                        pagamentosPrevistosPorAno[y] = (pagamentosPrevistosPorAno[y] || 0) + saldoDev;
                     }
                 }
             });
 
-            const sortedYears = Object.keys(quitacaoMap).map(Number).sort();
+            // Lógica para o cálculo do gráfico de Quitação Prevista (Saldo Devedor Acumulado no Fim de Cada Ano)
+            const yearsWithPayments = Object.keys(pagamentosPrevistosPorAno).map(Number);
+
+            // Inclui o ano atual e todos os anos onde há pagamentos previstos
+            let allRelevantYears = [...new Set([currYear, ...yearsWithPayments])].sort((a, b) => a - b);
+
+            // Garante que o gráfico comece no ano atual, mesmo que não haja pagamentos "a vencer" nele
+            if (allRelevantYears.length === 0 || allRelevantYears[0] > currYear) {
+                allRelevantYears.unshift(currYear);
+            }
+
+            const quitacaoAcumuladaMap = {};
+            let saldoRemanescenteNoAno = totalSaldoA_Vencer; // Começa com o saldo devedor total APENAS "A VENCER"
+
+            // Para cada ano relevante, calculamos o saldo remanescente no final daquele ano
+            for (let i = 0; i < allRelevantYears.length; i++) {
+                const year = allRelevantYears[i];
+                const valorPagoNoAno = pagamentosPrevistosPorAno[year] || 0;
+
+                // Subtrai o que seria pago naquele ano (apenas os "a vencer")
+                saldoRemanescenteNoAno -= valorPagoNoAno;
+
+                // O saldo acumulado no final do ano é o saldo remanescente após os pagamentos daquele ano
+                quitacaoAcumuladaMap[year] = Math.max(0, saldoRemanescenteNoAno); // Garante que não seja negativo
+
+                // Se o saldo chegou a zero ou menos, não precisamos calcular mais para anos futuros
+                if (saldoRemanescenteNoAno <= 0) {
+                    // Preenche os anos subsequentes até o último ano relevante com 0, se houver
+                    for (let j = i + 1; j < allRelevantYears.length; j++) {
+                        quitacaoAcumuladaMap[allRelevantYears[j]] = 0;
+                    }
+                    break; // Sai do loop
+                }
+            }
+
+            // Se o saldo ainda for positivo após o último ano com pagamentos previstos,
+            // estende o gráfico para mostrar que a dívida persiste com o mesmo valor.
+            const lastProcessedYear = allRelevantYears[allRelevantYears.length - 1];
+            if (saldoRemanescenteNoAno > 0 && lastProcessedYear) {
+                for (let y = lastProcessedYear + 1; y <= lastProcessedYear + 3; y++) { // Estende por mais 3 anos
+                    quitacaoAcumuladaMap[y] = saldoRemanescenteNoAno;
+                }
+            }
+
+
             const qLabels = [], qData = [];
-            sortedYears.forEach(y => {
-                const val = quitacaoMap[y];
-                if (val > 0) { qLabels.push(String(y)); qData.push(val); }
+            Object.keys(quitacaoAcumuladaMap).sort((a, b) => a - b).forEach(y => {
+                qLabels.push(`Fim ${y}`);
+                qData.push(quitacaoAcumuladaMap[y]);
             });
 
-            DOM.kpiSaldo.textContent = Utils.fmtCurrencyDash(totalSaldo);
-            DOM.kpiAtivas.textContent = ativas;
-            DOM.kpiAtivasSub.textContent = `de ${totalContratos} contratos no total`;
+            DOM.kpiSaldo.textContent = Utils.fmtCurrencyDash(totalSaldoA_Vencer); // KPI mostra o saldo total A VENCER
+            DOM.kpiAtivas.textContent = contratosAtivosA_Vencer;
+            DOM.kpiAtivasSub.textContent = `contratos com saldo "A Vencer"`;
 
             Chart.defaults.font.family = "'Outfit', sans-serif";
             Chart.register(ChartDataLabels);
             Object.values(charts).forEach(c => c?.destroy());
 
-            // 1. Quitação Prevista (Sem Legenda, apenas a Pagar)
+            // 1. Quitação Prevista (Saldo Devedor Acumulado no Fim de Cada Ano)
             charts.quitacao = new Chart(DOM.chartQuitacaoCanvas, {
                 type: 'bar',
                 data: { labels: qLabels, datasets: [{ data: qData, backgroundColor: Utils.makeGradient('chartQuitacao', '#FF6E00', '#ff9544'), borderRadius: 6, maxBarThickness: 60 }] },
@@ -761,12 +938,12 @@
                 type: 'bar',
                 data: { labels: orgaoEntries.map(e => e[0]), datasets: [{ data: orgaoEntries.map(e => e[1]), backgroundColor: '#3C003C', borderRadius: 5, maxBarThickness: 28 }] },
                 options: {
-                    ...chartOpts(), 
+                    ...chartOpts(),
                     indexAxis: 'y',
                     layout: { padding: { right: 80, top: 20, bottom: 10 } }, // Protege o texto de ser cortado
-                    scales: { 
+                    scales: {
                         x: { display: false, grace: '15%' }, // Dá 15% de espaço no fim da maior barra
-                        y: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#8a7aa0', font: { family: "'Outfit'", size: 11, weight: 500 }, padding: 8 } } 
+                        y: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#8a7aa0', font: { family: "'Outfit'", size: 11, weight: 500 }, padding: 8 } }
                     }
                 }
             });
@@ -800,11 +977,12 @@
             DOM.bodyDetalhado.innerHTML = data.map(r => {
                 const statusLabel = String(r['Status'] || '-').trim();
                 const statusLower = statusLabel.toLowerCase();
-                let badgeClass = 'status-inactive'; 
-                
+                let badgeClass = 'status-default'; // Default para status não mapeados
+
                 if (statusLower === 'a vencer') badgeClass = 'status-vencer';
-                else if (Utils.isAtivo(statusLabel)) badgeClass = 'status-active';
-                
+                else if (statusLower === 'quitada' || statusLower === 'encerrado') badgeClass = 'status-quitada'; // Verde para Quitada e Encerrado
+                else if (statusLower.includes('atraso')) badgeClass = 'status-atraso'; // Vermelho para Em Atraso
+
                 return `
                 <tr>
                     <td>${Utils.formatDate(r['Data'])}</td><td><strong>${r['Número'] || r['Negociação'] || '-'}</strong></td>
@@ -831,16 +1009,22 @@
         };
 
         const filterSintetico = Utils.debounce(() => {
-            renderSintetico(getFilteredSintetico(DOM.searchSintetico.value));
+            const searchTerm = DOM.searchSintetico.value;
+            const filterNatureza = DOM.filterSinteticoNatureza.value;
+            const filterOrgao = DOM.filterSinteticoOrgao.value;
+            renderSintetico(getFilteredSintetico(searchTerm, filterNatureza, filterOrgao));
         });
 
         // ═══════════════════════════════════════════════════════════════════
-        // Filtro Detalhado com Mês/Ano
+        // Filtro Detalhado
         // ═══════════════════════════════════════════════════════════════════
         const filterDetalhado = Utils.debounce(() => {
             const t = DOM.searchDetalhado.value.toLowerCase();
-            const filterDate = DOM.filterMesAno.value; // Formato esperado "YYYY-MM"
-            
+            const filterOrgao = DOM.filterDetalhadoOrgao.value;
+            const filterNatureza = DOM.filterDetalhadoNatureza.value;
+            const filterStatus = DOM.filterDetalhadoStatus.value;
+            const filterMesAno = DOM.filterDetalhadoMesAno.value; // Novo filtro de Mês/Ano
+
             let filtered = rawData.filter(r => {
                 // 1. Check text search
                 const textMatch = String(r['Número'] || '').toLowerCase().includes(t) ||
@@ -848,15 +1032,30 @@
                                   String(r['Natureza'] || '').toLowerCase().includes(t) ||
                                   String(r['Tributo'] || '').toLowerCase().includes(t) ||
                                   String(r['Status'] || '').toLowerCase().includes(t);
-                
+
                 if (!textMatch) return false;
 
-                // 2. Check Date Filter
-                if (filterDate) {
-                    const [fYear, fMonth] = filterDate.split('-');
+                // 2. Check Orgao Filter
+                if (filterOrgao && String(r['Orgão'] || '').toLowerCase() !== filterOrgao.toLowerCase()) {
+                    return false;
+                }
+
+                // 3. Check Natureza Filter
+                if (filterNatureza && String(r['Natureza'] || '').toLowerCase() !== filterNatureza.toLowerCase()) {
+                    return false;
+                }
+
+                // 4. Check Status Filter
+                if (filterStatus && String(r['Status'] || '').toLowerCase() !== filterStatus.toLowerCase()) {
+                    return false;
+                }
+
+                // 5. Check Mês/Ano Filter
+                if (filterMesAno) {
                     const d = new Date(r['Data']);
                     if (isNaN(d.getTime())) return false; // Exclui se não tem data válida e o filtro está ativo
-                    if (d.getUTCFullYear() !== parseInt(fYear) || (d.getUTCMonth() + 1) !== parseInt(fMonth)) {
+                    const rowMesAno = `${monthNames[d.getUTCMonth()]}/${d.getUTCFullYear()}`;
+                    if (rowMesAno !== filterMesAno) {
                         return false;
                     }
                 }
