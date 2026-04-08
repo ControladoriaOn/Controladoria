@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Parcelamentos | ONTIME</title>
+    
+    <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* ─── VARIÁVEIS GLOBAIS (Identidade ONTIME) ─── */
+        :root {
+            --orange: #FF6E00;
+            --orange-light: #fff3e8;
+            --orange-mid: #ff8c33;
+            --purple: #3C003C;
+            --purple-mid: #5a005a;
+            --purple-light: #f5edf5;
+
+            --bg: #f2f3f7;
+            --surface: #ffffff;
+            --text-1: #1a1a2e;
+            --text-2: #6b7280;
+            --text-3: #9ca3af;
+            --border: #e5e7eb;
+
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'DM Sans', sans-serif;
+            --radius: 14px;
+            --radius-sm: 8px;
+            --shadow-sm: 0 1px 4px rgba(60,0,60,0.06), 0 4px 12px rgba(60,0,60,0.04);
+            --shadow-md: 0 8px 24px rgba(60,0,60,0.10);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-1);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ─── HEADER (Padrão Hub) ─── */
+        header {
+            background-color: var(--purple);
+            padding: 0 48px;
+            border-bottom: 3px solid var(--orange);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 72px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(60,0,60,0.25);
+        }
+
+        .header-brand { display: flex; align-items: center; gap: 14px; text-decoration: none;}
+        .brand-img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 0 3px rgba(255,110,0,0.25); }
+        .brand-name { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+        .brand-name span { color: var(--orange); margin-left: -3px; }
+        .header-pill { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; }
+        .back-link { color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 6px; text-decoration: none; font-size: 14px; transition: color 0.2s; margin-right: 20px;}
+        .back-link:hover { color: #fff; }
+        .header-right { display: flex; align-items: center; }
+
+        /* ─── MAIN CONTENT ─── */
+        main {
+            flex: 1;
+            padding: 40px 48px 60px;
+            max-width: 1300px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .page-title h1 {
+            font-family: var(--font-display);
+            font-size: 32px;
+            color: var(--purple);
+            margin-bottom: 8px;
+        }
+
+        .page-title p {
+            color: var(--text-2);
+            font-size: 15px;
+        }
+
+        /* ─── TABS ─── */
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            font-family: var(--font-body);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-2);
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover { background: var(--border); color: var(--text-1); }
+        .tab-btn.active { background: var(--purple-light); color: var(--purple); }
+        .tab-btn.active i { color: var(--orange); }
+        
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ─── DASHBOARD (ABA 1) ─── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--orange);
+        }
+
+        .kpi-title { font-size: 13px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .kpi-value { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--purple); }
+        .kpi-desc { font-size: 12px; color: var(--text-2); margin-top: 6px; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .chart-header { font-family: var(--font-display); font-size: 18px; color: var(--purple); margin-bottom: 20px; font-weight: 700; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+
+        /* ─── TABELA (ABA 2) ─── */
+        .table-toolbar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 350px;
+            padding: 10px 16px 10px 40px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-body);
+            background: var(--surface) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="%239ca3af" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>') no-repeat 12px center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus { border-color: var(--orange); }
+
+        .table-container {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: var(--bg); padding: 14px 20px; font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); white-space: nowrap;}
+        td { padding: 14px 20px; font-size: 14px; border-bottom: 1px solid var(--border); color: var(--text-1); white-space: nowrap;}
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--purple-light); }
+        
+        .status-badge {
+            padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+        }
+        .status-active { background: #dcfce7; color: #16a34a; }
+        .status-inactive { background: #fee2e2; color: #dc2626; }
+
+        /* ─── LOADING STATE ─── */
+        #loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 0;
+            color: var(--purple);
+        }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--purple-light); border-top: 4px solid var(--orange); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ─── RESPONSIVIDADE ─── */
+        @media (max-width: 900px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            header, main { padding-left: 20px; padding-right: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="../" class="header-brand">
+        <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="brand-img">
+        <span class="brand-name">ON<span>TIME</span></span>
+    </a>
+    <div class="header-right">
+        <a href="../" class="back-link"><i class="ph ph-arrow-left"></i> Voltar ao Hub</a>
+        <span class="header-pill">Controladoria</span>
+    </div>
+</header>
+
+<main>
+    <div class="page-header">
+        <div class="page-title">
+            <h1>Gestão de Parcelamentos</h1>
+            <p>Acompanhamento estratégico de acordos, tributos e passivos.</p>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('dashboard')"><i class="ph-fill ph-chart-pie-slice"></i> Visão Estratégica</button>
+        <button class="tab-btn" onclick="switchTab('tabela')"><i class="ph-fill ph-table"></i> Detalhamento</button>
+    </div>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <p>Buscando dados seguros no servidor...</p>
+    </div>
+
+    <div id="app-content" style="display: none;">
+        
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-title">Saldo Devedor Total</div>
+                    <div class="kpi-value" id="kpi-saldo">R$ 0,00</div>
+                    <div class="kpi-desc">Somatório do principal + encargos</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Juros e Encargos</div>
+                    <div class="kpi-value" id="kpi-juros">R$ 0,00</div>
+                    <div class="kpi-desc">Custo financeiro das negociações</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-title">Negociações Ativas</div>
+                    <div class="kpi-value" id="kpi-ativas">0</div>
+                    <div class="kpi-desc">Parcelamentos em andamento</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">Saldo Devedor por Órgão</div>
+                    <div class="chart-container">
+                        <canvas id="chartOrgao"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">Saldo Devedor por Natureza</div>
+                    <div class="chart-container">
+                        <canvas id="chartNatureza"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-tabela" class="tab-content">
+            <div class="table-toolbar">
+                <input type="text" id="searchInput" class="search-input" placeholder="Pesquisar por órgão, natureza ou número..." onkeyup="filterTable()">
+            </div>
+            
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Negociação</th>
+                            <th>Órgão</th>
+                            <th>Natureza</th>
+                            <th>Valor Original</th>
+                            <th>Saldo Devedor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    // URL gerada no Google Apps Script
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwfu8_ghCZFSs3yvcXtuTchwo6nfQ62di-jk0qNF0suhe1egMYvNZzrL9THDt7fx8h2hg/exec';
+    let globalData = [];
+
+    // Formatador de Moeda
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+    };
+
+    // Formatador de Data (limpando o formato ISO que vem do Sheets)
+    const formatDate = (dateString) => {
+        if(!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    };
+
+    // Alternar Abas
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(`tab-${tabId}`).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    // Inicialização e Fetch
+    async function init() {
+        try {
+            const response = await fetch(API_URL);
+            globalData = await response.json();
+            
+            processKPIs();
+            renderCharts();
+            renderTable(globalData);
+            
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+        } catch (error) {
+            console.error("Erro ao carregar os dados:", error);
+            document.getElementById('loader').innerHTML = `<p style="color: red;">Erro ao carregar dados. Verifique a permissão do Google Sheets.</p>`;
+        }
+    }
+
+    // Processamento dos Cards (KPIs)
+    function processKPIs() {
+        let totalSaldo = 0;
+        let totalJuros = 0;
+        let ativasCount = 0;
+
+        globalData.forEach(row => {
+            totalSaldo += Number(row[' Saldo Devedor '] || 0);
+            totalJuros += Number(row[' Multa '] || 0) + Number(row[' Juros '] || 0) + Number(row[' Encargos Honorários '] || 0);
+            
+            // Verifica a coluna ATIVO (ajuste a string 'SIM' ou 'Ativo' dependendo de como preenchem a planilha)
+            const statusAtivo = String(row['ATIVO']).trim().toUpperCase();
+            if (statusAtivo === 'SIM' || statusAtivo === 'ATIVO' || statusAtivo === 'TRUE') {
+                ativasCount++;
+            }
+        });
+
+        document.getElementById('kpi-saldo').textContent = formatCurrency(totalSaldo);
+        document.getElementById('kpi-juros').textContent = formatCurrency(totalJuros);
+        document.getElementById('kpi-ativas').textContent = ativasCount;
+    }
+
+    // Renderização dos Gráficos (Chart.js)
+    function renderCharts() {
+        Chart.defaults.font.family = "'DM Sans', sans-serif";
+        Chart.defaults.color = "#6b7280";
+
+        // Cores ONTIME para os gráficos
+        const chartColors = ['#FF6E00', '#3C003C', '#ff8c33', '#5a005a', '#f59e0b', '#8b5cf6'];
+
+        // Agrupamento para Gráfico de Órgão
+        const orgaoMap = {};
+        const naturezaMap = {};
+
+        globalData.forEach(row => {
+            const orgao = row['Orgão'] || 'Não Informado';
+            const natureza = row['Natureza'] || 'Não Informada';
+            const saldo = Number(row[' Saldo Devedor '] || 0);
+
+            orgaoMap[orgao] = (orgaoMap[orgao] || 0) + saldo;
+            naturezaMap[natureza] = (naturezaMap[natureza] || 0) + saldo;
+        });
+
+        // Gráfico de Rosca - Órgão
+        new Chart(document.getElementById('chartOrgao'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(orgaoMap),
+                datasets: [{
+                    data: Object.values(orgaoMap),
+                    backgroundColor: chartColors,
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+        });
+
+        // Gráfico de Barras - Natureza
+        new Chart(document.getElementById('chartNatureza'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(naturezaMap),
+                datasets: [{
+                    label: 'Saldo Devedor',
+                    data: Object.values(naturezaMap),
+                    backgroundColor: '#FF6E00',
+                    borderRadius: 4
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+    }
+
+    // Renderização e Filtro da Tabela
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        data.forEach(row => {
+            const isAtivo = String(row['ATIVO']).trim().toUpperCase() === 'SIM' || String(row['ATIVO']).trim().toUpperCase() === 'ATIVO';
+            const badgeClass = isAtivo ? 'status-active' : 'status-inactive';
+            const badgeText = isAtivo ? 'Ativo' : 'Inativo';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${formatDate(row['Data'])}</td>
+                <td><strong>${row['Negociação'] || '-'}</strong></td>
+                <td>${row['Orgão'] || '-'}</td>
+                <td>${row['Natureza'] || '-'}</td>
+                <td>${formatCurrency(row[' Valor Original '])}</td>
+                <td style="color: var(--orange); font-weight: 700;">${formatCurrency(row[' Saldo Devedor '])}</td>
+                <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function filterTable() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = globalData.filter(row => {
+            return (
+                String(row['Orgão']).toLowerCase().includes(term) ||
+                String(row['Natureza']).toLowerCase().includes(term) ||
+                String(row[' Número ']).toLowerCase().includes(term) ||
+                String(row['Negociação']).toLowerCase().includes(term)
+            );
+        });
+        renderTable(filtered);
+    }
+
+    // Iniciar a aplicação
+    window.onload = init;
+</script>
+
+</body>
+</html>
