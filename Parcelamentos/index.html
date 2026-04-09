@@ -14,6 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <style>
         :root {
@@ -142,6 +143,8 @@
         .btn-export.excel:hover { border-color:var(--status-ok); color:var(--status-ok); background:rgba(16,185,129,0.05); }
         .btn-export.pdf { background:var(--orange-main); color:#fff; box-shadow:0 4px 15px var(--orange-glow); }
         .btn-export.pdf:hover { background:var(--orange-hover); transform:translateY(-1px); }
+        
+        .btn-export.pdf.loading i { animation: spin 1s linear infinite; }
 
         /* ═══ CONTENT ═══ */
         .content-area { padding:32px 40px 120px; max-width:1500px; margin:0 auto; width:100%; display:flex; flex-direction:column; gap:48px; }
@@ -240,6 +243,14 @@
         .scroll-section:nth-child(2) { animation-delay:0.15s; }
         .scroll-section:nth-child(3) { animation-delay:0.25s; }
 
+        /* Esconder elementos na impressão nativa */
+        @media print {
+            .sidebar, header, .filter-bar, .pagination { display: none !important; }
+            .main-content { margin-left: 0 !important; width: 100% !important; overflow: visible !important; }
+            .content-area { padding: 0 !important; max-width: 100% !important; gap: 20px !important; }
+            .table-responsive { max-height: none !important; overflow: visible !important; }
+        }
+
         /* ═══ RESPONSIVO ═══ */
         @media (max-width:1024px) {
             .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); }
@@ -291,7 +302,7 @@
             <div class="header-pill"><span class="dot"></span> <span id="lastSync">—</span></div>
             <button class="btn-export excel" onclick="App.exportExcel('sintetico')"><i class="ph-bold ph-microsoft-excel-logo"></i> <span>Sintético</span></button>
             <button class="btn-export excel" onclick="App.exportExcel('detalhado')"><i class="ph-bold ph-microsoft-excel-logo"></i> <span>Detalhado</span></button>
-            <button class="btn-export pdf" onclick="App.exportPDF()"><i class="ph-bold ph-file-pdf"></i> <span>Relatório PDF</span></button>
+            <button class="btn-export pdf" id="btnExportPDF" onclick="App.exportPDF()"><i class="ph-bold ph-file-pdf"></i> <span>Relatório PDF</span></button>
         </div>
     </header>
 
@@ -332,7 +343,7 @@
 
             <div id="sintetico" class="scroll-section" data-pdf="capture">
                 <h2 class="section-title"><i class="ph-fill ph-list-numbers"></i> Resumo Sintético</h2>
-                <div class="filter-bar">
+                <div class="filter-bar" id="filterSinteticoBar">
                     <div class="filter-group" style="flex:2"><label>Pesquisa</label><input type="text" id="searchSintetico" class="filter-input has-icon" placeholder="Contrato, órgão, natureza..." oninput="App.filterSintetico()"></div>
                    
                     <div class="filter-group"><label>Natureza</label><select id="filterSinteticoNatureza" class="filter-input" onchange="App.filterSintetico()"><option value="">Todas</option></select></div>
@@ -341,18 +352,23 @@
                 <div class="table-card">
                     <div class="table-bar"><div class="table-bar-title"><i class="ph-fill ph-files"></i> Posição por Contrato</div></div>
          
-                    <div class="table-responsive"><table><thead><tr>
-                        <th onclick="App.doSort('sintetico','natureza')">Natureza <i id="sort-sintetico-natureza" class="ph-bold ph-caret-up-down"></i></th>
-                        <th onclick="App.doSort('sintetico','tributo')">Tributo <i id="sort-sintetico-tributo" class="ph-bold ph-caret-up-down"></i></th>
-                        <th onclick="App.doSort('sintetico','numero')">Número <i id="sort-sintetico-numero" class="ph-bold ph-caret-up-down"></i></th>
- 
-                        <th onclick="App.doSort('sintetico','orgao')">Órgão <i id="sort-sintetico-orgao" class="ph-bold ph-caret-up-down"></i></th>
-                        <th onclick="App.doSort('sintetico','qtdParcela')">Parcelas <i id="sort-sintetico-qtdParcela" class="ph-bold ph-caret-up-down"></i></th>
-                        <th onclick="App.doSort('sintetico','atraso')">Atraso <i id="sort-sintetico-atraso" class="ph-bold ph-caret-up-down"></i></th>
-              
-                        <th onclick="App.doSort('sintetico','totalDivida')">Total Dívida <i id="sort-sintetico-totalDivida" class="ph-bold ph-caret-up-down"></i></th>
-                        <th onclick="App.doSort('sintetico','parcelaUnit')">Vlr Parcela <i id="sort-sintetico-parcelaUnit" class="ph-bold ph-caret-up-down"></i></th>
-                    </tr></thead><tbody id="bodySintetico"></tbody></table></div>
+                    <div class="table-responsive">
+                        <table id="tableSinteticoFull">
+                            <thead>
+                                <tr>
+                                    <th onclick="App.doSort('sintetico','natureza')">Natureza <i id="sort-sintetico-natureza" class="ph-bold ph-caret-up-down"></i></th>
+                                    <th onclick="App.doSort('sintetico','tributo')">Tributo <i id="sort-sintetico-tributo" class="ph-bold ph-caret-up-down"></i></th>
+                                    <th onclick="App.doSort('sintetico','numero')">Número <i id="sort-sintetico-numero" class="ph-bold ph-caret-up-down"></i></th>
+                                    <th onclick="App.doSort('sintetico','orgao')">Órgão <i id="sort-sintetico-orgao" class="ph-bold ph-caret-up-down"></i></th>
+                                    <th onclick="App.doSort('sintetico','qtdParcela')">Parcelas <i id="sort-sintetico-qtdParcela" class="ph-bold ph-caret-up-down"></i></th>
+                                    <th onclick="App.doSort('sintetico','atraso')">Atraso <i id="sort-sintetico-atraso" class="ph-bold ph-caret-up-down"></i></th>
+                                    <th onclick="App.doSort('sintetico','totalDivida')">Total Dívida <i id="sort-sintetico-totalDivida" class="ph-bold ph-caret-up-down"></i></th>
+                                    <th onclick="App.doSort('sintetico','parcelaUnit')">Vlr Parcela <i id="sort-sintetico-parcelaUnit" class="ph-bold ph-caret-up-down"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodySintetico"></tbody>
+                        </table>
+                    </div>
                     <div class="pagination" id="paginationSintetico"></div>
            
                 </div>
@@ -397,6 +413,8 @@ const CAIXA_JAN_2023=421634, ROWS_PER_PAGE=20;
 
 const App=(()=>{
     let rawData=[],consolidatedData=[];
+    let currentFilteredSintetico = []; // Guarda a lista filtrada para o PDF usar
+
     const charts={abertura:null,quitacao:null,caixa:null};
     const pagination={sintetico:{page:1,data:[]},detalhado:{page:1,data:[]}};
     const sortState={sintetico:{col:null,dir:'asc'},detalhado:{col:null,dir:'asc'}};
@@ -405,7 +423,9 @@ const App=(()=>{
     const now=new Date(),currMonth=now.getMonth(),currYear=now.getFullYear();
     const monthNames=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-    // ═══ UTILS ═══
+    // ───────────────────────────────────────────────────────────
+    // UTILS
+    // ───────────────────────────────────────────────────────────
     const U={
         fmt:v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0),
         fmtD:v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v||0),
@@ -415,96 +435,515 @@ const App=(()=>{
         debounce:(fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}},
         grad:(id,c1,c2)=>{const ctx=$(id).getContext('2d');const g=ctx.createLinearGradient(0,0,0,300);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;}
     };
-// ═══ SIDEBAR & SCROLL ═══
+
+    // ───────────────────────────────────────────────────────────
+    // SIDEBAR & SCROLL
+    // ───────────────────────────────────────────────────────────
     const toggleSidebar=()=>{$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('visible');};
     const scrollToSection=id=>{const el=$(id),ct=$('scroll-container'),hd=$('main-header');if(!el||!ct||!hd)return;ct.scrollTo({top:el.offsetTop-hd.offsetHeight-20,behavior:'smooth'});};
-    const initScrollSpy=()=>{const ct=$('scroll-container'),hd=$('main-header'),secs=document.querySelectorAll('.scroll-section'),navs=document.querySelectorAll('.nav-item');if(!ct||!hd)return;ct.addEventListener('scroll',()=>{const trigger=hd.getBoundingClientRect().bottom+100;let cur='';secs.forEach(s=>{if(s.getBoundingClientRect().top<=trigger)cur=s.id;});if(ct.scrollHeight-ct.scrollTop<=ct.clientHeight+2)cur=secs[secs.length-1].id;navs.forEach(n=>n.classList.toggle('active',n.dataset.target===cur));});};
-// ═══ PAGINATION ═══
+    
+    const initScrollSpy=()=>{
+        const ct=$('scroll-container'),hd=$('main-header');
+        const secs=document.querySelectorAll('.scroll-section'),navs=document.querySelectorAll('.nav-item');
+        if(!ct||!hd)return;
+        
+        ct.addEventListener('scroll',()=>{
+            const trigger=hd.getBoundingClientRect().bottom+100;
+            let cur='';
+            secs.forEach(s=>{if(s.getBoundingClientRect().top<=trigger)cur=s.id;});
+            if(ct.scrollHeight-ct.scrollTop<=ct.clientHeight+2)cur=secs[secs.length-1].id;
+            navs.forEach(n=>n.classList.toggle('active',n.dataset.target===cur));
+        });
+    };
+
+    // ───────────────────────────────────────────────────────────
+    // PAGINATION
+    // ───────────────────────────────────────────────────────────
     const getSlice=k=>{const p=pagination[k];return p.data.slice((p.page-1)*ROWS_PER_PAGE,p.page*ROWS_PER_PAGE);};
     const totPages=k=>Math.max(1,Math.ceil(pagination[k].data.length/ROWS_PER_PAGE));
-const renderPag=(k,el)=>{const t=totPages(k),c=pagination[k].page,cnt=pagination[k].data.length,s=cnt===0?0:(c-1)*ROWS_PER_PAGE+1,e=Math.min(c*ROWS_PER_PAGE,cnt);let sp=Math.max(1,c-2),ep=Math.min(t,sp+4);if(ep-sp<4)sp=Math.max(1,ep-4);let b=`<button onclick="App.goPage('${k}',${c-1})" ${c<=1?'disabled':''}><i class="ph-bold ph-caret-left"></i></button>`;for(let i=sp;i<=ep;i++)b+=`<button class="${i===c?'active':''}" onclick="App.goPage('${k}',${i})">${i}</button>`;b+=`<button onclick="App.goPage('${k}',${c+1})" ${c>=t?'disabled':''}><i class="ph-bold ph-caret-right"></i></button>`;el.innerHTML=`<span>${s}–${e} de ${cnt} registros</span><div class="pagination-btns">${b}</div>`;};
-const goPage=(k,p)=>{const t=totPages(k);if(p<1||p>t)return;pagination[k].page=p;if(k==='sintetico'){renderSintRows(getSlice('sintetico'));renderPag('sintetico',$('paginationSintetico'));}else{renderDetRows(getSlice('detalhado'));renderPag('detalhado',$('paginationDetalhado'));}};
+    
+    const renderPag=(k,el)=>{
+        const t=totPages(k),c=pagination[k].page,cnt=pagination[k].data.length;
+        const s=cnt===0?0:(c-1)*ROWS_PER_PAGE+1,e=Math.min(c*ROWS_PER_PAGE,cnt);
+        let sp=Math.max(1,c-2),ep=Math.min(t,sp+4);
+        if(ep-sp<4)sp=Math.max(1,ep-4);
+        
+        let b=`<button onclick="App.goPage('${k}',${c-1})" ${c<=1?'disabled':''}><i class="ph-bold ph-caret-left"></i></button>`;
+        for(let i=sp;i<=ep;i++) b+=`<button class="${i===c?'active':''}" onclick="App.goPage('${k}',${i})">${i}</button>`;
+        b+=`<button onclick="App.goPage('${k}',${c+1})" ${c>=t?'disabled':''}><i class="ph-bold ph-caret-right"></i></button>`;
+        
+        el.innerHTML=`<span>${s}–${e} de ${cnt} registros</span><div class="pagination-btns">${b}</div>`;
+    };
 
-    // ═══ SORTING ═══
-    const doSort=(tbl,col)=>{if(sortState[tbl].col===col)sortState[tbl].dir=sortState[tbl].dir==='asc'?'desc':'asc';else{sortState[tbl].col=col;sortState[tbl].dir='asc';}document.querySelectorAll(`#${tbl} th i`).forEach(i=>i.className='ph-bold ph-caret-up-down');const ic=$(`sort-${tbl}-${col}`);if(ic)ic.className=sortState[tbl].dir==='asc'?'ph-bold ph-caret-up active':'ph-bold ph-caret-down active';if(tbl==='sintetico')filterSintetico();else filterDetalhado();};
-const applySort=(arr,tbl)=>{const{col,dir}=sortState[tbl];if(!col)return arr;const nums=['qtdParcela','atraso','totalDivida','parcelaUnit','Valor Original','Saldo Devedor'];return[...arr].sort((a,b)=>{let va=a[col],vb=b[col];if(col==='Data')return dir==='asc'?(new Date(va).getTime()||0)-(new Date(vb).getTime()||0):(new Date(vb).getTime()||0)-(new Date(va).getTime()||0);if(nums.includes(col))return dir==='asc'?U.num(va)-U.num(vb):U.num(vb)-U.num(va);va=String(va||'').toLowerCase();vb=String(vb||'').toLowerCase();return dir==='asc'?va.localeCompare(vb):vb.localeCompare(va);});};
-// ═══ INIT ═══
-    const init=async()=>{try{const res=await fetch(API_URL);if(!res.ok)throw new Error(`HTTP ${res.status}`);const raw=await res.json();rawData=raw.map(r=>{const c={};for(const k in r)c[k.trim()]=r[k];return c;}).filter(r=>r['Número']||r['Negociação']);const st=new Date();$('lastSync').textContent=st.toLocaleDateString('pt-BR')+' '+st.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});processConsolidation();populateFilters();populateYears();updateDashboard();renderSintetico(getFilteredSint());renderDetalhado(applySort(rawData,'detalhado'));$('loader').style.display='none';$('app-content').style.display='flex';initScrollSpy();}catch(e){console.error(e);$('loader').innerHTML=`<p style="color:var(--status-err);font-weight:600;">Erro ao acessar dados.<br><small style="color:var(--text-3)">${e.message}</small></p>`;}};
-// ═══ CONSOLIDATION ═══
-    const processConsolidation=()=>{const map={};rawData.forEach(row=>{const id=row['Número']||row['Negociação']||'S/N';const status=String(row['Status']||'').trim().toLowerCase();if(!map[id])map[id]={natureza:row['Natureza']||'-',tributo:row['Tributo']||'-',numero:id,orgao:row['Orgão']||'-',qtdParcela:0,atraso:0,totalDivida:0,parcelaUnit:U.num(row['Valor Original']),isEncerrado:true,hasAVencer:false};map[id].qtdParcela++;if(status==='a vencer'||status.includes('atraso'))map[id].totalDivida+=U.num(row['Saldo Devedor']);if(status.includes('atraso'))map[id].atraso++;if(!status.includes('encerrado'))map[id].isEncerrado=false;if(status==='a vencer')map[id].hasAVencer=true;});consolidatedData=Object.values(map);};
-// ═══ FILTERS ═══
-    const populateFilters=()=>{const nats=new Set(),orgs=new Set();rawData.forEach(r=>{if(r['Natureza'])nats.add(r['Natureza']);if(r['Orgão'])orgs.add(r['Orgão']);});const no=Array.from(nats).sort().map(n=>`<option value="${n}">${n}</option>`).join('');const oo=Array.from(orgs).sort().map(o=>`<option value="${o}">${o}</option>`).join('');$('filterSinteticoNatureza').innerHTML='<option value="">Todas</option>'+no;$('filterSinteticoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoNatureza').innerHTML='<option value="">Todas</option>'+no;};
-const populateYears=()=>{const yrs=new Set();rawData.forEach(r=>{const d=new Date(r['Data']);if(!isNaN(d.getTime()))yrs.add(d.getUTCFullYear());});$('filterDetalhadoAno').innerHTML='<option value="">Todos</option>'+Array.from(yrs).sort().map(y=>`<option value="${y}">${y}</option>`).join('');};
+    const goPage=(k,p)=>{
+        const t=totPages(k);
+        if(p<1||p>t)return;
+        pagination[k].page=p;
+        if(k==='sintetico'){
+            renderSintRows(getSlice('sintetico'));
+            renderPag('sintetico',$('paginationSintetico'));
+        }else{
+            renderDetRows(getSlice('detalhado'));
+            renderPag('detalhado',$('paginationDetalhado'));
+        }
+    };
 
-    const getFilteredSint=()=>{const t=$('searchSintetico').value.toLowerCase(),fN=$('filterSinteticoNatureza').value.toLowerCase(),fO=$('filterSinteticoOrgao').value.toLowerCase();return consolidatedData.filter(c=>{if(c.totalDivida<=0||c.parcelaUnit===0||c.isEncerrado)return false;if(t&&!(c.numero.toLowerCase().includes(t)||c.orgao.toLowerCase().includes(t)||c.natureza.toLowerCase().includes(t)||c.tributo.toLowerCase().includes(t)))return false;if(fN&&c.natureza.toLowerCase()!==fN)return false;if(fO&&c.orgao.toLowerCase()!==fO)return false;return true;});};
-// ═══ DASHBOARD ═══
-    const chartOpts=(ov={})=>({responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,bottom:10}},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(15,10,24,0.95)',titleColor:'#fff',bodyColor:'#a39eb5',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:12,cornerRadius:8,callbacks:{label:ctx=>U.fmtD(ctx.raw)}},datalabels:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:600},formatter:v=>v>0?U.fmtD(v):'',anchor:'end',align:'end',...(ov.datalabels||{})}},scales:{x:{display:false},y:{display:false}},...(ov.extra||{})});
+    // ───────────────────────────────────────────────────────────
+    // SORTING
+    // ───────────────────────────────────────────────────────────
+    const doSort=(tbl,col)=>{
+        if(sortState[tbl].col===col) sortState[tbl].dir=sortState[tbl].dir==='asc'?'desc':'asc';
+        else{sortState[tbl].col=col;sortState[tbl].dir='asc';}
+        
+        document.querySelectorAll(`#${tbl} th i`).forEach(i=>i.className='ph-bold ph-caret-up-down');
+        const ic=$(`sort-${tbl}-${col}`);
+        if(ic) ic.className=sortState[tbl].dir==='asc'?'ph-bold ph-caret-up active':'ph-bold ph-caret-down active';
+        
+        if(tbl==='sintetico') filterSintetico();
+        else filterDetalhado();
+    };
 
-    const updateDashboard=()=>{let totalS=0,caixaM=0;const contSet=new Set(),orgMap={},anoMap={};rawData.forEach(row=>{const saldo=U.num(row['Saldo Devedor']),status=String(row['Status']||'').trim().toLowerCase(),id=row['Número']||row['Negociação']||'S/N',d=new Date(row['Data']),ok=!isNaN(d.getTime());if(status==='a vencer'){totalS+=saldo;contSet.add(id);if(ok){const y=d.getUTCFullYear(),m=d.getUTCMonth(),org=row['Orgão']||'-';orgMap[org]=(orgMap[org]||0)+saldo;anoMap[y]=(anoMap[y]||0)+saldo;if(y===currYear&&m===currMonth)caixaM+=saldo;}}});
-$('kpi-saldo').textContent=U.fmtD(totalS);$('kpi-ativas').textContent=contSet.size;$('kpi-ativas-sub').textContent=`contratos com parcelas "A Vencer"`;$('kpi-mensal').textContent=U.fmtD(caixaM);$('kpi-mensal-sub').textContent=`${monthNames[currMonth]}/${currYear} — saída prevista`;
-    const sy=Object.keys(anoMap).map(Number).sort(),qL=[],qD=[];sy.forEach(y=>{if(anoMap[y]>0){qL.push(String(y));qD.push(anoMap[y]);}});
-    Chart.defaults.font.family="'Outfit',sans-serif";Chart.register(ChartDataLabels);Object.values(charts).forEach(c=>c?.destroy());
-    const orgE=Object.entries(orgMap).sort((a,b)=>b[1]-a[1]);
-    charts.abertura=new Chart($('chartAbertura'),{type:'bar',data:{labels:orgE.map(e=>e[0]),datasets:[{data:orgE.map(e=>e[1]),backgroundColor:'#FF6E00',borderRadius:5,maxBarThickness:28}]},options:{...chartOpts(),indexAxis:'y',layout:{padding:{right:90,top:20,bottom:10}},scales:{x:{display:false,grace:'15%'},y:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:500},padding:8}}}}});
-    charts.caixa=new Chart($('chartCaixa'),{type:'bar',data:{labels:['Jan/2023',`${monthNames[currMonth]}/${currYear}`],datasets:[{data:[CAIXA_JAN_2023,caixaM],backgroundColor:['#5a005a','#FF6E00'],borderRadius:6,maxBarThickness:90}]},options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:13,weight:600},padding:10}},y:{display:false}}}});
-    charts.quitacao=new Chart($('chartQuitacao'),{type:'bar',data:{labels:qL,datasets:[{data:qD,backgroundColor:U.grad('chartQuitacao','#FF6E00','#ff9544'),borderRadius:6,maxBarThickness:60}]},options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:12,weight:500}}},y:{display:false}}}});};
-// ═══ TABLES ═══
-    const renderSintRows=data=>{$('bodySintetico').innerHTML=data.map(c=>`<tr><td>${c.natureza}</td><td>${c.tributo}</td><td><strong>${c.numero}</strong></td><td>${c.orgao}</td><td>${c.qtdParcela}</td><td style="color:${c.atraso>0?'var(--status-err)':'var(--status-ok)'};font-weight:600;">${c.atraso}</td><td class="val-destaque">${U.fmt(c.totalDivida)}</td><td>${U.fmt(c.parcelaUnit)}</td></tr>`).join('');};
-const renderDetRows=data=>{$('bodyDetalhado').innerHTML=data.map(r=>{const l=String(r['Status']||'-').trim(),lo=l.toLowerCase();let b='status-default';if(lo==='a vencer')b='status-vencer';else if(lo==='quitada'||lo==='encerrado')b='status-quitada';else if(lo.includes('atraso'))b='status-atraso';return`<tr><td>${U.date(r['Data'])}</td><td><strong>${r['Número']||r['Negociação']||'-'}</strong></td><td>${r['Orgão']||'-'}</td><td>${r['Natureza']||'-'}</td><td>${U.fmt(U.num(r['Valor Original']))}</td><td class="val-destaque">${U.fmt(U.num(r['Saldo Devedor']))}</td><td><span class="status-badge ${b}">${l}</span></td></tr>`;}).join('');};
+    const applySort=(arr,tbl)=>{
+        const{col,dir}=sortState[tbl];
+        if(!col)return arr;
+        const nums=['qtdParcela','atraso','totalDivida','parcelaUnit','Valor Original','Saldo Devedor'];
+        return[...arr].sort((a,b)=>{
+            let va=a[col],vb=b[col];
+            if(col==='Data') return dir==='asc'?(new Date(va).getTime()||0)-(new Date(vb).getTime()||0):(new Date(vb).getTime()||0)-(new Date(va).getTime()||0);
+            if(nums.includes(col)) return dir==='asc'?U.num(va)-U.num(vb):U.num(vb)-U.num(va);
+            va=String(va||'').toLowerCase();vb=String(vb||'').toLowerCase();
+            return dir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
+        });
+    };
 
-    const renderSintetico=data=>{pagination.sintetico.data=data;pagination.sintetico.page=1;renderSintRows(getSlice('sintetico'));renderPag('sintetico',$('paginationSintetico'));};
-    const renderDetalhado=data=>{pagination.detalhado.data=data;pagination.detalhado.page=1;renderDetRows(getSlice('detalhado'));renderPag('detalhado',$('paginationDetalhado'));};
+    // ───────────────────────────────────────────────────────────
+    // INIT
+    // ───────────────────────────────────────────────────────────
+    const init=async()=>{
+        try{
+            const res=await fetch(API_URL);
+            if(!res.ok)throw new Error(`HTTP ${res.status}`);
+            const raw=await res.json();
+            
+            rawData=raw.map(r=>{
+                const c={};
+                for(const k in r) c[k.trim()]=r[k];
+                return c;
+            }).filter(r=>r['Número']||r['Negociação']);
+            
+            const st=new Date();
+            $('lastSync').textContent=st.toLocaleDateString('pt-BR')+' '+st.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+            
+            processConsolidation();
+            populateFilters();
+            populateYears();
+            updateDashboard();
+            
+            filterSintetico(); // Chama o filtro inicial que vai preencher currentFilteredSintetico
+            renderDetalhado(applySort(rawData,'detalhado'));
+            
+            $('loader').style.display='none';
+            $('app-content').style.display='flex';
+            initScrollSpy();
+        }catch(e){
+            console.error(e);
+            $('loader').innerHTML=`<p style="color:var(--status-err);font-weight:600;">Erro ao acessar dados.<br><small style="color:var(--text-3)">${e.message}</small></p>`;
+        }
+    };
 
-    const filterSintetico=U.debounce(()=>{renderSintetico(applySort(getFilteredSint(),'sintetico'));});
-const filterDetalhado=U.debounce(()=>{const t=$('searchDetalhado').value.toLowerCase(),fO=$('filterDetalhadoOrgao').value.toLowerCase(),fN=$('filterDetalhadoNatureza').value.toLowerCase(),fS=$('filterDetalhadoStatus').value.toLowerCase(),fM=$('filterDetalhadoMes').value,fA=$('filterDetalhadoAno').value;let f=rawData.filter(r=>{const tx=String(r['Número']||'').toLowerCase().includes(t)||String(r['Orgão']||'').toLowerCase().includes(t)||String(r['Natureza']||'').toLowerCase().includes(t)||String(r['Status']||'').toLowerCase().includes(t);if(!tx)return false;if(fO&&String(r['Orgão']||'').toLowerCase()!==fO)return false;if(fN&&String(r['Natureza']||'').toLowerCase()!==fN)return false;if(fS&&String(r['Status']||'').toLowerCase()!==fS)return false;if(fM||fA){const d=new Date(r['Data']);if(isNaN(d.getTime()))return false;if(fA&&d.getUTCFullYear()!==parseInt(fA))return false;if(fM&&(d.getUTCMonth()+1)!==parseInt(fM))return false;}return true;});renderDetalhado(applySort(f,'detalhado'));});
-// ═══ EXCEL EXPORT ═══
+    // ───────────────────────────────────────────────────────────
+    // CONSOLIDATION
+    // ───────────────────────────────────────────────────────────
+    const processConsolidation=()=>{
+        const map={};
+        rawData.forEach(row=>{
+            const id=row['Número']||row['Negociação']||'S/N';
+            const status=String(row['Status']||'').trim().toLowerCase();
+            
+            if(!map[id]){
+                map[id]={
+                    natureza:row['Natureza']||'-',
+                    tributo:row['Tributo']||'-',
+                    numero:id,
+                    orgao:row['Orgão']||'-',
+                    qtdParcela:0,
+                    atraso:0,
+                    totalDivida:0,
+                    parcelaUnit:U.num(row['Valor Original']),
+                    isEncerrado:true,
+                    hasAVencer:false
+                };
+            }
+            
+            map[id].qtdParcela++;
+            if(status==='a vencer'||status.includes('atraso')) map[id].totalDivida+=U.num(row['Saldo Devedor']);
+            if(status.includes('atraso')) map[id].atraso++;
+            if(!status.includes('encerrado')) map[id].isEncerrado=false;
+            if(status==='a vencer') map[id].hasAVencer=true;
+        });
+        consolidatedData=Object.values(map);
+    };
+
+    // ───────────────────────────────────────────────────────────
+    // FILTERS
+    // ───────────────────────────────────────────────────────────
+    const populateFilters=()=>{
+        const nats=new Set(),orgs=new Set();
+        rawData.forEach(r=>{
+            if(r['Natureza'])nats.add(r['Natureza']);
+            if(r['Orgão'])orgs.add(r['Orgão']);
+        });
+        const no=Array.from(nats).sort().map(n=>`<option value="${n}">${n}</option>`).join('');
+        const oo=Array.from(orgs).sort().map(o=>`<option value="${o}">${o}</option>`).join('');
+        
+        $('filterSinteticoNatureza').innerHTML='<option value="">Todas</option>'+no;
+        $('filterSinteticoOrgao').innerHTML='<option value="">Todos</option>'+oo;
+        $('filterDetalhadoOrgao').innerHTML='<option value="">Todos</option>'+oo;
+        $('filterDetalhadoNatureza').innerHTML='<option value="">Todas</option>'+no;
+    };
+
+    const populateYears=()=>{
+        const yrs=new Set();
+        rawData.forEach(r=>{
+            const d=new Date(r['Data']);
+            if(!isNaN(d.getTime())) yrs.add(d.getUTCFullYear());
+        });
+        $('filterDetalhadoAno').innerHTML='<option value="">Todos</option>'+Array.from(yrs).sort().map(y=>`<option value="${y}">${y}</option>`).join('');
+    };
+
+    const getFilteredSint=()=>{
+        const t=$('searchSintetico').value.toLowerCase(),
+              fN=$('filterSinteticoNatureza').value.toLowerCase(),
+              fO=$('filterSinteticoOrgao').value.toLowerCase();
+              
+        return consolidatedData.filter(c=>{
+            if(c.totalDivida<=0||c.parcelaUnit===0||c.isEncerrado) return false;
+            if(t&&!(c.numero.toLowerCase().includes(t)||c.orgao.toLowerCase().includes(t)||c.natureza.toLowerCase().includes(t)||c.tributo.toLowerCase().includes(t))) return false;
+            if(fN&&c.natureza.toLowerCase()!==fN) return false;
+            if(fO&&c.orgao.toLowerCase()!==fO) return false;
+            return true;
+        });
+    };
+
+    // ───────────────────────────────────────────────────────────
+    // DASHBOARD
+    // ───────────────────────────────────────────────────────────
+    const chartOpts=(ov={})=>({
+        responsive:true,
+        maintainAspectRatio:false,
+        layout:{padding:{top:28,bottom:10}},
+        plugins:{
+            legend:{display:false},
+            tooltip:{backgroundColor:'rgba(15,10,24,0.95)',titleColor:'#fff',bodyColor:'#a39eb5',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:12,cornerRadius:8,callbacks:{label:ctx=>U.fmtD(ctx.raw)}},
+            datalabels:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:600},formatter:v=>v>0?U.fmtD(v):'',anchor:'end',align:'end',...(ov.datalabels||{})}
+        },
+        scales:{x:{display:false},y:{display:false}},
+        ...(ov.extra||{})
+    });
+
+    const updateDashboard=()=>{
+        let totalS=0,caixaM=0;
+        const contSet=new Set(),orgMap={},anoMap={};
+        
+        rawData.forEach(row=>{
+            const saldo=U.num(row['Saldo Devedor']),
+                  status=String(row['Status']||'').trim().toLowerCase(),
+                  id=row['Número']||row['Negociação']||'S/N',
+                  d=new Date(row['Data']),
+                  ok=!isNaN(d.getTime());
+                  
+            if(status==='a vencer'){
+                totalS+=saldo;
+                contSet.add(id);
+                if(ok){
+                    const y=d.getUTCFullYear(),m=d.getUTCMonth(),org=row['Orgão']||'-';
+                    orgMap[org]=(orgMap[org]||0)+saldo;
+                    anoMap[y]=(anoMap[y]||0)+saldo;
+                    if(y===currYear&&m===currMonth) caixaM+=saldo;
+                }
+            }
+        });
+        
+        $('kpi-saldo').textContent=U.fmtD(totalS);
+        $('kpi-ativas').textContent=contSet.size;
+        $('kpi-ativas-sub').textContent=`contratos com parcelas "A Vencer"`;
+        $('kpi-mensal').textContent=U.fmtD(caixaM);
+        $('kpi-mensal-sub').textContent=`${monthNames[currMonth]}/${currYear} — saída prevista`;
+        
+        const sy=Object.keys(anoMap).map(Number).sort(),qL=[],qD=[];
+        sy.forEach(y=>{if(anoMap[y]>0){qL.push(String(y));qD.push(anoMap[y]);}});
+        
+        Chart.defaults.font.family="'Outfit',sans-serif";
+        Chart.register(ChartDataLabels);
+        Object.values(charts).forEach(c=>c?.destroy());
+        
+        const orgE=Object.entries(orgMap).sort((a,b)=>b[1]-a[1]);
+        
+        charts.abertura=new Chart($('chartAbertura'),{
+            type:'bar',
+            data:{labels:orgE.map(e=>e[0]),datasets:[{data:orgE.map(e=>e[1]),backgroundColor:'#FF6E00',borderRadius:5,maxBarThickness:28}]},
+            options:{...chartOpts(),indexAxis:'y',layout:{padding:{right:90,top:20,bottom:10}},scales:{x:{display:false,grace:'15%'},y:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:500},padding:8}}}}
+        });
+        
+        charts.caixa=new Chart($('chartCaixa'),{
+            type:'bar',
+            data:{labels:['Jan/2023',`${monthNames[currMonth]}/${currYear}`],datasets:[{data:[CAIXA_JAN_2023,caixaM],backgroundColor:['#5a005a','#FF6E00'],borderRadius:6,maxBarThickness:90}]},
+            options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:13,weight:600},padding:10}},y:{display:false}}}
+        });
+        
+        charts.quitacao=new Chart($('chartQuitacao'),{
+            type:'bar',
+            data:{labels:qL,datasets:[{data:qD,backgroundColor:U.grad('chartQuitacao','#FF6E00','#ff9544'),borderRadius:6,maxBarThickness:60}]},
+            options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:12,weight:500}}},y:{display:false}}}
+        });
+    };
+
+    // ───────────────────────────────────────────────────────────
+    // TABLES
+    // ───────────────────────────────────────────────────────────
+    const renderSintRows=data=>{
+        $('bodySintetico').innerHTML=data.map(c=>`<tr><td>${c.natureza}</td><td>${c.tributo}</td><td><strong>${c.numero}</strong></td><td>${c.orgao}</td><td>${c.qtdParcela}</td><td style="color:${c.atraso>0?'var(--status-err)':'var(--status-ok)'};font-weight:600;">${c.atraso}</td><td class="val-destaque">${U.fmt(c.totalDivida)}</td><td>${U.fmt(c.parcelaUnit)}</td></tr>`).join('');
+    };
+
+    const renderDetRows=data=>{
+        $('bodyDetalhado').innerHTML=data.map(r=>{
+            const l=String(r['Status']||'-').trim(),lo=l.toLowerCase();
+            let b='status-default';
+            if(lo==='a vencer') b='status-vencer';
+            else if(lo==='quitada'||lo==='encerrado') b='status-quitada';
+            else if(lo.includes('atraso')) b='status-atraso';
+            return`<tr><td>${U.date(r['Data'])}</td><td><strong>${r['Número']||r['Negociação']||'-'}</strong></td><td>${r['Orgão']||'-'}</td><td>${r['Natureza']||'-'}</td><td>${U.fmt(U.num(r['Valor Original']))}</td><td class="val-destaque">${U.fmt(U.num(r['Saldo Devedor']))}</td><td><span class="status-badge ${b}">${l}</span></td></tr>`;
+        }).join('');
+    };
+
+    const renderSintetico=data=>{
+        pagination.sintetico.data=data;
+        pagination.sintetico.page=1;
+        renderSintRows(getSlice('sintetico'));
+        renderPag('sintetico',$('paginationSintetico'));
+    };
+
+    const renderDetalhado=data=>{
+        pagination.detalhado.data=data;
+        pagination.detalhado.page=1;
+        renderDetRows(getSlice('detalhado'));
+        renderPag('detalhado',$('paginationDetalhado'));
+    };
+
+    const filterSintetico=U.debounce(()=>{
+        currentFilteredSintetico = applySort(getFilteredSint(),'sintetico');
+        renderSintetico(currentFilteredSintetico);
+    });
+
+    const filterDetalhado=U.debounce(()=>{
+        const t=$('searchDetalhado').value.toLowerCase(),
+              fO=$('filterDetalhadoOrgao').value.toLowerCase(),
+              fN=$('filterDetalhadoNatureza').value.toLowerCase(),
+              fS=$('filterDetalhadoStatus').value.toLowerCase(),
+              fM=$('filterDetalhadoMes').value,
+              fA=$('filterDetalhadoAno').value;
+              
+        let f=rawData.filter(r=>{
+            const tx=String(r['Número']||'').toLowerCase().includes(t)||String(r['Orgão']||'').toLowerCase().includes(t)||String(r['Natureza']||'').toLowerCase().includes(t)||String(r['Status']||'').toLowerCase().includes(t);
+            if(!tx) return false;
+            if(fO&&String(r['Orgão']||'').toLowerCase()!==fO) return false;
+            if(fN&&String(r['Natureza']||'').toLowerCase()!==fN) return false;
+            if(fS&&String(r['Status']||'').toLowerCase()!==fS) return false;
+            if(fM||fA){
+                const d=new Date(r['Data']);
+                if(isNaN(d.getTime())) return false;
+                if(fA&&d.getUTCFullYear()!==parseInt(fA)) return false;
+                if(fM&&(d.getUTCMonth()+1)!==parseInt(fM)) return false;
+            }
+            return true;
+        });
+        renderDetalhado(applySort(f,'detalhado'));
+    });
+
+    // ───────────────────────────────────────────────────────────
+    // EXCEL EXPORT
+    // ───────────────────────────────────────────────────────────
     const exportExcel=(type)=>{
         if(typeof XLSX==='undefined'){alert('Biblioteca de exportação ainda carregando. Tente novamente.');return;}
         const dateStr=new Date().toISOString().split('T')[0];
-let data,filename,sheetName;
+        let data,filename,sheetName;
 
         if(type==='sintetico'){
-            data=getFilteredSint().map(c=>({'Natureza':c.natureza,'Tributo':c.tributo,'Número':c.numero,'Órgão':c.orgao,'Parcelas':c.qtdParcela,'Atraso':c.atraso,'Total Dívida':c.totalDivida,'Valor Parcela':c.parcelaUnit}));
-            filename=`ONTIME_Sintetico_${dateStr}.xlsx`;sheetName='Resumo Sintético';
-}else{
-            data=(pagination.detalhado.data.length?pagination.detalhado.data:rawData).map(r=>({'Data':U.date(r['Data']),'Número':r['Número']||r['Negociação']||'-','Órgão':r['Orgão']||'-','Natureza':r['Natureza']||'-','Valor Original':U.num(r['Valor Original']),'Saldo Devedor':U.num(r['Saldo Devedor']),'Status':r['Status']||'-'}));
-            filename=`ONTIME_Detalhado_${dateStr}.xlsx`;sheetName='Detalhamento';
-}
+            data=currentFilteredSintetico.map(c=>({
+                'Natureza':c.natureza,
+                'Tributo':c.tributo,
+                'Número':c.numero,
+                'Órgão':c.orgao,
+                'Parcelas':c.qtdParcela,
+                'Atraso':c.atraso,
+                'Total Dívida':c.totalDivida,
+                'Valor Parcela':c.parcelaUnit
+            }));
+            filename=`ONTIME_Sintetico_${dateStr}.xlsx`;
+            sheetName='Resumo Sintético';
+        }else{
+            data=(pagination.detalhado.data.length?pagination.detalhado.data:rawData).map(r=>({
+                'Data':U.date(r['Data']),
+                'Número':r['Número']||r['Negociação']||'-',
+                'Órgão':r['Orgão']||'-',
+                'Natureza':r['Natureza']||'-',
+                'Valor Original':U.num(r['Valor Original']),
+                'Saldo Devedor':U.num(r['Saldo Devedor']),
+                'Status':r['Status']||'-'
+            }));
+            filename=`ONTIME_Detalhado_${dateStr}.xlsx`;
+            sheetName='Detalhamento';
+        }
+        
         if(!data.length){alert('Nenhum dado para exportar.');return;}
-        const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheetName);XLSX.writeFile(wb,filename);
-};
-
-    // ═══ PDF EXPORT ═══
-    const exportPDF=async()=>{
-        if(typeof html2canvas==='undefined'||typeof jspdf==='undefined'){alert('Bibliotecas de PDF carregando. Tente novamente.');return;}
-        const{jsPDF}=jspdf;
-const sections=document.querySelectorAll('[data-pdf="capture"]');
-        const pdf=new jsPDF('l','mm','a4');
-        const pageW=pdf.internal.pageSize.getWidth(),pageH=pdf.internal.pageSize.getHeight();
-        const margin=10;
-
-        for(let i=0;i<sections.length;i++){
-            if(i>0)pdf.addPage();
-const el=sections[i];
-            // Temporarily expand to show all content
-            const origMax=el.style.maxHeight;el.style.maxHeight='none';
-const canvas=await html2canvas(el,{backgroundColor:'#0f0a18',scale:1.5,useCORS:true,logging:false});
-            el.style.maxHeight=origMax;
-            const imgData=canvas.toDataURL('image/png');
-            const imgW=pageW-margin*2;
-            const imgH=(canvas.height*imgW)/canvas.width;
-            const finalH=Math.min(imgH,pageH-margin*2);
-            pdf.addImage(imgData,'PNG',margin,margin,imgW,finalH);
-}
-
-        const dateStr=new Date().toISOString().split('T')[0];
-        pdf.save(`ONTIME_Relatorio_${dateStr}.pdf`);
+        const ws=XLSX.utils.json_to_sheet(data);
+        const wb=XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,sheetName);
+        XLSX.writeFile(wb,filename);
     };
-// ═══ EVENTS ═══
-    document.addEventListener('DOMContentLoaded',init);
-    document.addEventListener('click',e=>{if(e.target.closest('.nav-item')&&window.innerWidth<=1024)toggleSidebar();});
 
-    return{toggleSidebar,scrollToSection,goPage,filterSintetico,filterDetalhado,doSort,exportExcel,exportPDF};
+    // ───────────────────────────────────────────────────────────
+    // NEW ADVANCED PDF EXPORT (WITH AUTOTABLE)
+    // ───────────────────────────────────────────────────────────
+    const exportPDF=async()=>{
+        if(typeof html2canvas==='undefined'||typeof jspdf==='undefined'){
+            alert('Bibliotecas de PDF carregando. Tente novamente.');
+            return;
+        }
+        
+        const btn = document.getElementById('btnExportPDF');
+        const originalHtml = btn.innerHTML;
+        btn.classList.add('loading');
+        btn.innerHTML = '<i class="ph-bold ph-spinner"></i> <span>Gerando...</span>';
+
+        try {
+            const { jsPDF } = jspdf;
+            const pdf = new jsPDF('l','mm','a4');
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const margin = 14;
+
+            // Background escuro para todo o PDF
+            pdf.setFillColor(15, 10, 24);
+            pdf.rect(0, 0, pageW, pageH, 'F');
+
+            // 1. Capturar o Dashboard como Imagem
+            const dashEl = document.getElementById('dashboard');
+            
+            // Expandir temporariamente para evitar cortes (bug de scroll do html2canvas)
+            const origMax = dashEl.style.maxHeight;
+            const origOverflow = dashEl.style.overflow;
+            dashEl.style.maxHeight = 'none';
+            dashEl.style.overflow = 'visible';
+
+            const canvas = await html2canvas(dashEl, {
+                backgroundColor: '#0f0a18',
+                scale: 1.5,
+                useCORS: true,
+                logging: false,
+                windowWidth: dashEl.scrollWidth,
+                windowHeight: dashEl.scrollHeight
+            });
+
+            dashEl.style.maxHeight = origMax;
+            dashEl.style.overflow = origOverflow;
+
+            const imgData = canvas.toDataURL('image/png');
+            const imgW = pageW - margin*2;
+            const imgH = (canvas.height * imgW) / canvas.width;
+            
+            // Garantir que a imagem cabe na primeira página, ou escalar
+            const finalH = Math.min(imgH, pageH - margin*2);
+            pdf.addImage(imgData, 'PNG', margin, margin, imgW, finalH);
+
+            // 2. Gerar Tabela Sintética na Página Seguinte usando autoTable
+            pdf.addPage();
+            pdf.setFillColor(15, 10, 24);
+            pdf.rect(0, 0, pageW, pageH, 'F'); // Fundo escuro
+
+            // Título da Tabela
+            pdf.setTextColor(255, 110, 0); // Orange Main
+            pdf.setFontSize(16);
+            pdf.text('Resumo Sintético de Parcelamentos', margin, margin + 10);
+
+            // Preparar dados da tabela
+            const tableCols = ["Natureza", "Tributo", "Número", "Órgão", "Parcelas", "Atraso", "Total Dívida (R$)", "Vlr Parcela (R$)"];
+            const tableRows = currentFilteredSintetico.map(c => [
+                c.natureza,
+                c.tributo,
+                c.numero,
+                c.orgao,
+                c.qtdParcela,
+                c.atraso,
+                U.fmt(c.totalDivida),
+                U.fmt(c.parcelaUnit)
+            ]);
+
+            // Utilizar autoTable nativo
+            pdf.autoTable({
+                head: [tableCols],
+                body: tableRows,
+                startY: margin + 18,
+                theme: 'grid',
+                styles: {
+                    fillColor: [26, 20, 35], // Surface-1
+                    textColor: [255, 255, 255],
+                    lineColor: [47, 39, 58], // Surface-3
+                    lineWidth: 0.1,
+                    font: 'helvetica',
+                    fontSize: 9
+                },
+                headStyles: {
+                    fillColor: [36, 29, 46],
+                    textColor: [163, 158, 181],
+                    fontStyle: 'bold',
+                    fontSize: 8
+                },
+                alternateRowStyles: {
+                    fillColor: [22, 16, 30]
+                },
+                margin: { left: 14, right: 14 },
+                // Garante fundo escuro em páginas extras da tabela
+                didDrawPage: (data) => {
+                    if (data.pageNumber > 1) {
+                        pdf.setFillColor(15, 10, 24);
+                        pdf.rect(0, 0, pageW, pageH, 'F');
+                    }
+                }
+            });
+
+            pdf.save(`ONTIME_Relatorio_${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao gerar o PDF. Verifique a consola.');
+        } finally {
+            btn.classList.remove('loading');
+            btn.innerHTML = originalHtml;
+        }
+    };
+
+    // ───────────────────────────────────────────────────────────
+    // EVENTS
+    // ───────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', init);
+
+    document.addEventListener('click', e => {
+        if (e.target.closest('.nav-item') && window.innerWidth <= 1024) {
+            toggleSidebar();
+        }
+    });
+
+    // API pública
+    return {
+        toggleSidebar,
+        scrollToSection,
+        goPage,
+        filterSintetico,
+        filterDetalhado,
+        doSort,
+        exportExcel,
+        exportPDF
+    };
 })();
 
 // ─── LÓGICA DO BOTÃO VOLTAR INTELIGENTE ───
