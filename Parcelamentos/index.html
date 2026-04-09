@@ -18,277 +18,123 @@
 
     <style>
         :root {
-            --purple-deep: #1a0a2e;
-            --purple-main: #3C003C;
-            --purple-light: #5a005a;
-            --purple-glow: rgba(60,0,60,0.4);
-
-            --orange-main: #FF6E00;
-            --orange-hover: #ff8533;
-            --orange-glow: rgba(255,110,0,0.3);
-            --orange-dim: rgba(255,110,0,0.12);
-
-            --bg-dark: #0f0a18;
-            --surface-1: #1a1423;
-            --surface-2: #241d2e;
-            --surface-3: #2f273a;
-
-            --text-1: #ffffff;
-            --text-2: #a39eb5;
-            --text-3: #6b6580;
-
-            --border-color: rgba(255,255,255,0.08);
-
-            --status-ok: #10b981;
-            --status-ok-bg: rgba(16,185,129,0.15);
-            --status-warn: #f59e0b;
-            --status-warn-bg: rgba(245,158,11,0.15);
-            --status-err: #ef4444;
-            --status-err-bg: rgba(239,68,68,0.15);
-
-            --font-display: 'Syne', sans-serif;
-            --font-body: 'Outfit', sans-serif;
-
-            --shadow-card: 0 8px 32px rgba(0,0,0,0.4);
-            --radius-lg: 20px;
-            --radius-md: 12px;
-            --radius-sm: 8px;
-            --sidebar-w: 280px;
+            --purple-deep:#1a0a2e; --purple-main:#3C003C; --purple-light:#5a005a; --purple-glow:rgba(60,0,60,0.4);
+            --orange-main:#FF6E00; --orange-hover:#ff8533; --orange-glow:rgba(255,110,0,0.3); --orange-dim:rgba(255,110,0,0.12);
+            --bg-dark:#0f0a18; --surface-1:#1a1423; --surface-2:#241d2e; --surface-3:#2f273a;
+            --text-1:#ffffff; --text-2:#a39eb5; --text-3:#6b6580;
+            --border-color:rgba(255,255,255,0.08);
+            --status-ok:#10b981; --status-ok-bg:rgba(16,185,129,0.15);
+            --status-warn:#f59e0b; --status-warn-bg:rgba(245,158,11,0.15);
+            --status-err:#ef4444; --status-err-bg:rgba(239,68,68,0.15);
+            --font-display:'Syne',sans-serif; --font-body:'Outfit',sans-serif;
+            --shadow-card:0 8px 32px rgba(0,0,0,0.4);
+            --radius-lg:20px; --radius-md:12px; --radius-sm:8px; --sidebar-w:280px;
         }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:var(--font-body);background:var(--bg-dark);color:var(--text-1);display:flex;height:100vh;overflow:hidden;background-image:radial-gradient(circle at 15% 50%,rgba(60,0,60,0.15),transparent 25%),radial-gradient(circle at 85% 30%,rgba(255,110,0,0.05),transparent 25%)}
+        ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:var(--bg-dark)}::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:10px}::-webkit-scrollbar-thumb:hover{background:var(--orange-main)}
 
-        body {
-            font-family: var(--font-body);
-            background: var(--bg-dark); color: var(--text-1);
-            display: flex; height: 100vh; overflow: hidden;
-            background-image: radial-gradient(circle at 15% 50%, rgba(60,0,60,0.15), transparent 25%),
-                              radial-gradient(circle at 85% 30%, rgba(255,110,0,0.05), transparent 25%);
-        }
+        .sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,var(--purple-deep) 0%,var(--surface-1) 100%);border-right:1px solid var(--border-color);display:flex;flex-direction:column;flex-shrink:0;z-index:100;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+        .sidebar-brand{height:90px;display:flex;align-items:center;padding:0 28px;gap:14px;border-bottom:1px solid var(--border-color);position:relative;overflow:hidden}
+        .sidebar-brand::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--orange-main),transparent)}
+        .sidebar-brand img{width:42px;height:42px;border-radius:12px;box-shadow:0 0 15px var(--orange-glow);border:1px solid rgba(255,110,0,.3)}
+        .sidebar-brand .brand-text{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:1px}.sidebar-brand .brand-text span{color:var(--orange-main);margin-left:-2px}
+        .sidebar-nav{padding:24px 16px;display:flex;flex-direction:column;gap:8px;flex:1}
+        .nav-item{display:flex;align-items:center;gap:14px;padding:14px 18px;color:var(--text-2);text-decoration:none;border-radius:var(--radius-md);font-weight:500;font-size:15px;transition:all .2s;border:1px solid transparent;background:none;cursor:pointer;font-family:var(--font-body);text-align:left;width:100%}
+        .nav-item i{font-size:22px;transition:transform .2s}.nav-item:hover{color:var(--text-1);background:rgba(255,255,255,.03);border-color:var(--border-color)}.nav-item:hover i{transform:scale(1.1);color:var(--orange-main)}
+        .nav-item.active{background:linear-gradient(90deg,rgba(255,110,0,.1),transparent);color:var(--orange-main);border-color:rgba(255,110,0,.2);border-left:3px solid var(--orange-main)}
+        .sidebar-footer{padding:16px;border-top:1px solid var(--border-color)}
+        .back-link{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 18px;background:rgba(255,255,255,.03);border:1px solid var(--border-color);border-radius:var(--radius-md);color:var(--text-2);text-decoration:none;font-size:14px;font-weight:600;transition:all .2s;width:100%}
+        .back-link:hover{background:var(--orange-main);border-color:var(--orange-main);color:#fff}
+        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:90;backdrop-filter:blur(4px)}
+        .hamburger{display:none;background:none;border:none;color:var(--text-1);font-size:28px;cursor:pointer}
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--orange-main); }
+        .main-content{flex:1;display:flex;flex-direction:column;overflow-y:auto;scroll-behavior:smooth}
+        header{height:80px;background:rgba(15,10,24,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;padding:0 40px;position:sticky;top:0;z-index:50;gap:16px;flex-wrap:wrap}
+        .header-left{display:flex;align-items:center;gap:16px}.page-title{font-family:var(--font-display);font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px}.page-title i{color:var(--orange-main)}
+        .header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+        .header-pill{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border-color);color:var(--text-2);font-size:12px;font-weight:500;padding:8px 16px;border-radius:999px}
+        .header-pill .dot{width:7px;height:7px;background:var(--status-ok);border-radius:50%;animation:pulse-dot 2.5s infinite}
+        @keyframes pulse-dot{0%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}70%{box-shadow:0 0 0 5px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+        .btn-export{display:flex;align-items:center;gap:8px;padding:9px 18px;border-radius:999px;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;border:none}
+        .btn-export.excel{background:var(--surface-2);border:1px solid var(--border-color);color:var(--text-1)}.btn-export.excel:hover{border-color:var(--status-ok);color:var(--status-ok);background:rgba(16,185,129,.05)}
+        .btn-export.pdf{background:var(--orange-main);color:#fff;box-shadow:0 4px 15px var(--orange-glow)}.btn-export.pdf:hover{background:var(--orange-hover);transform:translateY(-1px)}
+        .btn-export.pdf.loading i{animation:spin 1s linear infinite}
 
-        /* ═══ SIDEBAR ═══ */
-        .sidebar {
-            width: var(--sidebar-w);
-            background: linear-gradient(180deg, var(--purple-deep) 0%, var(--surface-1) 100%);
-            border-right: 1px solid var(--border-color); display: flex; flex-direction: column;
-            flex-shrink: 0; z-index: 100;
-            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-        }
-        .sidebar-brand {
-            height: 90px;
-            display: flex; align-items: center; padding: 0 28px; gap: 14px;
-            border-bottom: 1px solid var(--border-color); position: relative; overflow: hidden;
-        }
-        .sidebar-brand::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:2px; background:linear-gradient(90deg, var(--orange-main), transparent); }
-        .sidebar-brand img { width:42px; height:42px; border-radius:12px; box-shadow:0 0 15px var(--orange-glow); border:1px solid rgba(255,110,0,0.3); }
-        .sidebar-brand .brand-text { font-family:var(--font-display); font-size:22px; font-weight:800; letter-spacing:1px; }
-        .sidebar-brand .brand-text span { color:var(--orange-main); margin-left:-2px; }
+        .content-area{padding:32px 40px 120px;max-width:1500px;margin:0 auto;width:100%;display:flex;flex-direction:column;gap:48px}
+        .section-title{font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:10px}.section-title i{color:var(--orange-main);font-size:24px}
 
-        .sidebar-nav { padding:24px 16px; display:flex; flex-direction:column; gap:8px; flex:1; }
+        .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:28px}
+        .kpi-card{background:var(--surface-1);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:28px;position:relative;overflow:hidden;box-shadow:var(--shadow-card);transition:border-color .3s,transform .3s}
+        .kpi-card:hover{border-color:rgba(255,255,255,.15);transform:translateY(-2px)}
+        .kpi-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px}
+        .kpi-card.purple::before{background:var(--purple-light)}.kpi-card.orange::before{background:var(--orange-main)}.kpi-card.green::before{background:var(--status-ok)}
+        .kpi-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+        .kpi-label{font-size:13px;color:var(--text-2);font-weight:500}
+        .kpi-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+        .kpi-card.purple .kpi-icon{background:rgba(90,0,90,.15);color:#d8b4fe}.kpi-card.orange .kpi-icon{background:var(--orange-glow);color:var(--orange-main)}.kpi-card.green .kpi-icon{background:var(--status-ok-bg);color:var(--status-ok)}
+        .kpi-value{font-family:var(--font-display);font-size:30px;font-weight:800}.kpi-sub{font-size:12px;color:var(--text-3);margin-top:8px}
 
-        .nav-item {
-            display:flex;
-            align-items:center; gap:14px; padding:14px 18px; color:var(--text-2);
-            text-decoration:none; border-radius:var(--radius-md); font-weight:500; font-size:15px;
-            transition:all 0.2s; border:1px solid transparent; background:none; cursor:pointer;
-            font-family:var(--font-body); text-align:left; width:100%;
-        }
-        .nav-item i { font-size:22px; transition:transform 0.2s; }
-        .nav-item:hover { color:var(--text-1); background:rgba(255,255,255,0.03); border-color:var(--border-color); }
-        .nav-item:hover i { transform:scale(1.1); color:var(--orange-main); }
-        .nav-item.active { background:linear-gradient(90deg,rgba(255,110,0,0.1),transparent); color:var(--orange-main); border-color:rgba(255,110,0,0.2); border-left:3px solid var(--orange-main); }
+        .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.chart-full{grid-column:1/-1}
+        .chart-card{background:var(--surface-1);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-card);transition:border-color .3s}.chart-card:hover{border-color:rgba(255,255,255,.12)}
+        .chart-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:4px}.chart-subtitle{font-size:12px;color:var(--text-3);margin-bottom:20px}
+        .chart-container{position:relative;height:300px;width:100%}
 
-        .sidebar-footer { padding:16px; border-top:1px solid var(--border-color); }
-        .back-link {
-            display:flex;
-            align-items:center; justify-content:center; gap:8px; padding:14px 18px;
-            background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:var(--radius-md);
-            color:var(--text-2); text-decoration:none; font-size:14px; font-weight:600; transition:all 0.2s; width:100%;
-        }
-        .back-link:hover { background:var(--orange-main); border-color:var(--orange-main); color:#fff; }
+        /* Filter badge */
+        .filter-badge{display:inline-flex;align-items:center;gap:8px;background:var(--orange-dim);border:1px solid rgba(255,110,0,.25);color:var(--orange-main);font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;margin-left:16px;animation:fadeUp .3s ease}
+        .filter-badge button{background:none;border:none;color:var(--orange-main);cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 4px;opacity:.7;transition:opacity .2s}
+        .filter-badge button:hover{opacity:1}
 
-        .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:90; backdrop-filter:blur(4px); }
-        .hamburger { display:none; background:none; border:none; color:var(--text-1); font-size:28px; cursor:pointer; }
+        .filter-bar{background:var(--surface-1);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:20px 24px;margin-bottom:20px;display:flex;align-items:flex-end;flex-wrap:wrap;gap:16px;box-shadow:var(--shadow-card)}
+        .filter-group{flex:1;min-width:140px;display:flex;flex-direction:column;gap:6px}
+        .filter-group label{font-size:11px;color:var(--text-2);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+        .filter-input{width:100%;background:var(--surface-2);border:1px solid var(--border-color);color:var(--text-1);padding:10px 14px;border-radius:var(--radius-sm);font-family:var(--font-body);font-size:13px;outline:none;transition:all .2s;appearance:none}
+        .filter-input:focus{border-color:var(--orange-main);box-shadow:0 0 0 3px rgba(255,110,0,.1)}.filter-input::placeholder{color:var(--text-3)}
+        .filter-input.has-icon{padding-left:38px;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236b6580" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>');background-repeat:no-repeat;background-position:12px center}
 
-        /* ═══ MAIN ═══ */
-        .main-content { flex:1; display:flex; flex-direction:column; overflow-y:auto; scroll-behavior:smooth; }
+        .table-card{background:var(--surface-1);border:1px solid var(--border-color);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);overflow:hidden}
+        .table-bar{padding:16px 24px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,.2)}
+        .table-bar-title{font-family:var(--font-display);font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}.table-bar-title i{color:var(--orange-main)}
+        .table-responsive{overflow-x:auto}
+        table{width:100%;border-collapse:collapse;text-align:left}
+        th{padding:14px 20px;font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;cursor:pointer;transition:background .2s;background:var(--surface-2);position:sticky;top:0;z-index:5}
+        th:hover{background:var(--surface-3);color:var(--text-1)}th i{font-size:13px;margin-left:4px;color:var(--text-3);vertical-align:middle}th i.active{color:var(--orange-main)}
+        td{padding:14px 20px;font-size:13px;border-bottom:1px solid var(--border-color);color:var(--text-1);white-space:nowrap}
+        tr:hover td{background:rgba(255,255,255,.02)}td strong{font-weight:600}.val-destaque{color:var(--orange-main);font-weight:600}
+        .status-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border:1px solid transparent}
+        .status-vencer{background:var(--orange-dim);color:var(--orange-main);border-color:rgba(255,110,0,.25)}
+        .status-quitada{background:var(--status-ok-bg);color:var(--status-ok);border-color:rgba(16,185,129,.3)}
+        .status-atraso{background:var(--status-err-bg);color:var(--status-err);border-color:rgba(239,68,68,.3)}
+        .status-default{background:rgba(255,255,255,.04);color:var(--text-3)}
+        .pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid var(--border-color);font-size:12px;color:var(--text-2);flex-wrap:wrap;gap:8px}
+        .pagination-btns{display:flex;gap:6px}
+        .pagination-btns button{background:var(--surface-2);border:1px solid var(--border-color);color:var(--text-1);padding:6px 14px;border-radius:6px;font-family:var(--font-body);font-size:12px;font-weight:500;cursor:pointer;transition:all .2s}
+        .pagination-btns button:hover:not(:disabled){border-color:var(--orange-main);color:var(--text-1)}.pagination-btns button:disabled{opacity:.3;cursor:not-allowed}
+        .pagination-btns button.active{background:var(--orange-dim);border-color:var(--orange-main);color:var(--orange-main);font-weight:600}
+        .table-footer{padding:14px 24px;border-top:1px solid var(--border-color);font-size:12px;color:var(--text-2);background:rgba(0,0,0,.15)}
 
-        header {
-            height:80px;
-            background:rgba(15,10,24,0.8); backdrop-filter:blur(12px);
-            border-bottom:1px solid var(--border-color); display:flex; align-items:center;
-            justify-content:space-between; padding:0 40px; position:sticky; top:0; z-index:50; gap:16px; flex-wrap:wrap;
-        }
-        .header-left { display:flex; align-items:center; gap:16px; }
-        .page-title { font-family:var(--font-display); font-size:22px; font-weight:700; display:flex; align-items:center; gap:10px; }
-        .page-title i { color:var(--orange-main); }
-        .header-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        #loader{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;color:var(--text-2)}
+        .spinner{width:44px;height:44px;border:3px solid rgba(255,110,0,.2);border-top-color:var(--orange-main);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:16px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+        .scroll-section{animation:fadeUp .5s ease-out both}.scroll-section:nth-child(1){animation-delay:.05s}.scroll-section:nth-child(2){animation-delay:.15s}.scroll-section:nth-child(3){animation-delay:.25s}
 
-        .header-pill { display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--border-color); color:var(--text-2); font-size:12px; font-weight:500; padding:8px 16px; border-radius:999px; }
-        .header-pill .dot { width:7px; height:7px; background:var(--status-ok); border-radius:50%; animation:pulse-dot 2.5s infinite; }
-        @keyframes pulse-dot { 0%{box-shadow:0 0 0 0 rgba(16,185,129,0.5)} 70%{box-shadow:0 0 0 5px rgba(16,185,129,0)} 100%{box-shadow:0 0 0 0 rgba(16,185,129,0)} }
-
-        /* Export buttons */
-        .btn-export {
-            display:flex;
-            align-items:center; gap:8px; padding:9px 18px; border-radius:999px;
-            font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; border:none;
-        }
-        .btn-export.excel { background:var(--surface-2); border:1px solid var(--border-color); color:var(--text-1); }
-        .btn-export.excel:hover { border-color:var(--status-ok); color:var(--status-ok); background:rgba(16,185,129,0.05); }
-        .btn-export.pdf { background:var(--orange-main); color:#fff; box-shadow:0 4px 15px var(--orange-glow); }
-        .btn-export.pdf:hover { background:var(--orange-hover); transform:translateY(-1px); }
-        
-        .btn-export.pdf.loading i { animation: spin 1s linear infinite; }
-
-        /* ═══ CONTENT ═══ */
-        .content-area { padding:32px 40px 120px; max-width:1500px; margin:0 auto; width:100%; display:flex; flex-direction:column; gap:48px; }
-        .section-title { font-family:var(--font-display); font-size:20px; font-weight:700; margin-bottom:24px; display:flex; align-items:center; gap:10px; }
-        .section-title i { color:var(--orange-main); font-size:24px; }
-
-        /* ═══ KPIs ═══ */
-        .kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; margin-bottom:28px; }
-        .kpi-card {
-            background:var(--surface-1);
-            border:1px solid var(--border-color); border-radius:var(--radius-lg);
-            padding:28px; position:relative; overflow:hidden; box-shadow:var(--shadow-card);
-            transition:border-color 0.3s, transform 0.3s;
-        }
-        .kpi-card:hover { border-color:rgba(255,255,255,0.15); transform:translateY(-2px); }
-        .kpi-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; }
-        .kpi-card.purple::before { background:var(--purple-light); }
-        .kpi-card.orange::before { background:var(--orange-main); }
-        .kpi-card.green::before { background:var(--status-ok); }
-
-        .kpi-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
-        .kpi-label { font-size:13px; color:var(--text-2); font-weight:500; }
-        .kpi-icon { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; }
-        .kpi-card.purple .kpi-icon { background:rgba(90,0,90,0.15); color:#d8b4fe; }
-        .kpi-card.orange .kpi-icon { background:var(--orange-glow); color:var(--orange-main); }
-        .kpi-card.green .kpi-icon { background:var(--status-ok-bg); color:var(--status-ok); }
-
-        .kpi-value { font-family:var(--font-display); font-size:30px; font-weight:800; }
-        .kpi-sub { font-size:12px; color:var(--text-3); margin-top:8px; }
-
-        /* ═══ CHARTS ═══ */
-        .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-        .chart-full { grid-column:1/-1; }
-        .chart-card { background:var(--surface-1); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:24px; box-shadow:var(--shadow-card); transition:border-color 0.3s; }
-        .chart-card:hover { border-color:rgba(255,255,255,0.12); }
-        .chart-title { font-family:var(--font-display); font-size:16px; font-weight:700; margin-bottom:4px; }
-        .chart-subtitle { font-size:12px; color:var(--text-3); margin-bottom:20px; }
-        .chart-container { position:relative; height:300px; width:100%; }
-
-        /* ═══ FILTERS ═══ */
-        .filter-bar {
-            background:var(--surface-1);
-            border:1px solid var(--border-color); border-radius:var(--radius-lg);
-            padding:20px 24px; margin-bottom:20px; display:flex; align-items:flex-end; flex-wrap:wrap; gap:16px; box-shadow:var(--shadow-card);
-        }
-        .filter-group { flex:1; min-width:140px; display:flex; flex-direction:column; gap:6px; }
-        .filter-group label { font-size:11px; color:var(--text-2); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
-        .filter-input {
-            width:100%;
-            background:var(--surface-2); border:1px solid var(--border-color); color:var(--text-1);
-            padding:10px 14px; border-radius:var(--radius-sm); font-family:var(--font-body); font-size:13px;
-            outline:none; transition:all 0.2s; appearance:none;
-        }
-        .filter-input:focus { border-color:var(--orange-main); box-shadow:0 0 0 3px rgba(255,110,0,0.1); }
-        .filter-input::placeholder { color:var(--text-3); }
-        .filter-input.has-icon { padding-left:38px; background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236b6580" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>'); background-repeat:no-repeat; background-position:12px center; }
-
-        /* ═══ TABLES ═══ */
-        .table-card { background:var(--surface-1); border:1px solid var(--border-color); border-radius:var(--radius-lg); box-shadow:var(--shadow-card); overflow:hidden; }
-        .table-bar { padding:16px 24px; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); }
-        .table-bar-title { font-family:var(--font-display); font-size:15px; font-weight:700; display:flex; align-items:center; gap:8px; }
-        .table-bar-title i { color:var(--orange-main); }
-        .table-responsive { overflow-x:auto; }
-
-        table { width:100%; border-collapse:collapse; text-align:left; }
-        th { padding:14px 20px; font-size:11px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px; border-bottom:1px solid var(--border-color); white-space:nowrap; cursor:pointer; transition:background 0.2s; background:var(--surface-2); position:sticky; top:0; z-index:5; }
-        th:hover { background:var(--surface-3); color:var(--text-1); }
-        th i { font-size:13px; margin-left:4px; color:var(--text-3); vertical-align:middle; }
-        th i.active { color:var(--orange-main); }
-
-        td { padding:14px 20px; font-size:13px; border-bottom:1px solid var(--border-color); color:var(--text-1); white-space:nowrap; }
-        tr:hover td { background:rgba(255,255,255,0.02); }
-        td strong { font-weight:600; }
-        .val-destaque { color:var(--orange-main); font-weight:600; }
-
-        .status-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; border:1px solid transparent; }
-        .status-vencer { background:var(--orange-dim); color:var(--orange-main); border-color:rgba(255,110,0,0.25); }
-        .status-quitada { background:var(--status-ok-bg); color:var(--status-ok); border-color:rgba(16,185,129,0.3); }
-        .status-atraso { background:var(--status-err-bg); color:var(--status-err); border-color:rgba(239,68,68,0.3); }
-        .status-default { background:rgba(255,255,255,0.04); color:var(--text-3); }
-
-        .pagination { display:flex; align-items:center; justify-content:space-between; padding:14px 24px; border-top:1px solid var(--border-color); font-size:12px; color:var(--text-2); flex-wrap:wrap; gap:8px; }
-        .pagination-btns { display:flex; gap:6px; }
-        .pagination-btns button { background:var(--surface-2); border:1px solid var(--border-color); color:var(--text-1); padding:6px 14px; border-radius:6px; font-family:var(--font-body); font-size:12px; font-weight:500; cursor:pointer; transition:all 0.2s; }
-        .pagination-btns button:hover:not(:disabled) { border-color:var(--orange-main); color:var(--text-1); }
-        .pagination-btns button:disabled { opacity:0.3; cursor:not-allowed; }
-        .pagination-btns button.active { background:var(--orange-dim); border-color:var(--orange-main); color:var(--orange-main); font-weight:600; }
-
-        /* ═══ LOADER ═══ */
-        #loader { display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; color:var(--text-2); }
-        .spinner { width:44px; height:44px; border:3px solid rgba(255,110,0,0.2); border-top-color:var(--orange-main); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:16px; }
-        @keyframes spin { to{transform:rotate(360deg)} }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-        .scroll-section { animation:fadeUp 0.5s ease-out both; }
-        .scroll-section:nth-child(1) { animation-delay:0.05s; }
-        .scroll-section:nth-child(2) { animation-delay:0.15s; }
-        .scroll-section:nth-child(3) { animation-delay:0.25s; }
-
-        /* Esconder elementos na impressão nativa */
-        @media print {
-            .sidebar, header, .filter-bar, .pagination { display: none !important; }
-            .main-content { margin-left: 0 !important; width: 100% !important; overflow: visible !important; }
-            .content-area { padding: 0 !important; max-width: 100% !important; gap: 20px !important; }
-            .table-responsive { max-height: none !important; overflow: visible !important; }
-        }
-
-        /* ═══ RESPONSIVO ═══ */
-        @media (max-width:1024px) {
-            .sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); }
-            .sidebar.open { transform:translateX(0); box-shadow:10px 0 30px rgba(0,0,0,0.8); }
-            .sidebar-overlay.visible { display:block; }
-            .hamburger { display:block; }
-            .content-area { padding:24px 20px 100px; }
-            header { padding:0 20px; height:auto; min-height:70px; padding-top:12px; padding-bottom:12px; }
-            .kpi-grid, .charts-grid { grid-template-columns:1fr; }
-            .chart-full { grid-column:auto; }
-            .filter-bar { flex-direction:column; }
-            .filter-group { min-width:100%; }
-        }
-        @media (max-width:640px) {
-            .content-area { padding:16px 12px 100px; gap:32px; }
-            .kpi-value { font-size:24px; }
-            .header-right .btn-export span { display:none; }
-        }
+        @media print{.sidebar,header,.filter-bar,.pagination{display:none!important}.main-content{margin-left:0!important;width:100%!important;overflow:visible!important}.content-area{padding:0!important;max-width:100%!important;gap:20px!important}.table-responsive{max-height:none!important;overflow:visible!important}}
+        @media(max-width:1024px){.sidebar{position:fixed;left:0;top:0;bottom:0;transform:translateX(-100%)}.sidebar.open{transform:translateX(0);box-shadow:10px 0 30px rgba(0,0,0,.8)}.sidebar-overlay.visible{display:block}.hamburger{display:block}.content-area{padding:24px 20px 100px}header{padding:0 20px;height:auto;min-height:70px;padding-top:12px;padding-bottom:12px}.kpi-grid,.charts-grid{grid-template-columns:1fr}.chart-full{grid-column:auto}.filter-bar{flex-direction:column}.filter-group{min-width:100%}}
+        @media(max-width:640px){.content-area{padding:16px 12px 100px;gap:32px}.kpi-value{font-size:24px}.header-right .btn-export span{display:none}}
     </style>
 </head>
 <body>
-
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="App.toggleSidebar()"></div>
-
 <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-        <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="ONTIME">
-        <div class="brand-text">ON<span>TIME</span></div>
-    </div>
+    <div class="sidebar-brand"><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="ONTIME"><div class="brand-text">ON<span>TIME</span></div></div>
     <nav class="sidebar-nav">
         <button class="nav-item active" data-target="dashboard" onclick="App.scrollToSection('dashboard')"><i class="ph-fill ph-chart-pie-slice"></i> Dashboard</button>
         <button class="nav-item" data-target="sintetico" onclick="App.scrollToSection('sintetico')"><i class="ph-fill ph-list-numbers"></i> Resumo Sintético</button>
         <button class="nav-item" data-target="detalhado" onclick="App.scrollToSection('detalhado')"><i class="ph-fill ph-table"></i> Detalhamento</button>
     </nav>
-  
-    <div class="sidebar-footer">
-        <a href="../" class="back-link"><i class="ph-bold ph-arrow-left"></i> Voltar ao Hub</a>
-    </div>
+    <div class="sidebar-footer"><a href="../" class="back-link"><i class="ph-bold ph-arrow-left"></i> Voltar ao Hub</a></div>
 </aside>
 
 <main class="main-content" id="scroll-container">
@@ -298,7 +144,6 @@
             <div class="page-title"><i class="ph-fill ph-chart-polar"></i> Gestão de Parcelamentos</div>
         </div>
         <div class="header-right">
-           
             <div class="header-pill"><span class="dot"></span> <span id="lastSync">—</span></div>
             <button class="btn-export excel" onclick="App.exportExcel('sintetico')"><i class="ph-bold ph-microsoft-excel-logo"></i> <span>Sintético</span></button>
             <button class="btn-export excel" onclick="App.exportExcel('detalhado')"><i class="ph-bold ph-microsoft-excel-logo"></i> <span>Detalhado</span></button>
@@ -308,99 +153,81 @@
 
     <div class="content-area" id="contentArea">
         <div id="loader"><div class="spinner"></div><p>Sincronizando dados...</p></div>
+        <div id="app-content" style="display:none;flex-direction:column;gap:48px;">
 
-        <div id="app-content" style="display:none; flex-direction:column; gap:48px;">
-
+            <!-- DASHBOARD -->
             <div id="dashboard" class="scroll-section" data-pdf="capture">
-                <h2 class="section-title"><i class="ph-fill ph-chart-pie-slice"></i> Visão Estratégica</h2>
+                <h2 class="section-title"><i class="ph-fill ph-chart-pie-slice"></i> Visão Estratégica <span id="orgaoFilterBadge"></span></h2>
                 <div class="kpi-grid">
                     <div class="kpi-card purple">
-        
                         <div class="kpi-header"><div class="kpi-label">Saldo Devedor Total (A Vencer)</div><div class="kpi-icon"><i class="ph-fill ph-wallet"></i></div></div>
                         <div class="kpi-value" id="kpi-saldo">R$ 0</div>
                     </div>
                     <div class="kpi-card orange">
-      
                         <div class="kpi-header"><div class="kpi-label">Contratos A Vencer</div><div class="kpi-icon"><i class="ph-fill ph-files"></i></div></div>
                         <div class="kpi-value" id="kpi-ativas">0</div>
                         <div class="kpi-sub" id="kpi-ativas-sub"></div>
                     </div>
-   
                     <div class="kpi-card green">
-                        <div class="kpi-header"><div class="kpi-label">Parcela Mensal (Mês Atual)</div><div class="kpi-icon"><i class="ph-fill ph-calendar-check"></i></div></div>
-                        <div class="kpi-value" id="kpi-mensal">R$ 0</div>
-                      
-                        <div class="kpi-sub" id="kpi-mensal-sub"></div>
+                        <div class="kpi-header"><div class="kpi-label">Total Pago</div><div class="kpi-icon"><i class="ph-fill ph-check-circle"></i></div></div>
+                        <div class="kpi-value" id="kpi-pago">R$ 0</div>
+                        <div class="kpi-sub" id="kpi-pago-sub"></div>
                     </div>
                 </div>
                 <div class="charts-grid">
-                    <div class="chart-card"><div class="chart-title">Débitos por Órgão</div><div class="chart-subtitle">Saldo devedor das parcelas "A Vencer"</div><div class="chart-container"><canvas id="chartAbertura"></canvas></div></div>
-           
+                    <div class="chart-card"><div class="chart-title">Débitos por Órgão</div><div class="chart-subtitle">Clique em uma barra para filtrar</div><div class="chart-container"><canvas id="chartAbertura"></canvas></div></div>
                     <div class="chart-card"><div class="chart-title">Efeito Caixa</div><div class="chart-subtitle">Comparativo Jan/2023 vs Mês Atual</div><div class="chart-container"><canvas id="chartCaixa"></canvas></div></div>
-                    <div class="chart-card chart-full"><div class="chart-title">Quitação Prevista</div><div class="chart-subtitle">Total a pagar por ano — parcelas "A Vencer"</div><div class="chart-container"><canvas id="chartQuitacao"></canvas></div></div>
+                    <div class="chart-card chart-full"><div class="chart-title">Quitação Prevista</div><div class="chart-subtitle">Saldo restante após pagamentos de cada ano</div><div class="chart-container"><canvas id="chartQuitacao"></canvas></div></div>
                 </div>
             </div>
 
+            <!-- SINTÉTICO -->
             <div id="sintetico" class="scroll-section" data-pdf="capture">
                 <h2 class="section-title"><i class="ph-fill ph-list-numbers"></i> Resumo Sintético</h2>
                 <div class="filter-bar" id="filterSinteticoBar">
                     <div class="filter-group" style="flex:2"><label>Pesquisa</label><input type="text" id="searchSintetico" class="filter-input has-icon" placeholder="Contrato, órgão, natureza..." oninput="App.filterSintetico()"></div>
-                   
                     <div class="filter-group"><label>Natureza</label><select id="filterSinteticoNatureza" class="filter-input" onchange="App.filterSintetico()"><option value="">Todas</option></select></div>
                     <div class="filter-group"><label>Órgão</label><select id="filterSinteticoOrgao" class="filter-input" onchange="App.filterSintetico()"><option value="">Todos</option></select></div>
                 </div>
                 <div class="table-card">
                     <div class="table-bar"><div class="table-bar-title"><i class="ph-fill ph-files"></i> Posição por Contrato</div></div>
-         
-                    <div class="table-responsive">
-                        <table id="tableSinteticoFull">
-                            <thead>
-                                <tr>
-                                    <th onclick="App.doSort('sintetico','natureza')">Natureza <i id="sort-sintetico-natureza" class="ph-bold ph-caret-up-down"></i></th>
-                                    <th onclick="App.doSort('sintetico','tributo')">Tributo <i id="sort-sintetico-tributo" class="ph-bold ph-caret-up-down"></i></th>
-                                    <th onclick="App.doSort('sintetico','numero')">Número <i id="sort-sintetico-numero" class="ph-bold ph-caret-up-down"></i></th>
-                                    <th onclick="App.doSort('sintetico','orgao')">Órgão <i id="sort-sintetico-orgao" class="ph-bold ph-caret-up-down"></i></th>
-                                    <th onclick="App.doSort('sintetico','qtdParcela')">Parcelas <i id="sort-sintetico-qtdParcela" class="ph-bold ph-caret-up-down"></i></th>
-                                    <th onclick="App.doSort('sintetico','atraso')">Atraso <i id="sort-sintetico-atraso" class="ph-bold ph-caret-up-down"></i></th>
-                                    <th onclick="App.doSort('sintetico','totalDivida')">Total Dívida <i id="sort-sintetico-totalDivida" class="ph-bold ph-caret-up-down"></i></th>
-                                    <th onclick="App.doSort('sintetico','parcelaUnit')">Vlr Parcela <i id="sort-sintetico-parcelaUnit" class="ph-bold ph-caret-up-down"></i></th>
-                                </tr>
-                            </thead>
-                            <tbody id="bodySintetico"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table id="tableSinteticoFull"><thead><tr>
+                        <th onclick="App.doSort('sintetico','natureza')">Natureza <i id="sort-sintetico-natureza" class="ph-bold ph-caret-up-down"></i></th>
+                        <th onclick="App.doSort('sintetico','tributo')">Tributo <i id="sort-sintetico-tributo" class="ph-bold ph-caret-up-down"></i></th>
+                        <th onclick="App.doSort('sintetico','numero')">Número <i id="sort-sintetico-numero" class="ph-bold ph-caret-up-down"></i></th>
+                        <th onclick="App.doSort('sintetico','orgao')">Órgão <i id="sort-sintetico-orgao" class="ph-bold ph-caret-up-down"></i></th>
+                        <th onclick="App.doSort('sintetico','qtdParcela')">Parcelas <i id="sort-sintetico-qtdParcela" class="ph-bold ph-caret-up-down"></i></th>
+                        <th onclick="App.doSort('sintetico','atraso')">Atraso <i id="sort-sintetico-atraso" class="ph-bold ph-caret-up-down"></i></th>
+                        <th onclick="App.doSort('sintetico','totalDivida')">Total Dívida <i id="sort-sintetico-totalDivida" class="ph-bold ph-caret-up-down"></i></th>
+                        <th onclick="App.doSort('sintetico','parcelaUnit')">Vlr Parcela <i id="sort-sintetico-parcelaUnit" class="ph-bold ph-caret-up-down"></i></th>
+                    </tr></thead><tbody id="bodySintetico"></tbody></table></div>
                     <div class="pagination" id="paginationSintetico"></div>
-           
                 </div>
             </div>
 
+            <!-- DETALHAMENTO (scroll, sem paginação) -->
             <div id="detalhado" class="scroll-section">
                 <h2 class="section-title"><i class="ph-fill ph-table"></i> Detalhamento</h2>
                 <div class="filter-bar">
-                
                     <div class="filter-group" style="flex:2"><label>Pesquisa</label><input type="text" id="searchDetalhado" class="filter-input has-icon" placeholder="Processo, órgão, natureza..." oninput="App.filterDetalhado()"></div>
                     <div class="filter-group"><label>Órgão</label><select id="filterDetalhadoOrgao" class="filter-input" onchange="App.filterDetalhado()"><option value="">Todos</option></select></div>
                     <div class="filter-group"><label>Natureza</label><select id="filterDetalhadoNatureza" class="filter-input" onchange="App.filterDetalhado()"><option value="">Todas</option></select></div>
                     <div class="filter-group"><label>Status</label><select id="filterDetalhadoStatus" class="filter-input" onchange="App.filterDetalhado()"><option value="">Todos</option><option value="A Vencer">A Vencer</option><option value="Quitada">Quitada</option><option value="Encerrado">Encerrado</option><option value="Em Atraso">Em Atraso</option></select></div>
-   
                     <div class="filter-group" style="min-width:100px"><label>Mês</label><select id="filterDetalhadoMes" class="filter-input" onchange="App.filterDetalhado()"><option value="">Todos</option><option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option><option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option><option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option></select></div>
                     <div class="filter-group" style="min-width:100px"><label>Ano</label><select id="filterDetalhadoAno" class="filter-input" onchange="App.filterDetalhado()"><option value="">Todos</option></select></div>
                 </div>
                 <div class="table-card">
-      
                     <div class="table-bar"><div class="table-bar-title"><i class="ph-fill ph-list-dashes"></i> Cronograma de Parcelas</div></div>
-                    <div class="table-responsive"><table><thead><tr>
+                    <div class="table-responsive" style="max-height:600px;overflow-y:auto"><table><thead><tr>
                         <th onclick="App.doSort('detalhado','Data')">Data <i id="sort-detalhado-Data" class="ph-bold ph-caret-up-down"></i></th>
                         <th onclick="App.doSort('detalhado','Número')">Número <i id="sort-detalhado-Número" class="ph-bold ph-caret-up-down"></i></th>
                         <th onclick="App.doSort('detalhado','Orgão')">Órgão <i id="sort-detalhado-Orgão" class="ph-bold ph-caret-up-down"></i></th>
                         <th onclick="App.doSort('detalhado','Natureza')">Natureza <i id="sort-detalhado-Natureza" class="ph-bold ph-caret-up-down"></i></th>
                         <th onclick="App.doSort('detalhado','Valor Original')">Vlr Original <i id="sort-detalhado-Valor Original" class="ph-bold ph-caret-up-down"></i></th>
-          
                         <th onclick="App.doSort('detalhado','Saldo Devedor')">Saldo Devedor <i id="sort-detalhado-Saldo Devedor" class="ph-bold ph-caret-up-down"></i></th>
                         <th onclick="App.doSort('detalhado','Status')">Status <i id="sort-detalhado-Status" class="ph-bold ph-caret-up-down"></i></th>
                     </tr></thead><tbody id="bodyDetalhado"></tbody></table></div>
-                    <div class="pagination" id="paginationDetalhado"></div>
-      
+                    <div class="table-footer" id="detalhadoFooter"></div>
                 </div>
             </div>
         </div>
@@ -409,249 +236,110 @@
 
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbwfu8_ghCZFSs3yvcXtuTchwo6nfQ62di-jk0qNF0suhe1egMYvNZzrL9THDt7fx8h2hg/exec';
-const CAIXA_JAN_2023=421634, ROWS_PER_PAGE=20;
+const CAIXA_JAN_2023=421634;
+const ROWS_PER_PAGE=20;
 
 const App=(()=>{
-    let rawData=[],consolidatedData=[];
-    let currentFilteredSintetico = []; // Guarda a lista filtrada para o PDF usar
+    let rawData=[], consolidatedData=[];
+    let currentFilteredSintetico=[];
+    let lastDetalhadoFiltered=[];
+    let selectedOrgao=null; // Filtro de órgão via clique no gráfico
 
     const charts={abertura:null,quitacao:null,caixa:null};
-    const pagination={sintetico:{page:1,data:[]},detalhado:{page:1,data:[]}};
+    const pagination={sintetico:{page:1,data:[]}};
     const sortState={sintetico:{col:null,dir:'asc'},detalhado:{col:null,dir:'asc'}};
 
     const $=id=>document.getElementById(id);
-    const now=new Date(),currMonth=now.getMonth(),currYear=now.getFullYear();
+    const now=new Date(), currMonth=now.getMonth(), currYear=now.getFullYear();
     const monthNames=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
-    // ───────────────────────────────────────────────────────────
-    // UTILS
-    // ───────────────────────────────────────────────────────────
+    // ═══ UTILS ═══
     const U={
         fmt:v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0),
         fmtD:v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v||0),
         date:s=>{if(!s)return'-';const d=new Date(s);return isNaN(d.getTime())?'-':d.toLocaleDateString('pt-BR',{timeZone:'UTC'});},
         num:v=>{if(v==null||v==='')return 0;if(typeof v==='number')return v;let s=String(v).replace(/[R$\s\u00A0]/g,'').trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');return parseFloat(s)||0;},
-      
         debounce:(fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}},
         grad:(id,c1,c2)=>{const ctx=$(id).getContext('2d');const g=ctx.createLinearGradient(0,0,0,300);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;}
     };
 
-    // ───────────────────────────────────────────────────────────
-    // SIDEBAR & SCROLL
-    // ───────────────────────────────────────────────────────────
+    // ═══ SIDEBAR & SCROLL ═══
     const toggleSidebar=()=>{$('sidebar').classList.toggle('open');$('sidebarOverlay').classList.toggle('visible');};
     const scrollToSection=id=>{const el=$(id),ct=$('scroll-container'),hd=$('main-header');if(!el||!ct||!hd)return;ct.scrollTo({top:el.offsetTop-hd.offsetHeight-20,behavior:'smooth'});};
-    
-    const initScrollSpy=()=>{
-        const ct=$('scroll-container'),hd=$('main-header');
-        const secs=document.querySelectorAll('.scroll-section'),navs=document.querySelectorAll('.nav-item');
-        if(!ct||!hd)return;
-        
-        ct.addEventListener('scroll',()=>{
-            const trigger=hd.getBoundingClientRect().bottom+100;
-            let cur='';
-            secs.forEach(s=>{if(s.getBoundingClientRect().top<=trigger)cur=s.id;});
-            if(ct.scrollHeight-ct.scrollTop<=ct.clientHeight+2)cur=secs[secs.length-1].id;
-            navs.forEach(n=>n.classList.toggle('active',n.dataset.target===cur));
-        });
-    };
+    const initScrollSpy=()=>{const ct=$('scroll-container'),hd=$('main-header'),secs=document.querySelectorAll('.scroll-section'),navs=document.querySelectorAll('.nav-item');if(!ct||!hd)return;ct.addEventListener('scroll',()=>{const trigger=hd.getBoundingClientRect().bottom+100;let cur='';secs.forEach(s=>{if(s.getBoundingClientRect().top<=trigger)cur=s.id;});if(ct.scrollHeight-ct.scrollTop<=ct.clientHeight+2)cur=secs[secs.length-1].id;navs.forEach(n=>n.classList.toggle('active',n.dataset.target===cur));});};
 
-    // ───────────────────────────────────────────────────────────
-    // PAGINATION
-    // ───────────────────────────────────────────────────────────
+    // ═══ PAGINATION (só sintético) ═══
     const getSlice=k=>{const p=pagination[k];return p.data.slice((p.page-1)*ROWS_PER_PAGE,p.page*ROWS_PER_PAGE);};
     const totPages=k=>Math.max(1,Math.ceil(pagination[k].data.length/ROWS_PER_PAGE));
-    
-    const renderPag=(k,el)=>{
-        const t=totPages(k),c=pagination[k].page,cnt=pagination[k].data.length;
-        const s=cnt===0?0:(c-1)*ROWS_PER_PAGE+1,e=Math.min(c*ROWS_PER_PAGE,cnt);
-        let sp=Math.max(1,c-2),ep=Math.min(t,sp+4);
-        if(ep-sp<4)sp=Math.max(1,ep-4);
-        
-        let b=`<button onclick="App.goPage('${k}',${c-1})" ${c<=1?'disabled':''}><i class="ph-bold ph-caret-left"></i></button>`;
-        for(let i=sp;i<=ep;i++) b+=`<button class="${i===c?'active':''}" onclick="App.goPage('${k}',${i})">${i}</button>`;
-        b+=`<button onclick="App.goPage('${k}',${c+1})" ${c>=t?'disabled':''}><i class="ph-bold ph-caret-right"></i></button>`;
-        
-        el.innerHTML=`<span>${s}–${e} de ${cnt} registros</span><div class="pagination-btns">${b}</div>`;
+    const renderPag=(k,el)=>{const t=totPages(k),c=pagination[k].page,cnt=pagination[k].data.length,s=cnt===0?0:(c-1)*ROWS_PER_PAGE+1,e=Math.min(c*ROWS_PER_PAGE,cnt);let sp=Math.max(1,c-2),ep=Math.min(t,sp+4);if(ep-sp<4)sp=Math.max(1,ep-4);let b=`<button onclick="App.goPage('sintetico',${c-1})" ${c<=1?'disabled':''}><i class="ph-bold ph-caret-left"></i></button>`;for(let i=sp;i<=ep;i++)b+=`<button class="${i===c?'active':''}" onclick="App.goPage('sintetico',${i})">${i}</button>`;b+=`<button onclick="App.goPage('sintetico',${c+1})" ${c>=t?'disabled':''}><i class="ph-bold ph-caret-right"></i></button>`;el.innerHTML=`<span>${s}–${e} de ${cnt} registros</span><div class="pagination-btns">${b}</div>`;};
+    const goPage=(k,p)=>{if(p<1||p>totPages(k))return;pagination[k].page=p;renderSintRows(getSlice('sintetico'));renderPag('sintetico',$('paginationSintetico'));};
+
+    // ═══ SORTING ═══
+    const doSort=(tbl,col)=>{if(sortState[tbl].col===col)sortState[tbl].dir=sortState[tbl].dir==='asc'?'desc':'asc';else{sortState[tbl].col=col;sortState[tbl].dir='asc';}document.querySelectorAll(`#${tbl} th i`).forEach(i=>i.className='ph-bold ph-caret-up-down');const ic=$(`sort-${tbl}-${col}`);if(ic)ic.className=sortState[tbl].dir==='asc'?'ph-bold ph-caret-up active':'ph-bold ph-caret-down active';if(tbl==='sintetico')filterSintetico();else filterDetalhado();};
+    const applySort=(arr,tbl)=>{const{col,dir}=sortState[tbl];if(!col)return arr;const nums=['qtdParcela','atraso','totalDivida','parcelaUnit','Valor Original','Saldo Devedor'];return[...arr].sort((a,b)=>{let va=a[col],vb=b[col];if(col==='Data')return dir==='asc'?(new Date(va).getTime()||0)-(new Date(vb).getTime()||0):(new Date(vb).getTime()||0)-(new Date(va).getTime()||0);if(nums.includes(col))return dir==='asc'?U.num(va)-U.num(vb):U.num(vb)-U.num(va);va=String(va||'').toLowerCase();vb=String(vb||'').toLowerCase();return dir==='asc'?va.localeCompare(vb):vb.localeCompare(va);});};
+
+    // ═══ INIT ═══
+    const init=async()=>{try{const res=await fetch(API_URL);if(!res.ok)throw new Error(`HTTP ${res.status}`);const raw=await res.json();rawData=raw.map(r=>{const c={};for(const k in r)c[k.trim()]=r[k];return c;}).filter(r=>r['Número']||r['Negociação']);const st=new Date();$('lastSync').textContent=st.toLocaleDateString('pt-BR')+' '+st.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});processConsolidation();populateFilters();populateYears();updateDashboard();filterSintetico();lastDetalhadoFiltered=rawData;renderDetalhado(applySort(rawData,'detalhado'));$('loader').style.display='none';$('app-content').style.display='flex';initScrollSpy();}catch(e){console.error(e);$('loader').innerHTML=`<p style="color:var(--status-err);font-weight:600;">Erro ao acessar dados.<br><small style="color:var(--text-3)">${e.message}</small></p>`;}};
+
+    // ═══ CONSOLIDATION ═══
+    const processConsolidation=()=>{const map={};rawData.forEach(row=>{const id=row['Número']||row['Negociação']||'S/N';const status=String(row['Status']||'').trim().toLowerCase();if(!map[id])map[id]={natureza:row['Natureza']||'-',tributo:row['Tributo']||'-',numero:id,orgao:row['Orgão']||'-',qtdParcela:0,atraso:0,totalDivida:0,parcelaUnit:U.num(row['Valor Original']),isEncerrado:true,hasAVencer:false};map[id].qtdParcela++;if(status==='a vencer'||status.includes('atraso'))map[id].totalDivida+=U.num(row['Saldo Devedor']);if(status.includes('atraso'))map[id].atraso++;if(!status.includes('encerrado'))map[id].isEncerrado=false;if(status==='a vencer')map[id].hasAVencer=true;});consolidatedData=Object.values(map);};
+
+    // ═══ FILTERS ═══
+    const populateFilters=()=>{const nats=new Set(),orgs=new Set();rawData.forEach(r=>{if(r['Natureza'])nats.add(r['Natureza']);if(r['Orgão'])orgs.add(r['Orgão']);});const no=Array.from(nats).sort().map(n=>`<option value="${n}">${n}</option>`).join('');const oo=Array.from(orgs).sort().map(o=>`<option value="${o}">${o}</option>`).join('');$('filterSinteticoNatureza').innerHTML='<option value="">Todas</option>'+no;$('filterSinteticoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoNatureza').innerHTML='<option value="">Todas</option>'+no;};
+    const populateYears=()=>{const yrs=new Set();rawData.forEach(r=>{const d=new Date(r['Data']);if(!isNaN(d.getTime()))yrs.add(d.getUTCFullYear());});$('filterDetalhadoAno').innerHTML='<option value="">Todos</option>'+Array.from(yrs).sort().map(y=>`<option value="${y}">${y}</option>`).join('');};
+    const getFilteredSint=()=>{const t=$('searchSintetico').value.toLowerCase(),fN=$('filterSinteticoNatureza').value.toLowerCase(),fO=$('filterSinteticoOrgao').value.toLowerCase();return consolidatedData.filter(c=>{if(c.totalDivida<=0||c.parcelaUnit===0||c.isEncerrado)return false;if(t&&!(c.numero.toLowerCase().includes(t)||c.orgao.toLowerCase().includes(t)||c.natureza.toLowerCase().includes(t)||c.tributo.toLowerCase().includes(t)))return false;if(fN&&c.natureza.toLowerCase()!==fN)return false;if(fO&&c.orgao.toLowerCase()!==fO)return false;return true;});};
+
+    // ═══ ÓRGÃO FILTER (clique no gráfico) ═══
+    const setOrgaoFilter=(orgao)=>{
+        if(selectedOrgao===orgao) selectedOrgao=null; // toggle
+        else selectedOrgao=orgao;
+        updateFilterBadge();
+        updateKPIs();
+        updateQuitacaoChart();
     };
 
-    const goPage=(k,p)=>{
-        const t=totPages(k);
-        if(p<1||p>t)return;
-        pagination[k].page=p;
-        if(k==='sintetico'){
-            renderSintRows(getSlice('sintetico'));
-            renderPag('sintetico',$('paginationSintetico'));
+    const clearOrgaoFilter=()=>{
+        selectedOrgao=null;
+        updateFilterBadge();
+        updateKPIs();
+        updateQuitacaoChart();
+    };
+
+    const updateFilterBadge=()=>{
+        const el=$('orgaoFilterBadge');
+        if(selectedOrgao){
+            el.innerHTML=`<span class="filter-badge"><i class="ph ph-funnel"></i> ${selectedOrgao} <button onclick="App.clearOrgaoFilter()" title="Limpar filtro">&times;</button></span>`;
         }else{
-            renderDetRows(getSlice('detalhado'));
-            renderPag('detalhado',$('paginationDetalhado'));
+            el.innerHTML='';
         }
     };
 
-    // ───────────────────────────────────────────────────────────
-    // SORTING
-    // ───────────────────────────────────────────────────────────
-    const doSort=(tbl,col)=>{
-        if(sortState[tbl].col===col) sortState[tbl].dir=sortState[tbl].dir==='asc'?'desc':'asc';
-        else{sortState[tbl].col=col;sortState[tbl].dir='asc';}
-        
-        document.querySelectorAll(`#${tbl} th i`).forEach(i=>i.className='ph-bold ph-caret-up-down');
-        const ic=$(`sort-${tbl}-${col}`);
-        if(ic) ic.className=sortState[tbl].dir==='asc'?'ph-bold ph-caret-up active':'ph-bold ph-caret-down active';
-        
-        if(tbl==='sintetico') filterSintetico();
-        else filterDetalhado();
-    };
-
-    const applySort=(arr,tbl)=>{
-        const{col,dir}=sortState[tbl];
-        if(!col)return arr;
-        const nums=['qtdParcela','atraso','totalDivida','parcelaUnit','Valor Original','Saldo Devedor'];
-        return[...arr].sort((a,b)=>{
-            let va=a[col],vb=b[col];
-            if(col==='Data') return dir==='asc'?(new Date(va).getTime()||0)-(new Date(vb).getTime()||0):(new Date(vb).getTime()||0)-(new Date(va).getTime()||0);
-            if(nums.includes(col)) return dir==='asc'?U.num(va)-U.num(vb):U.num(vb)-U.num(va);
-            va=String(va||'').toLowerCase();vb=String(vb||'').toLowerCase();
-            return dir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
-        });
-    };
-
-    // ───────────────────────────────────────────────────────────
-    // INIT
-    // ───────────────────────────────────────────────────────────
-    const init=async()=>{
-        try{
-            const res=await fetch(API_URL);
-            if(!res.ok)throw new Error(`HTTP ${res.status}`);
-            const raw=await res.json();
-            
-            rawData=raw.map(r=>{
-                const c={};
-                for(const k in r) c[k.trim()]=r[k];
-                return c;
-            }).filter(r=>r['Número']||r['Negociação']);
-            
-            const st=new Date();
-            $('lastSync').textContent=st.toLocaleDateString('pt-BR')+' '+st.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-            
-            processConsolidation();
-            populateFilters();
-            populateYears();
-            updateDashboard();
-            
-            filterSintetico(); // Chama o filtro inicial que vai preencher currentFilteredSintetico
-            renderDetalhado(applySort(rawData,'detalhado'));
-            
-            $('loader').style.display='none';
-            $('app-content').style.display='flex';
-            initScrollSpy();
-        }catch(e){
-            console.error(e);
-            $('loader').innerHTML=`<p style="color:var(--status-err);font-weight:600;">Erro ao acessar dados.<br><small style="color:var(--text-3)">${e.message}</small></p>`;
-        }
-    };
-
-    // ───────────────────────────────────────────────────────────
-    // CONSOLIDATION
-    // ───────────────────────────────────────────────────────────
-    const processConsolidation=()=>{
-        const map={};
-        rawData.forEach(row=>{
-            const id=row['Número']||row['Negociação']||'S/N';
-            const status=String(row['Status']||'').trim().toLowerCase();
-            
-            if(!map[id]){
-                map[id]={
-                    natureza:row['Natureza']||'-',
-                    tributo:row['Tributo']||'-',
-                    numero:id,
-                    orgao:row['Orgão']||'-',
-                    qtdParcela:0,
-                    atraso:0,
-                    totalDivida:0,
-                    parcelaUnit:U.num(row['Valor Original']),
-                    isEncerrado:true,
-                    hasAVencer:false
-                };
-            }
-            
-            map[id].qtdParcela++;
-            if(status==='a vencer'||status.includes('atraso')) map[id].totalDivida+=U.num(row['Saldo Devedor']);
-            if(status.includes('atraso')) map[id].atraso++;
-            if(!status.includes('encerrado')) map[id].isEncerrado=false;
-            if(status==='a vencer') map[id].hasAVencer=true;
-        });
-        consolidatedData=Object.values(map);
-    };
-
-    // ───────────────────────────────────────────────────────────
-    // FILTERS
-    // ───────────────────────────────────────────────────────────
-    const populateFilters=()=>{
-        const nats=new Set(),orgs=new Set();
-        rawData.forEach(r=>{
-            if(r['Natureza'])nats.add(r['Natureza']);
-            if(r['Orgão'])orgs.add(r['Orgão']);
-        });
-        const no=Array.from(nats).sort().map(n=>`<option value="${n}">${n}</option>`).join('');
-        const oo=Array.from(orgs).sort().map(o=>`<option value="${o}">${o}</option>`).join('');
-        
-        $('filterSinteticoNatureza').innerHTML='<option value="">Todas</option>'+no;
-        $('filterSinteticoOrgao').innerHTML='<option value="">Todos</option>'+oo;
-        $('filterDetalhadoOrgao').innerHTML='<option value="">Todos</option>'+oo;
-        $('filterDetalhadoNatureza').innerHTML='<option value="">Todas</option>'+no;
-    };
-
-    const populateYears=()=>{
-        const yrs=new Set();
-        rawData.forEach(r=>{
-            const d=new Date(r['Data']);
-            if(!isNaN(d.getTime())) yrs.add(d.getUTCFullYear());
-        });
-        $('filterDetalhadoAno').innerHTML='<option value="">Todos</option>'+Array.from(yrs).sort().map(y=>`<option value="${y}">${y}</option>`).join('');
-    };
-
-    const getFilteredSint=()=>{
-        const t=$('searchSintetico').value.toLowerCase(),
-              fN=$('filterSinteticoNatureza').value.toLowerCase(),
-              fO=$('filterSinteticoOrgao').value.toLowerCase();
-              
-        return consolidatedData.filter(c=>{
-            if(c.totalDivida<=0||c.parcelaUnit===0||c.isEncerrado) return false;
-            if(t&&!(c.numero.toLowerCase().includes(t)||c.orgao.toLowerCase().includes(t)||c.natureza.toLowerCase().includes(t)||c.tributo.toLowerCase().includes(t))) return false;
-            if(fN&&c.natureza.toLowerCase()!==fN) return false;
-            if(fO&&c.orgao.toLowerCase()!==fO) return false;
-            return true;
-        });
-    };
-
-    // ───────────────────────────────────────────────────────────
-    // DASHBOARD
-    // ───────────────────────────────────────────────────────────
+    // ═══ DASHBOARD ═══
     const chartOpts=(ov={})=>({
-        responsive:true,
-        maintainAspectRatio:false,
-        layout:{padding:{top:28,bottom:10}},
-        plugins:{
-            legend:{display:false},
-            tooltip:{backgroundColor:'rgba(15,10,24,0.95)',titleColor:'#fff',bodyColor:'#a39eb5',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:12,cornerRadius:8,callbacks:{label:ctx=>U.fmtD(ctx.raw)}},
-            datalabels:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:600},formatter:v=>v>0?U.fmtD(v):'',anchor:'end',align:'end',...(ov.datalabels||{})}
-        },
-        scales:{x:{display:false},y:{display:false}},
-        ...(ov.extra||{})
+        responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,bottom:10}},
+        plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(15,10,24,0.95)',titleColor:'#fff',bodyColor:'#a39eb5',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:12,cornerRadius:8,callbacks:{label:ctx=>U.fmtD(ctx.raw)}},
+        datalabels:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:600},formatter:v=>v>0?U.fmtD(v):'',anchor:'end',align:'end',...(ov.datalabels||{})}},
+        scales:{x:{display:false},y:{display:false}},...(ov.extra||{})
     });
 
-    const updateDashboard=()=>{
-        let totalS=0,caixaM=0;
+    // Dados globais calculados uma vez
+    let dashData={totalS:0,contSet:new Set(),orgMap:{},anoMap:{},caixaM:0,totalPago:0,orgEntries:[]};
+
+    const computeDashData=()=>{
+        let totalS=0,caixaM=0,totalPago=0;
         const contSet=new Set(),orgMap={},anoMap={};
-        
+
         rawData.forEach(row=>{
-            const saldo=U.num(row['Saldo Devedor']),
-                  status=String(row['Status']||'').trim().toLowerCase(),
-                  id=row['Número']||row['Negociação']||'S/N',
-                  d=new Date(row['Data']),
-                  ok=!isNaN(d.getTime());
-                  
+            const saldo=U.num(row['Saldo Devedor']);
+            const valOrig=U.num(row['Valor Original']);
+            const status=String(row['Status']||'').trim().toLowerCase();
+            const id=row['Número']||row['Negociação']||'S/N';
+            const d=new Date(row['Data']);
+            const ok=!isNaN(d.getTime());
+
+            // Total Pago: SOMENTE status "quitada"
+            if(status==='quitada') totalPago+=valOrig;
+
             if(status==='a vencer'){
                 totalS+=saldo;
                 contSet.add(id);
@@ -663,34 +351,58 @@ const App=(()=>{
                 }
             }
         });
-        
-        $('kpi-saldo').textContent=U.fmtD(totalS);
-        $('kpi-ativas').textContent=contSet.size;
-        $('kpi-ativas-sub').textContent=`contratos com parcelas "A Vencer"`;
-        $('kpi-mensal').textContent=U.fmtD(caixaM);
-        $('kpi-mensal-sub').textContent=`${monthNames[currMonth]}/${currYear} — saída prevista`;
-        
-        const sy=Object.keys(anoMap).map(Number).sort(),qL=[],qD=[];
-        sy.forEach(y=>{if(anoMap[y]>0){qL.push(String(y));qD.push(anoMap[y]);}});
-        
-        Chart.defaults.font.family="'Outfit',sans-serif";
-        Chart.register(ChartDataLabels);
-        Object.values(charts).forEach(c=>c?.destroy());
-        
-        const orgE=Object.entries(orgMap).sort((a,b)=>b[1]-a[1]);
-        
-        charts.abertura=new Chart($('chartAbertura'),{
-            type:'bar',
-            data:{labels:orgE.map(e=>e[0]),datasets:[{data:orgE.map(e=>e[1]),backgroundColor:'#FF6E00',borderRadius:5,maxBarThickness:28}]},
-            options:{...chartOpts(),indexAxis:'y',layout:{padding:{right:90,top:20,bottom:10}},scales:{x:{display:false,grace:'15%'},y:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:500},padding:8}}}}
+
+        dashData={totalS,contSet,orgMap,anoMap,caixaM,totalPago,orgEntries:Object.entries(orgMap).sort((a,b)=>b[1]-a[1])};
+    };
+
+    const updateKPIs=()=>{
+        const org=selectedOrgao;
+        if(!org){
+            $('kpi-saldo').textContent=U.fmtD(dashData.totalS);
+            $('kpi-ativas').textContent=dashData.contSet.size;
+            $('kpi-ativas-sub').textContent=`contratos com parcelas "A Vencer"`;
+            $('kpi-pago').textContent=U.fmtD(dashData.totalPago);
+            $('kpi-pago-sub').textContent=`soma das parcelas quitadas`;
+        }else{
+            // Filtrado por órgão
+            let saldo=0,pago=0;const ids=new Set();
+            rawData.forEach(row=>{
+                if((row['Orgão']||'-')!==org) return;
+                const status=String(row['Status']||'').trim().toLowerCase();
+                if(status==='quitada') pago+=U.num(row['Valor Original']);
+                if(status==='a vencer'){saldo+=U.num(row['Saldo Devedor']);ids.add(row['Número']||row['Negociação']||'S/N');}
+            });
+            $('kpi-saldo').textContent=U.fmtD(saldo);
+            $('kpi-ativas').textContent=ids.size;
+            $('kpi-ativas-sub').textContent=`contratos "${org}"`;
+            $('kpi-pago').textContent=U.fmtD(pago);
+            $('kpi-pago-sub').textContent=`quitadas "${org}"`;
+        }
+    };
+
+    const updateQuitacaoChart=()=>{
+        const org=selectedOrgao;
+        // Recalcula anoMap filtrado
+        const anoF={};
+        let totalF=0;
+        rawData.forEach(row=>{
+            if(org&&(row['Orgão']||'-')!==org) return;
+            const status=String(row['Status']||'').trim().toLowerCase();
+            if(status!=='a vencer') return;
+            const saldo=U.num(row['Saldo Devedor']);
+            const d=new Date(row['Data']);
+            if(isNaN(d.getTime())) return;
+            const y=d.getUTCFullYear();
+            anoF[y]=(anoF[y]||0)+saldo;
+            totalF+=saldo;
         });
-        
-        charts.caixa=new Chart($('chartCaixa'),{
-            type:'bar',
-            data:{labels:['Jan/2023',`${monthNames[currMonth]}/${currYear}`],datasets:[{data:[CAIXA_JAN_2023,caixaM],backgroundColor:['#5a005a','#FF6E00'],borderRadius:6,maxBarThickness:90}]},
-            options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:13,weight:600},padding:10}},y:{display:false}}}
-        });
-        
+
+        const sy=Object.keys(anoF).map(Number).sort();
+        const qL=[],qD=[];
+        let restante=totalF;
+        sy.forEach(y=>{if(anoF[y]>0){qL.push(String(y));qD.push(restante);restante-=anoF[y];}});
+
+        if(charts.quitacao) charts.quitacao.destroy();
         charts.quitacao=new Chart($('chartQuitacao'),{
             type:'bar',
             data:{labels:qL,datasets:[{data:qD,backgroundColor:U.grad('chartQuitacao','#FF6E00','#ff9544'),borderRadius:6,maxBarThickness:60}]},
@@ -698,265 +410,148 @@ const App=(()=>{
         });
     };
 
-    // ───────────────────────────────────────────────────────────
-    // TABLES
-    // ───────────────────────────────────────────────────────────
-    const renderSintRows=data=>{
-        $('bodySintetico').innerHTML=data.map(c=>`<tr><td>${c.natureza}</td><td>${c.tributo}</td><td><strong>${c.numero}</strong></td><td>${c.orgao}</td><td>${c.qtdParcela}</td><td style="color:${c.atraso>0?'var(--status-err)':'var(--status-ok)'};font-weight:600;">${c.atraso}</td><td class="val-destaque">${U.fmt(c.totalDivida)}</td><td>${U.fmt(c.parcelaUnit)}</td></tr>`).join('');
-    };
+    const updateDashboard=()=>{
+        computeDashData();
+        updateKPIs();
 
-    const renderDetRows=data=>{
-        $('bodyDetalhado').innerHTML=data.map(r=>{
-            const l=String(r['Status']||'-').trim(),lo=l.toLowerCase();
-            let b='status-default';
-            if(lo==='a vencer') b='status-vencer';
-            else if(lo==='quitada'||lo==='encerrado') b='status-quitada';
-            else if(lo.includes('atraso')) b='status-atraso';
-            return`<tr><td>${U.date(r['Data'])}</td><td><strong>${r['Número']||r['Negociação']||'-'}</strong></td><td>${r['Orgão']||'-'}</td><td>${r['Natureza']||'-'}</td><td>${U.fmt(U.num(r['Valor Original']))}</td><td class="val-destaque">${U.fmt(U.num(r['Saldo Devedor']))}</td><td><span class="status-badge ${b}">${l}</span></td></tr>`;
-        }).join('');
-    };
+        Chart.defaults.font.family="'Outfit',sans-serif";
+        Chart.register(ChartDataLabels);
+        Object.values(charts).forEach(c=>c?.destroy());
 
-    const renderSintetico=data=>{
-        pagination.sintetico.data=data;
-        pagination.sintetico.page=1;
-        renderSintRows(getSlice('sintetico'));
-        renderPag('sintetico',$('paginationSintetico'));
-    };
-
-    const renderDetalhado=data=>{
-        pagination.detalhado.data=data;
-        pagination.detalhado.page=1;
-        renderDetRows(getSlice('detalhado'));
-        renderPag('detalhado',$('paginationDetalhado'));
-    };
-
-    const filterSintetico=U.debounce(()=>{
-        currentFilteredSintetico = applySort(getFilteredSint(),'sintetico');
-        renderSintetico(currentFilteredSintetico);
-    });
-
-    const filterDetalhado=U.debounce(()=>{
-        const t=$('searchDetalhado').value.toLowerCase(),
-              fO=$('filterDetalhadoOrgao').value.toLowerCase(),
-              fN=$('filterDetalhadoNatureza').value.toLowerCase(),
-              fS=$('filterDetalhadoStatus').value.toLowerCase(),
-              fM=$('filterDetalhadoMes').value,
-              fA=$('filterDetalhadoAno').value;
-              
-        let f=rawData.filter(r=>{
-            const tx=String(r['Número']||'').toLowerCase().includes(t)||String(r['Orgão']||'').toLowerCase().includes(t)||String(r['Natureza']||'').toLowerCase().includes(t)||String(r['Status']||'').toLowerCase().includes(t);
-            if(!tx) return false;
-            if(fO&&String(r['Orgão']||'').toLowerCase()!==fO) return false;
-            if(fN&&String(r['Natureza']||'').toLowerCase()!==fN) return false;
-            if(fS&&String(r['Status']||'').toLowerCase()!==fS) return false;
-            if(fM||fA){
-                const d=new Date(r['Data']);
-                if(isNaN(d.getTime())) return false;
-                if(fA&&d.getUTCFullYear()!==parseInt(fA)) return false;
-                if(fM&&(d.getUTCMonth()+1)!==parseInt(fM)) return false;
+        // Débitos por Órgão (clicável)
+        const orgE=dashData.orgEntries;
+        charts.abertura=new Chart($('chartAbertura'),{
+            type:'bar',
+            data:{labels:orgE.map(e=>e[0]),datasets:[{data:orgE.map(e=>e[1]),backgroundColor:orgE.map(e=>e[0]===selectedOrgao?'#ff9544':'#FF6E00'),borderRadius:5,maxBarThickness:28}]},
+            options:{
+                ...chartOpts(),indexAxis:'y',
+                layout:{padding:{right:90,top:20,bottom:10}},
+                scales:{x:{display:false,grace:'15%'},y:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:500},padding:8}}},
+                onClick:(evt,elements)=>{
+                    if(elements.length>0){
+                        const idx=elements[0].index;
+                        const orgao=orgE[idx][0];
+                        setOrgaoFilter(orgao);
+                        // Atualiza cores das barras
+                        charts.abertura.data.datasets[0].backgroundColor=orgE.map(e=>e[0]===selectedOrgao?'#ff9544':'#FF6E00');
+                        charts.abertura.update();
+                    }
+                },
+                onHover:(evt,elements)=>{evt.native.target.style.cursor=elements.length?'pointer':'default';}
             }
-            return true;
         });
-        renderDetalhado(applySort(f,'detalhado'));
-    });
 
-    // ───────────────────────────────────────────────────────────
-    // EXCEL EXPORT
-    // ───────────────────────────────────────────────────────────
-    const exportExcel=(type)=>{
-        if(typeof XLSX==='undefined'){alert('Biblioteca de exportação ainda carregando. Tente novamente.');return;}
-        const dateStr=new Date().toISOString().split('T')[0];
-        let data,filename,sheetName;
+        // Efeito Caixa (sempre global)
+        charts.caixa=new Chart($('chartCaixa'),{
+            type:'bar',
+            data:{labels:['Jan/2023',`${monthNames[currMonth]}/${currYear}`],datasets:[{data:[CAIXA_JAN_2023,dashData.caixaM],backgroundColor:['#5a005a','#FF6E00'],borderRadius:6,maxBarThickness:80,barPercentage:0.5,categoryPercentage:0.5}]},
+            options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:13,weight:600},padding:10}},y:{display:false}}}
+        });
 
-        if(type==='sintetico'){
-            data=currentFilteredSintetico.map(c=>({
-                'Natureza':c.natureza,
-                'Tributo':c.tributo,
-                'Número':c.numero,
-                'Órgão':c.orgao,
-                'Parcelas':c.qtdParcela,
-                'Atraso':c.atraso,
-                'Total Dívida':c.totalDivida,
-                'Valor Parcela':c.parcelaUnit
-            }));
-            filename=`ONTIME_Sintetico_${dateStr}.xlsx`;
-            sheetName='Resumo Sintético';
-        }else{
-            data=(pagination.detalhado.data.length?pagination.detalhado.data:rawData).map(r=>({
-                'Data':U.date(r['Data']),
-                'Número':r['Número']||r['Negociação']||'-',
-                'Órgão':r['Orgão']||'-',
-                'Natureza':r['Natureza']||'-',
-                'Valor Original':U.num(r['Valor Original']),
-                'Saldo Devedor':U.num(r['Saldo Devedor']),
-                'Status':r['Status']||'-'
-            }));
-            filename=`ONTIME_Detalhado_${dateStr}.xlsx`;
-            sheetName='Detalhamento';
-        }
-        
-        if(!data.length){alert('Nenhum dado para exportar.');return;}
-        const ws=XLSX.utils.json_to_sheet(data);
-        const wb=XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb,ws,sheetName);
-        XLSX.writeFile(wb,filename);
+        // Quitação (responde ao filtro de órgão)
+        updateQuitacaoChart();
     };
 
-    // ───────────────────────────────────────────────────────────
-    // NEW ADVANCED PDF EXPORT (WITH AUTOTABLE)
-    // ───────────────────────────────────────────────────────────
+    // ═══ TABLES ═══
+    const renderSintRows=data=>{$('bodySintetico').innerHTML=data.map(c=>`<tr><td>${c.natureza}</td><td>${c.tributo}</td><td><strong>${c.numero}</strong></td><td>${c.orgao}</td><td>${c.qtdParcela}</td><td style="color:${c.atraso>0?'var(--status-err)':'var(--status-ok)'};font-weight:600;">${c.atraso}</td><td class="val-destaque">${U.fmt(c.totalDivida)}</td><td>${U.fmt(c.parcelaUnit)}</td></tr>`).join('');};
+    const renderDetRows=data=>{$('bodyDetalhado').innerHTML=data.map(r=>{const l=String(r['Status']||'-').trim(),lo=l.toLowerCase();let b='status-default';if(lo==='a vencer')b='status-vencer';else if(lo==='quitada'||lo==='encerrado')b='status-quitada';else if(lo.includes('atraso'))b='status-atraso';return`<tr><td>${U.date(r['Data'])}</td><td><strong>${r['Número']||r['Negociação']||'-'}</strong></td><td>${r['Orgão']||'-'}</td><td>${r['Natureza']||'-'}</td><td>${U.fmt(U.num(r['Valor Original']))}</td><td class="val-destaque">${U.fmt(U.num(r['Saldo Devedor']))}</td><td><span class="status-badge ${b}">${l}</span></td></tr>`;}).join('');};
+
+    const renderSintetico=data=>{pagination.sintetico.data=data;pagination.sintetico.page=1;renderSintRows(getSlice('sintetico'));renderPag('sintetico',$('paginationSintetico'));};
+    const renderDetalhado=data=>{renderDetRows(data);$('detalhadoFooter').textContent=`${data.length} parcela(s) listada(s)`;};
+
+    const filterSintetico=U.debounce(()=>{currentFilteredSintetico=applySort(getFilteredSint(),'sintetico');renderSintetico(currentFilteredSintetico);});
+    const filterDetalhado=U.debounce(()=>{const t=$('searchDetalhado').value.toLowerCase(),fO=$('filterDetalhadoOrgao').value.toLowerCase(),fN=$('filterDetalhadoNatureza').value.toLowerCase(),fS=$('filterDetalhadoStatus').value.toLowerCase(),fM=$('filterDetalhadoMes').value,fA=$('filterDetalhadoAno').value;let f=rawData.filter(r=>{const tx=String(r['Número']||'').toLowerCase().includes(t)||String(r['Orgão']||'').toLowerCase().includes(t)||String(r['Natureza']||'').toLowerCase().includes(t)||String(r['Status']||'').toLowerCase().includes(t);if(!tx)return false;if(fO&&String(r['Orgão']||'').toLowerCase()!==fO)return false;if(fN&&String(r['Natureza']||'').toLowerCase()!==fN)return false;if(fS&&String(r['Status']||'').toLowerCase()!==fS)return false;if(fM||fA){const d=new Date(r['Data']);if(isNaN(d.getTime()))return false;if(fA&&d.getUTCFullYear()!==parseInt(fA))return false;if(fM&&(d.getUTCMonth()+1)!==parseInt(fM))return false;}return true;});lastDetalhadoFiltered=f;renderDetalhado(applySort(f,'detalhado'));});
+
+    // ═══ EXCEL ═══
+    const exportExcel=(type)=>{if(typeof XLSX==='undefined'){alert('Carregando...');return;}const dateStr=new Date().toISOString().split('T')[0];let data,filename,sheetName;if(type==='sintetico'){data=currentFilteredSintetico.map(c=>({'Natureza':c.natureza,'Tributo':c.tributo,'Número':c.numero,'Órgão':c.orgao,'Parcelas':c.qtdParcela,'Atraso':c.atraso,'Total Dívida':c.totalDivida,'Valor Parcela':c.parcelaUnit}));filename=`ONTIME_Sintetico_${dateStr}.xlsx`;sheetName='Resumo Sintético';}else{data=(lastDetalhadoFiltered.length?lastDetalhadoFiltered:rawData).map(r=>({'Data':U.date(r['Data']),'Número':r['Número']||r['Negociação']||'-','Órgão':r['Orgão']||'-','Natureza':r['Natureza']||'-','Valor Original':U.num(r['Valor Original']),'Saldo Devedor':U.num(r['Saldo Devedor']),'Status':r['Status']||'-'}));filename=`ONTIME_Detalhado_${dateStr}.xlsx`;sheetName='Detalhamento';}if(!data.length){alert('Sem dados.');return;}const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheetName);XLSX.writeFile(wb,filename);};
+
+    // ═══ PDF (dashboard screenshot + tabela autoTable) ═══
     const exportPDF=async()=>{
-        if(typeof html2canvas==='undefined'||typeof jspdf==='undefined'){
-            alert('Bibliotecas de PDF carregando. Tente novamente.');
-            return;
-        }
-        
-        const btn = document.getElementById('btnExportPDF');
-        const originalHtml = btn.innerHTML;
+        if(typeof html2canvas==='undefined'||typeof jspdf==='undefined'){alert('Carregando...');return;}
+        const btn=$('btnExportPDF');
+        const origHtml=btn.innerHTML;
         btn.classList.add('loading');
-        btn.innerHTML = '<i class="ph-bold ph-spinner"></i> <span>Gerando...</span>';
+        btn.innerHTML='<i class="ph-bold ph-spinner"></i> <span>Gerando...</span>';
 
-        try {
-            const { jsPDF } = jspdf;
-            const pdf = new jsPDF('l','mm','a4');
-            const pageW = pdf.internal.pageSize.getWidth();
-            const pageH = pdf.internal.pageSize.getHeight();
-            const margin = 14;
+        try{
+            const{jsPDF}=jspdf;
+            const pdf=new jsPDF('l','mm','a4');
+            const pageW=pdf.internal.pageSize.getWidth();
+            const pageH=pdf.internal.pageSize.getHeight();
+            const margin=10;
 
-            // Background escuro para todo o PDF
-            pdf.setFillColor(15, 10, 24);
-            pdf.rect(0, 0, pageW, pageH, 'F');
+            // Captura dashboard
+            const dashEl=$('dashboard');
 
-            // 1. Capturar o Dashboard como Imagem
-            const dashEl = document.getElementById('dashboard');
-            
-            // Expandir temporariamente para evitar cortes (bug de scroll do html2canvas)
-            const origMax = dashEl.style.maxHeight;
-            const origOverflow = dashEl.style.overflow;
-            dashEl.style.maxHeight = 'none';
-            dashEl.style.overflow = 'visible';
+            // FIX: Forçar fundo opaco sólido temporariamente em todos os elementos
+            const origBg=dashEl.style.background;
+            dashEl.style.background='#0f0a18';
 
-            const canvas = await html2canvas(dashEl, {
-                backgroundColor: '#0f0a18',
-                scale: 1.5,
-                useCORS: true,
-                logging: false,
-                windowWidth: dashEl.scrollWidth,
-                windowHeight: dashEl.scrollHeight
+            // Forçar cards com fundo sólido (sem rgba/transparência)
+            const cards=dashEl.querySelectorAll('.kpi-card,.chart-card');
+            const origCardBgs=[];
+            cards.forEach(c=>{origCardBgs.push(c.style.background);c.style.background='#1a1423';});
+
+            const origMax=dashEl.style.maxHeight;
+            const origOver=dashEl.style.overflow;
+            dashEl.style.maxHeight='none';
+            dashEl.style.overflow='visible';
+
+            const canvas=await html2canvas(dashEl,{
+                backgroundColor:'#0f0a18',
+                scale:2,
+                useCORS:true,
+                logging:false,
+                windowWidth:dashEl.scrollWidth,
+                windowHeight:dashEl.scrollHeight
             });
 
-            dashEl.style.maxHeight = origMax;
-            dashEl.style.overflow = origOverflow;
+            // Restaurar estilos originais
+            dashEl.style.background=origBg;
+            dashEl.style.maxHeight=origMax;
+            dashEl.style.overflow=origOver;
+            cards.forEach((c,i)=>{c.style.background=origCardBgs[i];});
 
-            const imgData = canvas.toDataURL('image/png');
-            const imgW = pageW - margin*2;
-            const imgH = (canvas.height * imgW) / canvas.width;
-            
-            // Garantir que a imagem cabe na primeira página, ou escalar
-            const finalH = Math.min(imgH, pageH - margin*2);
-            pdf.addImage(imgData, 'PNG', margin, margin, imgW, finalH);
+            const imgData=canvas.toDataURL('image/jpeg',0.95);
+            const imgW=pageW-margin*2;
+            const imgH=(canvas.height*imgW)/canvas.width;
+            const finalH=Math.min(imgH,pageH-margin*2);
+            pdf.addImage(imgData,'JPEG',margin,margin,imgW,finalH);
 
-            // 2. Gerar Tabela Sintética na Página Seguinte usando autoTable
+            // Página 2: Tabela Sintética
             pdf.addPage();
-            pdf.setFillColor(15, 10, 24);
-            pdf.rect(0, 0, pageW, pageH, 'F'); // Fundo escuro
+            pdf.setFillColor(15,10,24);
+            pdf.rect(0,0,pageW,pageH,'F');
+            pdf.setTextColor(255,110,0);pdf.setFontSize(16);
+            pdf.text('Resumo Sintético de Parcelamentos',margin,margin+10);
+            pdf.setTextColor(163,158,181);pdf.setFontSize(9);
+            pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`,margin,margin+18);
 
-            // Título da Tabela
-            pdf.setTextColor(255, 110, 0); // Orange Main
-            pdf.setFontSize(16);
-            pdf.text('Resumo Sintético de Parcelamentos', margin, margin + 10);
-
-            // Preparar dados da tabela
-            const tableCols = ["Natureza", "Tributo", "Número", "Órgão", "Parcelas", "Atraso", "Total Dívida (R$)", "Vlr Parcela (R$)"];
-            const tableRows = currentFilteredSintetico.map(c => [
-                c.natureza,
-                c.tributo,
-                c.numero,
-                c.orgao,
-                c.qtdParcela,
-                c.atraso,
-                U.fmt(c.totalDivida),
-                U.fmt(c.parcelaUnit)
-            ]);
-
-            // Utilizar autoTable nativo
+            const rows=currentFilteredSintetico.map(c=>[c.natureza,c.tributo,c.numero,c.orgao,c.qtdParcela,c.atraso,U.fmt(c.totalDivida),U.fmt(c.parcelaUnit)]);
             pdf.autoTable({
-                head: [tableCols],
-                body: tableRows,
-                startY: margin + 18,
-                theme: 'grid',
-                styles: {
-                    fillColor: [26, 20, 35], // Surface-1
-                    textColor: [255, 255, 255],
-                    lineColor: [47, 39, 58], // Surface-3
-                    lineWidth: 0.1,
-                    font: 'helvetica',
-                    fontSize: 9
-                },
-                headStyles: {
-                    fillColor: [36, 29, 46],
-                    textColor: [163, 158, 181],
-                    fontStyle: 'bold',
-                    fontSize: 8
-                },
-                alternateRowStyles: {
-                    fillColor: [22, 16, 30]
-                },
-                margin: { left: 14, right: 14 },
-                // Garante fundo escuro em páginas extras da tabela
-                didDrawPage: (data) => {
-                    if (data.pageNumber > 1) {
-                        pdf.setFillColor(15, 10, 24);
-                        pdf.rect(0, 0, pageW, pageH, 'F');
-                    }
-                }
+                head:[["Natureza","Tributo","Número","Órgão","Parc.","Atraso","Total Dívida (R$)","Vlr Parcela (R$)"]],
+                body:rows,startY:margin+24,theme:'grid',
+                styles:{fillColor:[26,20,35],textColor:[255,255,255],lineColor:[47,39,58],lineWidth:0.1,font:'helvetica',fontSize:9},
+                headStyles:{fillColor:[36,29,46],textColor:[163,158,181],fontStyle:'bold',fontSize:8},
+                alternateRowStyles:{fillColor:[22,16,30]},
+                margin:{left:14,right:14},
+                didDrawPage:d=>{if(d.pageNumber>1){pdf.setFillColor(15,10,24);pdf.rect(0,0,pageW,pageH,'F');}}
             });
 
             pdf.save(`ONTIME_Relatorio_${new Date().toISOString().split('T')[0]}.pdf`);
-        } catch (err) {
-            console.error(err);
-            alert('Erro ao gerar o PDF. Verifique a consola.');
-        } finally {
-            btn.classList.remove('loading');
-            btn.innerHTML = originalHtml;
-        }
+        }catch(err){console.error(err);alert('Erro ao gerar PDF.');}
+        finally{btn.classList.remove('loading');btn.innerHTML=origHtml;}
     };
 
-    // ───────────────────────────────────────────────────────────
-    // EVENTS
-    // ───────────────────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', init);
+    // ═══ EVENTS ═══
+    document.addEventListener('DOMContentLoaded',init);
+    document.addEventListener('click',e=>{if(e.target.closest('.nav-item')&&window.innerWidth<=1024)toggleSidebar();});
 
-    document.addEventListener('click', e => {
-        if (e.target.closest('.nav-item') && window.innerWidth <= 1024) {
-            toggleSidebar();
-        }
-    });
-
-    // API pública
-    return {
-        toggleSidebar,
-        scrollToSection,
-        goPage,
-        filterSintetico,
-        filterDetalhado,
-        doSort,
-        exportExcel,
-        exportPDF
-    };
+    return{toggleSidebar,scrollToSection,goPage,filterSintetico,filterDetalhado,doSort,exportExcel,exportPDF,clearOrgaoFilter};
 })();
 
-// ─── LÓGICA DO BOTÃO VOLTAR INTELIGENTE ───
-(function initBackButton() {
-    const btn = document.querySelector('.back-link');
-    const referrer = document.referrer;
-    const currentHost = window.location.hostname;
-    
-    // Oculta o botão se o usuário acessar por link direto ou de fora do Hub
-    if (btn && (!referrer || !referrer.includes(currentHost))) {
-        btn.style.display = 'none';
-    }
-})();
+// Botão voltar inteligente
+(function(){const btn=document.querySelector('.back-link');const ref=document.referrer;if(btn&&(!ref||!ref.includes(window.location.hostname)))btn.style.display='none';})();
 </script>
 </body>
 </html>
