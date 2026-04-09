@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +12,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
@@ -285,8 +284,7 @@ const App=(()=>{
         rawData.forEach(row=>{
             const id=row['Número']||row['Negociação']||'S/N';
             const status=String(row['Status']||'').trim().toLowerCase();
-            const valOriginal=U.num(row['Valor Original']); // Usado para a coluna Valor da Parcela
-            const saldoDevedor=U.num(row['Saldo Devedor']); // Usado para a Dívida Total
+            const saldoDevedor=U.num(row['Saldo Devedor']);
 
             if(!map[id]){
                 map[id]={
@@ -297,19 +295,29 @@ const App=(()=>{
                     qtdParcela:0,
                     atraso:0,
                     totalDivida:0,
-                    parcelaUnit:valOriginal, // Mostra o valor original da parcela
+                    parcelaUnit:0, // Inicia a 0
+                    priority:0,    // Lógica de prioridade para achar a parcela atual
                     ativo:U.isAtivo(row['ATIVO']),
                     isEncerrado:true,
                     hasAVencer:false
                 };
-            } else {
-                if(map[id].parcelaUnit===0 && valOriginal>0) {
-                    map[id].parcelaUnit=valOriginal;
-                }
             }
 
             map[id].qtdParcela++;
-            // Dívida real é a soma do Saldo Devedor pendente
+
+            // Lógica de Prioridade: Procura a próxima parcela "A Vencer"
+            let currentPriority = 0;
+            if (saldoDevedor > 0) {
+                currentPriority = 1; // Linha válida
+                if (status.includes('atraso')) currentPriority = 2; // Em atraso é mais importante que quitada/velha
+                if (status === 'a vencer') currentPriority = 3; // "A Vencer" é a prioridade máxima (Parcela Atual)
+            }
+
+            if (currentPriority > map[id].priority) {
+                map[id].parcelaUnit = saldoDevedor;
+                map[id].priority = currentPriority;
+            }
+
             if(status==='a vencer'||status.includes('atraso')) map[id].totalDivida+=saldoDevedor;
             if(status.includes('atraso')) map[id].atraso++;
             if(!status.includes('encerrado')) map[id].isEncerrado=false;
@@ -320,14 +328,13 @@ const App=(()=>{
 
     // ═══ FILTERS ═══
     const populateFilters=()=>{const nats=new Set(),orgs=new Set();rawData.forEach(r=>{if(r['Natureza'])nats.add(r['Natureza']);if(r['Orgão'])orgs.add(r['Orgão']);});const no=Array.from(nats).sort().map(n=>`<option value="${n}">${n}</option>`).join('');const oo=Array.from(orgs).sort().map(o=>`<option value="${o}">${o}</option>`).join('');$('filterSinteticoNatureza').innerHTML='<option value="">Todas</option>'+no;$('filterSinteticoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoNatureza').innerHTML='<option value="">Todas</option>'+no;};
-
     const populateYears=()=>{const yrs=new Set();rawData.forEach(r=>{const d=new Date(r['Data']);if(!isNaN(d.getTime()))yrs.add(d.getUTCFullYear());});$('filterDetalhadoAno').innerHTML='<option value="">Todos</option>'+Array.from(yrs).sort().map(y=>`<option value="${y}">${y}</option>`).join('');};
     
     const getFilteredSint=()=>{
         const t=$('searchSintetico').value.toLowerCase(),fN=$('filterSinteticoNatureza').value.toLowerCase(),fO=$('filterSinteticoOrgao').value.toLowerCase();
         return consolidatedData.filter(c=>{
-            // Esconde apenas se não houver dívida total pendente (base no saldo devedor) ou encerrado
-            if(c.totalDivida<=0 || c.isEncerrado) return false;
+            // Esconde se a Dívida Total for 0 OU se o Saldo Devedor da Parcela for <= 0 OU se Encerrado
+            if(c.totalDivida<=0 || c.parcelaUnit<=0 || c.isEncerrado) return false;
             
             if(t&&!(c.numero.toLowerCase().includes(t)||c.orgao.toLowerCase().includes(t)||c.natureza.toLowerCase().includes(t)||c.tributo.toLowerCase().includes(t)))return false;
             if(fN&&c.natureza.toLowerCase()!==fN)return false;
@@ -343,9 +350,13 @@ const App=(()=>{
 
     // ═══ DASHBOARD ═══
     const chartOpts=(ov={})=>({
+        devicePixelRatio: 2,
         responsive:true,maintainAspectRatio:false,layout:{padding:{top:28,bottom:10}},
-        plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(15,10,24,0.95)',titleColor:'#fff',bodyColor:'#a39eb5',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:12,cornerRadius:8,callbacks:{label:ctx=>U.fmtD(ctx.raw)}},
-        datalabels:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:600},formatter:v=>v>0?U.fmtD(v):'',anchor:'end',align:'end',...(ov.datalabels||{})}},
+        plugins:{
+            legend:{display:false},
+            tooltip:{backgroundColor:'rgba(15,10,24,0.95)',titleColor:'#fff',bodyColor:'#a39eb5',borderColor:'rgba(255,255,255,0.1)',borderWidth:1,padding:12,cornerRadius:8,callbacks:{label:ctx=>U.fmtD(ctx.raw)}},
+            datalabels:{color:'#a39eb5',font:{family:"'Outfit'",size:12.5,weight:600},formatter:v=>v>0?U.fmtD(v):'',anchor:'end',align:'end',...(ov.datalabels||{})}
+        },
         scales:{x:{display:false},y:{display:false}},...(ov.extra||{})
     });
 
@@ -430,7 +441,7 @@ const App=(()=>{
         charts.quitacao=new Chart($('chartQuitacao'),{
             type:'bar',
             data:{labels:qL,datasets:[{data:qD,backgroundColor:U.grad('chartQuitacao','#FF6E00','#ff9544'),borderRadius:6,maxBarThickness:60}]},
-            options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:12,weight:500}}},y:{display:false}}}
+            options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:12.5,weight:500}}},y:{display:false}}}
         });
     };
 
@@ -448,7 +459,7 @@ const App=(()=>{
             data:{labels:orgE.map(e=>e[0]),datasets:[{data:orgE.map(e=>e[1]),backgroundColor:orgE.map(e=>e[0]===selectedOrgao?'#ff9544':'#FF6E00'),borderRadius:5,maxBarThickness:28}]},
             options:{
                 ...chartOpts(),indexAxis:'y',layout:{padding:{right:90,top:20,bottom:10}},
-                scales:{x:{display:false,grace:'15%'},y:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:500},padding:8}}},
+                scales:{x:{display:false,grace:'15%'},y:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:12.5,weight:500},padding:8}}},
                 onClick:(evt,elements)=>{
                     if(elements.length>0){
                         const idx=elements[0].index;
@@ -462,10 +473,28 @@ const App=(()=>{
             }
         });
 
+        // Efeito Caixa: Legenda removida, colunas ligeiramente mais grossas
         charts.caixa=new Chart($('chartCaixa'),{
             type:'bar',
-            data:{labels:['Jan/2023',`${monthNames[currMonth]}/${currYear}`],datasets:[{data:[CAIXA_JAN_2023,dashData.caixaM],backgroundColor:['#5a005a','#FF6E00'],borderRadius:6,maxBarThickness:80,barPercentage:0.5,categoryPercentage:0.5}]},
-            options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:13,weight:600},padding:10}},y:{display:false}}}
+            data:{
+                labels:['Jan/2023',`${monthNames[currMonth]}/${currYear}`],
+                datasets:[{
+                    data:[CAIXA_JAN_2023,dashData.caixaM],
+                    backgroundColor:['#5a005a','#FF6E00'],
+                    borderRadius:6,
+                    maxBarThickness:90,
+                    barPercentage:0.7,
+                    categoryPercentage:0.8
+                }]
+            },
+            options:{
+                ...chartOpts(),
+                plugins: {
+                    ...chartOpts().plugins,
+                    legend: { display: false } 
+                },
+                scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:12.5,weight:600},padding:10}},y:{display:false}}
+            }
         });
 
         updateQuitacaoChart();
@@ -484,68 +513,104 @@ const App=(()=>{
     // ═══ EXCEL ═══
     const exportExcel=(type)=>{if(typeof XLSX==='undefined'){alert('Carregando...');return;}const dateStr=new Date().toISOString().split('T')[0];let data,filename,sheetName;if(type==='sintetico'){data=currentFilteredSintetico.map(c=>({'Natureza':c.natureza,'Tributo':c.tributo,'Número':c.numero,'Órgão':c.orgao,'Parcelas':c.qtdParcela,'Atraso':c.atraso,'Total Dívida':c.totalDivida,'Valor Parcela':c.parcelaUnit}));filename=`ONTIME_Sintetico_${dateStr}.xlsx`;sheetName='Resumo Sintético';}else{data=(lastDetalhadoFiltered.length?lastDetalhadoFiltered:rawData).map(r=>({'Data':U.date(r['Data']),'Número':r['Número']||r['Negociação']||'-','Órgão':r['Orgão']||'-','Natureza':r['Natureza']||'-','Valor Original':U.num(r['Valor Original']),'Saldo Devedor':U.num(r['Saldo Devedor']),'Status':r['Status']||'-'}));filename=`ONTIME_Detalhado_${dateStr}.xlsx`;sheetName='Detalhamento';}if(!data.length){alert('Sem dados.');return;}const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheetName);XLSX.writeFile(wb,filename);};
 
-    // ═══ PDF ═══
+    // ═══ PDF NATIVO ═══
     const exportPDF=async()=>{
-        if(typeof html2canvas==='undefined'||typeof jspdf==='undefined'){alert('Carregando...');return;}
+        if(typeof jspdf==='undefined'){alert('Carregando...');return;}
         const btn=$('btnExportPDF');
-
         const origHtml=btn.innerHTML;
         btn.classList.add('loading');
         btn.innerHTML='<i class="ph-bold ph-spinner"></i> <span>Gerando...</span>';
 
+        await new Promise(r => setTimeout(r, 100)); 
+
         try{
             const{jsPDF}=jspdf;
-            const pdf=new jsPDF('l','mm','a4');
+            const pdf=new jsPDF('l','mm','a4'); 
             const pageW=pdf.internal.pageSize.getWidth();
             const pageH=pdf.internal.pageSize.getHeight();
-            const margin=10;
+            const margin=14;
 
-            const dashEl=$('dashboard');
-            const origBg=dashEl.style.background;
-            dashEl.style.background='#0f0a18';
+            // ---- PÁGINA 1: DASHBOARD NATIVO VETORIAL ----
+            pdf.setFillColor(15,10,24); 
+            pdf.rect(0,0,pageW,pageH,'F');
 
-            const cards=dashEl.querySelectorAll('.kpi-card,.chart-card');
-            const origCardBgs=[];
-            cards.forEach(c=>{origCardBgs.push(c.style.background);c.style.background='#1a1423';});
+            pdf.setTextColor(255,110,0); 
+            pdf.setFontSize(16);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Visão Estratégica - Dashboard', margin, margin + 5);
 
-            const origMax=dashEl.style.maxHeight;
-            const origOver=dashEl.style.overflow;
-            dashEl.style.maxHeight='none';
-            dashEl.style.overflow='visible';
+            pdf.setTextColor(163,158,181);
+            pdf.setFontSize(10);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, margin, margin + 12);
 
-            const canvas=await html2canvas(dashEl,{
-                backgroundColor:'#0f0a18',
-                scale:2,
-                useCORS:true,
-                logging:false,
-                windowWidth:dashEl.scrollWidth,
-                windowHeight:dashEl.scrollHeight
-            });
+            // KPIs
+            const kpiY = margin + 20;
+            const kpiW = (pageW - (margin * 2) - 10) / 3;
+            const kpiH = 26;
 
-            dashEl.style.background=origBg;
-            dashEl.style.maxHeight=origMax;
-            dashEl.style.overflow=origOver;
-            cards.forEach((c,i)=>{c.style.background=origCardBgs[i];});
+            const drawKPI = (x, title, value, color) => {
+                pdf.setFillColor(26,20,35); 
+                pdf.rect(x, kpiY, kpiW, kpiH, 'F');
+                pdf.setTextColor(163,158,181); 
+                pdf.setFontSize(10);
+                pdf.text(title, x + 5, kpiY + 8);
+                pdf.setTextColor(color[0], color[1], color[2]);
+                pdf.setFontSize(18);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(value, x + 5, kpiY + 20);
+                pdf.setFont('helvetica', 'normal');
+            };
 
-            const imgData=canvas.toDataURL('image/jpeg',0.95);
-            const imgW=pageW-margin*2;
-            const imgH=(canvas.height*imgW)/canvas.width;
-            const finalH=Math.min(imgH,pageH-margin*2);
-            pdf.addImage(imgData,'JPEG',margin,margin,imgW,finalH);
+            drawKPI(margin, 'Saldo Devedor Total (A Vencer)', $('kpi-saldo').textContent, [216, 180, 254]); 
+            drawKPI(margin + kpiW + 5, 'Contratos A Vencer', $('kpi-ativas').textContent, [255, 110, 0]); 
+            drawKPI(margin + (kpiW * 2) + 10, 'Total Pago', $('kpi-pago').textContent, [16, 185, 129]); 
 
+            // CHARTS
+            const chartY = kpiY + kpiH + 8;
+            const chartW = (pageW - (margin * 2) - 8) / 2;
+            const chartH = 68;
+
+            const drawChart = (x, y, w, h, title, chartObj) => {
+                pdf.setFillColor(26,20,35);
+                pdf.rect(x, y, w, h, 'F');
+                pdf.setTextColor(255,255,255);
+                pdf.setFontSize(11);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(title, x + 5, y + 7);
+                pdf.setFont('helvetica', 'normal');
+                if(chartObj) {
+                    const imgData = chartObj.toBase64Image('image/png', 1.0);
+                    pdf.addImage(imgData, 'PNG', x + 2, y + 10, w - 4, h - 12);
+                }
+            };
+
+            drawChart(margin, chartY, chartW, chartH, 'Débitos por Órgão ("A Vencer")', charts.abertura);
+            drawChart(margin + chartW + 8, chartY, chartW, chartH, 'Efeito Caixa (Comparativo)', charts.caixa);
+
+            const chart3Y = chartY + chartH + 8;
+            const chart3W = pageW - (margin * 2);
+            const chart3H = 65;
+            drawChart(margin, chart3Y, chart3W, chart3H, 'Quitação Prevista (Saldo restante fim de ano)', charts.quitacao);
+
+            // ---- PÁGINA 2: TABELA SINTÉTICA ----
             pdf.addPage();
             pdf.setFillColor(15,10,24);
             pdf.rect(0,0,pageW,pageH,'F');
-            pdf.setTextColor(255,110,0);pdf.setFontSize(16);
-            pdf.text('Resumo Sintético de Parcelamentos',margin,margin+10);
-            pdf.setTextColor(163,158,181);pdf.setFontSize(9);
-            pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`,margin,margin+18);
+            pdf.setTextColor(255,110,0);
+            pdf.setFontSize(16);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Resumo Sintético de Parcelamentos',margin,margin+5);
+            pdf.setTextColor(163,158,181);
+            pdf.setFontSize(9);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`,margin,margin+12);
 
             const rows=currentFilteredSintetico.map(c=>[c.natureza,c.tributo,c.numero,c.orgao,c.qtdParcela,c.atraso,U.fmt(c.totalDivida),U.fmt(c.parcelaUnit)]);
 
             pdf.autoTable({
                 head:[["Natureza","Tributo","Número","Órgão","Parc.","Atraso","Total Dívida (R$)","Vlr Parcela (R$)"]],
-                body:rows,startY:margin+24,theme:'grid',
+                body:rows,startY:margin+18,theme:'grid',
                 styles:{fillColor:[26,20,35],textColor:[255,255,255],lineColor:[47,39,58],lineWidth:0.1,font:'helvetica',fontSize:9},
                 headStyles:{fillColor:[36,29,46],textColor:[163,158,181],fontStyle:'bold',fontSize:8},
                 alternateRowStyles:{fillColor:[22,16,30]},
