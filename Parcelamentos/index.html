@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,14 +18,16 @@
 
     <style>
         :root {
-            --purple-deep:#1a0a2e; --purple-main:#3C003C; --purple-light:#5a005a; --purple-glow:rgba(60,0,60,0.4);
+            --purple-deep:#1a0a2e;
+            --purple-main:#3C003C; --purple-light:#5a005a; --purple-glow:rgba(60,0,60,0.4);
             --orange-main:#FF6E00; --orange-hover:#ff8533; --orange-glow:rgba(255,110,0,0.3); --orange-dim:rgba(255,110,0,0.12);
             --bg-dark:#0f0a18; --surface-1:#1a1423; --surface-2:#241d2e; --surface-3:#2f273a;
             --text-1:#ffffff; --text-2:#a39eb5; --text-3:#6b6580;
             --border-color:rgba(255,255,255,0.08);
             --status-ok:#10b981; --status-ok-bg:rgba(16,185,129,0.15);
             --status-warn:#f59e0b; --status-warn-bg:rgba(245,158,11,0.15);
-            --status-err:#ef4444; --status-err-bg:rgba(239,68,68,0.15);
+            --status-err:#ef4444;
+            --status-err-bg:rgba(239,68,68,0.15);
             --font-display:'Syne',sans-serif; --font-body:'Outfit',sans-serif;
             --shadow-card:0 8px 32px rgba(0,0,0,0.4);
             --radius-lg:20px; --radius-md:12px; --radius-sm:8px; --sidebar-w:280px;
@@ -74,7 +76,7 @@
         .kpi-label{font-size:13px;color:var(--text-2);font-weight:500}
         .kpi-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
         .kpi-card.purple .kpi-icon{background:rgba(90,0,90,.15);color:#d8b4fe}.kpi-card.orange .kpi-icon{background:var(--orange-glow);color:var(--orange-main)}.kpi-card.green .kpi-icon{background:var(--status-ok-bg);color:var(--status-ok)}
-        .kpi-value{font-family:var(--font-display);font-size:30px;font-weight:800}.kpi-sub{font-size:12px;color:var(--text-3);margin-top:8px}
+        .kpi-value{font-family:var(--font-display);font-size:30px;font-weight:800;margin-top:6px;}
 
         .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.chart-full{grid-column:1/-1}
         .chart-card{background:var(--surface-1);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-card);transition:border-color .3s}.chart-card:hover{border-color:rgba(255,255,255,.12)}
@@ -155,7 +157,6 @@
         <div id="loader"><div class="spinner"></div><p>Sincronizando dados...</p></div>
         <div id="app-content" style="display:none;flex-direction:column;gap:48px;">
 
-            <!-- DASHBOARD -->
             <div id="dashboard" class="scroll-section" data-pdf="capture">
                 <h2 class="section-title"><i class="ph-fill ph-chart-pie-slice"></i> Visão Estratégica <span id="orgaoFilterBadge"></span></h2>
                 <div class="kpi-grid">
@@ -166,12 +167,10 @@
                     <div class="kpi-card orange">
                         <div class="kpi-header"><div class="kpi-label">Contratos A Vencer</div><div class="kpi-icon"><i class="ph-fill ph-files"></i></div></div>
                         <div class="kpi-value" id="kpi-ativas">0</div>
-                        <div class="kpi-sub" id="kpi-ativas-sub"></div>
                     </div>
                     <div class="kpi-card green">
                         <div class="kpi-header"><div class="kpi-label">Total Pago</div><div class="kpi-icon"><i class="ph-fill ph-check-circle"></i></div></div>
                         <div class="kpi-value" id="kpi-pago">R$ 0</div>
-                        <div class="kpi-sub" id="kpi-pago-sub"></div>
                     </div>
                 </div>
                 <div class="charts-grid">
@@ -181,7 +180,6 @@
                 </div>
             </div>
 
-            <!-- SINTÉTICO -->
             <div id="sintetico" class="scroll-section" data-pdf="capture">
                 <h2 class="section-title"><i class="ph-fill ph-list-numbers"></i> Resumo Sintético</h2>
                 <div class="filter-bar" id="filterSinteticoBar">
@@ -205,7 +203,6 @@
                 </div>
             </div>
 
-            <!-- DETALHAMENTO (scroll, sem paginação) -->
             <div id="detalhado" class="scroll-section">
                 <h2 class="section-title"><i class="ph-fill ph-table"></i> Detalhamento</h2>
                 <div class="filter-bar">
@@ -243,7 +240,7 @@ const App=(()=>{
     let rawData=[], consolidatedData=[];
     let currentFilteredSintetico=[];
     let lastDetalhadoFiltered=[];
-    let selectedOrgao=null; // Filtro de órgão via clique no gráfico
+    let selectedOrgao=null; 
 
     const charts={abertura:null,quitacao:null,caixa:null};
     const pagination={sintetico:{page:1,data:[]}};
@@ -260,7 +257,8 @@ const App=(()=>{
         date:s=>{if(!s)return'-';const d=new Date(s);return isNaN(d.getTime())?'-':d.toLocaleDateString('pt-BR',{timeZone:'UTC'});},
         num:v=>{if(v==null||v==='')return 0;if(typeof v==='number')return v;let s=String(v).replace(/[R$\s\u00A0]/g,'').trim();if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');return parseFloat(s)||0;},
         debounce:(fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}},
-        grad:(id,c1,c2)=>{const ctx=$(id).getContext('2d');const g=ctx.createLinearGradient(0,0,0,300);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;}
+        grad:(id,c1,c2)=>{const ctx=$(id).getContext('2d');const g=ctx.createLinearGradient(0,0,0,300);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;},
+        isAtivo:v=>{const u=String(v||'').toUpperCase();return u.includes('SIM')||u.includes('ATIVO')||u.includes('PAGO');}
     };
 
     // ═══ SIDEBAR & SCROLL ═══
@@ -282,37 +280,66 @@ const App=(()=>{
     const init=async()=>{try{const res=await fetch(API_URL);if(!res.ok)throw new Error(`HTTP ${res.status}`);const raw=await res.json();rawData=raw.map(r=>{const c={};for(const k in r)c[k.trim()]=r[k];return c;}).filter(r=>r['Número']||r['Negociação']);const st=new Date();$('lastSync').textContent=st.toLocaleDateString('pt-BR')+' '+st.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});processConsolidation();populateFilters();populateYears();updateDashboard();filterSintetico();lastDetalhadoFiltered=rawData;renderDetalhado(applySort(rawData,'detalhado'));$('loader').style.display='none';$('app-content').style.display='flex';initScrollSpy();}catch(e){console.error(e);$('loader').innerHTML=`<p style="color:var(--status-err);font-weight:600;">Erro ao acessar dados.<br><small style="color:var(--text-3)">${e.message}</small></p>`;}};
 
     // ═══ CONSOLIDATION ═══
-    const processConsolidation=()=>{const map={};rawData.forEach(row=>{const id=row['Número']||row['Negociação']||'S/N';const status=String(row['Status']||'').trim().toLowerCase();if(!map[id])map[id]={natureza:row['Natureza']||'-',tributo:row['Tributo']||'-',numero:id,orgao:row['Orgão']||'-',qtdParcela:0,atraso:0,totalDivida:0,parcelaUnit:U.num(row['Valor Original']),isEncerrado:true,hasAVencer:false};map[id].qtdParcela++;if(status==='a vencer'||status.includes('atraso'))map[id].totalDivida+=U.num(row['Saldo Devedor']);if(status.includes('atraso'))map[id].atraso++;if(!status.includes('encerrado'))map[id].isEncerrado=false;if(status==='a vencer')map[id].hasAVencer=true;});consolidatedData=Object.values(map);};
+    const processConsolidation=()=>{
+        const map={};
+        rawData.forEach(row=>{
+            const id=row['Número']||row['Negociação']||'S/N';
+            const status=String(row['Status']||'').trim().toLowerCase();
+            const valOriginal=U.num(row['Valor Original']); // Usado para a coluna Valor da Parcela
+            const saldoDevedor=U.num(row['Saldo Devedor']); // Usado para a Dívida Total
+
+            if(!map[id]){
+                map[id]={
+                    natureza:row['Natureza']||'-',
+                    tributo:row['Tributo']||'-',
+                    numero:id,
+                    orgao:row['Orgão']||'-',
+                    qtdParcela:0,
+                    atraso:0,
+                    totalDivida:0,
+                    parcelaUnit:valOriginal, // Mostra o valor original da parcela
+                    ativo:U.isAtivo(row['ATIVO']),
+                    isEncerrado:true,
+                    hasAVencer:false
+                };
+            } else {
+                if(map[id].parcelaUnit===0 && valOriginal>0) {
+                    map[id].parcelaUnit=valOriginal;
+                }
+            }
+
+            map[id].qtdParcela++;
+            // Dívida real é a soma do Saldo Devedor pendente
+            if(status==='a vencer'||status.includes('atraso')) map[id].totalDivida+=saldoDevedor;
+            if(status.includes('atraso')) map[id].atraso++;
+            if(!status.includes('encerrado')) map[id].isEncerrado=false;
+            if(status==='a vencer') map[id].hasAVencer=true;
+        });
+        consolidatedData=Object.values(map);
+    };
 
     // ═══ FILTERS ═══
     const populateFilters=()=>{const nats=new Set(),orgs=new Set();rawData.forEach(r=>{if(r['Natureza'])nats.add(r['Natureza']);if(r['Orgão'])orgs.add(r['Orgão']);});const no=Array.from(nats).sort().map(n=>`<option value="${n}">${n}</option>`).join('');const oo=Array.from(orgs).sort().map(o=>`<option value="${o}">${o}</option>`).join('');$('filterSinteticoNatureza').innerHTML='<option value="">Todas</option>'+no;$('filterSinteticoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoNatureza').innerHTML='<option value="">Todas</option>'+no;};
+
     const populateYears=()=>{const yrs=new Set();rawData.forEach(r=>{const d=new Date(r['Data']);if(!isNaN(d.getTime()))yrs.add(d.getUTCFullYear());});$('filterDetalhadoAno').innerHTML='<option value="">Todos</option>'+Array.from(yrs).sort().map(y=>`<option value="${y}">${y}</option>`).join('');};
-    const getFilteredSint=()=>{const t=$('searchSintetico').value.toLowerCase(),fN=$('filterSinteticoNatureza').value.toLowerCase(),fO=$('filterSinteticoOrgao').value.toLowerCase();return consolidatedData.filter(c=>{if(c.totalDivida<=0||c.parcelaUnit===0||c.isEncerrado)return false;if(t&&!(c.numero.toLowerCase().includes(t)||c.orgao.toLowerCase().includes(t)||c.natureza.toLowerCase().includes(t)||c.tributo.toLowerCase().includes(t)))return false;if(fN&&c.natureza.toLowerCase()!==fN)return false;if(fO&&c.orgao.toLowerCase()!==fO)return false;return true;});};
-
-    // ═══ ÓRGÃO FILTER (clique no gráfico) ═══
-    const setOrgaoFilter=(orgao)=>{
-        if(selectedOrgao===orgao) selectedOrgao=null; // toggle
-        else selectedOrgao=orgao;
-        updateFilterBadge();
-        updateKPIs();
-        updateQuitacaoChart();
+    
+    const getFilteredSint=()=>{
+        const t=$('searchSintetico').value.toLowerCase(),fN=$('filterSinteticoNatureza').value.toLowerCase(),fO=$('filterSinteticoOrgao').value.toLowerCase();
+        return consolidatedData.filter(c=>{
+            // Esconde apenas se não houver dívida total pendente (base no saldo devedor) ou encerrado
+            if(c.totalDivida<=0 || c.isEncerrado) return false;
+            
+            if(t&&!(c.numero.toLowerCase().includes(t)||c.orgao.toLowerCase().includes(t)||c.natureza.toLowerCase().includes(t)||c.tributo.toLowerCase().includes(t)))return false;
+            if(fN&&c.natureza.toLowerCase()!==fN)return false;
+            if(fO&&c.orgao.toLowerCase()!==fO)return false;
+            return true;
+        });
     };
 
-    const clearOrgaoFilter=()=>{
-        selectedOrgao=null;
-        updateFilterBadge();
-        updateKPIs();
-        updateQuitacaoChart();
-    };
-
-    const updateFilterBadge=()=>{
-        const el=$('orgaoFilterBadge');
-        if(selectedOrgao){
-            el.innerHTML=`<span class="filter-badge"><i class="ph ph-funnel"></i> ${selectedOrgao} <button onclick="App.clearOrgaoFilter()" title="Limpar filtro">&times;</button></span>`;
-        }else{
-            el.innerHTML='';
-        }
-    };
+    // ═══ ÓRGÃO FILTER ═══
+    const setOrgaoFilter=(orgao)=>{if(selectedOrgao===orgao) selectedOrgao=null;else selectedOrgao=orgao;updateFilterBadge();updateKPIs();updateQuitacaoChart();};
+    const clearOrgaoFilter=()=>{selectedOrgao=null;updateFilterBadge();updateKPIs();updateQuitacaoChart();};
+    const updateFilterBadge=()=>{const el=$('orgaoFilterBadge');if(selectedOrgao)el.innerHTML=`<span class="filter-badge"><i class="ph ph-funnel"></i> ${selectedOrgao} <button onclick="App.clearOrgaoFilter()" title="Limpar filtro">&times;</button></span>`;else el.innerHTML='';};
 
     // ═══ DASHBOARD ═══
     const chartOpts=(ov={})=>({
@@ -322,7 +349,6 @@ const App=(()=>{
         scales:{x:{display:false},y:{display:false}},...(ov.extra||{})
     });
 
-    // Dados globais calculados uma vez
     let dashData={totalS:0,contSet:new Set(),orgMap:{},anoMap:{},caixaM:0,totalPago:0,orgEntries:[]};
 
     const computeDashData=()=>{
@@ -331,14 +357,13 @@ const App=(()=>{
 
         rawData.forEach(row=>{
             const saldo=U.num(row['Saldo Devedor']);
-            const valOrig=U.num(row['Valor Original']);
             const status=String(row['Status']||'').trim().toLowerCase();
             const id=row['Número']||row['Negociação']||'S/N';
             const d=new Date(row['Data']);
             const ok=!isNaN(d.getTime());
 
-            // Total Pago: SOMENTE status "quitada"
-            if(status==='quitada') totalPago+=valOrig;
+            // KPI Total Pago: Somando APENAS Saldo Devedor onde o status é 'quitada'
+            if(status==='quitada') totalPago+=saldo;
 
             if(status==='a vencer'){
                 totalS+=saldo;
@@ -357,34 +382,33 @@ const App=(()=>{
 
     const updateKPIs=()=>{
         const org=selectedOrgao;
+
         if(!org){
             $('kpi-saldo').textContent=U.fmtD(dashData.totalS);
             $('kpi-ativas').textContent=dashData.contSet.size;
-            $('kpi-ativas-sub').textContent=`contratos com parcelas "A Vencer"`;
             $('kpi-pago').textContent=U.fmtD(dashData.totalPago);
-            $('kpi-pago-sub').textContent=`soma das parcelas quitadas`;
         }else{
-            // Filtrado por órgão
             let saldo=0,pago=0;const ids=new Set();
+
             rawData.forEach(row=>{
                 if((row['Orgão']||'-')!==org) return;
                 const status=String(row['Status']||'').trim().toLowerCase();
-                if(status==='quitada') pago+=U.num(row['Valor Original']);
+                
+                if(status==='quitada') pago+=U.num(row['Saldo Devedor']);
                 if(status==='a vencer'){saldo+=U.num(row['Saldo Devedor']);ids.add(row['Número']||row['Negociação']||'S/N');}
             });
+
             $('kpi-saldo').textContent=U.fmtD(saldo);
             $('kpi-ativas').textContent=ids.size;
-            $('kpi-ativas-sub').textContent=`contratos "${org}"`;
             $('kpi-pago').textContent=U.fmtD(pago);
-            $('kpi-pago-sub').textContent=`quitadas "${org}"`;
         }
     };
 
     const updateQuitacaoChart=()=>{
         const org=selectedOrgao;
-        // Recalcula anoMap filtrado
         const anoF={};
         let totalF=0;
+
         rawData.forEach(row=>{
             if(org&&(row['Orgão']||'-')!==org) return;
             const status=String(row['Status']||'').trim().toLowerCase();
@@ -418,21 +442,18 @@ const App=(()=>{
         Chart.register(ChartDataLabels);
         Object.values(charts).forEach(c=>c?.destroy());
 
-        // Débitos por Órgão (clicável)
         const orgE=dashData.orgEntries;
         charts.abertura=new Chart($('chartAbertura'),{
             type:'bar',
             data:{labels:orgE.map(e=>e[0]),datasets:[{data:orgE.map(e=>e[1]),backgroundColor:orgE.map(e=>e[0]===selectedOrgao?'#ff9544':'#FF6E00'),borderRadius:5,maxBarThickness:28}]},
             options:{
-                ...chartOpts(),indexAxis:'y',
-                layout:{padding:{right:90,top:20,bottom:10}},
+                ...chartOpts(),indexAxis:'y',layout:{padding:{right:90,top:20,bottom:10}},
                 scales:{x:{display:false,grace:'15%'},y:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:11,weight:500},padding:8}}},
                 onClick:(evt,elements)=>{
                     if(elements.length>0){
                         const idx=elements[0].index;
                         const orgao=orgE[idx][0];
                         setOrgaoFilter(orgao);
-                        // Atualiza cores das barras
                         charts.abertura.data.datasets[0].backgroundColor=orgE.map(e=>e[0]===selectedOrgao?'#ff9544':'#FF6E00');
                         charts.abertura.update();
                     }
@@ -441,14 +462,12 @@ const App=(()=>{
             }
         });
 
-        // Efeito Caixa (sempre global)
         charts.caixa=new Chart($('chartCaixa'),{
             type:'bar',
             data:{labels:['Jan/2023',`${monthNames[currMonth]}/${currYear}`],datasets:[{data:[CAIXA_JAN_2023,dashData.caixaM],backgroundColor:['#5a005a','#FF6E00'],borderRadius:6,maxBarThickness:80,barPercentage:0.5,categoryPercentage:0.5}]},
             options:{...chartOpts(),scales:{x:{display:true,grid:{display:false},border:{display:false},ticks:{color:'#a39eb5',font:{family:"'Outfit'",size:13,weight:600},padding:10}},y:{display:false}}}
         });
 
-        // Quitação (responde ao filtro de órgão)
         updateQuitacaoChart();
     };
 
@@ -465,10 +484,11 @@ const App=(()=>{
     // ═══ EXCEL ═══
     const exportExcel=(type)=>{if(typeof XLSX==='undefined'){alert('Carregando...');return;}const dateStr=new Date().toISOString().split('T')[0];let data,filename,sheetName;if(type==='sintetico'){data=currentFilteredSintetico.map(c=>({'Natureza':c.natureza,'Tributo':c.tributo,'Número':c.numero,'Órgão':c.orgao,'Parcelas':c.qtdParcela,'Atraso':c.atraso,'Total Dívida':c.totalDivida,'Valor Parcela':c.parcelaUnit}));filename=`ONTIME_Sintetico_${dateStr}.xlsx`;sheetName='Resumo Sintético';}else{data=(lastDetalhadoFiltered.length?lastDetalhadoFiltered:rawData).map(r=>({'Data':U.date(r['Data']),'Número':r['Número']||r['Negociação']||'-','Órgão':r['Orgão']||'-','Natureza':r['Natureza']||'-','Valor Original':U.num(r['Valor Original']),'Saldo Devedor':U.num(r['Saldo Devedor']),'Status':r['Status']||'-'}));filename=`ONTIME_Detalhado_${dateStr}.xlsx`;sheetName='Detalhamento';}if(!data.length){alert('Sem dados.');return;}const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,sheetName);XLSX.writeFile(wb,filename);};
 
-    // ═══ PDF (dashboard screenshot + tabela autoTable) ═══
+    // ═══ PDF ═══
     const exportPDF=async()=>{
         if(typeof html2canvas==='undefined'||typeof jspdf==='undefined'){alert('Carregando...');return;}
         const btn=$('btnExportPDF');
+
         const origHtml=btn.innerHTML;
         btn.classList.add('loading');
         btn.innerHTML='<i class="ph-bold ph-spinner"></i> <span>Gerando...</span>';
@@ -480,14 +500,10 @@ const App=(()=>{
             const pageH=pdf.internal.pageSize.getHeight();
             const margin=10;
 
-            // Captura dashboard
             const dashEl=$('dashboard');
-
-            // FIX: Forçar fundo opaco sólido temporariamente em todos os elementos
             const origBg=dashEl.style.background;
             dashEl.style.background='#0f0a18';
 
-            // Forçar cards com fundo sólido (sem rgba/transparência)
             const cards=dashEl.querySelectorAll('.kpi-card,.chart-card');
             const origCardBgs=[];
             cards.forEach(c=>{origCardBgs.push(c.style.background);c.style.background='#1a1423';});
@@ -506,7 +522,6 @@ const App=(()=>{
                 windowHeight:dashEl.scrollHeight
             });
 
-            // Restaurar estilos originais
             dashEl.style.background=origBg;
             dashEl.style.maxHeight=origMax;
             dashEl.style.overflow=origOver;
@@ -518,7 +533,6 @@ const App=(()=>{
             const finalH=Math.min(imgH,pageH-margin*2);
             pdf.addImage(imgData,'JPEG',margin,margin,imgW,finalH);
 
-            // Página 2: Tabela Sintética
             pdf.addPage();
             pdf.setFillColor(15,10,24);
             pdf.rect(0,0,pageW,pageH,'F');
@@ -528,6 +542,7 @@ const App=(()=>{
             pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`,margin,margin+18);
 
             const rows=currentFilteredSintetico.map(c=>[c.natureza,c.tributo,c.numero,c.orgao,c.qtdParcela,c.atraso,U.fmt(c.totalDivida),U.fmt(c.parcelaUnit)]);
+
             pdf.autoTable({
                 head:[["Natureza","Tributo","Número","Órgão","Parc.","Atraso","Total Dívida (R$)","Vlr Parcela (R$)"]],
                 body:rows,startY:margin+24,theme:'grid',
