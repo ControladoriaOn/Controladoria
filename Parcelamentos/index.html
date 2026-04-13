@@ -245,7 +245,6 @@ const App=(()=>{
     let currMonth=realMonth;
     let currYear=realYear;
 
-    // CORREÇÃO CRÍTICA: Lidador de Datas no padrão Brasil (DD/MM/AAAA)
     const parseDateBR = (val) => {
         if (!val) return new Date(NaN);
         const s = String(val).trim();
@@ -256,12 +255,11 @@ const App=(()=>{
         return new Date(s);
     };
 
-    // MAPAS DO CICLO DE VIDA DO CONTRATO
-    let encerramentoMap = {};
+    let inativoMap = {}; 
     let nascimentoMap = {};
     
     const buildLifeCycleMaps = () => {
-        encerramentoMap = {};
+        inativoMap = {};
         nascimentoMap = {};
         rawData.forEach(row => {
             const id = row['Número'] || row['Negociação'] || 'S/N';
@@ -269,65 +267,19 @@ const App=(()=>{
             if (!isNaN(d.getTime())) {
                 const mesAno = d.getUTCFullYear() * 100 + d.getUTCMonth();
                 
-                // Mapeia a Data de Nascimento (Primeira parcela de todas)
                 if (!nascimentoMap[id] || mesAno < nascimentoMap[id]) {
                     nascimentoMap[id] = mesAno;
                 }
 
-                // Mapeia a Data de Óbito (Primeira vez que encerra)
-                const status = String(row['Status'] || '').trim().toLowerCase();
-                if (status.includes('encerrado')) {
-                    if (!encerramentoMap[id] || mesAno < encerramentoMap[id]) {
-                        encerramentoMap[id] = mesAno;
+                // Lê EXCLUSIVAMENTE a coluna "ATIVO" para decretar o fim do contrato
+                const ativo = String(row['ATIVO'] || row['Ativo'] || row['ativo'] || '').trim().toLowerCase();
+                if (ativo === 'não' || ativo === 'nao') {
+                    if (!inativoMap[id] || mesAno < inativoMap[id]) {
+                        inativoMap[id] = mesAno;
                     }
                 }
             }
         });
-    };
-
-    // HORIZONTE: Retorna true se a parcela for do mesmo mês/ano da Data Base ou futuro
-    const isHorizonteValido = (dataStr) => {
-        const d = parseDateBR(dataStr);
-        if (isNaN(d.getTime())) return false;
-        const ano = d.getUTCFullYear();
-        const mes = d.getUTCMonth();
-        return ano > currYear || (ano === currYear && mes >= currMonth);
-    };
-
-    // MÊS EXATO: Útil para calcular o Efeito Caixa
-    const isMesExato = (dataStr) => {
-        const d = parseDateBR(dataStr);
-        if (isNaN(d.getTime())) return false;
-        return d.getUTCFullYear() === currYear && d.getUTCMonth() === currMonth;
-    };
-
-    // STATUS DINÂMICO (MÁQUINA DO TEMPO)
-    const getDynamicStatus = (dataStr, originalStatus, id) => {
-        const orig = String(originalStatus).trim().toLowerCase();
-        const d = parseDateBR(dataStr);
-        if (isNaN(d.getTime())) return orig;
-        
-        const anoP = d.getUTCFullYear();
-        const mesP = d.getUTCMonth();
-        const mesAnoP = anoP * 100 + mesP;
-        const mesAnoBase = currYear * 100 + currMonth;
-
-        // 1. O contrato ainda NEM EXISTIA nesta Data Base?
-        if (nascimentoMap[id] && mesAnoBase < nascimentoMap[id]) {
-            return 'invalido_ainda_nao_nasceu';
-        }
-
-        // 2. O contrato JÁ ESTAVA MORTO nesta Data Base?
-        if (encerramentoMap[id] && mesAnoBase >= encerramentoMap[id]) {
-            return 'encerrado';
-        }
-        
-        // 3. Máquina do Tempo: Se está vivo, e a parcela está no futuro, ela ainda não foi paga.
-        if (mesAnoP > mesAnoBase) {
-            return 'a vencer';
-        }
-        
-        return orig;
     };
 
     const charts={abertura:null,quitacao:null,caixa:null};
@@ -364,9 +316,7 @@ const App=(()=>{
         const selMes=$('dataBaseMes');
         const selAno=$('dataBaseAno');
         
-        // RESTRIÇÃO DE ANO: Apenas o ano atual e o ano anterior
         const allowedYears = [realYear - 1, realYear];
-        
         selAno.innerHTML=allowedYears.map(y=>`<option value="${y}" ${y===currYear?'selected':''}>${y}</option>`).join('');
 
         const maxMonth=currYear===realYear?realMonth:11;
@@ -394,43 +344,66 @@ const App=(()=>{
 
     const init=async()=>{try{const res=await fetch(API_URL);if(!res.ok)throw new Error(`HTTP ${res.status}`);const raw=await res.json();rawData=raw.map(r=>{const c={};for(const k in r)c[k.trim()]=r[k];return c;}).filter(r=>r['Número']||r['Negociação']);const st=new Date();$('lastSync').textContent=st.toLocaleDateString('pt-BR')+' '+st.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});buildLifeCycleMaps();processConsolidation();populateFilters();populateYears();initDataBaseSelector();updateDashboard();filterSintetico();lastDetalhadoFiltered=rawData;renderDetalhado(applySort(rawData,'detalhado'));$('loader').style.display='none';$('app-content').style.display='flex';initScrollSpy();}catch(e){console.error(e);$('loader').innerHTML=`<p style="color:var(--status-err);font-weight:600;">Erro ao acessar dados.<br><small style="color:var(--text-3)">${e.message}</small></p>`;}};
     
-    // ANÁLISE RETROATIVA NA CONSOLIDAÇÃO
+    // ANÁLISE RETROATIVA UNIFICADA (Tabela, Caixa e KPI em Sincronia Absoluta)
     const processConsolidation=()=>{
         const map={};
-        rawData.forEach(row=>{
-            if(!isHorizonteValido(row['Data'])) return;
+        const mesAnoBase = currYear * 100 + currMonth;
 
+        rawData.forEach(row=>{
             const id=row['Número']||row['Negociação']||'S/N';
+            const d=parseDateBR(row['Data']);
+            if(isNaN(d.getTime())) return;
+
+            const anoP = d.getUTCFullYear();
+            const mesP = d.getUTCMonth();
+            const mesAnoP = anoP * 100 + mesP;
+
             const saldoDevedor=U.num(row['Saldo Devedor']);
-            
-            // Passa o ID para verificar se o contrato está morto ou se ainda não nasceu
-            const status = getDynamicStatus(row['Data'], row['Status'] || '', id);
-            
+
+            if (mesAnoP < mesAnoBase) return;
+
+            const nascimento = nascimentoMap[id] || 999999;
+            const inativo = inativoMap[id] || 999999;
+
+            if (mesAnoBase < nascimento) return;
+
             if(!map[id]){
                 map[id]={
                     natureza:row['Natureza']||'-',tributo:row['Tributo']||'-',numero:id,orgao:row['Orgão']||'-',
-                    qtdParcela:0,atraso:0,totalDivida:0,parcelaUnit:0,
-                    isEncerrado:true
+                    qtdParcela:0,atraso:0,totalDivida:0,parcelaUnit:0
                 };
             }
-            
+
             map[id].qtdParcela++;
-            
-            if(status==='a vencer' || status.includes('atraso')){
-                map[id].totalDivida+=saldoDevedor;
-                if(saldoDevedor>0 && map[id].parcelaUnit===0){
-                    map[id].parcelaUnit=saldoDevedor;
+
+            const originalStatus = String(row['Status'] || '').trim().toLowerCase();
+
+            // SÓ FAZEMOS SOMAS SE O CONTRATO ESTIVER VIVO NESTA DATA BASE (Ativo = Sim)
+            // Se inativo (Não) for MAIOR que a Data Base, significa que ele AINDA está vivo.
+            if (mesAnoBase < inativo) {
+                
+                // 1. EFEITO CAIXA E PARCELA DO MÊS (EXTRATO)
+                if (mesAnoP === mesAnoBase) {
+                    // Como você pediu: se a parcela estiver Encerrada, ela NÃO soma na parcela do mês/caixa.
+                    if (!originalStatus.includes('encerrado')) {
+                        map[id].parcelaUnit += saldoDevedor;
+                    }
                 }
-            }
-            
-            if(status.includes('atraso')) map[id].atraso++;
-            if(!status.includes('encerrado') && !status.includes('quitada') && !status.includes('invalido')){
-                map[id].isEncerrado=false;
+
+                // 2. SALDO DEVEDOR E MOCHILA PARA O FUTURO
+                // Mesmo que a parcela atual seja Encerrada, as parcelas futuras CONTINUAM somando
+                // pois o contrato ainda está VIVO (Ativo = Sim).
+                if (mesAnoP > mesAnoBase || originalStatus === 'a vencer' || originalStatus.includes('atraso')) {
+                    map[id].totalDivida += saldoDevedor;
+                    if (originalStatus.includes('atraso') && mesAnoP <= mesAnoBase) {
+                        map[id].atraso++;
+                    }
+                }
             }
         });
         
-        // Remove os zerados e os que foram forçados a 'Encerrado' pela Máquina do Tempo
-        consolidatedData=Object.values(map).filter(c => c.totalDivida > 0 && c.parcelaUnit > 0);
+        // PENEIRA FINAL: Mostra quem teve movimentação no mês OU quem projeta dívida para o futuro
+        consolidatedData=Object.values(map).filter(c => c.totalDivida > 0 || c.parcelaUnit > 0);
     };
 
     const populateFilters=()=>{const nats=new Set(),orgs=new Set();rawData.forEach(r=>{if(r['Natureza'])nats.add(r['Natureza']);if(r['Orgão'])orgs.add(r['Orgão']);});const no=Array.from(nats).sort().map(n=>`<option value="${n}">${n}</option>`).join('');const oo=Array.from(orgs).sort().map(o=>`<option value="${o}">${o}</option>`).join('');$('filterSinteticoNatureza').innerHTML='<option value="">Todas</option>'+no;$('filterSinteticoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoOrgao').innerHTML='<option value="">Todos</option>'+oo;$('filterDetalhadoNatureza').innerHTML='<option value="">Todas</option>'+no;};
@@ -484,7 +457,7 @@ const App=(()=>{
         let totalS=0, aVencerMes=0;
         const orgMap={};
         
-        // KPI A Vencer no Mês extrai o valor exato da tabela, mantendo sincronia absoluta.
+        // Puxa exatamente da tabela consolidada, garantindo amarração perfeita entre KPI, Efeito Caixa e Tabela.
         consolidatedData.forEach(c=>{
             totalS += c.totalDivida;
             aVencerMes += c.parcelaUnit;
@@ -492,22 +465,11 @@ const App=(()=>{
             orgMap[org] = (orgMap[org]||0) + c.totalDivida;
         });
 
-        let caixaM = 0;
-        const validIds = new Set(consolidatedData.map(c=>c.numero));
-        
-        rawData.forEach(r => {
-            if(!isMesExato(r['Data'])) return;
-            const id = r['Número']||r['Negociação']||'S/N';
-            if(validIds.has(id)) {
-                caixaM += U.num(r['Saldo Devedor']);
-            }
-        });
-
         dashData={
             totalS, 
             contSetSize: consolidatedData.length, 
             orgMap, 
-            caixaM, 
+            caixaM: aVencerMes, // Hard-sync entre Caixa e KPI A Vencer no Mês
             aVencerMes, 
             orgEntries:Object.entries(orgMap).sort((a,b)=>b[1]-a[1])
         };
@@ -541,25 +503,32 @@ const App=(()=>{
     const updateQuitacaoChart=()=>{
         const org=selectedOrgao;
         const anoF={};let totalF=0;
+        const mesAnoBase = currYear * 100 + currMonth;
         const validIds = new Set(consolidatedData.map(c=>c.numero));
 
         rawData.forEach(row=>{
-            if(!isHorizonteValido(row['Data'])) return;
-            if(org&&(row['Orgão']||'-')!==org) return;
-            
             const id=row['Número']||row['Negociação']||'S/N';
             if(!validIds.has(id)) return;
+            if(org&&(row['Orgão']||'-')!==org) return;
 
-            const status = getDynamicStatus(row['Data'], row['Status'] || '', id);
-            const isDivida = status==='a vencer' || status.includes('atraso');
-            if(!isDivida) return;
-
-            const saldo=U.num(row['Saldo Devedor']);
             const d=parseDateBR(row['Data']);
             if(isNaN(d.getTime())) return;
             
-            anoF[d.getUTCFullYear()]=(anoF[d.getUTCFullYear()]||0)+saldo;
-            totalF+=saldo;
+            const anoP = d.getUTCFullYear();
+            const mesAnoP = anoP * 100 + d.getUTCMonth();
+
+            if(mesAnoP < mesAnoBase) return;
+
+            const inativo = inativoMap[id] || 999999;
+            if (mesAnoBase >= inativo) return;
+
+            const originalStatus = String(row['Status'] || '').trim().toLowerCase();
+            
+            if (mesAnoP > mesAnoBase || originalStatus === 'a vencer' || originalStatus.includes('atraso')) {
+                const saldo=U.num(row['Saldo Devedor']);
+                anoF[anoP]=(anoF[anoP]||0)+saldo;
+                totalF+=saldo;
+            }
         });
         
         const sy=Object.keys(anoF).map(Number).sort();
