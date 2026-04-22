@@ -1,3360 +1,1111 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<!doctype html>
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ONTIME - Resumo Comparativo RB/Custo</title>
-    <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        /* ========================================================
-           IMPORTS & RESET
-           ======================================================== */
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Roboto:wght@400;500;700;900&family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap');
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        /* ========================================================
-           CSS CUSTOM PROPERTIES (TEMA CLARO)
-           ======================================================== */
-        :root {
-            --ontime-orange: #FF6E00;
-            --ontime-orange-light: #FF9A4A;
-            --ontime-orange-dark: #D95D00;
-            --ontime-orange-soft: rgba(255, 110, 0, 0.15);
-
-            --ontime-purple: #3C003C;
-            --ontime-purple-light: #5A005A;
-            --ontime-purple-dark: #2A002A;
-            --ontime-purple-soft: rgba(60, 0, 60, 0.08);
-
-            --color-resultado: #0d6efd;
-            --color-resultado-soft: rgba(13, 110, 253, 0.10);
-            --color-ticket: #0f766e;
-            --color-ticket-soft: rgba(15, 118, 110, 0.10);
-            --color-margem: #166534;
-            --color-margem-soft: rgba(22, 101, 52, 0.10);
-
-            --bg: #F0F2F5;
-            --bg-card: #FFFFFF;
-            --text-primary: #1e1e2e;
-            --text-secondary: #5A5A6E;
-            --border-color: #E2E8F0;
-            --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-
-            --font-primary: 'DM Sans', sans-serif;
-            --font-heading: 'Syne', sans-serif;
-            --transition-speed: 0.2s;
-        }
-
-        /* ========================================================
-           SCROLLBARS
-           ======================================================== */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #C0C4C8;
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #A0A4A8;
-        }
-
-        /* ========================================================
-           DARK MODE
-           ======================================================== */
-        body.dark-mode {
-            --bg: #121212;
-            --bg-card: #1E1E26;
-            --text-primary: #E0E0E0;
-            --text-secondary: #A0A0B0;
-            --border-color: #333344;
-            --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-            --ontime-purple-soft: rgba(255, 255, 255, 0.05);
-            --color-resultado-soft: rgba(13, 110, 253, 0.15);
-            --color-ticket-soft: rgba(15, 118, 110, 0.15);
-            --color-margem-soft: rgba(22, 101, 52, 0.15);
-        }
-
-        body.dark-mode ::-webkit-scrollbar-thumb {
-            background: #444455;
-        }
-
-        body.dark-mode header {
-            background: #181820;
-            border-bottom: 4px solid var(--ontime-orange);
-        }
-
-        body.dark-mode .sidebar {
-            background: #181820;
-            border-color: #333344;
-        }
-
-        body.dark-mode .btn {
-            background: #2A2A35;
-            color: #E0E0E0;
-            border-color: #444455;
-        }
-
-        body.dark-mode .btn:hover {
-            background: var(--ontime-orange);
-            color: white;
-            border-color: var(--ontime-orange);
-        }
-
-        body.dark-mode .btn.primary {
-            background: var(--ontime-orange);
-            color: white;
-        }
-
-        body.dark-mode .nav-tab {
-            background: #2A2A35;
-            border-color: #444455;
-            color: #A0A0B0;
-        }
-
-        body.dark-mode .nav-tab.active {
-            background: var(--ontime-purple-light);
-            color: white;
-            border-color: var(--ontime-purple-light);
-        }
-
-        body.dark-mode .filter-btn {
-            background: #2A2A35;
-            color: #CCC;
-            border-color: #2A2A35;
-        }
-
-        body.dark-mode .filter-btn.active {
-            background: var(--ontime-orange-soft);
-            color: var(--ontime-orange);
-            border-color: var(--ontime-orange);
-        }
-
-        body.dark-mode .mode-btn {
-            background: #2A2A35;
-            color: #CCC;
-        }
-
-        body.dark-mode .empty-state-msg {
-            background: #1E1E26;
-            border-color: #333344;
-        }
-
-        body.dark-mode .sidebar-title {
-            color: #FFFFFF;
-        }
-
-        body.dark-mode .kpi-card .valor {
-            color: #FFFFFF;
-        }
-
-        body.dark-mode #modeRB.active {
-            color: #FFFFFF;
-            background: var(--ontime-purple-light);
-            border-color: var(--ontime-purple-light);
-        }
-
-        body.dark-mode .kpi-card .variacao.neutra {
-            background: #333344;
-            color: #CCC;
-        }
-
-        body.dark-mode .clear-filters-btn {
-            background: #2A2A35;
-            color: #FFFFFF;
-            border-color: #5A005A;
-        }
-
-        body.dark-mode .clear-filters-btn:hover {
-            background: var(--ontime-purple-light);
-        }
-
-        body.dark-mode .loading-overlay {
-            background: rgba(18, 18, 18, 0.95);
-            color: #FFF;
-        }
-
-        /* Dark Mode - Tabela */
-        body.dark-mode thead th {
-            background-color: #2A2A35;
-            border-bottom-color: var(--ontime-orange);
-            color: #E0E0E0;
-        }
-
-        body.dark-mode th.mes-header {
-            background-color: #1E1E26;
-        }
-
-        body.dark-mode td {
-            background-color: #1E1E26;
-            color: var(--text-primary);
-            border-bottom-color: var(--border-color);
-            border-right-color: var(--border-color);
-        }
-
-        body.dark-mode tbody td.grupo-mes-par {
-            background-color: #24242E;
-        }
-
-        body.dark-mode tbody td.grupo-mes-impar {
-            background-color: #1E1E26;
-        }
-
-        body.dark-mode tbody tr:hover td {
-            background-color: #2A2A35;
-        }
-
-        body.dark-mode th:nth-child(1),
-        body.dark-mode th:nth-child(2),
-        body.dark-mode th:nth-child(3),
-        body.dark-mode th:nth-child(4) {
-            background-color: #2A2A35;
-            border-right-color: var(--border-color);
-        }
-
-        body.dark-mode td:nth-child(1),
-        body.dark-mode td:nth-child(2),
-        body.dark-mode td:nth-child(3),
-        body.dark-mode td:nth-child(4) {
-            background-color: #1E1E26;
-            color: #A0A0B0;
-            border-right-color: var(--border-color);
-        }
-
-        body.dark-mode tbody tr:hover td:nth-child(1),
-        body.dark-mode tbody tr:hover td:nth-child(2),
-        body.dark-mode tbody tr:hover td:nth-child(3),
-        body.dark-mode tbody tr:hover td:nth-child(4) {
-            background-color: #2A2A35;
-        }
-
-        /* Dark Mode - KPI Icons */
-        body.dark-mode .kpi-rb .kpi-icon {
-            background: rgba(60, 0, 60, 0.25);
-            color: #d090d0;
-        }
-
-        body.dark-mode .kpi-custo .kpi-icon {
-            background: rgba(255, 110, 0, 0.2);
-            color: var(--ontime-orange-light);
-        }
-
-        body.dark-mode .kpi-margem .kpi-icon {
-            background: rgba(22, 101, 52, 0.2);
-            color: #4ade80;
-        }
-
-        body.dark-mode .kpi-ticket .kpi-icon {
-            background: rgba(15, 118, 110, 0.2);
-            color: #5eead4;
-        }
-
-        /* ========================================================
-           BASE & LAYOUT
-           ======================================================== */
-        body {
-            background-color: var(--bg);
-            color: var(--text-primary);
-            font-family: var(--font-primary);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            margin: 0;
-            overflow-x: hidden;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        /* ========================================================
-           HEADER
-           ======================================================== */
-        header {
-            background: #3C003C;
-            padding: 15px 30px;
-            border-bottom: 4px solid var(--ontime-orange);
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            width: 100%;
-            transition: background-color 0.3s;
-        }
-
-        header h1 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 24px;
-            font-weight: 800;
-            color: white;
-            margin: 0;
-        }
-
-        header h1 span {
-            color: var(--ontime-orange);
-            margin-left: -3px;
-        }
-
-        .brand-img {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            object-fit: cover;
-            box-shadow: 0 0 0 2px rgba(255, 110, 0, 0.3);
-            vertical-align: middle;
-            margin-right: 10px;
-            margin-bottom: 4px;
-        }
-
-        .menu-toggle {
-            display: none;
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 26px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .menu-toggle:hover {
-            transform: scale(1.1);
-            color: var(--ontime-orange);
-        }
-
-        /* ========================================================
-           BOTÃO VOLTAR
-           ======================================================== */
-        .btn-voltar {
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-family: var(--font-primary);
-            padding-right: 15px;
-            border-right: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-voltar:hover {
-            color: var(--ontime-orange);
-        }
-
-        .btn-voltar i {
-            font-size: 16px;
-            margin-bottom: 1px;
-        }
-
-        /* ========================================================
-           APP CONTAINER & SIDEBAR
-           ======================================================== */
-        .app-container {
-            display: flex;
-            flex: 1;
-            align-items: stretch;
-            position: relative;
-            width: 100%;
-        }
-
-        .sidebar {
-            width: 280px;
-            background: var(--bg-card);
-            border-right: 1px solid var(--border-color);
-            padding: 25px 20px;
-            overflow-y: auto;
-            height: calc(100vh - 66px);
-            position: sticky;
-            top: 66px;
-            z-index: 90;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
-            transition: left 0.3s ease;
-        }
-
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 85;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .main-content {
-            flex: 1;
-            padding: 0;
-            overflow-x: auto;
-            background-color: var(--bg);
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s;
-        }
-
-        .content-body {
-            padding: 25px 30px;
-            flex: 1;
-        }
-
-        /* ========================================================
-           LOADING / SPLASH SCREEN
-           ======================================================== */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(240, 242, 245, 0.95);
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.5s;
-        }
-
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .spinner-large {
-            width: 60px;
-            height: 60px;
-            border: 6px solid var(--ontime-purple-soft);
-            border-top: 6px solid var(--ontime-orange);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        .loading-overlay h2 {
-            font-family: var(--font-heading);
-            color: var(--ontime-purple);
-            margin: 0;
-        }
-
-        .loading-overlay h2 span {
-            color: var(--ontime-orange);
-        }
-
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
-
-        .spin-anim {
-            animation: spin 1s linear infinite;
-        }
-
-        /* ========================================================
-           NAVEGAÇÃO (TABS)
-           ======================================================== */
-        .nav-bar {
-            display: flex;
-            justify-content: flex-start;
-            gap: 10px;
-            margin-bottom: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .nav-tab {
-            padding: 8px 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 30px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-speed);
-            font-size: 14px;
-        }
-
-        .nav-tab:hover {
-            border-color: var(--ontime-purple);
-            color: var(--ontime-purple);
-        }
-
-        .nav-tab.active {
-            background: var(--ontime-purple);
-            color: white;
-            border-color: var(--ontime-purple-dark);
-            box-shadow: 0 4px 10px rgba(60, 0, 60, 0.15);
-        }
-
-        /* ========================================================
-           BOTÕES
-           ======================================================== */
-        .btn {
-            background: white;
-            border: 1px solid var(--border-color);
-            color: var(--ontime-purple);
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-speed);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-
-        .btn:hover {
-            background: var(--ontime-purple-soft);
-            border-color: var(--ontime-purple);
-        }
-
-        .btn.primary {
-            background: var(--ontime-orange);
-            color: white;
-            border-color: var(--ontime-orange-dark);
-        }
-
-        .btn.primary:hover {
-            background: var(--ontime-orange-dark);
-            color: white;
-            box-shadow: 0 4px 10px rgba(255, 110, 0, 0.3);
-        }
-
-        .btn.icon-only {
-            padding: 8px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            font-size: 16px;
-        }
-
-        /* ========================================================
-           PÁGINAS
-           ======================================================== */
-        .page {
-            display: none;
-        }
-
-        .page.active {
-            display: block;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ========================================================
-           TÍTULO DE EXPORTAÇÃO
-           ======================================================== */
-        #export-title-container {
-            display: none;
-            text-align: center;
-            margin-bottom: 25px;
-            padding-bottom: 12px;
-            border-bottom: 3px solid var(--ontime-orange);
-        }
-
-        #export-title-text {
-            font-family: var(--font-heading);
-            font-size: 24px;
-            font-weight: 900;
-            color: var(--ontime-purple);
-            margin: 0 0 6px 0;
-        }
-
-        #export-subtitle {
-            font-family: var(--font-primary);
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            margin: 0;
-        }
-
-        body.exporting #export-title-container {
-            display: block;
-        }
-
-        body.exporting #export-title-text {
-            color: #3C003C !important;
-        }
-
-        body.exporting #export-subtitle {
-            color: #5A5A6E !important;
-        }
-
-        /* ========================================================
-           FILTROS / SIDEBAR
-           ======================================================== */
-        .sidebar-title {
-            font-size: 14px;
-            font-weight: 800;
-            color: var(--ontime-purple);
-            margin-bottom: 15px;
-            display: block;
-            transition: color 0.3s;
-        }
-
-        .filtro-grupo {
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px;
-            transition: border-color 0.3s;
-        }
-
-        .filtro-grupo:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-        }
-
-        .filtro-grupo label {
-            display: block;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-            transition: color 0.3s;
-        }
-
-        .quick-links {
-            float: right;
-            font-weight: 600;
-            font-size: 10px;
-            text-transform: none;
-        }
-
-        .quick-links a {
-            color: var(--ontime-orange);
-            cursor: pointer;
-            text-decoration: none;
-            margin-left: 5px;
-            transition: color 0.2s;
-        }
-
-        .quick-links a:hover {
-            color: var(--ontime-purple);
-            text-decoration: underline;
-        }
-
-        .buttons-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .filter-btn {
-            background: var(--bg);
-            border: 1px solid transparent;
-            color: var(--text-secondary);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-speed);
-            font-size: 12px;
-        }
-
-        .filter-btn:hover {
-            background: var(--border-color);
-            color: var(--text-primary);
-        }
-
-        .filter-btn.active {
-            background: var(--ontime-orange-soft);
-            color: var(--ontime-orange-dark);
-            border-color: var(--ontime-orange);
-            font-weight: 700;
-        }
-
-        .mode-buttons {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .mode-btn {
-            flex: 1;
-            text-align: center;
-            background: var(--bg);
-            border: 1px solid transparent;
-            color: var(--text-secondary);
-            padding: 6px 0;
-            border-radius: 20px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all var(--transition-speed);
-            font-size: 12px;
-        }
-
-        #modeCusto.active {
-            background: var(--ontime-orange-soft);
-            color: var(--ontime-orange-dark);
-            border-color: var(--ontime-orange);
-        }
-
-        #modeRB.active {
-            background: var(--ontime-purple-soft);
-            color: var(--ontime-purple);
-            border-color: var(--ontime-purple);
-        }
-
-        .clear-filters-btn {
-            background: var(--bg-card);
-            color: var(--ontime-purple);
-            border: 1px solid var(--ontime-purple);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-            font-size: 12px;
-            transition: all 0.2s;
-        }
-
-        .clear-filters-btn:hover {
-            background: var(--ontime-purple);
-            color: white;
-        }
-
-        .empty-state-msg {
-            display: none;
-            text-align: center;
-            padding: 60px 20px;
-            background: var(--bg-card);
-            border-radius: 16px;
-            border: 1px dashed var(--border-color);
-            margin-top: 20px;
-            transition: all 0.3s;
-        }
-
-        .empty-state-msg h2 {
-            color: var(--ontime-orange);
-            font-family: var(--font-heading);
-            margin-bottom: 10px;
-        }
-
-        #page-dashboard.is-empty .empty-state-msg {
-            display: block;
-        }
-
-        #page-dashboard.is-empty #export-block-1,
-        #page-dashboard.is-empty #export-block-2,
-        #page-dashboard.is-empty #export-block-3 {
-            display: none;
-        }
-
-        /* ========================================================
-           KPIs
-           ======================================================== */
-        .kpis {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            margin-bottom: 25px;
-        }
-
-        .kpi-card {
-            background: var(--bg-card);
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--card-shadow);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            border-radius: 16px 0 0 16px;
-        }
-
-        .kpi-card.kpi-rb::before     { background: var(--ontime-purple); }
-        .kpi-card.kpi-custo::before   { background: var(--ontime-orange); }
-        .kpi-card.kpi-margem::before  { background: var(--color-margem); }
-        .kpi-card.kpi-ticket::before  { background: var(--color-ticket); }
-
-        .kpi-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .kpi-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        .kpi-rb .kpi-icon     { background: var(--ontime-purple-soft); color: var(--ontime-purple); }
-        .kpi-custo .kpi-icon   { background: var(--ontime-orange-soft); color: var(--ontime-orange-dark); }
-        .kpi-margem .kpi-icon  { background: var(--color-margem-soft); color: var(--color-margem); }
-        .kpi-ticket .kpi-icon  { background: var(--color-ticket-soft); color: var(--color-ticket); }
-
-        .kpi-card h3 {
-            font-family: 'Roboto', sans-serif;
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin: 0;
-            font-weight: 700;
-            transition: color 0.3s;
-        }
-
-        .kpi-card .valor {
-            font-family: 'Roboto', sans-serif;
-            font-size: 24px;
-            font-weight: 900;
-            color: var(--text-primary);
-            line-height: 1.1;
-            transition: color 0.3s;
-        }
-
-        .kpi-card .variacao {
-            font-size: 11px;
-            font-weight: 700;
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: #f0f0f0;
-            width: fit-content;
-            transition: background 0.3s;
-        }
-
-        .kpi-card .variacao.positiva { color: #008148; background: #E6F4EA; }
-        .kpi-card .variacao.negativa { color: #C62828; background: #FCE8E6; }
-        .kpi-card .variacao.neutra   { color: var(--text-secondary); background: var(--border-color); }
-
-        /* ========================================================
-           GRÁFICOS
-           ======================================================== */
-        .graficos {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 25px;
-        }
-
-        .grafico-linha-unica {
-            display: block;
-            margin-bottom: 25px;
-        }
-
-        .grafico-card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--card-shadow);
-            display: flex;
-            flex-direction: column;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .grafico-card h2 {
-            font-family: var(--font-primary);
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
-            transition: color 0.3s;
-        }
-
-        .grafico-card canvas {
-            max-height: 320px;
-            width: 100% !important;
-        }
-
-        #graficoMensal {
-            max-height: 400px;
-        }
-
-        /* ========================================================
-           TABELA
-           ======================================================== */
-        .tabela-container {
-            overflow-x: auto;
-            overflow-y: auto;
-            max-height: 600px;
-            background: var(--bg-card);
-            border-radius: 16px;
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s;
-            border: 1px solid var(--border-color);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-size: 13px;
-            min-width: 800px;
-        }
-
-        th, td {
-            background-clip: padding-box;
-            padding: 10px;
-            white-space: nowrap;
-            text-align: right;
-            transition: all 0.3s;
-        }
-
-        th {
-            border-bottom: 2px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-        }
-
-        td {
-            border-bottom: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-        }
-
-        th:last-child, td:last-child {
-            border-right: none;
-        }
-
-        thead th {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            background-color: var(--ontime-purple);
-            color: white;
-            font-weight: 600;
-            border-bottom: 2px solid var(--ontime-purple-dark);
-        }
-
-        tr:nth-child(2) th {
-            top: 41px;
-            z-index: 20;
-            font-size: 12px;
-        }
-
-        th:nth-child(1), th:nth-child(2), th:nth-child(3), th:nth-child(4) {
-            text-align: left;
-        }
-
-        td:nth-child(1), td:nth-child(2), td:nth-child(3), td:nth-child(4) {
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        thead th:nth-child(1), thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) {
-            z-index: 50 !important;
-            left: 0;
-        }
-
-        tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(4) {
-            position: sticky;
-            left: 0;
-            z-index: 15;
-            background-color: var(--bg-card);
-        }
-
-        th:nth-child(1), td:nth-child(1) { min-width: 100px; left: 0; }
-        th:nth-child(2), td:nth-child(2) { min-width: 130px; left: 100px; }
-        th:nth-child(3), td:nth-child(3) { min-width: 120px; left: 230px; }
-        th:nth-child(4), td:nth-child(4) {
-            min-width: 100px;
-            left: 350px;
-            border-right: 1px solid var(--border-color);
-            box-shadow: 4px 0 6px -4px rgba(0, 0, 0, 0.15);
-        }
-
-        tbody tr:hover td {
-            background-color: #F8FAFC;
-        }
-
-        tbody td.grupo-mes-par  { background-color: #FAFAFA; }
-        tbody td.grupo-mes-impar { background-color: #FFFFFF; }
-
-        th.subcol.sortable {
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        th.subcol.sortable:hover {
-            color: var(--ontime-orange-light);
-        }
-
-        th.mes-header {
-            text-align: center;
-            background-color: #2A002A;
-        }
-
-        /* ========================================================
-           PAGINAÇÃO DA TABELA
-           ======================================================== */
-        .pagination-bar {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-            padding: 12px 16px;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border-color);
-            border-radius: 0 0 16px 16px;
-        }
-
-        .pagination-bar button {
-            background: var(--bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            padding: 5px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .pagination-bar button:hover:not(:disabled) {
-            background: var(--ontime-purple-soft);
-            border-color: var(--ontime-purple);
-            color: var(--ontime-purple);
-        }
-
-        .pagination-bar button.active {
-            background: var(--ontime-purple);
-            color: white;
-            border-color: var(--ontime-purple-dark);
-        }
-
-        .pagination-bar button:disabled {
-            opacity: 0.4;
-            cursor: default;
-        }
-
-        .pagination-bar .page-info {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            padding: 0 8px;
-        }
-
-        /* ========================================================
-           FOOTER
-           ======================================================== */
-        footer {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 12px;
-            margin-top: 30px;
-            padding-bottom: 20px;
-            transition: color 0.3s;
-        }
-
-        /* ========================================================
-           EXPORTAÇÃO & RESPONSIVIDADE
-           ======================================================== */
-        body.exporting * {
-            transition: none !important;
-            animation: none !important;
-        }
-
-        body.exporting .sidebar,
-        body.exporting .nav-bar,
-        body.exporting .menu-toggle {
-            display: none !important;
-        }
-
-        body.exporting .app-container {
-            display: block;
-        }
-
-        body.exporting .main-content {
-            padding: 0 !important;
-            width: 100%;
-            background: white !important;
-        }
-
-        body.exporting .grafico-card,
-        body.exporting .kpi-card {
-            border: 1px solid #E2E8F0 !important;
-            box-shadow: none !important;
-        }
-
-        body.exporting header {
-            display: none !important;
-        }
-
-        @media (max-width: 1024px) {
-            .menu-toggle { display: block; }
-
-            .sidebar {
-                position: fixed;
-                left: -320px;
-                top: 0;
-                height: 100vh;
-                width: 300px;
-                z-index: 10000;
-                box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
-                padding-top: 20px;
-            }
-
-            .sidebar.open { left: 0; }
-
-            .sidebar-overlay.show {
-                display: block;
-                opacity: 1;
-                z-index: 9999;
-            }
-
-            .graficos {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* ========================================================
-           MODO IMPRESSÃO (Nativo)
-           ======================================================== */
-        @media print {
-            .sidebar, .nav-bar, header, footer, .quick-links,
-            .export-buttons, .menu-toggle { display: none !important; }
-
-            body, .main-content, .app-container {
-                background: white !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-                display: block !important;
-            }
-
-            #export-title-container {
-                display: block !important;
-                border-bottom: 3px solid #FF6E00 !important;
-            }
-
-            #export-title-text { color: #3C003C !important; }
-            #export-subtitle   { color: #5A5A6E !important; }
-
-            .kpis {
-                display: flex;
-                justify-content: space-between;
-                gap: 10px;
-                margin-bottom: 15px;
-                page-break-inside: avoid;
-            }
-
-            .kpi-card {
-                flex: 1;
-                margin: 0;
-                padding: 15px;
-                border: 1px solid #CCC !important;
-                box-shadow: none !important;
-                border-radius: 8px !important;
-            }
-
-            .graficos {
-                display: flex;
-                flex-direction: row;
-                justify-content: space-between;
-                gap: 15px;
-                margin-bottom: 15px;
-                page-break-inside: avoid;
-            }
-
-            .grafico-card {
-                flex: 1;
-                margin: 0;
-                padding: 15px;
-                border: 1px solid #CCC !important;
-                box-shadow: none !important;
-                border-radius: 8px !important;
-                page-break-inside: avoid;
-            }
-
-            .grafico-linha-unica {
-                margin-bottom: 15px;
-                page-break-inside: avoid;
-            }
-
-            canvas                { max-height: 280px !important; }
-            #graficoMensal         { max-height: 300px !important; }
-            #graficoCentroCusto    { max-width: 250px !important; max-height: 250px !important; margin: 0 auto; display: block; }
-
-            @page { size: landscape; margin: 5mm; }
-        }
-
-        /* ========================================================
-           TOAST
-           ======================================================== */
-        .toast {
-            position: fixed;
-            bottom: 28px;
-            left: 50%;
-            transform: translateX(-50%) translateY(20px);
-            background: #C62828;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 600;
-            z-index: 99999;
-            opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
-            pointer-events: none;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            white-space: nowrap;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .toast.success {
-            background: #166534;
-        }
-
-        /* ========================================================
-           RETRY BAR
-           ======================================================== */
-        .retry-bar {
-            display: none;
-            justify-content: center;
-            align-items: center;
-            gap: 12px;
-            padding: 18px;
-            background: var(--bg-card);
-            border: 1px dashed var(--border-color);
-            border-radius: 12px;
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .retry-bar.visible {
-            display: flex;
-        }
-
-        .retry-bar p {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin: 0;
-        }
-
-        .retry-bar button {
-            background: var(--ontime-orange);
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 13px;
-            transition: background 0.2s;
-        }
-
-        .retry-bar button:hover {
-            background: var(--ontime-orange-dark);
-        }
-
-        /* ========================================================
-           GRÁFICO DE MARGEM
-           ======================================================== */
-        .grafico-margem-container {
-            margin-bottom: 25px;
-        }
-
-        .export-buttons {
-            display: flex;
-            gap: 8px;
-            margin-left: auto;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-    </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pagamentos · Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --plum: #3C003C;
+    --plum-deep: #2A0028;
+    --plum-light: #5C1A5C;
+    --orange: #FF6E00;
+    --orange-soft: #FFF1E4;
+    --orange-deep: #D25500;
+    --ink: #1A0F1A;
+    --muted: #6B5E6B;
+    --line: #E8E0E8;
+    --line-soft: #F4EFF4;
+    --surface: #FFFFFF;
+    --bg: #FAF7F5;
+    --ok: #1F7A3D;
+    --ok-soft: #EAF7EE;
+    --warn: #C77700;
+    --warn-soft: #FFF4E0;
+    --err: #B91C1C;
+    --err-soft: #FCE9E9;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Manrope', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14.5px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============= Header ============= */
+  header.hero {
+    background: linear-gradient(135deg, var(--plum-deep) 0%, var(--plum) 60%, var(--plum-light) 100%);
+    color: white;
+    padding: 28px 40px 56px;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero::before {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -10%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(255,110,0,0.18) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  header.hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 100%, rgba(255,110,0,0.08) 0%, transparent 40%);
+    pointer-events: none;
+  }
+  .hero-bar {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-mark {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.12);
+    display: grid; place-items: center;
+    color: var(--orange);
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 22px;
+  }
+  .brand-text h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .brand-text p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.65);
+  }
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 999px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.85);
+  }
+  .stamp .dot {
+    width: 7px; height: 7px;
+    border-radius: 999px;
+    background: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74,222,128,0.25);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .stamp.stale .dot { background: var(--orange); box-shadow: 0 0 0 3px rgba(255,110,0,0.3); }
+  .stamp.error .dot { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.3); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .btn-print {
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-print:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.3); }
+
+  .hero-body {
+    max-width: 1400px;
+    margin: 32px auto 0;
+    position: relative;
+  }
+  .hero-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 42px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin: 0 0 6px;
+  }
+  .hero-title em {
+    font-style: italic;
+    color: var(--orange);
+    font-weight: 500;
+  }
+  .hero-sub {
+    color: rgba(255,255,255,0.7);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  /* ============= Layout ============= */
+  main {
+    max-width: 1400px;
+    margin: -32px auto 64px;
+    padding: 0 40px;
+    position: relative;
+    z-index: 1;
+  }
+  section { margin-bottom: 48px; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    margin: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .section-title .date {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 400;
+  }
+  .section-sub {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  /* ============= KPIs ============= */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .kpi {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 22px 24px;
+    border: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 32px -14px rgba(60,0,60,0.15);
+  }
+  .kpi.accent { background: linear-gradient(135deg, var(--plum) 0%, var(--plum-deep) 100%); color: white; border-color: transparent; }
+  .kpi.accent::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(255,110,0,0.2) 0%, transparent 65%);
+  }
+  .kpi-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+  .kpi.accent .kpi-label { color: rgba(255,255,255,0.7); }
+  .kpi-value {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    position: relative;
+  }
+  .kpi-value .prefix {
+    font-size: 16px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .kpi.accent .kpi-value .prefix { color: rgba(255,255,255,0.6); }
+  .kpi-value em {
+    font-style: normal;
+    color: var(--orange);
+  }
+  .kpi-sub {
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+  }
+  .kpi.accent .kpi-sub { color: rgba(255,255,255,0.75); }
+  .kpi-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: var(--orange-soft);
+    color: var(--orange-deep);
+    border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 11px;
+  }
+
+  /* ============= Cards wrap ============= */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--line-soft);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .card-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 17px;
+    margin: 0;
+    letter-spacing: -0.005em;
+  }
+  .card-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* ============= Tabs ============= */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--line);
+    padding: 0 24px;
+    background: linear-gradient(to bottom, rgba(60,0,60,0.015), transparent);
+  }
+  .tab {
+    padding: 14px 18px;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: -1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--plum); border-bottom-color: var(--orange); }
+  .tab-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    font-size: 11px;
+    padding: 1px 7px;
+    background: var(--line-soft);
+    border-radius: 999px;
+    color: var(--muted);
+  }
+  .tab.active .tab-count { background: var(--orange-soft); color: var(--orange-deep); }
+
+  /* ============= Toolbar ============= */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    padding: 14px 24px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+  .search input {
+    width: 100%;
+    padding: 9px 12px 9px 36px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13.5px;
+    background: var(--bg);
+    transition: all 0.15s;
+  }
+  .search input:focus {
+    outline: 0;
+    border-color: var(--orange);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(255,110,0,0.1);
+  }
+  .search::before {
+    content: '⌕';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 16px;
+    pointer-events: none;
+  }
+  .filter-chip {
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .filter-chip:hover { border-color: var(--plum); color: var(--ink); }
+  .filter-chip.active { background: var(--plum); color: white; border-color: var(--plum); }
+  .toolbar-right {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  .toolbar-right strong { color: var(--plum); font-weight: 600; }
+
+  /* ============= Table ============= */
+  .table-wrap { overflow-x: auto; }
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.data thead th {
+    text-align: left;
+    padding: 11px 16px;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  table.data thead th:hover { color: var(--ink); background: var(--line-soft); }
+  table.data thead th.sorted { color: var(--plum); }
+  table.data thead th.sorted::after {
+    content: attr(data-dir);
+    margin-left: 4px;
+    color: var(--orange);
+  }
+  table.data tbody tr {
+    border-bottom: 1px solid var(--line-soft);
+    transition: background 0.1s;
+  }
+  table.data tbody tr:hover { background: rgba(255,110,0,0.03); }
+  table.data tbody tr.flag-approval { background: var(--warn-soft); }
+  table.data tbody tr.flag-approval:hover { background: #FFE8BD; }
+  table.data td {
+    padding: 11px 16px;
+    vertical-align: top;
+  }
+  table.data td.num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  table.data td.num.strong { font-weight: 600; color: var(--ink); }
+  table.data .hist { color: var(--muted); font-size: 12px; }
+  table.data td .pill {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--line-soft);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  table.data td .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  table.data td .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  table.data td .pill.nf { background: rgba(255,110,0,0.1); color: var(--orange-deep); }
+  table.data td .pill.bol { background: rgba(60,0,60,0.08); color: var(--plum); }
+  table.data td .pill.rd { background: rgba(31,122,61,0.1); color: var(--ok); }
+
+  tfoot.data td {
+    padding: 14px 16px;
+    background: var(--bg);
+    font-weight: 600;
+    border-top: 2px solid var(--line);
+    font-size: 13px;
+  }
+  tfoot.data .num {
+    font-family: 'JetBrains Mono', monospace;
+    text-align: right;
+    color: var(--plum);
+    font-weight: 700;
+  }
+
+  /* ============= Categoria panel ============= */
+  .cat-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--line-soft);
+    background: linear-gradient(to bottom, rgba(60,0,60,0.02), transparent);
+  }
+  .cat-item {
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: var(--surface);
+  }
+  .cat-item.active { border-color: var(--orange); box-shadow: 0 4px 14px -6px rgba(255,110,0,0.25); }
+  .cat-item .cat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .cat-item .cat-value {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.01em;
+  }
+  .cat-item .cat-sub {
+    margin: 4px 0 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ============= Alertas ============= */
+  .alerts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .alert {
+    padding: 14px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    border: 1px solid;
+  }
+  .alert-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex: 0 0 28px;
+  }
+  .alert.warn { background: var(--warn-soft); border-color: #F5DFA8; color: #6B4500; }
+  .alert.warn .alert-icon { background: var(--warn); color: white; }
+  .alert.info { background: var(--orange-soft); border-color: #FBDAB8; color: #7A3600; }
+  .alert.info .alert-icon { background: var(--orange); color: white; }
+  .alert.ok { background: var(--ok-soft); border-color: #B8E0C6; color: #0F4D25; }
+  .alert.ok .alert-icon { background: var(--ok); color: white; }
+  .alert strong { font-weight: 700; }
+  .alert small { display: block; opacity: 0.75; margin-top: 2px; font-size: 11.5px; }
+
+  /* ============= Empty / Error state ============= */
+  .empty-state {
+    padding: 80px 32px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: 18px;
+  }
+  .empty-state h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 24px;
+    margin: 0 0 10px;
+  }
+  .empty-state p { color: var(--muted); margin: 0 0 20px; max-width: 520px; margin-inline: auto; }
+  .empty-state a {
+    color: var(--orange);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .empty-state a:hover { text-decoration: underline; }
+  .empty-state code {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--line-soft);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  /* ============= Fade-in animation ============= */
+  .reveal { animation: reveal 0.5s ease-out both; }
+  .reveal:nth-child(2) { animation-delay: 0.06s; }
+  .reveal:nth-child(3) { animation-delay: 0.12s; }
+  .reveal:nth-child(4) { animation-delay: 0.18s; }
+  @keyframes reveal {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============= Print ============= */
+  @media print {
+    header.hero { background: var(--plum) !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .btn-print, .toolbar, .tabs { display: none !important; }
+    body { background: white; }
+    .card, .kpi { break-inside: avoid; box-shadow: none !important; }
+    section { margin-bottom: 24px; }
+    main { margin-top: 0; padding: 0 20px; }
+    .kpi-grid { grid-template-columns: repeat(4, 1fr); }
+    .table-wrap { overflow: visible; }
+    table.data { font-size: 10.5px; }
+    table.data thead th { position: static; }
+  }
+
+  @media (max-width: 1100px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .cat-summary { grid-template-columns: 1fr; }
+    .hero-title { font-size: 34px; }
+  }
+  @media (max-width: 640px) {
+    header.hero { padding: 22px 20px 44px; }
+    main { padding: 0 20px; margin-top: -28px; }
+    .hero-title { font-size: 28px; }
+    .kpi-grid { grid-template-columns: 1fr; }
+    .kpi-value { font-size: 28px; }
+  }
+</style>
 </head>
 <body>
 
-<!-- ================================================================
-     LOADING OVERLAY
-     ================================================================ -->
-<div id="loadingOverlay" class="loading-overlay" role="status" aria-live="polite" aria-label="Carregando dados do sistema">
-    <div style="text-align:center;">
-        <div style="width:56px;height:56px;border:5px solid rgba(60,0,60,0.15);border-top:5px solid #FF6E00;border-radius:50%;animation:spin 0.9s linear infinite;margin:0 auto 20px;"></div>
-        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#3C003C;">ON<span style="color:#FF6E00;">TIME</span></div>
-        <p style="color:#5A5A6E;margin-top:6px;font-size:13px;font-family:'DM Sans',sans-serif;" id="loadingStatusText">Carregando dados do sistema...</p>
+<header class="hero">
+  <div class="hero-bar">
+    <div class="brand">
+      <div class="brand-mark">₣</div>
+      <div class="brand-text">
+        <h1>Pagamentos</h1>
+        <p>Dashboard executivo</p>
+      </div>
     </div>
-</div>
-
-<!-- TOAST -->
-<div id="toastEl" class="toast" role="alert" aria-live="assertive"><i class="ph-fill ph-warning-circle"></i><span id="toastMsg"></span></div>
-
-<!-- SIDEBAR OVERLAY (mobile) -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-<!-- ================================================================
-     HEADER
-     ================================================================ -->
-<header id="header-area" role="banner">
-    <a href="../" class="btn-voltar" id="btnVoltar" title="Voltar ao Menu Principal"><i class="ph ph-arrow-left"></i> Voltar</a>
-    <button class="menu-toggle" id="menuToggleBtn" title="Menu Filtros" aria-label="Abrir menu de filtros"><i class="ph ph-list"></i></button>
-    <h1><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="brand-img"> ON<span>TIME</span> | Resumo Comparativo RB / Custo</h1>
+    <div class="header-actions">
+      <span class="stamp" id="stamp"><span class="dot"></span><span id="stamp-text">carregando…</span></span>
+      <button class="btn-print" onclick="window.print()">Imprimir / PDF</button>
+    </div>
+  </div>
+  <div class="hero-body">
+    <h2 class="hero-title" id="hero-title">Carregando dados<em>…</em></h2>
+    <p class="hero-sub" id="hero-sub">&nbsp;</p>
+  </div>
 </header>
 
-<!-- ================================================================
-     APP CONTAINER
-     ================================================================ -->
-<div class="app-container">
-    <nav class="sidebar" id="sidebar" role="navigation" aria-label="Filtros do dashboard"></nav>
+<main id="main">
+  <div class="empty-state" id="initial-state">
+    <h2>Aguarde, carregando dados…</h2>
+    <p>Se esta tela ficar aqui por mais de alguns segundos, é porque ainda não há um arquivo <code>data.json</code> no repositório.</p>
+  </div>
+</main>
 
-    <main class="main-content" id="print-area" role="main">
-        <div class="content-body">
-
-            <!-- Título dinâmico para exportação -->
-            <div id="export-title-container">
-                <h2 id="export-title-text">ONTIME | Resumo Comparativo</h2>
-                <p id="export-subtitle"></p>
-            </div>
-
-            <!-- NAV BAR -->
-            <div class="nav-bar" role="tablist" aria-label="Navegação entre páginas">
-                <div class="nav-tab active" id="tabDashboard" role="tab" aria-selected="true" aria-controls="page-dashboard" tabindex="0">
-                    <i class="ph-fill ph-chart-bar" style="font-size:15px;"></i> Dashboard
-                </div>
-                <div class="nav-tab" id="tabRelatorio" role="tab" aria-selected="false" aria-controls="page-relatorio" tabindex="0">
-                    <i class="ph-fill ph-file-text" style="font-size:15px;"></i> Relatório Mensal
-                </div>
-                <div style="flex:1"></div>
-                <button class="btn icon-only" id="darkModeBtn" title="Alternar Modo Escuro" aria-label="Alternar modo escuro"><i class="ph ph-moon"></i></button>
-                <div id="exportButtonsContainer" class="export-buttons" role="toolbar" aria-label="Botões de exportação"></div>
-                <button class="btn icon-only" id="atualizarBtn" title="Forçar Atualização (Ignorar Cache)" aria-label="Atualizar dados">
-                    <svg id="icone-atualizar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
-                        <path d="M21 3v5h-5"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- RETRY BAR (mostrada em caso de falha de rede) -->
-            <div class="retry-bar" id="retryBar" role="alert" aria-live="polite">
-                <p id="retryMessage">Erro ao carregar dados. Verifique sua conexão.</p>
-                <button id="retryBtn">Tentar novamente</button>
-            </div>
-
-            <!-- ============================================
-                 PÁGINA: DASHBOARD
-                 ============================================ -->
-            <div id="page-dashboard" class="page active" role="tabpanel" aria-labelledby="tabDashboard">
-                <div class="empty-state-msg" role="status">
-                    <h2>Ops, não há dados!</h2>
-                    <p>Nenhum dado encontrado com a combinação de filtros atuais. Tente limpar os filtros.</p>
-                </div>
-
-                <div id="export-block-1">
-                    <div class="kpis" role="region" aria-label="Indicadores-chave de performance">
-                        <div class="kpi-card kpi-rb">
-                            <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-trend-up"></i></div><h3>Receita Bruta</h3></div>
-                            <div class="valor" id="rbTotal" aria-label="Valor da receita bruta">R$ 0</div>
-                            <div class="variacao" id="varRb" aria-label="Variação da receita bruta">--</div>
-                        </div>
-                        <div class="kpi-card kpi-custo">
-                            <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-receipt"></i></div><h3>Custo Total</h3></div>
-                            <div class="valor" id="custoTotal" aria-label="Valor do custo total">R$ 0</div>
-                            <div class="variacao" id="varCusto" aria-label="Variação do custo total">--</div>
-                        </div>
-                        <div class="kpi-card kpi-margem">
-                            <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-percent"></i></div><h3>Margem Bruta</h3></div>
-                            <div class="valor" id="margem" aria-label="Margem bruta percentual">0%</div>
-                            <div class="variacao" id="varMargem" aria-label="Variação da margem">--</div>
-                        </div>
-                        <div class="kpi-card kpi-ticket">
-                            <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-users"></i></div><h3>Ticket Médio / Cliente</h3></div>
-                            <div class="valor" id="ticketMedio" aria-label="Ticket médio por cliente">R$ 0</div>
-                            <div class="variacao" id="varTicket" aria-label="Variação do ticket médio">--</div>
-                        </div>
-                    </div>
-                    <div class="grafico-linha-unica">
-                        <div class="grafico-card">
-                            <h2>Receita x Custo Mensal <span style="font-size:10px; font-weight:normal; color:var(--text-secondary);">(Clique nas barras para filtrar)</span></h2>
-                            <canvas id="graficoMensal"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="export-block-2">
-                    <div class="graficos">
-                        <div class="grafico-card"><h2>Total gerado por Trimestre</h2><canvas id="graficoTrimestre"></canvas></div>
-                        <div class="grafico-card"><h2>Soma por Cliente <span style="font-size:10px; font-weight:normal; color:var(--text-secondary);">(Clique para filtrar)</span></h2><canvas id="graficoTop10Horizontal"></canvas></div>
-                    </div>
-                    <div class="graficos">
-                        <div class="grafico-card"><h2>Percentual Acumulado por C.C. <span style="font-size:10px; font-weight:normal; color:var(--text-secondary);">(Clique nas fatias)</span></h2><canvas id="graficoCentroCusto"></canvas></div>
-                        <div class="grafico-card"><h2>Receita/Custo por Centro de Custo <span style="font-size:10px; font-weight:normal; color:var(--text-secondary);">(Clique nas barras)</span></h2><canvas id="graficoCCBarras"></canvas></div>
-                    </div>
-                </div>
-
-                <div id="export-block-3">
-                    <div class="grafico-linha-unica">
-                        <div class="grafico-card">
-                            <h2 id="tituloYoY">Comparativo Anual</h2>
-                            <div style="height:350px"><canvas id="graficoYoY"></canvas></div>
-                        </div>
-                    </div>
-                    <div class="grafico-linha-unica grafico-margem-container">
-                        <div class="grafico-card">
-                            <h2>Evolução da Margem Bruta (%) <span style="font-size:10px; font-weight:normal; color:var(--text-secondary);">Mês a mês</span></h2>
-                            <div style="height:280px"><canvas id="graficoMargem"></canvas></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ============================================
-                 PÁGINA: RELATÓRIO MENSAL
-                 ============================================ -->
-            <div id="page-relatorio" class="page" role="tabpanel" aria-labelledby="tabRelatorio">
-                <div class="tabela-container">
-                    <table id="tabelaRelatorioMensal" role="grid" aria-label="Relatório mensal detalhado">
-                        <thead id="theadRelatorio"></thead>
-                        <tbody id="tbodyRelatorioMensal"></tbody>
-                    </table>
-                </div>
-                <div class="pagination-bar" id="paginationBar" role="navigation" aria-label="Paginação do relatório"></div>
-            </div>
-
-            <footer>Dados atualizados em <span id="dataAtual"></span> - Ontime v54.1 (Enterprise Analytics Edition)</footer>
-        </div>
-    </main>
-</div>
-
-<!-- ================================================================
-     JAVASCRIPT — REFATORADO
-     ================================================================ -->
 <script>
-(function () {
-    'use strict';
-
-    /* ==========================================================
-       SEÇÃO 1: CONFIG — Constantes, URLs, cores, parâmetros
-       ========================================================== */
-    const Config = {
-        // SEGURANÇA: Endpoint público exposto no client-side.
-        // IDEAL: mover para backend/proxy autenticado para proteger a URL da planilha.
-        CSV_URL: 'https://controlcomparativo.controladoriaontimegestao.workers.dev/dados',
-        CACHE_KEY_DATA: 'ontime_csv_data',
-        CACHE_KEY_TIME: 'ontime_csv_time',
-        CACHE_TTL_MS: 300000, // 5 min
-        THEME_KEY: 'ontime-theme',
-
-        RETRY_MAX: 3,
-        RETRY_BACKOFF_MS: 2000,
-
-        ROWS_PER_PAGE: 50,
-
-        MESES_ORDEM: ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'],
-
-        MESES_NUMERO: { JAN: 1, FEV: 2, MAR: 3, ABR: 4, MAI: 5, JUN: 6, JUL: 7, AGO: 8, SET: 9, OUT: 10, NOV: 11, DEZ: 12 },
-
-        // Mapeamento operação → centro de custo / subnegócio
-        AUXILIAR: [
-            { operacao: 'LM',             cc: '30010101', centro: 'OTX B2C',  sub: 'LM' },
-            { operacao: 'FM',             cc: '30010105', centro: 'OT FM',    sub: 'FM' },
-            { operacao: 'BULK',           cc: '30010101', centro: 'OTX B2C',  sub: 'Bulk' },
-            { operacao: 'MELIONE',        cc: '30010104', centro: 'OTX ECO',  sub: 'MELIONE' },
-            { operacao: 'OTX_ECO',        cc: '30010104', centro: 'OTX ECO',  sub: 'Eco' },
-            { operacao: 'RENTALS',        cc: '30010107', centro: 'FLEET X',  sub: 'Rentals' },
-            { operacao: 'FROTA FIXA',     cc: '30010107', centro: 'FLEET X',  sub: 'Frota Fixa' },
-            { operacao: 'FROTA FIXA II',  cc: '30010107', centro: 'FLEET X',  sub: 'FROTA FIXA II' },
-            { operacao: 'FROTA FIXA III', cc: '30010107', centro: 'FLEET X',  sub: 'FROTA FIXA III' },
-            { operacao: 'FROTA FIXA IV',  cc: '30010107', centro: 'FLEET X',  sub: 'FROTA FIXA IV' },
-            { operacao: 'FTL',            cc: '30010106', centro: 'FTL',      sub: 'FTL' },
-            { operacao: 'LM_GT',          cc: '30010102', centro: 'OTX B2B',  sub: 'LM_GT' },
-            { operacao: 'LM_KA',          cc: '30010102', centro: 'OTX B2B',  sub: 'LM_KA' },
-            { operacao: 'LM_SW',          cc: '30010102', centro: 'OTX B2B',  sub: 'LM_SW' },
-            { operacao: 'APOIOS',         cc: '30010101', centro: 'OTX B2C',  sub: 'Apoios' }
-        ],
-
-        // Índice para lookup rápido
-        AUXILIAR_MAP: null,
-
-        CORES_DOUGHNUT: {
-            RB:    ['#3C003C', '#5A005A', '#780078', '#960096', '#B400B4', '#D200D2'],
-            Custo: ['#FF6E00', '#FF8522', '#FF9C44', '#FFB366', '#FFCA88', '#FFE1AA']
-        },
-
-        // Cores centralizadas para PDF e charts
-        CHART_COLORS: {
-            receita_bg:    'rgba(60, 0, 60, 0.85)',
-            receita_border: '#2A002A',
-            custo_bg:      'rgba(255, 110, 0, 0.85)',
-            custo_border:  '#D95D00',
-            margem_line:   '#166534',
-            margem_fill:   'rgba(22, 101, 52, 0.08)',
-        },
-
-        PDF_COLORS: {
-            bg: '#ffffff',
-            title: '#3C003C',
-            subtitle: '#5A5A6E',
-            border: '#E2E8F0',
-            accent: '#FF6E00',
-        },
-
-        init() {
-            // Cria mapa de lookup indexado para auxiliar
-            this.AUXILIAR_MAP = new Map();
-            this.AUXILIAR.forEach(a => this.AUXILIAR_MAP.set(a.operacao, a));
-        }
-    };
-    Config.init();
-
-    /* ==========================================================
-       SEÇÃO 2: HELPERS — Funções utilitárias puras e reutilizáveis
-       ========================================================== */
-    const Helpers = {
-        /** Lookup rápido de CC/Sub por operação (O(1) via Map) */
-        getCCSub(operacao) {
-            return Config.AUXILIAR_MAP.get(operacao) || { cc: '00000000', centro: 'Outros', sub: operacao };
-        },
-
-        /** Normaliza texto: remove acentos, upper case, trim */
-        normalizarTexto(str) {
-            return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim() : str;
-        },
-
-        /** Limpa texto para export CSV */
-        limparTextoCsv(str) {
-            return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').trim() : '';
-        },
-
-        /** Formata número inteiro no padrão BR */
-        formatarNumeroInteiro(v) {
-            return new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(v);
-        },
-
-        /** Formata eixo do gráfico (M / mil) */
-        formatarEixo(v) {
-            if (v >= 1000000) return (v / 1000000).toFixed(1).replace('.0', '') + 'M';
-            if (v >= 1000)    return (v / 1000).toFixed(0) + ' mil';
-            return v;
-        },
-
-        /** Calcula variação percentual com classe CSS */
-        formatarVariacao(atual, anterior, inverteCores) {
-            if (anterior === 0) return { texto: '--', classe: 'neutra' };
-            const varReal = ((atual - anterior) / Math.abs(anterior)) * 100;
-            const prefix = varReal > 0 ? '+' : '';
-            let classColor = varReal > 0 ? 'positiva' : (varReal < 0 ? 'negativa' : 'neutra');
-            if (inverteCores) classColor = varReal > 0 ? 'negativa' : (varReal < 0 ? 'positiva' : 'neutra');
-            return { texto: `${prefix}${varReal.toFixed(1)}%`, classe: classColor };
-        },
-
-        /** Extrai mês e ano de string "MES/ANO" de forma segura */
-        parseMesAno(mesStr) {
-            if (!mesStr || typeof mesStr !== 'string') {
-                return { mes: '', ano: '' };
-            }
-            const partes = mesStr.split('/');
-            const mes = (partes[0] || '').replace('.', '').trim();
-            const ano = partes.length > 1 ? partes[1].trim() : '';
-
-            if (mes && !Config.MESES_ORDEM.includes(mes)) {
-                console.warn(`[Helpers.parseMesAno] Mês não reconhecido: "${mes}" em "${mesStr}"`);
-            }
-            return { mes, ano };
-        },
-
-        /** Retorna número do trimestre (1–4) a partir do nome do mês */
-        getTrimestreNum(mesStr) {
-            const num = Config.MESES_NUMERO[mesStr];
-            if (!num) return 0;
-            return Math.ceil(num / 3);
-        },
-
-        /** Retorna valor de acordo com o modo (RB ou Custo) */
-        getValorModo(d) {
-            return AppState.currentMode === 'RB' ? d.rb : d.custo;
-        },
-
-        /** Cores do modo atual para gráficos de barras */
-        getCorModoBg() {
-            return AppState.currentMode === 'Custo' ? 'rgba(255, 110, 0, 0.8)' : 'rgba(60, 0, 60, 0.8)';
-        },
-
-        getCorModoBorder() {
-            return AppState.currentMode === 'Custo' ? '#D95D00' : '#2A002A';
-        },
-
-        /** Detecta dark mode */
-        isDark() {
-            return document.body.classList.contains('dark-mode');
-        },
-
-        /** Cores dinâmicas para charts baseadas no tema */
-        chartTextColor()   { return Helpers.isDark() ? '#E0E0E0' : '#2C3E50'; },
-        chartGridColor()   { return Helpers.isDark() ? '#333344' : '#E2E8F0'; },
-        chartTooltipBg()   { return Helpers.isDark() ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.95)'; },
-        chartTooltipText() { return Helpers.isDark() ? '#FFF' : '#2C3E50'; },
-
-        /** Parser CSV robusto: suporta campos com vírgulas entre aspas (RFC 4180) */
-        parseCsvLine(line) {
-            const result = [];
-            let cur = '', inQuote = false;
-            for (let i = 0; i < line.length; i++) {
-                const ch = line[i];
-                if (ch === '"') {
-                    if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
-                    else { inQuote = !inQuote; }
-                } else if (ch === ',' && !inQuote) {
-                    result.push(cur.trim());
-                    cur = '';
-                } else {
-                    cur += ch;
-                }
-            }
-            result.push(cur.trim());
-            return result;
-        },
-
-        /** Cria elemento DOM com textContent seguro (XSS-safe) */
-        createElement(tag, attrs, textContent) {
-            const el = document.createElement(tag);
-            if (attrs) {
-                for (const [key, val] of Object.entries(attrs)) {
-                    if (key === 'className') el.className = val;
-                    else if (key.startsWith('data-')) el.setAttribute(key, val);
-                    else el[key] = val;
-                }
-            }
-            if (textContent !== undefined) el.textContent = textContent;
-            return el;
-        },
-
-        /** Cursor pointer ao hoverar sobre elementos clicáveis do chart */
-        chartHoverCursor(e, elements) {
-            e.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-        },
-
-        /** Atualiza as propriedades visuais de tema em um chart existente */
-        applyThemeToChart(chart, opts) {
-            const tc = Helpers.chartTextColor();
-            const gc = Helpers.chartGridColor();
-            const tb = Helpers.chartTooltipBg();
-            const tt = Helpers.chartTooltipText();
-
-            if (chart.options.plugins.tooltip) {
-                chart.options.plugins.tooltip.backgroundColor = tb;
-                chart.options.plugins.tooltip.titleColor = tt;
-                chart.options.plugins.tooltip.bodyColor = tt;
-            }
-            if (chart.options.plugins.datalabels) {
-                chart.options.plugins.datalabels.color = opts?.datalabelsColor || tc;
-            }
-            if (chart.options.scales?.x) {
-                chart.options.scales.x.ticks.color = tc;
-            }
-            if (chart.options.scales?.y) {
-                chart.options.scales.y.ticks.color = tc;
-                if (chart.options.scales.y.grid) {
-                    chart.options.scales.y.grid.color = gc;
-                }
-            }
-            if (chart.options.plugins.legend?.labels) {
-                chart.options.plugins.legend.labels.color = tc;
-            }
-        },
-
-        showToast(msg, tipo) {
-            const el = document.getElementById('toastEl');
-            const msgEl = document.getElementById('toastMsg');
-            if (!el || !msgEl) return;
-            msgEl.textContent = msg;
-            el.className = `toast${tipo === 'success' ? ' success' : ''} show`;
-            clearTimeout(Helpers._toastTimer);
-            Helpers._toastTimer = setTimeout(() => el.classList.remove('show'), 4000);
-        },
-        _toastTimer: null
-    };
-
-    /* ==========================================================
-       SEÇÃO 3: APP STATE — Estado global da aplicação
-       ========================================================== */
-    const AppState = {
-        dadosCompletos: [],
-        filtroAno: null,
-        filtroMeses: new Set(),
-        filtroClientes: new Set(),
-        filtroCentros: new Set(),
-        currentMode: 'RB',
-        sortRelatorio: { mes: null, tipo: null, asc: false },
-        filtroAnoRelatorio: null,
-        paginaRelatorio: 1,
-
-        // Índices calculados após carregamento (performance)
-        _indexAno: new Map(),     // ano -> [registros]
-        _indexMes: new Map(),     // mes -> [registros]
-        _indexCliente: new Map(), // cliente -> [registros]
-        _indexCentro: new Map(),  // centro -> [registros]
-        _todosAnos: [],
-        _todosMeses: [],
-        _todosClientes: [],
-        _todosCentros: [],
-
-        /** Reconstrói índices auxiliares após carregamento dos dados */
-        buildIndexes() {
-            this._indexAno.clear();
-            this._indexMes.clear();
-            this._indexCliente.clear();
-            this._indexCentro.clear();
-
-            const anosSet = new Set();
-            const mesesSet = new Set();
-            const clientesSet = new Set();
-            const centrosSet = new Set();
-
-            for (const d of this.dadosCompletos) {
-                const { mes, ano } = Helpers.parseMesAno(d.mes);
-                const centro = Helpers.getCCSub(d.operacao).centro;
-
-                // Ano
-                if (ano) {
-                    anosSet.add(ano);
-                    if (!this._indexAno.has(ano)) this._indexAno.set(ano, []);
-                    this._indexAno.get(ano).push(d);
-                }
-
-                // Mês
-                if (mes) {
-                    mesesSet.add(mes);
-                    if (!this._indexMes.has(mes)) this._indexMes.set(mes, []);
-                    this._indexMes.get(mes).push(d);
-                }
-
-                // Cliente
-                if (d.cliente) {
-                    clientesSet.add(d.cliente);
-                    if (!this._indexCliente.has(d.cliente)) this._indexCliente.set(d.cliente, []);
-                    this._indexCliente.get(d.cliente).push(d);
-                }
-
-                // Centro
-                centrosSet.add(centro);
-                if (!this._indexCentro.has(centro)) this._indexCentro.set(centro, []);
-                this._indexCentro.get(centro).push(d);
-            }
-
-            this._todosAnos = [...anosSet].sort();
-            this._todosMeses = [...mesesSet].sort((a, b) => Config.MESES_ORDEM.indexOf(a) - Config.MESES_ORDEM.indexOf(b));
-            this._todosClientes = [...clientesSet].sort();
-            this._todosCentros = [...centrosSet].sort();
-        },
-
-        /** Obtém o ano mais recente disponível */
-        obterAnoMaisRecente() {
-            return this._todosAnos.length ? this._todosAnos[this._todosAnos.length - 1] : null;
-        },
-
-        /** Limpa todos os filtros */
-        resetFiltros() {
-            this.filtroAno = this.obterAnoMaisRecente();
-            this.filtroMeses.clear();
-            this.filtroClientes.clear();
-            this.filtroCentros.clear();
-            this.currentMode = 'RB';
-        },
-
-        /** Aplica filtros base usando funções helper reutilizáveis */
-        _matchAno(d) {
-            if (!this.filtroAno) return true;
-            return Helpers.parseMesAno(d.mes).ano === this.filtroAno;
-        },
-        _matchMes(d) {
-            if (!this.filtroMeses.size) return true;
-            return this.filtroMeses.has(Helpers.parseMesAno(d.mes).mes);
-        },
-        _matchCliente(d) {
-            if (!this.filtroClientes.size) return true;
-            return this.filtroClientes.has(d.cliente);
-        },
-        _matchCentro(d) {
-            if (!this.filtroCentros.size) return true;
-            return this.filtroCentros.has(Helpers.getCCSub(d.operacao).centro);
-        },
-
-        /** Filtra dados completos com todos os filtros ativos */
-        filtrarDados() {
-            return this.dadosCompletos.filter(d =>
-                this._matchAno(d) && this._matchMes(d) && this._matchCliente(d) && this._matchCentro(d)
-            );
-        },
-
-        /** Filtra sem considerar clientes (para gráfico top10) */
-        filtrarSemClientes() {
-            return this.dadosCompletos.filter(d =>
-                this._matchAno(d) && this._matchMes(d) && this._matchCentro(d)
-            );
-        },
-
-        /** Filtra sem considerar mês e ano (para gráfico YoY) */
-        filtrarParaYoY() {
-            return this.dadosCompletos.filter(d =>
-                this._matchCliente(d) && this._matchCentro(d)
-            );
-        }
-    };
-
-    /* ==========================================================
-       SEÇÃO 4: FILTROS CASCATA — Lógica de disponibilidade
-       ========================================================== */
-    const FiltrosCascata = {
-        getAnosDisponiveis() {
-            let dados = AppState.dadosCompletos;
-            if (AppState.filtroMeses.size)    dados = dados.filter(d => AppState._matchMes(d));
-            if (AppState.filtroClientes.size) dados = dados.filter(d => AppState._matchCliente(d));
-            if (AppState.filtroCentros.size)  dados = dados.filter(d => AppState._matchCentro(d));
-            return [...new Set(dados.map(d => Helpers.parseMesAno(d.mes).ano).filter(a => a !== ''))].sort();
-        },
-
-        getMesesDisponiveis() {
-            let dados = AppState.dadosCompletos;
-            if (AppState.filtroAno)           dados = dados.filter(d => AppState._matchAno(d));
-            if (AppState.filtroClientes.size) dados = dados.filter(d => AppState._matchCliente(d));
-            if (AppState.filtroCentros.size)  dados = dados.filter(d => AppState._matchCentro(d));
-            return new Set(dados.map(d => Helpers.parseMesAno(d.mes).mes));
-        },
-
-        getClientesDisponiveis() {
-            let dados = AppState.dadosCompletos;
-            if (AppState.filtroAno)           dados = dados.filter(d => AppState._matchAno(d));
-            if (AppState.filtroMeses.size)    dados = dados.filter(d => AppState._matchMes(d));
-            if (AppState.filtroCentros.size)  dados = dados.filter(d => AppState._matchCentro(d));
-            return new Set(dados.map(d => d.cliente));
-        },
-
-        getCentrosDisponiveis() {
-            let dados = AppState.dadosCompletos;
-            if (AppState.filtroAno)           dados = dados.filter(d => AppState._matchAno(d));
-            if (AppState.filtroMeses.size)    dados = dados.filter(d => AppState._matchMes(d));
-            if (AppState.filtroClientes.size) dados = dados.filter(d => AppState._matchCliente(d));
-            return new Set(dados.map(d => Helpers.getCCSub(d.operacao).centro));
-        },
-
-        /** Valida filtros ativos contra disponibilidade atual */
-        validarFiltros() {
-            const anosDisp = this.getAnosDisponiveis();
-            const mesesDisp = this.getMesesDisponiveis();
-            const clientesDisp = this.getClientesDisponiveis();
-            const centrosDisp = this.getCentrosDisponiveis();
-
-            if (AppState.filtroAno && !anosDisp.includes(AppState.filtroAno)) {
-                AppState.filtroAno = anosDisp.length ? anosDisp[anosDisp.length - 1] : null;
-            }
-            for (const m of AppState.filtroMeses)    { if (!mesesDisp.has(m))    AppState.filtroMeses.delete(m); }
-            for (const c of AppState.filtroClientes) { if (!clientesDisp.has(c)) AppState.filtroClientes.delete(c); }
-            for (const c of AppState.filtroCentros)  { if (!centrosDisp.has(c))  AppState.filtroCentros.delete(c); }
-
-            return { anosDisp, mesesDisp, clientesDisp, centrosDisp };
-        }
-    };
-
-    /* ==========================================================
-       SEÇÃO 5: DATA SERVICE — Carregamento, parsing e cache
-       ========================================================== */
-    const DataService = {
-        _retryCount: 0,
-
-        /** Faz fetch do CSV com retry automático e backoff exponencial */
-        async fetchCSV(force) {
-            // Tenta cache
-            if (!force) {
-                try {
-                    const cacheTime = sessionStorage.getItem(Config.CACHE_KEY_TIME);
-                    const cacheData = sessionStorage.getItem(Config.CACHE_KEY_DATA);
-                    if (cacheData && cacheTime && (Date.now() - parseInt(cacheTime, 10)) < Config.CACHE_TTL_MS) {
-                        return cacheData;
-                    }
-                } catch (e) {
-                    console.warn('[DataService] Erro ao ler cache:', e.message);
-                }
-            }
-
-            // Fetch com retry
-            let lastError = null;
-            for (let tentativa = 0; tentativa <= Config.RETRY_MAX; tentativa++) {
-                try {
-                    if (tentativa > 0) {
-                        const delay = Config.RETRY_BACKOFF_MS * tentativa;
-                        UI.atualizarStatusLoading(`Tentativa ${tentativa + 1} de ${Config.RETRY_MAX + 1}...`);
-                        await new Promise(r => setTimeout(r, delay));
-                    }
-
-                    const resp = await fetch(Config.CSV_URL);
-                    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
-                    const csvText = await resp.text();
-
-                    // Salva cache
-                    try {
-                        sessionStorage.setItem(Config.CACHE_KEY_DATA, csvText);
-                        sessionStorage.setItem(Config.CACHE_KEY_TIME, Date.now().toString());
-                    } catch (e) {
-                        console.warn('[DataService] Erro ao salvar cache:', e.message);
-                    }
-
-                    this._retryCount = 0;
-                    return csvText;
-                } catch (err) {
-                    lastError = err;
-                    console.warn(`[DataService] Tentativa ${tentativa + 1} falhou:`, err.message);
-                }
-            }
-
-            throw lastError || new Error('Falha ao carregar dados após todas as tentativas.');
-        },
-
-        /** Faz parsing seguro do CSV em objetos normalizados */
-        parseCSV(csvText) {
-            const linhas = csvText.split('\n').filter(l => l.trim() !== '');
-            if (linhas.length < 2) {
-                throw new Error('CSV vazio ou com apenas cabeçalho.');
-            }
-
-            // Normaliza cabeçalho para lowercase (resolve variações ATIVO/ativo/Ativo)
-            const cabecalho = Helpers.parseCsvLine(linhas[0]).map(h => h.trim().toLowerCase());
-
-            const idxCliente  = cabecalho.indexOf('cliente');
-            const idxOperacao = cabecalho.indexOf('operacao');
-            const idxRb       = cabecalho.indexOf('rb');
-            const idxCusto    = cabecalho.indexOf('custo');
-            const idxMes      = cabecalho.indexOf('mes');
-
-            if (idxCliente < 0 || idxOperacao < 0 || idxRb < 0 || idxCusto < 0 || idxMes < 0) {
-                const faltantes = [];
-                if (idxCliente < 0)  faltantes.push('cliente');
-                if (idxOperacao < 0) faltantes.push('operacao');
-                if (idxRb < 0)       faltantes.push('rb');
-                if (idxCusto < 0)    faltantes.push('custo');
-                if (idxMes < 0)      faltantes.push('mes');
-                throw new Error(`Colunas obrigatórias não encontradas no CSV: ${faltantes.join(', ')}`);
-            }
-
-            const dados = [];
-            let errosLinha = 0;
-
-            for (let i = 1; i < linhas.length; i++) {
-                try {
-                    const cols = Helpers.parseCsvLine(linhas[i]);
-                    const cliente  = Helpers.normalizarTexto(cols[idxCliente] || '');
-                    const operacao = Helpers.normalizarTexto(cols[idxOperacao] || '');
-                    const mesRaw   = cols[idxMes] || '';
-                    const mesNorm  = mesRaw ? Helpers.normalizarTexto(mesRaw) : '';
-
-                    if (!cliente || !operacao) continue;
-
-                    // Parse seguro de valores numéricos
-                    const rbStr = (cols[idxRb] || '').replace(',', '.');
-                    const custoStr = (cols[idxCusto] || '').replace(',', '.');
-                    const rb = parseFloat(rbStr);
-                    const custo = parseFloat(custoStr);
-
-                    if (isNaN(rb) || isNaN(custo)) {
-                        errosLinha++;
-                        if (errosLinha <= 5) {
-                            console.warn(`[DataService] Linha ${i + 1}: valor numérico inválido (rb="${rbStr}", custo="${custoStr}")`);
-                        }
-                        continue;
-                    }
-
-                    // Validação segura de formato de data
-                    const { mes, ano } = Helpers.parseMesAno(mesNorm);
-                    if (!mes || !Config.MESES_ORDEM.includes(mes)) {
-                        errosLinha++;
-                        if (errosLinha <= 5) {
-                            console.warn(`[DataService] Linha ${i + 1}: mês não reconhecido "${mesRaw}"`);
-                        }
-                        continue;
-                    }
-
-                    dados.push({ cliente, operacao, rb, custo, mes: mesNorm });
-                } catch (e) {
-                    errosLinha++;
-                    if (errosLinha <= 3) {
-                        console.warn(`[DataService] Erro na linha ${i + 1}:`, e.message);
-                    }
-                }
-            }
-
-            if (errosLinha > 5) {
-                console.warn(`[DataService] Total de ${errosLinha} linhas com problemas no parsing.`);
-            }
-
-            return dados;
-        }
-    };
-
-    /* ==========================================================
-       SEÇÃO 6: CHART MANAGER — Criação e atualização de gráficos
-       ========================================================== */
-    const ChartManager = {
-        _charts: {
-            mensal: null,
-            top10: null,
-            trimestre: null,
-            centroCusto: null,
-            ccBarras: null,
-            yoy: null,
-            margem: null
-        },
-        _pluginsRegistered: false,
-
-        /** Registra plugins uma única vez */
-        ensurePlugins() {
-            // ChartDataLabels já é importado via script tag.
-            // Não precisamos registrar globalmente pois passamos via plugins:[].
-            this._pluginsRegistered = true;
-        },
-
-        /** Opções comuns de tooltip */
-        _tooltipBase() {
-            return {
-                backgroundColor: Helpers.chartTooltipBg(),
-                titleColor: Helpers.chartTooltipText(),
-                bodyColor: Helpers.chartTooltipText()
-            };
-        },
-
-        /** Opções comuns de datalabels */
-        _datalabelsBase(opts) {
-            return {
-                anchor: opts?.anchor || 'end',
-                align: opts?.align || 'top',
-                offset: opts?.offset || 4,
-                color: Helpers.chartTextColor(),
-                font: { weight: 'bold', size: 13 },
-                ...opts
-            };
-        },
-
-        /** Escala Y padrão */
-        _scaleY(opts) {
-            return {
-                beginAtZero: true,
-                grace: '20%',
-                grid: { color: Helpers.chartGridColor(), borderDash: [5, 5] },
-                border: { display: false },
-                ticks: {
-                    callback: v => Helpers.formatarEixo(v),
-                    font: { size: 11 },
-                    color: Helpers.chartTextColor()
-                },
-                ...opts
-            };
-        },
-
-        /** Escala X padrão */
-        _scaleX(opts) {
-            return {
-                grid: { display: false },
-                border: { display: false },
-                ticks: { font: { weight: '600', size: 11 }, color: Helpers.chartTextColor() },
-                ...opts
-            };
-        },
-
-        // ── Gráfico Mensal (Receita x Custo) ──────────────────────
-        atualizarMensal(dados, sync) {
-            const mesesMap = {};
-            dados.forEach(d => {
-                const m = Helpers.parseMesAno(d.mes).mes;
-                if (!mesesMap[m]) mesesMap[m] = { receita: 0, custo: 0 };
-                mesesMap[m].receita += d.rb;
-                mesesMap[m].custo += d.custo;
-            });
-
-            const mesesOrd = Object.keys(mesesMap).sort((a, b) => Config.MESES_ORDEM.indexOf(a) - Config.MESES_ORDEM.indexOf(b));
-            const receita = mesesOrd.map(m => mesesMap[m].receita);
-            const custo = mesesOrd.map(m => mesesMap[m].custo);
-
-            if (this._charts.mensal) {
-                this._charts.mensal.data.labels = mesesOrd;
-                this._charts.mensal.data.datasets[0].data = receita;
-                this._charts.mensal.data.datasets[1].data = custo;
-                Helpers.applyThemeToChart(this._charts.mensal);
-                this._charts.mensal.update(sync ? 'none' : undefined);
-            } else {
-                const ctx = document.getElementById('graficoMensal').getContext('2d');
-                this._charts.mensal = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: mesesOrd,
-                        datasets: [
-                            { label: 'Receita', data: receita, backgroundColor: Config.CHART_COLORS.receita_bg, borderColor: Config.CHART_COLORS.receita_border, borderWidth: 1, borderRadius: 4 },
-                            { label: 'Custo', data: custo, backgroundColor: Config.CHART_COLORS.custo_bg, borderColor: Config.CHART_COLORS.custo_border, borderWidth: 1, borderRadius: 4 }
-                        ]
-                    },
-                    options: {
-                        layout: { padding: { top: 30 } },
-                        responsive: true, maintainAspectRatio: false, barPercentage: 0.7, categoryPercentage: 0.8,
-                        interaction: { mode: 'index', intersect: false },
-                        onHover: Helpers.chartHoverCursor,
-                        onClick: (e, elements, chart) => {
-                            if (elements.length > 0) {
-                                const label = chart.data.labels[elements[0].index];
-                                if (AppState.filtroMeses.has(label)) AppState.filtroMeses.delete(label);
-                                else AppState.filtroMeses.add(label);
-                                App.construirSidebar();
-                                App.aplicarFiltros();
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { ...this._tooltipBase(), callbacks: { label: ctx => `${ctx.dataset.label}: ${Helpers.formatarNumeroInteiro(ctx.raw)}` } },
-                            datalabels: this._datalabelsBase({ formatter: v => Helpers.formatarNumeroInteiro(v) })
-                        },
-                        scales: { y: this._scaleY(), x: this._scaleX() }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-        },
-
-        // ── Gráfico Top 10 Clientes ──────────────────────
-        atualizarTop10(dados, sync) {
-            const clientesMap = {};
-            dados.forEach(d => { clientesMap[d.cliente] = (clientesMap[d.cliente] || 0) + Helpers.getValorModo(d); });
-            const top10 = Object.entries(clientesMap).filter(([_, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 10).reverse();
-            const labels = top10.map(c => c[0]);
-            const data = top10.map(c => c[1]);
-            const modoLabel = AppState.currentMode === 'RB' ? 'Receita' : 'Custo';
-
-            if (this._charts.top10) {
-                this._charts.top10.data.labels = labels;
-                this._charts.top10.data.datasets[0].label = modoLabel;
-                this._charts.top10.data.datasets[0].data = data;
-                this._charts.top10.data.datasets[0].backgroundColor = Helpers.getCorModoBg();
-                this._charts.top10.data.datasets[0].borderColor = Helpers.getCorModoBorder();
-                Helpers.applyThemeToChart(this._charts.top10);
-                this._charts.top10.update(sync ? 'none' : undefined);
-            } else {
-                const ctx = document.getElementById('graficoTop10Horizontal').getContext('2d');
-                this._charts.top10 = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels, datasets: [{ label: modoLabel, data, backgroundColor: Helpers.getCorModoBg(), borderColor: Helpers.getCorModoBorder(), borderWidth: 1, borderRadius: 4 }] },
-                    options: {
-                        indexAxis: 'y', responsive: true, maintainAspectRatio: false, layout: { padding: { right: 80 } },
-                        interaction: { mode: 'y', intersect: false },
-                        onHover: Helpers.chartHoverCursor,
-                        onClick: (e, elements, chart) => {
-                            if (elements.length > 0) {
-                                const label = chart.data.labels[elements[0].index];
-                                if (AppState.filtroClientes.has(label)) AppState.filtroClientes.delete(label);
-                                else AppState.filtroClientes.add(label);
-                                App.construirSidebar();
-                                App.aplicarFiltros();
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { ...this._tooltipBase(), callbacks: { label: ctx => `${modoLabel}: ${Helpers.formatarNumeroInteiro(ctx.raw)}` } },
-                            datalabels: this._datalabelsBase({ anchor: 'end', align: 'right', offset: 6, formatter: v => Helpers.formatarNumeroInteiro(v) })
-                        },
-                        scales: {
-                            x: { ...this._scaleY(), grid: { color: Helpers.chartGridColor(), borderDash: [5, 5] } },
-                            y: this._scaleX({ ticks: { font: { weight: '600', size: 10 }, color: Helpers.chartTextColor() } })
-                        }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-        },
-
-        // ── Gráfico Trimestral ──────────────────────
-        atualizarTrimestre(dados, sync) {
-            const trimestres = { '1º Trim': 0, '2º Trim': 0, '3º Trim': 0, '4º Trim': 0 };
-            const trimKeys = ['1º Trim', '2º Trim', '3º Trim', '4º Trim'];
-            dados.forEach(d => {
-                const m = Helpers.parseMesAno(d.mes).mes;
-                const t = Helpers.getTrimestreNum(m);
-                if (t >= 1 && t <= 4) trimestres[trimKeys[t - 1]] += Helpers.getValorModo(d);
-            });
-
-            const labels = trimKeys;
-            const data = trimKeys.map(k => trimestres[k]);
-            const modoLabel = AppState.currentMode === 'RB' ? 'Receita' : 'Custo';
-
-            if (this._charts.trimestre) {
-                this._charts.trimestre.data.labels = labels;
-                this._charts.trimestre.data.datasets[0].label = modoLabel;
-                this._charts.trimestre.data.datasets[0].data = data;
-                this._charts.trimestre.data.datasets[0].backgroundColor = Helpers.getCorModoBg();
-                this._charts.trimestre.data.datasets[0].borderColor = Helpers.getCorModoBorder();
-                Helpers.applyThemeToChart(this._charts.trimestre);
-                this._charts.trimestre.update(sync ? 'none' : undefined);
-            } else {
-                const ctx = document.getElementById('graficoTrimestre').getContext('2d');
-                this._charts.trimestre = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels, datasets: [{ label: modoLabel, data, backgroundColor: Helpers.getCorModoBg(), borderColor: Helpers.getCorModoBorder(), borderWidth: 1, borderRadius: 4 }] },
-                    options: {
-                        layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, barPercentage: 0.6, categoryPercentage: 0.7,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { ...this._tooltipBase(), callbacks: { label: ctx => `${modoLabel}: ${Helpers.formatarNumeroInteiro(ctx.raw)}` } },
-                            datalabels: this._datalabelsBase({ formatter: v => Helpers.formatarNumeroInteiro(v) })
-                        },
-                        scales: { y: this._scaleY(), x: this._scaleX() }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-        },
-
-        // ── Gráfico Doughnut Centro de Custo ──────────────────────
-        atualizarCentroCusto(dados, sync) {
-            // Calcula total de referência (sem filtro de CC)
-            let dadosRef = AppState.dadosCompletos;
-            if (AppState.filtroAno)           dadosRef = dadosRef.filter(d => AppState._matchAno(d));
-            if (AppState.filtroMeses.size)    dadosRef = dadosRef.filter(d => AppState._matchMes(d));
-            if (AppState.filtroClientes.size) dadosRef = dadosRef.filter(d => AppState._matchCliente(d));
-            const totalRef = dadosRef.reduce((a, d) => a + Helpers.getValorModo(d), 0);
-
-            const ccMap = {};
-            dados.forEach(d => { const { centro } = Helpers.getCCSub(d.operacao); ccMap[centro] = (ccMap[centro] || 0) + Helpers.getValorModo(d); });
-            const labels = Object.keys(ccMap);
-            const data = Object.values(ccMap);
-            const baseColors = Config.CORES_DOUGHNUT[AppState.currentMode] || Config.CORES_DOUGHNUT.RB;
-
-            const makeTooltipLabel = ctx => {
-                const perc = totalRef > 0 ? (ctx.raw / totalRef) * 100 : 0;
-                return `${ctx.label}: ${Helpers.formatarNumeroInteiro(ctx.raw)} (${perc.toFixed(1)}%)`;
-            };
-            const makeDatalabel = (v, ctx) => {
-                const perc = totalRef > 0 ? (v / totalRef) * 100 : 0;
-                return `${ctx.chart.data.labels[ctx.dataIndex]}\n${perc.toFixed(1)}%`;
-            };
-
-            if (this._charts.centroCusto) {
-                this._charts.centroCusto.data.labels = labels;
-                this._charts.centroCusto.data.datasets[0].data = data;
-                this._charts.centroCusto.data.datasets[0].backgroundColor = baseColors;
-                this._charts.centroCusto.options.plugins.tooltip.backgroundColor = Helpers.chartTooltipBg();
-                this._charts.centroCusto.options.plugins.tooltip.titleColor = Helpers.chartTooltipText();
-                this._charts.centroCusto.options.plugins.tooltip.bodyColor = Helpers.chartTooltipText();
-                this._charts.centroCusto.options.plugins.tooltip.callbacks.label = makeTooltipLabel;
-                this._charts.centroCusto.options.plugins.datalabels.formatter = makeDatalabel;
-                this._charts.centroCusto.update(sync ? 'none' : undefined);
-            } else {
-                const ctx = document.getElementById('graficoCentroCusto').getContext('2d');
-                this._charts.centroCusto = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: { labels, datasets: [{ data, backgroundColor: baseColors, borderColor: '#fff', borderWidth: 2 }] },
-                    options: {
-                        responsive: true, maintainAspectRatio: false, cutout: '65%',
-                        onHover: Helpers.chartHoverCursor,
-                        onClick: (e, elements, chart) => {
-                            if (elements.length > 0) {
-                                const label = chart.data.labels[elements[0].index];
-                                if (label !== 'Outros') {
-                                    if (AppState.filtroCentros.has(label)) AppState.filtroCentros.delete(label);
-                                    else AppState.filtroCentros.add(label);
-                                    App.construirSidebar();
-                                    App.aplicarFiltros();
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { ...this._tooltipBase(), callbacks: { label: makeTooltipLabel } },
-                            datalabels: { formatter: makeDatalabel, color: '#fff', font: { weight: 'bold', size: 13 }, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 4, textAlign: 'center' }
-                        }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-        },
-
-        // ── Gráfico de Barras por Centro de Custo ──────────────────
-        atualizarCCBarras(dados, sync) {
-            const ccMap = {};
-            dados.forEach(d => { const { centro } = Helpers.getCCSub(d.operacao); ccMap[centro] = (ccMap[centro] || 0) + Helpers.getValorModo(d); });
-            const sorted = Object.entries(ccMap).sort((a, b) => b[1] - a[1]);
-            const labels = sorted.map(s => s[0]);
-            const data = sorted.map(s => s[1]);
-            const modoLabel = AppState.currentMode === 'RB' ? 'Receita' : 'Custo';
-
-            if (this._charts.ccBarras) {
-                this._charts.ccBarras.data.labels = labels;
-                this._charts.ccBarras.data.datasets[0].label = modoLabel;
-                this._charts.ccBarras.data.datasets[0].data = data;
-                this._charts.ccBarras.data.datasets[0].backgroundColor = Helpers.getCorModoBg();
-                this._charts.ccBarras.data.datasets[0].borderColor = Helpers.getCorModoBorder();
-                Helpers.applyThemeToChart(this._charts.ccBarras);
-                this._charts.ccBarras.update(sync ? 'none' : undefined);
-            } else {
-                const ctx = document.getElementById('graficoCCBarras').getContext('2d');
-                this._charts.ccBarras = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels, datasets: [{ label: modoLabel, data, backgroundColor: Helpers.getCorModoBg(), borderColor: Helpers.getCorModoBorder(), borderWidth: 1, borderRadius: 4 }] },
-                    options: {
-                        layout: { padding: { top: 30 } }, responsive: true, maintainAspectRatio: false, barPercentage: 0.7, categoryPercentage: 0.8,
-                        interaction: { mode: 'index', intersect: false },
-                        onHover: Helpers.chartHoverCursor,
-                        onClick: (e, elements, chart) => {
-                            if (elements.length > 0) {
-                                const label = chart.data.labels[elements[0].index];
-                                if (AppState.filtroCentros.has(label)) AppState.filtroCentros.delete(label);
-                                else AppState.filtroCentros.add(label);
-                                App.construirSidebar();
-                                App.aplicarFiltros();
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { ...this._tooltipBase(), callbacks: { label: ctx => `${modoLabel}: ${Helpers.formatarNumeroInteiro(ctx.raw)}` } },
-                            datalabels: this._datalabelsBase({ formatter: v => Helpers.formatarNumeroInteiro(v) })
-                        },
-                        scales: { y: this._scaleY(), x: this._scaleX() }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-        },
-
-        // ── Gráfico YoY Comparativo Anual ──────────────────────
-        atualizarYoY(dados, anoAtual, sync) {
-            if (!anoAtual) return;
-            const anoAnt = (parseInt(anoAtual, 10) - 1).toString();
-            const meses = Config.MESES_ORDEM;
-            const valAtual = new Array(12).fill(0);
-            const valAnt = new Array(12).fill(0);
-
-            dados.forEach(d => {
-                const { mes, ano } = Helpers.parseMesAno(d.mes);
-                const idx = meses.indexOf(mes);
-                if (idx === -1) return;
-                const valor = Helpers.getValorModo(d);
-                if (ano === anoAtual) valAtual[idx] += valor;
-                else if (ano === anoAnt) valAnt[idx] += valor;
-            });
-
-            // Atualiza título (XSS-safe: textContent)
-            const tituloEl = document.getElementById('tituloYoY');
-            if (tituloEl) {
-                tituloEl.textContent = '';
-                tituloEl.appendChild(document.createTextNode(`Comparativo Anual (${anoAnt} vs ${anoAtual}) `));
-                const span = Helpers.createElement('span', {}, `(Visão ${AppState.currentMode})`);
-                span.style.fontSize = '10px';
-                span.style.fontWeight = 'normal';
-                span.style.color = 'var(--text-secondary)';
-                tituloEl.appendChild(span);
-            }
-
-            const corAtual = Helpers.getCorModoBg();
-            const corBorderAtual = Helpers.getCorModoBorder();
-            const corAnt = Helpers.isDark() ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)';
-            const corBorderAnt = Helpers.isDark() ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)';
-
-            if (this._charts.yoy) {
-                this._charts.yoy.data.labels = meses;
-                this._charts.yoy.data.datasets[0].label = anoAnt;
-                this._charts.yoy.data.datasets[0].data = valAnt;
-                this._charts.yoy.data.datasets[0].backgroundColor = corAnt;
-                this._charts.yoy.data.datasets[0].borderColor = corBorderAnt;
-                this._charts.yoy.data.datasets[1].label = anoAtual;
-                this._charts.yoy.data.datasets[1].data = valAtual;
-                this._charts.yoy.data.datasets[1].backgroundColor = corAtual;
-                this._charts.yoy.data.datasets[1].borderColor = corBorderAtual;
-                Helpers.applyThemeToChart(this._charts.yoy);
-                this._charts.yoy.update(sync ? 'none' : undefined);
-            } else {
-                const ctx = document.getElementById('graficoYoY').getContext('2d');
-                this._charts.yoy = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: meses,
-                        datasets: [
-                            { label: anoAnt, data: valAnt, backgroundColor: corAnt, borderColor: corBorderAnt, borderWidth: 1, borderRadius: 4 },
-                            { label: anoAtual, data: valAtual, backgroundColor: corAtual, borderColor: corBorderAtual, borderWidth: 1, borderRadius: 4 }
-                        ]
-                    },
-                    options: {
-                        layout: { padding: { top: 35 } },
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { display: true, position: 'top', labels: { color: Helpers.chartTextColor(), font: { size: 12, weight: 'bold' } } },
-                            tooltip: { ...this._tooltipBase(), callbacks: { label: ctx => `${ctx.dataset.label}: ${Helpers.formatarNumeroInteiro(ctx.raw)}` } },
-                            datalabels: { anchor: 'end', align: 'top', offset: 2, formatter: v => v > 0 ? Helpers.formatarEixo(v) : '', color: Helpers.chartTextColor(), font: { weight: 'bold', size: 13 } }
-                        },
-                        scales: {
-                            y: this._scaleY({ ticks: { callback: v => Helpers.formatarEixo(v), color: Helpers.chartTextColor() } }),
-                            x: this._scaleX({ ticks: { font: { weight: '600' }, color: Helpers.chartTextColor() } })
-                        }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-        },
-
-        // ── Gráfico de Margem Mensal ──────────────────────
-        atualizarMargem(dados, sync) {
-            const mesesMap = {};
-            dados.forEach(d => {
-                const m = Helpers.parseMesAno(d.mes).mes;
-                if (!mesesMap[m]) mesesMap[m] = { rb: 0, custo: 0 };
-                mesesMap[m].rb += d.rb;
-                mesesMap[m].custo += d.custo;
-            });
-
-            const mesesOrd = Object.keys(mesesMap).sort((a, b) => Config.MESES_ORDEM.indexOf(a) - Config.MESES_ORDEM.indexOf(b));
-            const margens = mesesOrd.map(m => {
-                const v = mesesMap[m];
-                return v.rb > 0 ? parseFloat(((v.rb - v.custo) / v.rb * 100).toFixed(2)) : 0;
-            });
-
-            if (this._charts.margem) {
-                this._charts.margem.data.labels = mesesOrd;
-                this._charts.margem.data.datasets[0].data = margens;
-                Helpers.applyThemeToChart(this._charts.margem);
-                this._charts.margem.update(sync ? 'none' : undefined);
-            } else {
-                const ctx = document.getElementById('graficoMargem').getContext('2d');
-                this._charts.margem = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: mesesOrd,
-                        datasets: [{
-                            label: 'Margem %',
-                            data: margens,
-                            borderColor: Config.CHART_COLORS.margem_line,
-                            backgroundColor: Config.CHART_COLORS.margem_fill,
-                            borderWidth: 2.5,
-                            pointBackgroundColor: Config.CHART_COLORS.margem_line,
-                            pointRadius: 5,
-                            pointHoverRadius: 7,
-                            fill: true,
-                            tension: 0.35
-                        }]
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { ...this._tooltipBase(), callbacks: { label: ctx => `Margem: ${ctx.raw.toFixed(1)}%` } },
-                            datalabels: { anchor: 'top', align: 'top', offset: 4, formatter: v => `${v.toFixed(1)}%`, color: Helpers.chartTextColor(), font: { weight: 'bold', size: 12 } }
-                        },
-                        scales: {
-                            y: { beginAtZero: false, grace: '10%', grid: { color: Helpers.chartGridColor(), borderDash: [5, 5] }, border: { display: false }, ticks: { callback: v => `${v}%`, color: Helpers.chartTextColor(), font: { size: 11 } } },
-                            x: this._scaleX()
-                        }
-                    },
-                    plugins: [ChartDataLabels]
-                });
-            }
-        }
-    };
-
-    /* ==========================================================
-       SEÇÃO 7: TABLE RENDERER — Relatório mensal com paginação
-       ========================================================== */
-    const TableRenderer = {
-        _gruposCache: null,
-        _mesesListaCache: null,
-
-        /** Constrói os dados agrupados para a tabela */
-        _buildGrupos(dados) {
-            const mesesExistentes = new Set(dados.map(d => Helpers.parseMesAno(d.mes).mes));
-            const mesesLista = Array.from(mesesExistentes).sort((a, b) => Config.MESES_ORDEM.indexOf(a) - Config.MESES_ORDEM.indexOf(b));
-
-            const grupos = {};
-            dados.forEach(d => {
-                const mBase = Helpers.parseMesAno(d.mes).mes;
-                const { cc, centro, sub } = Helpers.getCCSub(d.operacao);
-                const chave = `${d.cliente}|${cc}|${centro}|${sub}`;
-                if (!grupos[chave]) grupos[chave] = { cliente: d.cliente, cc, centro, sub, meses: {} };
-                if (!grupos[chave].meses[mBase]) grupos[chave].meses[mBase] = { rb: 0, custo: 0 };
-                grupos[chave].meses[mBase].rb += d.rb;
-                grupos[chave].meses[mBase].custo += d.custo;
-            });
-
-            return { grupos: Object.values(grupos), mesesLista };
-        },
-
-        /** Renderiza tabela completa com paginação */
-        atualizarRelatorioMensal() {
-            let dados = AppState.dadosCompletos;
-            if (AppState.filtroAnoRelatorio) {
-                dados = dados.filter(d => Helpers.parseMesAno(d.mes).ano === AppState.filtroAnoRelatorio);
-            }
-
-            const { grupos, mesesLista } = this._buildGrupos(dados);
-            this._mesesListaCache = mesesLista;
-
-            // Ordenação
-            let linhasOrdenadas = [...grupos];
-            if (AppState.sortRelatorio.mes && AppState.sortRelatorio.tipo) {
-                const { mes, tipo, asc } = AppState.sortRelatorio;
-                linhasOrdenadas.sort((a, b) => {
-                    const valA = a.meses[mes] ? a.meses[mes][tipo] : 0;
-                    const valB = b.meses[mes] ? b.meses[mes][tipo] : 0;
-                    return asc ? (valA - valB) : (valB - valA);
-                });
-            }
-            this._gruposCache = linhasOrdenadas;
-
-            // Renderiza thead (DOM seguro)
-            this._renderThead(mesesLista);
-
-            // Paginação
-            const totalLinhas = linhasOrdenadas.length;
-            const totalPaginas = Math.max(1, Math.ceil(totalLinhas / Config.ROWS_PER_PAGE));
-            if (AppState.paginaRelatorio > totalPaginas) AppState.paginaRelatorio = totalPaginas;
-            const inicio = (AppState.paginaRelatorio - 1) * Config.ROWS_PER_PAGE;
-            const fim = Math.min(inicio + Config.ROWS_PER_PAGE, totalLinhas);
-            const pagina = linhasOrdenadas.slice(inicio, fim);
-
-            // Renderiza tbody (DOM seguro, sem innerHTML para conteúdo de dados)
-            this._renderTbody(pagina, mesesLista);
-
-            // Renderiza barra de paginação
-            this._renderPaginacao(totalPaginas, totalLinhas);
-        },
-
-        _renderThead(mesesLista) {
-            const thead = document.getElementById('theadRelatorio');
-            thead.textContent = '';
-
-            // Linha 1
-            const tr1 = document.createElement('tr');
-            ['Código C.C.', 'Centro de Custo', 'Cliente', 'Subnegócio'].forEach(txt => {
-                const th = Helpers.createElement('th', {}, txt);
-                tr1.appendChild(th);
-            });
-            mesesLista.forEach(m => {
-                const th = Helpers.createElement('th', { className: 'mes-header', colSpan: 2 }, m);
-                th.setAttribute('colspan', '2');
-                tr1.appendChild(th);
-            });
-            thead.appendChild(tr1);
-
-            // Linha 2 (subcolunas)
-            const tr2 = document.createElement('tr');
-            for (let i = 0; i < 4; i++) tr2.appendChild(document.createElement('th'));
-
-            mesesLista.forEach(m => {
-                const setaRB = (AppState.sortRelatorio.mes === m && AppState.sortRelatorio.tipo === 'rb')
-                    ? (AppState.sortRelatorio.asc ? ' ▴' : ' ▾') : '';
-                const setaCusto = (AppState.sortRelatorio.mes === m && AppState.sortRelatorio.tipo === 'custo')
-                    ? (AppState.sortRelatorio.asc ? ' ▴' : ' ▾') : '';
-
-                const thRb = Helpers.createElement('th', { className: 'subcol sortable', title: 'Clique para ordenar' }, `RB${setaRB}`);
-                thRb.setAttribute('aria-sort', AppState.sortRelatorio.mes === m && AppState.sortRelatorio.tipo === 'rb'
-                    ? (AppState.sortRelatorio.asc ? 'ascending' : 'descending') : 'none');
-                thRb.addEventListener('click', () => {
-                    this._ordenar(m, 'rb');
-                });
-                tr2.appendChild(thRb);
-
-                const thCusto = Helpers.createElement('th', { className: 'subcol sortable', title: 'Clique para ordenar' }, `Custo${setaCusto}`);
-                thCusto.setAttribute('aria-sort', AppState.sortRelatorio.mes === m && AppState.sortRelatorio.tipo === 'custo'
-                    ? (AppState.sortRelatorio.asc ? 'ascending' : 'descending') : 'none');
-                thCusto.addEventListener('click', () => {
-                    this._ordenar(m, 'custo');
-                });
-                tr2.appendChild(thCusto);
-            });
-            thead.appendChild(tr2);
-        },
-
-        _renderTbody(linhas, mesesLista) {
-            const tbody = document.getElementById('tbodyRelatorioMensal');
-            tbody.textContent = '';
-
-            const frag = document.createDocumentFragment();
-            linhas.forEach(g => {
-                const tr = document.createElement('tr');
-                tr.appendChild(Helpers.createElement('td', {}, g.cc));
-                tr.appendChild(Helpers.createElement('td', {}, g.centro));
-                tr.appendChild(Helpers.createElement('td', {}, g.cliente));
-                tr.appendChild(Helpers.createElement('td', {}, g.sub));
-
-                mesesLista.forEach((m, idx) => {
-                    const vals = g.meses[m] || { rb: 0, custo: 0 };
-                    const classe = idx % 2 === 0 ? 'grupo-mes-par' : 'grupo-mes-impar';
-                    tr.appendChild(Helpers.createElement('td', { className: classe }, Helpers.formatarNumeroInteiro(vals.rb)));
-                    tr.appendChild(Helpers.createElement('td', { className: classe }, Helpers.formatarNumeroInteiro(vals.custo)));
-                });
-                frag.appendChild(tr);
-            });
-            tbody.appendChild(frag);
-        },
-
-        _renderPaginacao(totalPaginas, totalLinhas) {
-            const bar = document.getElementById('paginationBar');
-            bar.textContent = '';
-
-            if (totalLinhas <= Config.ROWS_PER_PAGE) {
-                bar.style.display = 'none';
-                return;
-            }
-            bar.style.display = 'flex';
-
-            const pagAtual = AppState.paginaRelatorio;
-
-            // Botão anterior
-            const btnPrev = Helpers.createElement('button', { disabled: pagAtual <= 1 }, '← Anterior');
-            btnPrev.addEventListener('click', () => { AppState.paginaRelatorio--; this.atualizarRelatorioMensal(); });
-            bar.appendChild(btnPrev);
-
-            // Números de página
-            const maxButtons = 7;
-            let start = Math.max(1, pagAtual - Math.floor(maxButtons / 2));
-            let end = Math.min(totalPaginas, start + maxButtons - 1);
-            if (end - start + 1 < maxButtons) start = Math.max(1, end - maxButtons + 1);
-
-            for (let p = start; p <= end; p++) {
-                const btn = Helpers.createElement('button', { className: p === pagAtual ? 'active' : '' }, String(p));
-                if (p === pagAtual) btn.setAttribute('aria-current', 'page');
-                btn.addEventListener('click', () => { AppState.paginaRelatorio = p; this.atualizarRelatorioMensal(); });
-                bar.appendChild(btn);
-            }
-
-            // Info
-            const info = Helpers.createElement('span', { className: 'page-info' }, `(${totalLinhas} registros)`);
-            bar.appendChild(info);
-
-            // Botão próximo
-            const btnNext = Helpers.createElement('button', { disabled: pagAtual >= totalPaginas }, 'Próximo →');
-            btnNext.addEventListener('click', () => { AppState.paginaRelatorio++; this.atualizarRelatorioMensal(); });
-            bar.appendChild(btnNext);
-        },
-
-        _ordenar(mes, tipo) {
-            if (AppState.sortRelatorio.mes === mes && AppState.sortRelatorio.tipo === tipo) {
-                AppState.sortRelatorio.asc = !AppState.sortRelatorio.asc;
-            } else {
-                AppState.sortRelatorio.mes = mes;
-                AppState.sortRelatorio.tipo = tipo;
-                AppState.sortRelatorio.asc = false;
-            }
-            AppState.paginaRelatorio = 1;
-            this.atualizarRelatorioMensal();
-        },
-
-        /** Exporta para CSV (mantém funcionalidade original) */
-        exportarCSV() {
-            let dados = AppState.dadosCompletos;
-            if (AppState.filtroAnoRelatorio) {
-                dados = dados.filter(d => Helpers.parseMesAno(d.mes).ano === AppState.filtroAnoRelatorio);
-            }
-
-            const { grupos, mesesLista } = this._buildGrupos(dados);
-
-            const cabecalho = ['Código C.C.', 'Centro de Custo', 'Cliente', 'Subnegócio'];
-            mesesLista.forEach(m => { cabecalho.push(`${m} RB`); cabecalho.push(`${m} Custo`); });
-
-            const linhas = [];
-            grupos.forEach(g => {
-                const linha = [
-                    Helpers.limparTextoCsv(g.cc),
-                    Helpers.limparTextoCsv(g.centro),
-                    Helpers.limparTextoCsv(g.cliente),
-                    Helpers.limparTextoCsv(g.sub)
-                ];
-                mesesLista.forEach(m => {
-                    const vals = g.meses[m] || { rb: 0, custo: 0 };
-                    linha.push(vals.rb.toFixed(2).replace('.', ','));
-                    linha.push(vals.custo.toFixed(2).replace('.', ','));
-                });
-                linhas.push(linha);
-            });
-
-            const csv = [cabecalho, ...linhas].map(row => row.join(';')).join('\n');
-            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `relatorio_${new Date().toISOString().slice(0, 10)}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-    };
-
-    /* ==========================================================
-       SEÇÃO 8: UI — Controles de interface, temas, exportação
-       ========================================================== */
-    const UI = {
-        _wasDarkBeforePrint: false,
-
-        atualizarStatusLoading(msg) {
-            const el = document.getElementById('loadingStatusText');
-            if (el) el.textContent = msg;
-        },
-
-        toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebarOverlay').classList.toggle('show');
-        },
-
-        toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem(Config.THEME_KEY, Helpers.isDark() ? 'dark' : 'light');
-            App.aplicarFiltros();
-        },
-
-        atualizarTituloExportacao() {
-            const titleEl = document.getElementById('export-title-text');
-            const subEl = document.getElementById('export-subtitle');
-
-            const modoStr = AppState.currentMode === 'RB' ? 'Receita Bruta (RB)' : 'Custos Operacionais';
-            titleEl.textContent = `ONTIME | Análise de ${modoStr}`;
-
-            const filtros = [];
-            if (AppState.filtroAno) filtros.push(`Ano: ${AppState.filtroAno}`);
-            if (AppState.filtroMeses.size) filtros.push(`Mês: ${Array.from(AppState.filtroMeses).join(', ')}`);
-            if (AppState.filtroClientes.size) filtros.push(`Cliente: ${Array.from(AppState.filtroClientes).join(', ')}`);
-            if (AppState.filtroCentros.size) filtros.push(`C.C.: ${Array.from(AppState.filtroCentros).join(', ')}`);
-
-            const filtroStr = filtros.length > 0 ? filtros.join(' | ') : 'Visão Geral (Sem filtros aplicados)';
-            const agora = new Date();
-            const dataFmt = agora.toLocaleDateString('pt-BR');
-            const horaFmt = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-            subEl.textContent = `Filtros: ${filtroStr} • Gerado em: ${dataFmt} às ${horaFmt}`;
-        },
-
-        atualizarBotoesExportacao(pagina) {
-            const container = document.getElementById('exportButtonsContainer');
-            if (!container) return;
-
-            container.textContent = '';
-
-            if (pagina === 'dashboard') {
-                const btnPdf = Helpers.createElement('button', { className: 'btn' });
-                btnPdf.innerHTML = '<i class="ph-fill ph-file-pdf"></i> PDF';
-                btnPdf.addEventListener('click', () => ExportService.exportarPDF());
-
-                const btnPng = Helpers.createElement('button', { className: 'btn' });
-                btnPng.innerHTML = '<i class="ph-fill ph-image"></i> PNG';
-                btnPng.addEventListener('click', () => ExportService.exportarPNG());
-
-                const btnImprimir = Helpers.createElement('button', { className: 'btn primary' });
-                btnImprimir.innerHTML = '<i class="ph-fill ph-printer"></i> Imprimir';
-                btnImprimir.addEventListener('click', () => window.print());
-
-                container.appendChild(btnPdf);
-                container.appendChild(btnPng);
-                container.appendChild(btnImprimir);
-            } else {
-                const btnCsv = Helpers.createElement('button', { className: 'btn primary' });
-                btnCsv.innerHTML = '<i class="ph-fill ph-download-simple"></i> Exportar Excel (CSV)';
-                btnCsv.addEventListener('click', () => TableRenderer.exportarCSV());
-                container.appendChild(btnCsv);
-            }
-        },
-
-        mostrarRetryBar(msg) {
-            const bar = document.getElementById('retryBar');
-            const msgEl = document.getElementById('retryMessage');
-            if (bar) bar.classList.add('visible');
-            if (msgEl) msgEl.textContent = msg || 'Erro ao carregar dados. Verifique sua conexão.';
-        },
-
-        esconderRetryBar() {
-            const bar = document.getElementById('retryBar');
-            if (bar) bar.classList.remove('visible');
-        }
-    };
-
-    /* ==========================================================
-       SEÇÃO 9: EXPORT SERVICE — PDF, PNG, impressão
-       ========================================================== */
-    const ExportService = {
-        /** Prepara ambiente para exportação (tema claro, sem transições) */
-        async _prepararExportacao(acaoExportacao) {
-            const wasDark = Helpers.isDark();
-            const styleNoTransition = document.createElement('style');
-            styleNoTransition.textContent = '* { transition: none !important; animation: none !important; }';
-            document.head.appendChild(styleNoTransition);
-
-            if (wasDark) document.body.classList.remove('dark-mode');
-            document.body.classList.add('exporting');
-            UI.atualizarTituloExportacao();
-            App.aplicarFiltros(true);
-
-            await new Promise(r => setTimeout(r, 300));
-
-            try {
-                await acaoExportacao();
-            } catch (err) {
-                console.error('[ExportService] Erro na exportação:', err);
-                Helpers.showToast('Erro ao exportar. Tente novamente.');
-            }
-
-            document.body.classList.remove('exporting');
-            if (wasDark) document.body.classList.add('dark-mode');
-            App.aplicarFiltros();
-            setTimeout(() => document.head.removeChild(styleNoTransition), 50);
-        },
-
-        /** Gera página de PDF a partir de um canvas */
-        _addPageToPdf(pdf, canvas, pdfWidth, pdfHeight) {
-            const ratio = canvas.width / canvas.height;
-            const h = pdfWidth / ratio;
-            const y = h < pdfHeight ? (pdfHeight - h) / 2 : 0;
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, y, pdfWidth, h, undefined, 'FAST');
-        },
-
-        exportarPDF() {
-            this._prepararExportacao(async () => {
-                const printArea = document.querySelector('.content-body');
-                const block1 = document.getElementById('export-block-1');
-                const block2 = document.getElementById('export-block-2');
-                const block3 = document.getElementById('export-block-3');
-                const exportTitleContainer = document.getElementById('export-title-container');
-
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('landscape', 'mm', 'a4');
-                const pdfWidth = 297;
-                const pdfHeight = 210;
-                const bgColor = Config.PDF_COLORS.bg;
-
-                exportTitleContainer.style.display = 'block';
-
-                // PÁGINA 1
-                block2.style.display = 'none';
-                block3.style.display = 'none';
-                const canvas1 = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: bgColor });
-                this._addPageToPdf(pdf, canvas1, pdfWidth, pdfHeight);
-
-                // PÁGINA 2
-                block1.style.display = 'none';
-                block2.style.display = '';
-                const canvas2 = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: bgColor });
-                pdf.addPage();
-                this._addPageToPdf(pdf, canvas2, pdfWidth, pdfHeight);
-
-                // PÁGINA 3 (Gráfico YoY)
-                block2.style.display = 'none';
-                block3.style.display = '';
-                const canvas3 = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: bgColor });
-                pdf.addPage();
-                this._addPageToPdf(pdf, canvas3, pdfWidth, pdfHeight);
-
-                // RESTAURA
-                block1.style.display = '';
-                block2.style.display = '';
-                exportTitleContainer.style.display = '';
-
-                pdf.save('Dashboard_Ontime.pdf');
-            });
-        },
-
-        exportarPNG() {
-            this._prepararExportacao(async () => {
-                const exportTitleContainer = document.getElementById('export-title-container');
-                exportTitleContainer.style.display = 'block';
-                const printArea = document.querySelector('.content-body');
-                const canvas = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: Config.PDF_COLORS.bg });
-                const link = document.createElement('a');
-                link.download = 'Dashboard_Ontime.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                exportTitleContainer.style.display = '';
-            });
-        }
-    };
-
-    /* ==========================================================
-       SEÇÃO 10: APP — Orquestrador principal
-       ========================================================== */
-    const App = {
-        /** Inicialização completa da aplicação */
-        async init() {
-            // Tema salvo
-            if (localStorage.getItem(Config.THEME_KEY) === 'dark') {
-                document.body.classList.add('dark-mode');
-            }
-
-            // Data atual no footer
-            document.getElementById('dataAtual').textContent = new Date().toLocaleDateString('pt-BR');
-
-            // Controle do botão voltar
-            this._initBotaoVoltar();
-
-            // Bind de eventos via addEventListener (sem onclick inline)
-            this._bindEvents();
-
-            // Carrega dados
-            await this.carregarDados();
-        },
-
-        _initBotaoVoltar() {
-            const btnVoltar = document.getElementById('btnVoltar');
-            const referrer = document.referrer;
-            const currentHost = window.location.hostname;
-
-            if (!referrer || !referrer.includes(currentHost)) {
-                if (btnVoltar) btnVoltar.style.display = 'none';
-            }
-        },
-
-        _bindEvents() {
-            // Menu mobile
-            document.getElementById('menuToggleBtn').addEventListener('click', () => UI.toggleSidebar());
-            document.getElementById('sidebarOverlay').addEventListener('click', () => UI.toggleSidebar());
-
-            // Dark mode
-            document.getElementById('darkModeBtn').addEventListener('click', () => UI.toggleDarkMode());
-
-            // Atualizar dados
-            document.getElementById('atualizarBtn').addEventListener('click', () => this.carregarDados(true));
-
-            // Retry
-            document.getElementById('retryBtn').addEventListener('click', () => this.carregarDados(true));
-
-            // Tabs (nav)
-            document.getElementById('tabDashboard').addEventListener('click', () => this.mudarPagina('dashboard'));
-            document.getElementById('tabRelatorio').addEventListener('click', () => this.mudarPagina('relatorio'));
-
-            // Teclado para tabs (acessibilidade)
-            document.getElementById('tabDashboard').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.mudarPagina('dashboard'); } });
-            document.getElementById('tabRelatorio').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.mudarPagina('relatorio'); } });
-
-            // Impressão
-            window.addEventListener('beforeprint', () => {
-                UI._wasDarkBeforePrint = Helpers.isDark();
-                if (UI._wasDarkBeforePrint) { document.body.classList.remove('dark-mode'); this.aplicarFiltros(true); }
-                UI.atualizarTituloExportacao();
-            });
-            window.addEventListener('afterprint', () => {
-                if (UI._wasDarkBeforePrint) { document.body.classList.add('dark-mode'); this.aplicarFiltros(); }
-            });
-        },
-
-        /** Carrega dados do CSV */
-        async carregarDados(force) {
-            const btnIcon = document.getElementById('icone-atualizar');
-            const btn = document.getElementById('atualizarBtn');
-            const overlay = document.getElementById('loadingOverlay');
-
-            if (btnIcon) btnIcon.classList.add('spin-anim');
-            if (btn) btn.disabled = true;
-            overlay.classList.remove('hidden');
-            UI.esconderRetryBar();
-            UI.atualizarStatusLoading('Carregando dados do sistema...');
-
-            try {
-                // Etapa 1: Fetch
-                let csvText;
-                try {
-                    csvText = await DataService.fetchCSV(force);
-                } catch (e) {
-                    console.error('[App] Falha no carregamento:', e);
-                    Helpers.showToast('Falha ao baixar os dados. Verifique sua conexão.');
-                    UI.mostrarRetryBar('Não foi possível carregar os dados. Verifique sua conexão e tente novamente.');
-                    return;
-                }
-
-                // Etapa 2: Parsing
-                let dados;
-                try {
-                    UI.atualizarStatusLoading('Processando dados...');
-                    dados = DataService.parseCSV(csvText);
-                } catch (e) {
-                    console.error('[App] Falha no parsing:', e);
-                    Helpers.showToast(`Erro ao processar dados: ${e.message}`);
-                    UI.mostrarRetryBar(`Erro no processamento: ${e.message}`);
-                    return;
-                }
-
-                if (dados.length === 0) {
-                    Helpers.showToast('Nenhum registro válido encontrado nos dados.');
-                    UI.mostrarRetryBar('Os dados carregados não contêm registros válidos.');
-                    return;
-                }
-
-                // Etapa 3: Processamento
-                try {
-                    UI.atualizarStatusLoading('Indexando dados...');
-                    AppState.dadosCompletos = dados;
-                    AppState.buildIndexes();
-                    AppState.resetFiltros();
-                } catch (e) {
-                    console.error('[App] Falha na indexação:', e);
-                    Helpers.showToast('Erro ao processar índices dos dados.');
-                    return;
-                }
-
-                // Etapa 4: Renderização
-                try {
-                    UI.atualizarStatusLoading('Renderizando dashboard...');
-                    this.construirSidebar();
-                    this.aplicarFiltros();
-                    TableRenderer.atualizarRelatorioMensal();
-                    UI.esconderRetryBar();
-                } catch (e) {
-                    console.error('[App] Falha na renderização:', e);
-                    Helpers.showToast('Erro ao renderizar o dashboard.');
-                }
-
-            } finally {
-                if (btnIcon) btnIcon.classList.remove('spin-anim');
-                if (btn) btn.disabled = false;
-                setTimeout(() => overlay.classList.add('hidden'), 500);
-            }
-        },
-
-        /** Constrói a sidebar de filtros (DOM seguro) */
-        construirSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.textContent = '';
-
-            const { anosDisp, mesesDisp, clientesDisp, centrosDisp } = FiltrosCascata.validarFiltros();
-
-            // Helper para criar grupo de filtro
-            const criarGrupo = (labelText, quickLinksConfig) => {
-                const grupo = Helpers.createElement('div', { className: 'filtro-grupo' });
-                const label = Helpers.createElement('label');
-
-                if (quickLinksConfig) {
-                    const ql = Helpers.createElement('span', { className: 'quick-links' });
-                    const linkTodos = Helpers.createElement('a', {}, 'Todos');
-                    linkTodos.addEventListener('click', quickLinksConfig.todos);
-                    const linkNenhum = Helpers.createElement('a', {}, 'Nenhum');
-                    linkNenhum.addEventListener('click', quickLinksConfig.nenhum);
-                    ql.appendChild(linkTodos);
-                    ql.appendChild(linkNenhum);
-                    label.appendChild(ql);
-                }
-
-                label.appendChild(document.createTextNode(labelText));
-                grupo.appendChild(label);
-                return grupo;
-            };
-
-            // Helper para criar botões de filtro
-            const criarBotoesFiltro = (container, items, activeSet, toggleFn) => {
-                const btnsDiv = Helpers.createElement('div', { className: 'buttons-container' });
-                items.forEach(item => {
-                    const btn = Helpers.createElement('button', { className: 'filter-btn' }, item);
-                    if (activeSet instanceof Set ? activeSet.has(item) : activeSet === item) {
-                        btn.classList.add('active');
-                    }
-                    btn.addEventListener('click', () => toggleFn(item));
-                    btnsDiv.appendChild(btn);
-                });
-                container.appendChild(btnsDiv);
-                return btnsDiv;
-            };
-
-            // Título
-            sidebar.appendChild(Helpers.createElement('label', { className: 'sidebar-title' }, 'FILTROS'));
-
-            // Modo (RB / Custo)
-            const grupoModo = Helpers.createElement('div', { className: 'filtro-grupo' });
-            grupoModo.appendChild(Helpers.createElement('label', {}, 'Visualização'));
-            const modeBtns = Helpers.createElement('div', { className: 'mode-buttons' });
-
-            const btnRB = Helpers.createElement('button', { className: `mode-btn ${AppState.currentMode === 'RB' ? 'active' : ''}`, id: 'modeRB' }, 'RB');
-            btnRB.addEventListener('click', () => this._setMode('RB'));
-            modeBtns.appendChild(btnRB);
-
-            const btnCusto = Helpers.createElement('button', { className: `mode-btn ${AppState.currentMode === 'Custo' ? 'active' : ''}`, id: 'modeCusto' }, 'Custo');
-            btnCusto.addEventListener('click', () => this._setMode('Custo'));
-            modeBtns.appendChild(btnCusto);
-
-            grupoModo.appendChild(modeBtns);
-            sidebar.appendChild(grupoModo);
-
-            // Ano
-            const grupoAno = criarGrupo('Ano');
-            criarBotoesFiltro(grupoAno, anosDisp, AppState.filtroAno, ano => {
-                AppState.filtroAno = ano;
-                this.construirSidebar();
-                this.aplicarFiltros();
-            });
-            sidebar.appendChild(grupoAno);
-
-            // Mês
-            const todosMeses = AppState._todosMeses.filter(m => mesesDisp.has(m));
-            const grupoMes = criarGrupo('Mês', {
-                todos: () => { todosMeses.forEach(m => AppState.filtroMeses.add(m)); this.construirSidebar(); this.aplicarFiltros(); },
-                nenhum: () => { AppState.filtroMeses.clear(); this.construirSidebar(); this.aplicarFiltros(); }
-            });
-            criarBotoesFiltro(grupoMes, todosMeses, AppState.filtroMeses, mes => {
-                if (AppState.filtroMeses.has(mes)) AppState.filtroMeses.delete(mes);
-                else AppState.filtroMeses.add(mes);
-                this.construirSidebar();
-                this.aplicarFiltros();
-            });
-            sidebar.appendChild(grupoMes);
-
-            // Cliente
-            const todosClientes = AppState._todosClientes.filter(c => clientesDisp.has(c));
-            const grupoCliente = criarGrupo('Cliente', {
-                todos: () => { todosClientes.forEach(c => AppState.filtroClientes.add(c)); this.construirSidebar(); this.aplicarFiltros(); },
-                nenhum: () => { AppState.filtroClientes.clear(); this.construirSidebar(); this.aplicarFiltros(); }
-            });
-            criarBotoesFiltro(grupoCliente, todosClientes, AppState.filtroClientes, cli => {
-                if (AppState.filtroClientes.has(cli)) AppState.filtroClientes.delete(cli);
-                else AppState.filtroClientes.add(cli);
-                this.construirSidebar();
-                this.aplicarFiltros();
-            });
-            sidebar.appendChild(grupoCliente);
-
-            // Centro de Custo
-            const todosCentros = AppState._todosCentros.filter(c => centrosDisp.has(c));
-            const grupoCentro = criarGrupo('Centro de Custo', {
-                todos: () => { todosCentros.forEach(c => AppState.filtroCentros.add(c)); this.construirSidebar(); this.aplicarFiltros(); },
-                nenhum: () => { AppState.filtroCentros.clear(); this.construirSidebar(); this.aplicarFiltros(); }
-            });
-            criarBotoesFiltro(grupoCentro, todosCentros, AppState.filtroCentros, centro => {
-                if (AppState.filtroCentros.has(centro)) AppState.filtroCentros.delete(centro);
-                else AppState.filtroCentros.add(centro);
-                this.construirSidebar();
-                this.aplicarFiltros();
-            });
-            sidebar.appendChild(grupoCentro);
-
-            // Botão limpar filtros
-            const btnLimpar = Helpers.createElement('button', { className: 'clear-filters-btn' }, 'Limpar Filtros');
-            btnLimpar.addEventListener('click', () => {
-                AppState.filtroAno = AppState.obterAnoMaisRecente();
-                AppState.filtroMeses.clear();
-                AppState.filtroClientes.clear();
-                AppState.filtroCentros.clear();
-                this.construirSidebar();
-                this.aplicarFiltros();
-            });
-            sidebar.appendChild(btnLimpar);
-        },
-
-        _setMode(mode) {
-            if (mode === AppState.currentMode) return;
-            AppState.currentMode = mode;
-            this.aplicarFiltros();
-            const rbBtn = document.getElementById('modeRB');
-            const custoBtn = document.getElementById('modeCusto');
-            if (rbBtn) rbBtn.classList.toggle('active', mode === 'RB');
-            if (custoBtn) custoBtn.classList.toggle('active', mode === 'Custo');
-        },
-
-        /** Aplica filtros e atualiza todos os gráficos e KPIs */
-        aplicarFiltros(sync) {
-            const dadosBase = AppState.filtrarDados();
-            const dadosMensal = dadosBase; // mesmos filtros
-            const dadosClientes = AppState.filtrarSemClientes();
-            const dadosParaYoY = AppState.filtrarParaYoY();
-
-            const containerPainel = document.getElementById('page-dashboard');
-
-            if (dadosBase.length === 0) {
-                containerPainel.classList.add('is-empty');
-            } else {
-                containerPainel.classList.remove('is-empty');
-
-                try { this._atualizarKPIs(dadosBase); }
-                catch (e) { console.error('[App] Erro ao atualizar KPIs:', e); }
-
-                try { ChartManager.atualizarMensal(dadosMensal, sync); }
-                catch (e) { console.error('[App] Erro no gráfico mensal:', e); }
-
-                try { ChartManager.atualizarTop10(dadosClientes, sync); }
-                catch (e) { console.error('[App] Erro no gráfico top10:', e); }
-
-                try { ChartManager.atualizarTrimestre(dadosBase, sync); }
-                catch (e) { console.error('[App] Erro no gráfico trimestral:', e); }
-
-                try { ChartManager.atualizarCentroCusto(dadosBase, sync); }
-                catch (e) { console.error('[App] Erro no gráfico CC doughnut:', e); }
-
-                try { ChartManager.atualizarCCBarras(dadosBase, sync); }
-                catch (e) { console.error('[App] Erro no gráfico CC barras:', e); }
-
-                try { ChartManager.atualizarYoY(dadosParaYoY, AppState.filtroAno, sync); }
-                catch (e) { console.error('[App] Erro no gráfico YoY:', e); }
-
-                try { ChartManager.atualizarMargem(dadosMensal, sync); }
-                catch (e) { console.error('[App] Erro no gráfico margem:', e); }
-            }
-        },
-
-        /** Calcula e renderiza KPIs (DOM seguro com textContent) */
-        _atualizarKPIs(dados) {
-            const totalRB = dados.reduce((a, d) => a + d.rb, 0);
-            const totalCusto = dados.reduce((a, d) => a + d.custo, 0);
-            const resultado = totalRB - totalCusto;
-            const margem = totalRB > 0 ? ((resultado / totalRB) * 100) : 0;
-            const clientes = new Set(dados.map(d => d.cliente));
-            const ticketMedio = clientes.size > 0 ? (totalRB / clientes.size) : 0;
-
-            document.getElementById('rbTotal').textContent = `R$ ${Helpers.formatarNumeroInteiro(totalRB)}`;
-            document.getElementById('custoTotal').textContent = `R$ ${Helpers.formatarNumeroInteiro(totalCusto)}`;
-            document.getElementById('margem').textContent = `${margem.toFixed(1)}%`;
-            document.getElementById('ticketMedio').textContent = `R$ ${Helpers.formatarNumeroInteiro(ticketMedio)}`;
-
-            // Período anterior para variação
-            const dadosAnt = this._getPeriodoAnterior(dados);
-            const prevRB = dadosAnt.reduce((a, d) => a + d.rb, 0);
-            const prevCusto = dadosAnt.reduce((a, d) => a + d.custo, 0);
-            const prevResultado = prevRB - prevCusto;
-            const prevMargem = prevRB > 0 ? ((prevResultado / prevRB) * 100) : 0;
-            const prevClientes = new Set(dadosAnt.map(d => d.cliente));
-            const prevTicket = prevClientes.size > 0 ? (prevRB / prevClientes.size) : 0;
-
-            const varRb = Helpers.formatarVariacao(totalRB, prevRB);
-            const elVarRb = document.getElementById('varRb');
-            elVarRb.textContent = varRb.texto;
-            elVarRb.className = `variacao ${varRb.classe}`;
-
-            const varCusto = Helpers.formatarVariacao(totalCusto, prevCusto, true);
-            const elVarCusto = document.getElementById('varCusto');
-            elVarCusto.textContent = varCusto.texto;
-            elVarCusto.className = `variacao ${varCusto.classe}`;
-
-            const elVarMargem = document.getElementById('varMargem');
-            if (prevRB === 0) {
-                elVarMargem.textContent = '--';
-                elVarMargem.className = 'variacao neutra';
-            } else {
-                const diff = margem - prevMargem;
-                elVarMargem.textContent = `${diff > 0 ? '+' : ''}${diff.toFixed(1)} p.p.`;
-                elVarMargem.className = `variacao ${diff > 0 ? 'positiva' : 'negativa'}`;
-            }
-
-            const varTicket = Helpers.formatarVariacao(ticketMedio, prevTicket);
-            const elVarTicket = document.getElementById('varTicket');
-            elVarTicket.textContent = varTicket.texto;
-            elVarTicket.className = `variacao ${varTicket.classe}`;
-        },
-
-        /** Obtém dados do período anterior (ano -1) para comparação */
-        _getPeriodoAnterior(dadosFiltrados) {
-            const mesesFiltrados = [...new Set(dadosFiltrados.map(d => Helpers.parseMesAno(d.mes).mes))];
-            if (mesesFiltrados.length === 0) return [];
-
-            const anoAnterior = AppState.filtroAno ? (parseInt(AppState.filtroAno, 10) - 1).toString() : null;
-            if (!anoAnterior) return [];
-
-            return AppState.dadosCompletos.filter(d => {
-                const { mes, ano } = Helpers.parseMesAno(d.mes);
-                if (!mes || !ano) return false;
-                return mesesFiltrados.includes(mes) &&
-                       ano === anoAnterior &&
-                       AppState._matchCliente(d) &&
-                       AppState._matchCentro(d);
-            });
-        },
-
-        /** Troca entre as páginas Dashboard e Relatório */
-        mudarPagina(pagina) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(`page-${pagina}`).classList.add('active');
-
-            // Atualiza tabs
-            const tabDash = document.getElementById('tabDashboard');
-            const tabRel = document.getElementById('tabRelatorio');
-            tabDash.classList.toggle('active', pagina === 'dashboard');
-            tabDash.setAttribute('aria-selected', pagina === 'dashboard' ? 'true' : 'false');
-            tabRel.classList.toggle('active', pagina === 'relatorio');
-            tabRel.setAttribute('aria-selected', pagina === 'relatorio' ? 'true' : 'false');
-
-            UI.atualizarBotoesExportacao(pagina);
-
-            if (pagina === 'relatorio') {
-                this._construirSidebarRelatorio();
-                AppState.paginaRelatorio = 1;
-                TableRenderer.atualizarRelatorioMensal();
-            } else {
-                this.construirSidebar();
-            }
-        },
-
-        /** Constrói sidebar específica para a aba Relatório */
-        _construirSidebarRelatorio() {
-            const anos = [...new Set(AppState.dadosCompletos.map(d => Helpers.parseMesAno(d.mes).ano).filter(a => a !== ''))].sort();
-            if (!AppState.filtroAnoRelatorio) {
-                AppState.filtroAnoRelatorio = anos.length ? anos[anos.length - 1] : null;
-            }
-
-            const sidebar = document.getElementById('sidebar');
-            sidebar.textContent = '';
-
-            sidebar.appendChild(Helpers.createElement('label', { className: 'sidebar-title' }, 'FILTROS'));
-
-            const grupo = Helpers.createElement('div', { className: 'filtro-grupo' });
-            grupo.appendChild(Helpers.createElement('label', {}, 'Ano (Relatório)'));
-
-            const container = Helpers.createElement('div', { className: 'buttons-container' });
-            anos.forEach(ano => {
-                const btn = Helpers.createElement('button', { className: `filter-btn ${AppState.filtroAnoRelatorio === ano ? 'active' : ''}` }, ano);
-                btn.addEventListener('click', () => {
-                    container.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    AppState.filtroAnoRelatorio = ano;
-                    AppState.paginaRelatorio = 1;
-                    TableRenderer.atualizarRelatorioMensal();
-                });
-                container.appendChild(btn);
-            });
-            grupo.appendChild(container);
-            sidebar.appendChild(grupo);
-        }
-    };
-
-    /* ==========================================================
-       SEÇÃO 11: INICIALIZAÇÃO
-       ========================================================== */
-    document.addEventListener('DOMContentLoaded', () => {
-        ChartManager.ensurePlugins();
-        App.init();
+/* ============================================================
+   FORMATAÇÃO
+   ============================================================ */
+const fmtBR = n => (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtBRShort = n => {
+  if (!n) return '0';
+  if (Math.abs(n) >= 1e6) return (n/1e6).toLocaleString('pt-BR', {maximumFractionDigits:2}) + ' mi';
+  if (Math.abs(n) >= 1e3) return (n/1e3).toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' mil';
+  return n.toLocaleString('pt-BR', {maximumFractionDigits:0});
+};
+const fmtDate = iso => {
+  if (!iso) return '—';
+  const d = new Date(iso + (iso.length === 10 ? 'T00:00:00' : ''));
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+};
+const fmtDateShort = iso => {
+  if (!iso) return '—';
+  const d = new Date(iso + (iso.length === 10 ? 'T00:00:00' : ''));
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+};
+const fmtDateTime = iso => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' }) + ' · ' +
+         d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+};
+
+/* ============================================================
+   STATUS / STAMP
+   ============================================================ */
+function updateStamp(data) {
+  const stamp = document.getElementById('stamp');
+  const text = document.getElementById('stamp-text');
+  if (!data) {
+    stamp.className = 'stamp error';
+    text.textContent = 'sem dados';
+    return;
+  }
+  const gen = new Date(data.meta.generated_at);
+  const hoursAgo = (Date.now() - gen.getTime()) / 36e5;
+  let cls = 'stamp', label;
+  if (hoursAgo > 30) { cls = 'stamp stale'; label = `dados de ${Math.floor(hoursAgo/24)}d atrás`; }
+  else { label = `atualizado em ${fmtDateTime(data.meta.generated_at)}`; }
+  stamp.className = cls;
+  text.textContent = label;
+}
+
+/* ============================================================
+   RENDER PRINCIPAL
+   ============================================================ */
+function render(data) {
+  document.getElementById('initial-state').remove();
+  const hoje = data.pago_hoje;
+  const prev = data.previsto_amanha;
+
+  // Hero
+  document.getElementById('hero-title').innerHTML = `Hoje: <em>R$ ${fmtBRShort(hoje.total)}</em> · Amanhã: <em>R$ ${fmtBRShort(prev.total)}</em>`;
+  document.getElementById('hero-sub').textContent = `Consolidado de pagamentos realizados em ${fmtDate(data.meta.data_hoje)} e prévia para ${fmtDate(data.meta.data_amanha)}`;
+
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  /* ---- Alerts ---- */
+  const alerts = buildAlerts(data);
+  if (alerts.length) {
+    const s = document.createElement('section');
+    s.className = 'reveal';
+    s.innerHTML = `<div class="alerts">${alerts.join('')}</div>`;
+    main.appendChild(s);
+  }
+
+  /* ---- KPIs ---- */
+  const kpis = document.createElement('section');
+  kpis.className = 'reveal';
+  const pagoSharePrev = prev.total ? ((hoje.total / prev.total) * 100).toFixed(0) : 0;
+  kpis.innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi accent">
+        <p class="kpi-label">Pago hoje</p>
+        <div class="kpi-value"><span class="prefix">R$</span><em>${fmtBR(hoje.total)}</em></div>
+        <p class="kpi-sub">${hoje.quantidade} títulos · ${fmtDate(data.meta.data_hoje)}</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi-label">Previsto amanhã</p>
+        <div class="kpi-value"><span class="prefix">R$</span>${fmtBR(prev.total)}</div>
+        <p class="kpi-sub">${prev.quantidade} títulos · ${fmtDate(data.meta.data_amanha)}</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi-label">Maior pagamento hoje</p>
+        <div class="kpi-value"><span class="prefix">R$</span>${fmtBR(hoje.maior?.valor || 0)}</div>
+        <p class="kpi-sub" title="${hoje.maior?.fornecedor || ''}">${truncate(hoje.maior?.fornecedor || '—', 32)}</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi-label">Pendentes de aprovação</p>
+        <div class="kpi-value">${prev.em_aprovacao}</div>
+        <p class="kpi-sub"><span class="kpi-chip">risco</span> dos ${prev.quantidade} previstos</p>
+      </div>
+    </div>
+  `;
+  main.appendChild(kpis);
+
+  /* ---- Hoje realizado ---- */
+  main.appendChild(renderHojeSection(hoje, data.meta));
+
+  /* ---- Previsto amanhã ---- */
+  main.appendChild(renderPrevSection(prev, data.meta));
+}
+
+function truncate(s, n) {
+  return s.length > n ? s.slice(0, n-1) + '…' : s;
+}
+
+/* ============================================================
+   ALERTAS
+   ============================================================ */
+function buildAlerts(data) {
+  const arr = [];
+  const prev = data.previsto_amanha;
+  const hoje = data.pago_hoje;
+
+  if (prev.em_aprovacao > 0) {
+    arr.push(`
+      <div class="alert warn">
+        <div class="alert-icon">!</div>
+        <div><strong>${prev.em_aprovacao} títulos pendentes de aprovação</strong>
+        <small>Vencem amanhã e podem não ser pagos se não forem aprovados hoje.</small></div>
+      </div>`);
+  }
+  if (prev.total > hoje.total * 1.5 && hoje.total > 0) {
+    const mult = (prev.total / hoje.total).toFixed(1);
+    arr.push(`
+      <div class="alert info">
+        <div class="alert-icon">↑</div>
+        <div><strong>Prévia de amanhã ${mult}× maior que hoje</strong>
+        <small>R$ ${fmtBR(prev.total)} vs. R$ ${fmtBR(hoje.total)} pagos hoje. Conferir fluxo de caixa.</small></div>
+      </div>`);
+  }
+  const forns = prev.nf_servico.concat(prev.nf_titulo, prev.reembolso)
+    .map(x => (x.fornecedor || '').toUpperCase()).filter(Boolean);
+  const setHoje = new Set(hoje.titulos.map(t => (t.fornecedor || '').toUpperCase()).filter(Boolean));
+  const recorrentes = [...new Set(forns.filter(f => setHoje.has(f)))];
+  if (recorrentes.length) {
+    arr.push(`
+      <div class="alert ok">
+        <div class="alert-icon">↻</div>
+        <div><strong>${recorrentes.length} fornecedor${recorrentes.length>1?'es':''} recorrente${recorrentes.length>1?'s':''}</strong>
+        <small>Apareceram hoje e voltam amanhã. Ex.: ${recorrentes.slice(0,2).map(s => truncate(s, 28)).join(', ')}${recorrentes.length>2?' e mais':''}.</small></div>
+      </div>`);
+  }
+  return arr;
+}
+
+/* ============================================================
+   HOJE (Protheus)
+   ============================================================ */
+function renderHojeSection(hoje, meta) {
+  const sec = document.createElement('section');
+  sec.className = 'reveal';
+
+  // Estado local da tabela
+  const tipos = [...new Set(hoje.titulos.map(t => t.tipo).filter(Boolean))].sort();
+  let filter = { q: '', tipo: null };
+  let sort = { col: 'valor_rs', dir: -1 };
+
+  const cols = [
+    { key: 'numero',     label: 'Título',     render: t => `<span class="pill ${pillClass(t.tipo)}">${t.tipo||'?'}</span> ${t.numero}${t.parcela?`·${t.parcela}`:''}` },
+    { key: 'fornecedor', label: 'Fornecedor', render: t => `<div><div>${t.fornecedor||'—'}</div><div class="hist">${t.historico||''}</div></div>` },
+    { key: 'vencimento', label: 'Venc.',      render: t => `<span class="hist">${fmtDateShort(t.vencimento)}</span>` },
+    { key: 'forma_pgto', label: 'Forma',      render: t => t.forma_pgto || '—', num: false },
+    { key: 'valor_rs',   label: 'Valor',      render: t => `R$ ${fmtBR(t.valor_rs)}`, num: true, strong: true },
+  ];
+
+  sec.innerHTML = `
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Pagamentos realizados <span class="date">${fmtDate(meta.data_hoje)}</span></h2>
+        <p class="section-sub">${hoje.quantidade} títulos liquidados · Total R$ ${fmtBR(hoje.total)}</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="toolbar">
+        <div class="search"><input id="hoje-search" placeholder="Buscar fornecedor, histórico, título..." /></div>
+        <button class="filter-chip active" data-tipo="">Todos</button>
+        ${tipos.map(t => `<button class="filter-chip" data-tipo="${t}"><span class="pill ${pillClass(t)}">${t}</span></button>`).join('')}
+        <span class="toolbar-right">Mostrando <strong id="hoje-count">0</strong> · <strong id="hoje-total">R$ 0,00</strong></span>
+      </div>
+      <div class="table-wrap">
+        <table class="data" id="hoje-table">
+          <thead><tr>${cols.map(c => `<th data-key="${c.key}" class="${c.num?'num':''}">${c.label}</th>`).join('')}</tr></thead>
+          <tbody></tbody>
+          <tfoot class="data"></tfoot>
+        </table>
+      </div>
+    </div>
+  `;
+
+  function refresh() {
+    const rows = hoje.titulos.filter(t => {
+      if (filter.tipo && t.tipo !== filter.tipo) return false;
+      if (filter.q) {
+        const q = filter.q.toLowerCase();
+        const blob = (t.fornecedor + ' ' + t.historico + ' ' + t.numero + ' ' + t.natureza).toLowerCase();
+        if (!blob.includes(q)) return false;
+      }
+      return true;
+    });
+    const dir = sort.dir;
+    rows.sort((a, b) => {
+      let va = a[sort.col], vb = b[sort.col];
+      if (typeof va === 'number') return (va - vb) * dir;
+      return String(va||'').localeCompare(String(vb||''), 'pt-BR') * dir;
     });
 
-})();
+    const tbody = sec.querySelector('tbody');
+    tbody.innerHTML = rows.map(t => `
+      <tr>
+        ${cols.map(c => `<td class="${c.num?'num':''} ${c.strong?'strong':''}">${c.render(t)}</td>`).join('')}
+      </tr>
+    `).join('') || `<tr><td colspan="${cols.length}" style="text-align:center;padding:32px;color:var(--muted)">Nenhum resultado</td></tr>`;
+
+    const total = rows.reduce((s, t) => s + (t.valor_rs || 0), 0);
+    sec.querySelector('#hoje-count').textContent = rows.length;
+    sec.querySelector('#hoje-total').textContent = 'R$ ' + fmtBR(total);
+
+    const tfoot = sec.querySelector('tfoot');
+    tfoot.innerHTML = `<tr><td colspan="${cols.length - 1}">Total exibido (${rows.length} de ${hoje.titulos.length})</td><td class="num">R$ ${fmtBR(total)}</td></tr>`;
+
+    // Sort indicators
+    sec.querySelectorAll('thead th').forEach(th => {
+      th.classList.toggle('sorted', th.dataset.key === sort.col);
+      th.dataset.dir = th.dataset.key === sort.col ? (dir > 0 ? '↑' : '↓') : '';
+    });
+  }
+
+  sec.addEventListener('click', e => {
+    const fc = e.target.closest('.filter-chip');
+    if (fc) {
+      sec.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+      fc.classList.add('active');
+      filter.tipo = fc.dataset.tipo || null;
+      refresh();
+    }
+    const th = e.target.closest('thead th');
+    if (th) {
+      const k = th.dataset.key;
+      if (sort.col === k) sort.dir *= -1; else { sort.col = k; sort.dir = 1; }
+      refresh();
+    }
+  });
+  sec.querySelector('#hoje-search').addEventListener('input', e => { filter.q = e.target.value; refresh(); });
+
+  setTimeout(refresh, 0);
+  return sec;
+}
+
+function pillClass(tipo) {
+  return ({ NF: 'nf', BOL: 'bol', RD: 'rd' })[tipo] || '';
+}
+
+/* ============================================================
+   PREVISTO AMANHÃ (3 categorias)
+   ============================================================ */
+function renderPrevSection(prev, meta) {
+  const sec = document.createElement('section');
+  sec.className = 'reveal';
+
+  const cats = [
+    { key: 'nf_servico', label: 'NFs de Serviço',  data: prev.nf_servico },
+    { key: 'nf_titulo',  label: 'NFs de Título',   data: prev.nf_titulo },
+    { key: 'reembolso',  label: 'Reembolsos',      data: prev.reembolso },
+  ];
+  let activeCat = cats.reduce((a, b) => a.data.length >= b.data.length ? a : b).key;
+  let filter = { q: '' };
+  let sort = { col: 'valor_total', dir: -1 };
+
+  sec.innerHTML = `
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">Prévia de pagamentos <span class="date">${fmtDate(meta.data_amanha)}</span></h2>
+        <p class="section-sub">${prev.quantidade} títulos previstos · Total R$ ${fmtBR(prev.total)}</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="cat-summary">
+        ${cats.map(c => `
+          <div class="cat-item ${c.key===activeCat?'active':''}" data-cat="${c.key}" style="cursor:pointer">
+            <p class="cat-label">${c.label}</p>
+            <div class="cat-value">R$ ${fmtBR(prev.por_categoria[c.key].total)}</div>
+            <p class="cat-sub">${prev.por_categoria[c.key].quantidade} títulos</p>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="tabs">
+        ${cats.map(c => `
+          <button class="tab ${c.key===activeCat?'active':''}" data-cat="${c.key}">
+            ${c.label} <span class="tab-count">${c.data.length}</span>
+          </button>
+        `).join('')}
+      </div>
+
+      <div class="toolbar">
+        <div class="search"><input id="prev-search" placeholder="Buscar fornecedor, solicitante, aprovador..." /></div>
+        <span class="toolbar-right">Mostrando <strong id="prev-count">0</strong> · <strong id="prev-total">R$ 0,00</strong></span>
+      </div>
+
+      <div class="table-wrap"><table class="data" id="prev-table"><thead></thead><tbody></tbody><tfoot class="data"></tfoot></table></div>
+    </div>
+  `;
+
+  const colsBy = {
+    nf_servico: [
+      { key: 'numero_nf',      label: 'NF',           render: r => r.numero_nf || '—' },
+      { key: 'fornecedor',     label: 'Fornecedor',   render: r => `<div><div>${r.fornecedor || '—'}</div><div class="hist">${r.observacoes ? truncate(r.observacoes, 64) : ''}</div></div>` },
+      { key: 'empresa',        label: 'Empresa',      render: r => r.empresa || '—' },
+      { key: 'aprovador',      label: 'Aprovador',    render: r => r.aprovador || '—' },
+      { key: 'status',         label: 'Status',       render: r => renderStatus(r.status) },
+      { key: 'valor_total',    label: 'Valor',        render: r => `R$ ${fmtBR(r.valor_total)}`, num: true, strong: true },
+    ],
+    nf_titulo: [
+      { key: 'numero_titulo',  label: 'Título',       render: r => r.numero_titulo || '—' },
+      { key: 'fornecedor',     label: 'Fornecedor',   render: r => `<div><div>${r.fornecedor || '—'}</div><div class="hist">${r.historico || ''}</div></div>` },
+      { key: 'empresa',        label: 'Empresa',      render: r => r.empresa || '—' },
+      { key: 'aprovador',      label: 'Aprovador',    render: r => r.aprovador || '—' },
+      { key: 'status',         label: 'Status',       render: r => renderStatus(r.status) },
+      { key: 'valor_total',    label: 'Valor',        render: r => `R$ ${fmtBR(r.valor_total)}`, num: true, strong: true },
+    ],
+    reembolso: [
+      { key: 'solicitante',    label: 'Solicitante',  render: r => r.solicitante || '—' },
+      { key: 'tipo_despesa',   label: 'Tipo despesa', render: r => `<span class="pill">${r.tipo_despesa||'—'}</span>` },
+      { key: 'fornecedor',     label: 'Beneficiário', render: r => r.fornecedor || '—' },
+      { key: 'tipo_solicitacao',label:'Solicitação',  render: r => r.tipo_solicitacao || '—' },
+      { key: 'aprovador',      label: 'Aprovador',    render: r => r.aprovador || '—' },
+      { key: 'valor_total',    label: 'Valor',        render: r => `R$ ${fmtBR(r.valor_total)}`, num: true, strong: true },
+    ],
+  };
+
+  function renderStatus(s) {
+    if (!s) return '<span class="pill">—</span>';
+    const l = s.toLowerCase();
+    if (/aprova[cç][aã]o/.test(l)) return `<span class="pill warn">${s}</span>`;
+    if (/aguardando|baixa/.test(l)) return `<span class="pill ok">${s}</span>`;
+    return `<span class="pill">${s}</span>`;
+  }
+
+  function refresh() {
+    const cat = cats.find(c => c.key === activeCat);
+    const cols = colsBy[activeCat];
+    let rows = cat.data.filter(r => {
+      if (!filter.q) return true;
+      const q = filter.q.toLowerCase();
+      return JSON.stringify(r).toLowerCase().includes(q);
+    });
+    const dir = sort.dir;
+    const validCol = cols.find(c => c.key === sort.col) ? sort.col : cols[cols.length-1].key;
+    rows.sort((a, b) => {
+      let va = a[validCol], vb = b[validCol];
+      if (typeof va === 'number' || typeof vb === 'number') return ((va||0) - (vb||0)) * dir;
+      return String(va||'').localeCompare(String(vb||''), 'pt-BR') * dir;
+    });
+
+    const thead = sec.querySelector('thead');
+    thead.innerHTML = `<tr>${cols.map(c => `<th data-key="${c.key}" class="${c.num?'num':''} ${c.key===validCol?'sorted':''}" data-dir="${c.key===validCol?(dir>0?'↑':'↓'):''}">${c.label}</th>`).join('')}</tr>`;
+
+    const tbody = sec.querySelector('tbody');
+    tbody.innerHTML = rows.map(r => {
+      const risk = /aprova[cç][aã]o/i.test(r.status || '');
+      return `<tr class="${risk?'flag-approval':''}">
+        ${cols.map(c => `<td class="${c.num?'num':''} ${c.strong?'strong':''}">${c.render(r)}</td>`).join('')}
+      </tr>`;
+    }).join('') || `<tr><td colspan="${cols.length}" style="text-align:center;padding:32px;color:var(--muted)">Nenhum título ${cat.label.toLowerCase()} previsto</td></tr>`;
+
+    const total = rows.reduce((s, r) => s + (r.valor_total || 0), 0);
+    sec.querySelector('#prev-count').textContent = rows.length;
+    sec.querySelector('#prev-total').textContent = 'R$ ' + fmtBR(total);
+    const tfoot = sec.querySelector('tfoot');
+    tfoot.innerHTML = `<tr><td colspan="${cols.length - 1}">Total exibido (${rows.length} de ${cat.data.length})</td><td class="num">R$ ${fmtBR(total)}</td></tr>`;
+  }
+
+  sec.addEventListener('click', e => {
+    const tab = e.target.closest('.tab');
+    if (tab) {
+      activeCat = tab.dataset.cat;
+      sec.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.cat === activeCat));
+      sec.querySelectorAll('.cat-item').forEach(t => t.classList.toggle('active', t.dataset.cat === activeCat));
+      sort = { col: 'valor_total', dir: -1 };
+      refresh();
+    }
+    const ci = e.target.closest('.cat-item');
+    if (ci) {
+      activeCat = ci.dataset.cat;
+      sec.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.cat === activeCat));
+      sec.querySelectorAll('.cat-item').forEach(t => t.classList.toggle('active', t.dataset.cat === activeCat));
+      sort = { col: 'valor_total', dir: -1 };
+      refresh();
+    }
+    const th = e.target.closest('thead th');
+    if (th) {
+      const k = th.dataset.key;
+      if (sort.col === k) sort.dir *= -1; else { sort.col = k; sort.dir = 1; }
+      refresh();
+    }
+  });
+  sec.querySelector('#prev-search').addEventListener('input', e => { filter.q = e.target.value; refresh(); });
+
+  setTimeout(refresh, 0);
+  return sec;
+}
+
+/* ============================================================
+   EMPTY / ERROR STATES
+   ============================================================ */
+function renderError(msg) {
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="empty-state">
+      <h2>Ainda não tem dados por aqui</h2>
+      <p>${msg}</p>
+      <p style="margin-top:24px"><a href="atualizar.html">→ Ir para a ferramenta de atualização</a></p>
+    </div>
+  `;
+  document.getElementById('hero-title').innerHTML = `Sem dados<em>.</em>`;
+  document.getElementById('hero-sub').textContent = 'Gere um data.json na ferramenta de atualização e suba no repositório.';
+  const stamp = document.getElementById('stamp');
+  stamp.className = 'stamp error';
+  document.getElementById('stamp-text').textContent = 'sem data.json';
+}
+
+/* ============================================================
+   BOOTSTRAP
+   ============================================================ */
+async function boot() {
+  try {
+    const res = await fetch('data.json?v=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    updateStamp(data);
+    render(data);
+  } catch (e) {
+    renderError(`Não consegui carregar <code>data.json</code>. Suba o arquivo no repositório (mesma pasta deste index.html). Detalhe técnico: ${e.message}`);
+  }
+}
+boot();
 </script>
 </body>
 </html>
