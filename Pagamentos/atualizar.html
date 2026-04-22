@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Atualizar dashboard · Pagamentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --plum: #3C003C;
+    --plum-deep: #2A0028;
+    --plum-light: #5C1A5C;
+    --orange: #FF6E00;
+    --orange-deep: #D25500;
+    --ink: #1A0F1A;
+    --muted: #6B5E6B;
+    --line: #E8E0E8;
+    --surface: #FFFFFF;
+    --bg: #FAF7F5;
+    --ok: #1F7A3D;
+    --warn: #C77700;
+    --err: #B91C1C;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Manrope', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 48px 32px 96px;
+  }
+  header.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand-mark {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--plum) 0%, var(--plum-light) 100%);
+    display: grid; place-items: center;
+    color: var(--orange);
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 22px;
+    box-shadow: 0 4px 12px rgba(60,0,60,0.25);
+  }
+  .brand-text h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .brand-text p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .help-link {
+    color: var(--plum);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .help-link:hover { background: rgba(60,0,60,0.06); }
+
+  .lead {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 34px;
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin: 0 0 12px;
+    color: var(--ink);
+  }
+  .lead em {
+    font-style: italic;
+    color: var(--orange);
+    font-weight: 500;
+  }
+  .sub {
+    color: var(--muted);
+    margin: 0 0 32px;
+    max-width: 640px;
+  }
+
+  /* Drop zone */
+  .dropzone {
+    border: 2px dashed var(--line);
+    border-radius: 18px;
+    padding: 56px 32px;
+    text-align: center;
+    background: var(--surface);
+    transition: all 0.2s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .dropzone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 25% 0%, rgba(255,110,0,0.04) 0%, transparent 45%),
+                      radial-gradient(circle at 75% 100%, rgba(60,0,60,0.04) 0%, transparent 45%);
+    pointer-events: none;
+  }
+  .dropzone:hover, .dropzone.drag {
+    border-color: var(--orange);
+    background: #FFFBF5;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px -12px rgba(255,110,0,0.25);
+  }
+  .dz-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 18px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--plum), var(--plum-light));
+    display: grid; place-items: center;
+    color: var(--orange);
+    font-size: 28px;
+    box-shadow: 0 8px 20px -6px rgba(60,0,60,0.3);
+  }
+  .dz-title {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 500;
+    margin: 0 0 6px;
+  }
+  .dz-sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 22px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    border: 0;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--orange);
+    color: white;
+    box-shadow: 0 4px 14px -4px rgba(255,110,0,0.5);
+  }
+  .btn-primary:hover {
+    background: var(--orange-deep);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px -6px rgba(255,110,0,0.6);
+  }
+  .btn-primary:disabled {
+    background: #D4C9D4;
+    color: #8A7E8A;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--plum);
+    border: 1px solid var(--line);
+  }
+  .btn-ghost:hover { border-color: var(--plum); background: rgba(60,0,60,0.03); }
+
+  /* Arquivos detectados */
+  .detected {
+    margin-top: 36px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .detected h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 18px;
+    margin: 0;
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .detected h2 .counter {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 400;
+  }
+  .file-list { list-style: none; margin: 0; padding: 0; }
+  .file-row {
+    display: grid;
+    grid-template-columns: 40px 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--line);
+    animation: slideIn 0.3s ease-out;
+  }
+  .file-row:last-child { border-bottom: 0; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .file-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .file-icon.ok { background: #EAF7EE; color: var(--ok); }
+  .file-icon.err { background: #FCE9E9; color: var(--err); }
+  .file-name {
+    font-weight: 500;
+    color: var(--ink);
+    margin: 0 0 2px;
+    word-break: break-all;
+  }
+  .file-meta {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .badge.ok { background: rgba(31,122,61,0.1); color: var(--ok); }
+  .badge.err { background: rgba(185,28,28,0.1); color: var(--err); }
+  .badge.protheus { background: rgba(60,0,60,0.08); color: var(--plum); }
+  .badge.nf_servico { background: rgba(255,110,0,0.1); color: var(--orange-deep); }
+  .badge.nf_titulo { background: rgba(199,119,0,0.1); color: var(--warn); }
+  .badge.reembolso { background: rgba(31,122,61,0.1); color: var(--ok); }
+
+  .file-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+    min-width: 80px;
+    text-align: right;
+  }
+
+  /* Resumo */
+  .summary {
+    margin-top: 32px;
+    background: linear-gradient(135deg, var(--plum) 0%, var(--plum-deep) 100%);
+    color: white;
+    border-radius: 18px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .summary::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,110,0,0.15) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .summary h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 15px;
+    margin: 0 0 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: rgba(255,255,255,0.7);
+    position: relative;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    position: relative;
+  }
+  .sum-item .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 6px;
+  }
+  .sum-item .value {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 32px;
+    letter-spacing: -0.01em;
+  }
+  .sum-item .value em {
+    font-style: normal;
+    color: var(--orange);
+  }
+  .sum-item .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    margin: 4px 0 0;
+  }
+
+  /* Ações finais */
+  .actions {
+    margin-top: 32px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .actions .hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin-left: 8px;
+  }
+
+  .state-empty { color: var(--muted); padding: 32px 24px; text-align: center; font-size: 14px; }
+  .fade-in { animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Instruções passo-a-passo */
+  .steps {
+    margin-top: 40px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px 32px;
+  }
+  .steps h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 18px;
+    margin: 0 0 18px;
+  }
+  .steps ol { padding-left: 22px; margin: 0; }
+  .steps li { margin-bottom: 10px; color: var(--ink); }
+  .steps li::marker { color: var(--orange); font-weight: 700; }
+  .steps code {
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(60,0,60,0.06);
+    color: var(--plum);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: white;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 640px) {
+    .summary-grid { grid-template-columns: 1fr; }
+    .file-row { grid-template-columns: 40px 1fr; }
+    .file-row .badge, .file-row .file-count { grid-column: 2; justify-self: start; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">₣</div>
+      <div class="brand-text">
+        <h1>Atualizar dashboard</h1>
+        <p>Ferramenta interna · uso restrito</p>
+      </div>
+    </div>
+    <a href="index.html" class="help-link">Ver dashboard →</a>
+  </header>
+
+  <h2 class="lead">Jogue as planilhas aqui e eu <em>gero o arquivo de dados</em> do portal.</h2>
+  <p class="sub">
+    Arraste os 4 arquivos (3 Consultas em .xlsx + o CSV do Protheus). Não importa o nome nem a ordem —
+    identifico cada um pelo conteúdo. Depois é só baixar o <code>data.json</code> e jogar no GitHub.
+  </p>
+
+  <div id="dz" class="dropzone" tabindex="0">
+    <div class="dz-icon">↑</div>
+    <p class="dz-title">Arraste os arquivos ou clique</p>
+    <p class="dz-sub">Aceita .xlsx e .csv · processamento 100% no seu navegador</p>
+    <button class="btn btn-primary" id="btn-pick">Selecionar arquivos</button>
+    <input type="file" id="file-input" multiple accept=".xlsx,.xls,.csv" style="display:none">
+  </div>
+
+  <div id="detected-wrap" style="display:none">
+    <div class="detected fade-in">
+      <h2>Arquivos processados <span class="counter" id="counter"></span></h2>
+      <ul class="file-list" id="file-list"></ul>
+    </div>
+
+    <div class="summary fade-in" id="summary-box">
+      <h3>Resumo do processamento</h3>
+      <div class="summary-grid">
+        <div class="sum-item">
+          <div class="label">Pago hoje</div>
+          <div class="value" id="sum-pago-val">—</div>
+          <div class="sub" id="sum-pago-qtd">— títulos</div>
+        </div>
+        <div class="sum-item">
+          <div class="label">Previsto amanhã</div>
+          <div class="value" id="sum-prev-val">—</div>
+          <div class="sub" id="sum-prev-qtd">— títulos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-download" disabled>↓ Baixar data.json</button>
+      <button class="btn btn-ghost" id="btn-reset">Recomeçar</button>
+      <span class="hint" id="hint">Processe pelo menos 1 arquivo para baixar</span>
+    </div>
+  </div>
+
+  <div class="steps">
+    <h3>Como usar (3 passos)</h3>
+    <ol>
+      <li>Arraste os 4 arquivos acima (ou clique em "Selecionar arquivos").</li>
+      <li>Clique em <strong>Baixar data.json</strong>. O arquivo vai para a pasta de Downloads.</li>
+      <li>
+        No GitHub, abra o repositório, clique em <code>data.json</code>, clique no ícone de lápis
+        (editar) e arraste o arquivo baixado por cima. Commite. Em ~1 minuto o dashboard está atualizado.
+      </li>
+    </ol>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   PARSERS E NORMALIZAÇÃO
+   ============================================================ */
+
+function parseBRNumber(x) {
+  if (x === null || x === undefined || x === '') return 0;
+  if (typeof x === 'number') return x;
+  let s = String(x).trim().replace(/R\$\s*/, '').replace(/\s/g, '');
+  if (!s) return 0;
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function parseBRDate(x) {
+  if (x === null || x === undefined || x === '') return null;
+  if (x instanceof Date && !isNaN(x)) {
+    const y = x.getFullYear();
+    const m = String(x.getMonth()+1).padStart(2,'0');
+    const d = String(x.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  const s = String(x).trim();
+  if (!s || s === '/  /' || s === '//') return null;
+  const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  // Serial do Excel (número de dias desde 1900-01-01)
+  const n = Number(s);
+  if (!isNaN(n) && n > 20000 && n < 80000) {
+    const d = new Date((n - 25569) * 86400 * 1000);
+    return parseBRDate(d);
+  }
+  return null;
+}
+
+function safeStr(x) {
+  if (x === null || x === undefined) return '';
+  return String(x).trim();
+}
+
+/* ============================================================
+   LEITURA DE ARQUIVOS
+   ============================================================ */
+
+async function readAsArrayBuffer(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.readAsArrayBuffer(file);
+  });
+}
+
+async function readAsText(file, encoding) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.readAsText(file, encoding || 'utf-8');
+  });
+}
+
+/* ============================================================
+   DETECÇÃO DE TIPO
+   ============================================================ */
+
+async function detectType(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.csv')) {
+    const head = await readAsText(file.slice(0, 300), 'iso-8859-1');
+    if (head.startsWith('SE2')) return 'protheus';
+    return 'desconhecido';
+  }
+  if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    const buf = await readAsArrayBuffer(file);
+    const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    // Procura linha com "ID" na primeira coluna
+    let headerRow = -1;
+    for (let i = 0; i < Math.min(10, rows.length); i++) {
+      if (safeStr(rows[i][0]) === 'ID') { headerRow = i; break; }
+    }
+    if (headerRow === -1) return 'desconhecido';
+    const headers = rows[headerRow].map(safeStr);
+    if (headers.includes('TIPO DE DESPESA')) return 'reembolso';
+    if (headers.includes('VALOR TOTAL SERVIÇO')) return 'nf_servico';
+    if (headers.includes('N. TITULO') && !headers.includes('TIPO DE DESPESA')) return 'nf_titulo';
+    return 'desconhecido';
+  }
+  return 'desconhecido';
+}
+
+/* ============================================================
+   PARSERS ESPECÍFICOS
+   ============================================================ */
+
+async function parseProtheus(file) {
+  const text = await readAsText(file, 'iso-8859-1');
+  // Pular as 2 primeiras linhas (SE2 + vazia)
+  const lines = text.split(/\r?\n/);
+  const body = lines.slice(2).join('\n');
+  const parsed = Papa.parse(body, { header: true, delimiter: ';', skipEmptyLines: true });
+  const out = [];
+  for (const r of parsed.data) {
+    if (!safeStr(r['No. Titulo'])) continue;
+    out.push({
+      numero: safeStr(r['No. Titulo']),
+      parcela: safeStr(r['Parcela']),
+      prefixo: safeStr(r['Prefixo']),
+      tipo: safeStr(r['Tipo']),
+      natureza: safeStr(r['Natureza']),
+      fornecedor_cod: safeStr(r['Fornecedor']),
+      fornecedor: safeStr(r['Nome Fornece']),
+      dt_emissao: parseBRDate(r['DT Emissao']),
+      vencimento: parseBRDate(r['Vencimento']),
+      dt_baixa: parseBRDate(r['DT Baixa']),
+      valor: parseBRNumber(r['Vlr.Titulo']),
+      valor_rs: parseBRNumber(r['Vlr R$']),
+      valor_liquido: parseBRNumber(r['Val Liq Baix']),
+      historico: safeStr(r['Historico']),
+      forma_pgto: safeStr(r['Forma Pgto.']),
+      banco: safeStr(r['Banco For.']),
+    });
+  }
+  return out;
+}
+
+async function readXlsxWithAutoHeader(file) {
+  const buf = await readAsArrayBuffer(file);
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+  let headerRow = -1;
+  for (let i = 0; i < Math.min(10, rows.length); i++) {
+    if (safeStr(rows[i][0]) === 'ID') { headerRow = i; break; }
+  }
+  if (headerRow === -1) return [];
+  const headers = rows[headerRow].map(safeStr);
+  return rows.slice(headerRow + 1)
+    .filter(r => safeStr(r[0]))
+    .map(r => {
+      const o = {};
+      headers.forEach((h, i) => o[h] = r[i]);
+      return o;
+    });
+}
+
+async function parseNFServico(file) {
+  const rows = await readXlsxWithAutoHeader(file);
+  return rows.map(r => {
+    const vs = parseBRNumber(r['VALOR TOTAL SERVIÇO']);
+    const vp = parseBRNumber(r['VALOR TOTAL PRODUTO']);
+    return {
+      id: parseInt(r['ID']) || null,
+      solicitante: safeStr(r['SOLICITANTE']),
+      numero_nf: safeStr(r['N. NF']),
+      natureza_cod: safeStr(r['NATUREZA']),
+      natureza: safeStr(r['DESC NATUREZA']),
+      fornecedor: safeStr(r['DESC FORNECEDOR']) || safeStr(r['FORNE NOVO']),
+      contato: safeStr(r['CONTATO']),
+      valor_servico: vs,
+      valor_produto: vp,
+      valor_total: vs + vp,
+      vencimento: parseBRDate(r['VENCIMENTO']),
+      dt_solicitacao: parseBRDate(r['DT SOLICITAÇÃO']),
+      dt_emissao: parseBRDate(r['DT EMISSÃO']),
+      aprovador: safeStr(r['APROVADOR']),
+      cnpj: safeStr(r['CNPJ FORNECE']),
+      empresa: safeStr(r['EMPRESA']),
+      observacoes: safeStr(r['OBSERVAÇÕES']),
+      status: safeStr(r['STATUS']),
+    };
+  });
+}
+
+async function parseNFTitulo(file) {
+  const rows = await readXlsxWithAutoHeader(file);
+  return rows.map(r => ({
+    id: parseInt(r['ID']) || null,
+    solicitante: safeStr(r['SOLICITANTE']),
+    numero_titulo: safeStr(r['N. TITULO']),
+    natureza_cod: safeStr(r['NATUREZA']),
+    natureza: safeStr(r['DESC NATUREZA']),
+    fornecedor: safeStr(r['DESC FORNECEDOR']) || safeStr(r['FORNE NOVO']),
+    valor_total: parseBRNumber(r['VALOR TOTAL']),
+    vencimento: parseBRDate(r['VENCIMENTO']),
+    dt_solicitacao: parseBRDate(r['DT SOLICITAÇÃO']),
+    dt_emissao: parseBRDate(r['DT EMISSÃO']),
+    aprovador: safeStr(r['APROVADOR']),
+    cnpj: safeStr(r['CNPJ FORNECE']),
+    empresa: safeStr(r['EMPRESA']),
+    historico: safeStr(r['HISTÓRICO']),
+    status: safeStr(r['STATUS']),
+  }));
+}
+
+async function parseReembolso(file) {
+  const rows = await readXlsxWithAutoHeader(file);
+  return rows.map(r => ({
+    id: parseInt(r['ID']) || null,
+    solicitante: safeStr(r['SOLICITANTE']),
+    tipo_solicitacao: safeStr(r['TIPO DE SOLICITAÇÃO']),
+    tipo_despesa: safeStr(r['TIPO DE DESPESA']),
+    natureza_cod: safeStr(r['CÓD. NATUREZA']),
+    fornecedor: safeStr(r['DESC FORNECEDOR']) || safeStr(r['FORNE NOVO']),
+    valor_total: parseBRNumber(r['VALOR TOTAL']),
+    vencimento: parseBRDate(r['VENCIMENTO']),
+    dt_emissao: parseBRDate(r['DT EMISSÃO']),
+    aprovador: safeStr(r['APROVADOR']),
+    cnpj: safeStr(r['CNPJ FORNECE']),
+    empresa: safeStr(r['EMPRESA']),
+    status: safeStr(r['STATUS']),
+  }));
+}
+
+/* ============================================================
+   AGREGAÇÃO
+   ============================================================ */
+
+function agregar(store) {
+  const pagos = store.protheus;
+  const totalPago = pagos.reduce((s, t) => s + t.valor_rs, 0);
+  const porTipo = {};
+  pagos.forEach(t => {
+    const k = t.tipo || '?';
+    porTipo[k] = (porTipo[k] || 0) + t.valor_rs;
+  });
+  const maiorPago = pagos.length ? pagos.reduce((a,b) => a.valor_rs > b.valor_rs ? a : b) : null;
+
+  const ns = store.nf_servico, nt = store.nf_titulo, rb = store.reembolso;
+  const totNS = ns.reduce((s,x) => s + x.valor_total, 0);
+  const totNT = nt.reduce((s,x) => s + x.valor_total, 0);
+  const totRB = rb.reduce((s,x) => s + x.valor_total, 0);
+  const totPrev = totNS + totNT + totRB;
+  const todos = [...ns, ...nt, ...rb];
+  const maiorPrev = todos.length ? todos.reduce((a,b) => a.valor_total > b.valor_total ? a : b) : null;
+  const emAprov = todos.filter(x => /aprova[cç][aã]o/i.test(x.status || '')).length;
+
+  // Datas
+  const now = new Date();
+  const tz = -now.getTimezoneOffset() * 60000;
+  const iso = new Date(now - (-tz)).toISOString().slice(0, -1) +
+              (now.getTimezoneOffset() <= 0 ? '+' : '-') +
+              String(Math.abs(Math.floor(now.getTimezoneOffset()/60))).padStart(2,'0') + ':' +
+              String(Math.abs(now.getTimezoneOffset() % 60)).padStart(2,'0');
+
+  const dataHoje = now.toISOString().slice(0,10);
+  const vencs = todos.map(x => x.vencimento).filter(Boolean);
+  const dataAmanha = vencs.length ? vencs.sort().slice(-1)[0] : null;
+
+  return {
+    meta: {
+      generated_at: iso,
+      data_hoje: dataHoje,
+      data_amanha: dataAmanha,
+    },
+    pago_hoje: {
+      total: Math.round(totalPago * 100) / 100,
+      quantidade: pagos.length,
+      por_tipo: Object.fromEntries(Object.entries(porTipo).map(([k,v]) => [k, Math.round(v*100)/100])),
+      maior: maiorPago ? { fornecedor: maiorPago.fornecedor, valor: maiorPago.valor_rs, historico: maiorPago.historico } : null,
+      titulos: pagos,
+    },
+    previsto_amanha: {
+      total: Math.round(totPrev * 100) / 100,
+      quantidade: todos.length,
+      por_categoria: {
+        nf_servico: { total: Math.round(totNS*100)/100, quantidade: ns.length },
+        nf_titulo:  { total: Math.round(totNT*100)/100, quantidade: nt.length },
+        reembolso:  { total: Math.round(totRB*100)/100, quantidade: rb.length },
+      },
+      em_aprovacao: emAprov,
+      maior: maiorPrev ? { fornecedor: maiorPrev.fornecedor, valor: maiorPrev.valor_total } : null,
+      nf_servico: ns,
+      nf_titulo: nt,
+      reembolso: rb,
+    },
+  };
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+
+const state = {
+  files: [],       // [{file, tipo, count, ok, err}]
+  data: null,
+};
+
+const el = id => document.getElementById(id);
+const fmtBR = n => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const tipoLabels = {
+  protheus:   ['Pagamentos realizados (Protheus)', 'protheus'],
+  nf_servico: ['NFs de Serviço (prévia)', 'nf_servico'],
+  nf_titulo:  ['NFs de Título (prévia)', 'nf_titulo'],
+  reembolso:  ['Reembolsos e Despesas (prévia)', 'reembolso'],
+  desconhecido: ['Não reconhecido', 'err'],
+};
+
+function toast(msg) {
+  const t = el('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+async function processFiles(files) {
+  for (const f of files) {
+    const tipo = await detectType(f);
+    const entry = { file: f, tipo, count: 0, ok: tipo !== 'desconhecido', err: null };
+    try {
+      if (tipo === 'protheus')   state.store = state.store || {}, state.store.protheus   = await parseProtheus(f);
+      else if (tipo === 'nf_servico') state.store = state.store || {}, state.store.nf_servico = await parseNFServico(f);
+      else if (tipo === 'nf_titulo')  state.store = state.store || {}, state.store.nf_titulo  = await parseNFTitulo(f);
+      else if (tipo === 'reembolso')  state.store = state.store || {}, state.store.reembolso  = await parseReembolso(f);
+      const arr = state.store && state.store[tipo];
+      entry.count = Array.isArray(arr) ? arr.length : 0;
+    } catch (e) {
+      entry.ok = false;
+      entry.err = e.message || String(e);
+    }
+    // Substituir arquivo do mesmo tipo, se já existe
+    state.files = state.files.filter(x => x.tipo !== tipo || tipo === 'desconhecido');
+    state.files.push(entry);
+  }
+  render();
+}
+
+function render() {
+  // Garantir store
+  state.store = state.store || { protheus: [], nf_servico: [], nf_titulo: [], reembolso: [] };
+  ['protheus','nf_servico','nf_titulo','reembolso'].forEach(k => state.store[k] = state.store[k] || []);
+
+  const hasAny = state.files.length > 0;
+  el('detected-wrap').style.display = hasAny ? 'block' : 'none';
+  if (!hasAny) return;
+
+  // Lista de arquivos
+  const list = el('file-list');
+  list.innerHTML = '';
+  const ordem = { protheus: 0, nf_servico: 1, nf_titulo: 2, reembolso: 3, desconhecido: 9 };
+  const sorted = [...state.files].sort((a,b) => (ordem[a.tipo]||99) - (ordem[b.tipo]||99));
+  for (const e of sorted) {
+    const [label, cls] = tipoLabels[e.tipo];
+    const row = document.createElement('li');
+    row.className = 'file-row';
+    row.innerHTML = `
+      <div class="file-icon ${e.ok ? 'ok' : 'err'}">${e.ok ? '✓' : '!'}</div>
+      <div>
+        <div class="file-name">${e.file.name}</div>
+        <div class="file-meta">${(e.file.size/1024).toFixed(1)} KB · ${e.err ? 'Erro: ' + e.err : 'processado em memória'}</div>
+      </div>
+      <span class="badge ${cls}">${label}</span>
+      <span class="file-count">${e.count.toLocaleString('pt-BR')} registros</span>
+    `;
+    list.appendChild(row);
+  }
+
+  // Contador
+  const reconhecidos = state.files.filter(f => f.ok).length;
+  el('counter').textContent = `${reconhecidos}/${state.files.length} reconhecidos`;
+
+  // Agregação
+  state.data = agregar(state.store);
+  el('sum-pago-val').innerHTML = `R$ <em>${fmtBR(state.data.pago_hoje.total)}</em>`;
+  el('sum-pago-qtd').textContent = `${state.data.pago_hoje.quantidade} títulos · ${state.data.meta.data_hoje || '—'}`;
+  el('sum-prev-val').innerHTML = `R$ <em>${fmtBR(state.data.previsto_amanha.total)}</em>`;
+  el('sum-prev-qtd').textContent = `${state.data.previsto_amanha.quantidade} títulos · ${state.data.meta.data_amanha || '—'}`;
+
+  // Download habilita quando tem pelo menos 1 tipo ok
+  const podeBaixar = reconhecidos > 0;
+  el('btn-download').disabled = !podeBaixar;
+  el('hint').textContent = podeBaixar
+    ? (reconhecidos < 4 ? `Faltam tipos: ${['protheus','nf_servico','nf_titulo','reembolso'].filter(k => !state.store[k].length).join(', ') || '—'}` : 'Tudo pronto. Pode baixar.')
+    : 'Processe pelo menos 1 arquivo para baixar';
+}
+
+function download() {
+  if (!state.data) return;
+  const blob = new Blob([JSON.stringify(state.data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('data.json baixado ✓');
+}
+
+function reset() {
+  state.files = [];
+  state.store = null;
+  state.data = null;
+  render();
+  el('file-input').value = '';
+  toast('Limpado.');
+}
+
+/* Events */
+const dz = el('dz');
+const input = el('file-input');
+el('btn-pick').addEventListener('click', e => { e.stopPropagation(); input.click(); });
+dz.addEventListener('click', () => input.click());
+dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
+input.addEventListener('change', e => processFiles([...e.target.files]));
+
+['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => {
+  e.preventDefault(); e.stopPropagation(); dz.classList.add('drag');
+}));
+['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
+  e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag');
+}));
+dz.addEventListener('drop', e => processFiles([...e.dataTransfer.files]));
+
+el('btn-download').addEventListener('click', download);
+el('btn-reset').addEventListener('click', reset);
+</script>
+</body>
+</html>
