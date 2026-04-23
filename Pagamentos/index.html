@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Pagamentos · Dashboard</title>
 
-<link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,6 +23,7 @@
     --ink:             #1A0F1A;
     --muted:           #6B5E6B;
     --subtle:          #A89CB0;
+
     --plum:            #3C003C;
     --plum-deep:       #2A0028;
     --plum-light:      #5C1A5C;
@@ -33,6 +33,7 @@
     --orange-soft:     #FFF1E4;
     --orange-tint:     rgba(255,110,0,0.12);
     --orange-deep:     #D25500;
+
     --ok:              #1F7A3D;
     --ok-soft:         #EAF7EE;
     --warn:            #C77700;
@@ -43,6 +44,7 @@
     --font-display:    'Fraunces', 'Times New Roman', serif;
     --font-body:       'Manrope', system-ui, sans-serif;
     --font-mono:       'JetBrains Mono', ui-monospace, monospace;
+
     --shadow-sm:       0 1px 2px rgba(26,15,26,0.04);
     --shadow-md:       0 4px 14px -6px rgba(26,15,26,0.08);
     --shadow-lg:       0 14px 32px -14px rgba(26,15,26,0.15);
@@ -58,40 +60,35 @@
     font-size: 14.5px;
     line-height: 1.55;
     min-height: 100vh;
-    display: flex;
     -webkit-font-smoothing: antialiased;
   }
   section[id] { scroll-margin-top: 100px; }
 
   /* ============================================================
-     SIDEBAR
+     SIDEBAR — position: fixed garante que nunca saia da tela
      ============================================================ */
   .sidebar {
     width: 240px;
-    flex-shrink: 0;
     background: linear-gradient(170deg, var(--plum-deep) 0%, var(--plum) 55%, var(--plum-light) 100%);
     color: rgba(255,255,255,0.9);
     padding: 24px 18px;
     display: flex;
     flex-direction: column;
     gap: 4px;
-    position: sticky; /* <- Define a barra como fixa */
+    position: fixed;
     top: 0;
+    left: 0;
+    bottom: 0;
     height: 100vh;
     z-index: 40;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
-  .sidebar::before {
-    content: '';
-    position: absolute;
-    top: -20%;
-    right: -50%;
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(255,110,0,0.18) 0%, transparent 65%);
-    pointer-events: none;
-  }
-  .sidebar > * { position: relative; }
+  /* Scrollbar fina e discreta no fundo plum */
+  .sidebar::-webkit-scrollbar { width: 6px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
   .sidebar .logo {
     font-family: var(--font-display);
     font-weight: 500;
@@ -104,6 +101,7 @@
     align-items: center;
     gap: 12px;
     color: #FFFFFF;
+    flex-shrink: 0;
   }
   .sidebar .logo-mark {
     width: 36px; height: 36px; border-radius: 9px;
@@ -158,6 +156,30 @@
     transition: color 0.15s;
   }
   .sidebar nav a:hover i, .sidebar nav a.active i { color: var(--orange); }
+
+  /* Links "em breve" — desabilitados com badge */
+  .sidebar nav a.coming-soon {
+    color: rgba(255,255,255,0.35);
+    cursor: not-allowed;
+    pointer-events: none;
+    position: relative;
+  }
+  .sidebar nav a.coming-soon i { color: rgba(255,255,255,0.25); }
+  .sidebar nav a.coming-soon::after {
+    content: 'em breve';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.5);
+    border-radius: 4px;
+  }
 
   .sidebar-footer {
     margin-top: auto;
@@ -243,10 +265,11 @@
      MAIN CONTENT & HEADER
      ============================================================ */
   .main-content {
-    flex: 1;
+    margin-left: 240px;
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 100vh;
   }
   header {
     height: 80px;
@@ -631,19 +654,24 @@
     margin-top: 3px;
     line-height: 1.45;
   }
-  .nat-tag {
+  .nat-desc {
     display: inline-block;
-    padding: 1px 7px;
+    padding: 3px 9px;
     background: var(--plum-mist);
     color: var(--plum-light);
-    border-radius: 4px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    line-height: 1.3;
+    max-width: 220px;
+    white-space: normal;
+  }
+  .nat-empty {
+    color: var(--subtle);
     font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    margin-right: 6px;
-    text-transform: uppercase;
-    vertical-align: middle;
+    font-size: 11.5px;
   }
   .empty-row {
     text-align: center;
@@ -847,6 +875,7 @@
 
   @media (max-width: 1100px) {
     .sidebar { display: none; }
+    .main-content { margin-left: 0; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .cat-summary { grid-template-columns: 1fr; }
   }
@@ -865,9 +894,7 @@
 
 <aside class="sidebar" aria-label="Navegação principal">
   <div class="logo">
-    <div class="logo-mark" style="padding: 0; overflow: hidden; background: transparent; border: none;">
-      <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="ONTIME" style="width: 100%; height: 100%; object-fit: cover; border-radius: 9px; box-shadow: 0 0 15px rgba(255,110,0,0.3); border: 1px solid rgba(255,110,0,0.3);">
-    </div>
+    <div class="logo-mark">₣</div>
     <div class="logo-text">
       <span>Financeiro</span>
       <span>Pagamentos</span>
@@ -883,6 +910,12 @@
     <a href="#previsto" data-spy-link>
       <i class="fa-solid fa-calendar-day"></i> Prévia de Pagamentos
     </a>
+    <a href="atualizar.html">
+      <i class="fa-solid fa-arrow-up-from-bracket"></i> Atualizar
+    </a>
+    <a href="#" class="coming-soon"><i class="fa-solid fa-file-invoice"></i> NFs</a>
+    <a href="#" class="coming-soon"><i class="fa-solid fa-receipt"></i> Reembolsos</a>
+    <a href="#" class="coming-soon"><i class="fa-solid fa-gear"></i> Ajustes</a>
   </nav>
 
   <div class="sidebar-footer">
@@ -893,7 +926,8 @@
         <span class="stamp-text" id="stamp-text">carregando…</span>
       </div>
     </div>
-    <a class="btn-hub" href="../" rel="noopener" style="display: none;">
+    <!-- TODO: Ajuste o href de "Voltar ao Hub" para a URL real do seu hub. -->
+    <a class="btn-hub" href="/" rel="noopener">
       <i class="fa-solid fa-arrow-left-long"></i>
       Voltar ao Hub
     </a>
@@ -920,6 +954,7 @@
 
 <script>
 'use strict';
+
 /* ============================================================================
    CONFIG
    ============================================================================ */
@@ -1001,6 +1036,57 @@ const Utils = {
     return s.toLowerCase().split(/\s+/).map((w, i) =>
       i > 0 && low.includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)
     ).join(' ');
+  },
+};
+
+/* ============================================================================
+   DATE UTILS — regra de dias úteis (sáb/dom → próxima segunda)
+   ============================================================================ */
+const DateUtils = {
+  /** true se o dia é sábado (6) ou domingo (0) */
+  isWeekend(date) {
+    const d = date.getDay();
+    return d === 0 || d === 6;
+  },
+
+  /** Converte 'YYYY-MM-DD' para Date local (sem timezone) */
+  fromISO(iso) {
+    if (!iso) return null;
+    const parts = iso.slice(0, 10).split('-');
+    if (parts.length !== 3) return null;
+    const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    return isNaN(d) ? null : d;
+  },
+
+  /** Converte Date para 'YYYY-MM-DD' */
+  toISO(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  },
+
+  /** Próximo dia útil a partir da data fornecida (não inclui o próprio dia).
+   *  Se for sexta → retorna segunda. Se for sábado → segunda. Se for domingo → segunda.
+   */
+  nextBusinessDay(date) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + 1);
+    while (this.isWeekend(d)) d.setDate(d.getDate() + 1);
+    return d;
+  },
+
+  /** Se a data cai em fim de semana, retorna o próximo dia útil. Senão retorna a própria. */
+  ensureBusinessDay(date) {
+    if (!this.isWeekend(date)) return new Date(date);
+    const d = new Date(date);
+    while (this.isWeekend(d)) d.setDate(d.getDate() + 1);
+    return d;
+  },
+
+  /** Nome do dia da semana em PT-BR */
+  weekdayName(date) {
+    return date.toLocaleDateString(CONFIG.LOCALE, { weekday: 'long' });
   },
 };
 
@@ -1182,6 +1268,7 @@ const Pagination = {
    */
   render({ page, pageSize, total, onPage }) {
     if (total <= pageSize) return null;
+
     const totalPages = Math.ceil(total / pageSize);
     const start = (page - 1) * pageSize + 1;
     const end = Math.min(page * pageSize, total);
@@ -1194,6 +1281,7 @@ const Pagination = {
       ' de ',
       DOM.h('strong', {}, String(total)),
     ]);
+
     const controls = DOM.h('div', { class: 'pagination-controls' });
 
     const mkBtn = (label, targetPage, { disabled = false, active = false, ariaLabel } = {}) => {
@@ -1213,7 +1301,7 @@ const Pagination = {
     controls.appendChild(mkBtn(DOM.icon('fa-angles-left'), 1, { disabled: page === 1, ariaLabel: 'Primeira página' }));
     // ‹ anterior
     controls.appendChild(mkBtn(DOM.icon('fa-angle-left'), page - 1, { disabled: page === 1, ariaLabel: 'Anterior' }));
-    
+
     // Números — estratégia: sempre mostrar 1, current±1, last, com elipses
     const pages = this._computePageList(page, totalPages);
     for (const p of pages) {
@@ -1228,7 +1316,7 @@ const Pagination = {
     controls.appendChild(mkBtn(DOM.icon('fa-angle-right'), page + 1, { disabled: page === totalPages, ariaLabel: 'Próxima' }));
     // » última
     controls.appendChild(mkBtn(DOM.icon('fa-angles-right'), totalPages, { disabled: page === totalPages, ariaLabel: 'Última página' }));
-    
+
     return DOM.h('div', { class: 'pagination' }, [info, controls]);
   },
 
@@ -1281,6 +1369,16 @@ const UI_Dashboard = {
     const arr = [];
     const { previsto_amanha: prev, pago_hoje: hoje } = data;
 
+    // Alerta de fim de semana: se data_hoje gravada cair em sábado/domingo
+    const dataHoje = DateUtils.fromISO(data.meta.data_hoje);
+    if (dataHoje && DateUtils.isWeekend(dataHoje)) {
+      const wd = DateUtils.weekdayName(dataHoje);
+      arr.push(this._buildAlert('info', 'fa-circle-info', [
+        DOM.h('strong', {}, `Dados gerados num ${wd}`),
+        DOM.h('small', {}, 'Como pagamentos ocorrem apenas em dias úteis, confira se deseja atualizar.'),
+      ]));
+    }
+
     if (prev.em_aprovacao > 0) {
       arr.push(this._buildAlert('warn', 'fa-triangle-exclamation', [
         DOM.h('strong', {}, `${prev.em_aprovacao} títulos pendentes de aprovação`),
@@ -1298,7 +1396,6 @@ const UI_Dashboard = {
       .map(x => (x.fornecedor || '').toUpperCase()).filter(Boolean);
     const hojeSet = new Set(hoje.titulos.map(t => (t.fornecedor || '').toUpperCase()).filter(Boolean));
     const recorrentes = [...new Set(forns.filter(f => hojeSet.has(f)))];
-    
     if (recorrentes.length) {
       const plural = recorrentes.length > 1;
       const exemplos = recorrentes.slice(0, 2).map(s => Utils.truncate(s, 28)).join(', ');
@@ -1322,7 +1419,7 @@ const UI_Dashboard = {
   _renderKPIs(data) {
     const { pago_hoje: hoje, previsto_amanha: prev, meta } = data;
     const maiorForn = (hoje.maior && hoje.maior.fornecedor) ? hoje.maior.fornecedor : '—';
-    
+
     return DOM.h('div', { class: 'kpi-grid' }, [
       this._buildKPI({
         accent: true, icon: 'fa-check-circle', label: 'Pago hoje',
@@ -1371,20 +1468,29 @@ const UI_Dashboard = {
 };
 
 /* ============================================================================
-   COMMON — builder de célula "Fornecedor + hist com natureza"
+   COMMON — builders de células reutilizáveis
    ============================================================================ */
-function buildFornecedorCell(fornecedor, historicoRaw, natCode) {
+
+/**
+ * Célula Fornecedor com histórico abaixo (sem natureza — ela tem coluna própria).
+ */
+function buildFornecedorCell(fornecedor, historicoRaw) {
   const children = [fornecedor || '—'];
-  const natDesc = NaturezaMap.describe(natCode);
   const hasHist = historicoRaw && String(historicoRaw).trim();
-  
-  if (natDesc || hasHist) {
-    const histInner = [];
-    if (natDesc) histInner.push(DOM.h('span', { class: 'nat-tag' }, natDesc));
-    if (hasHist) histInner.push(Utils.truncate(String(historicoRaw), 80));
-    children.push(DOM.h('div', { class: 'hist' }, histInner));
+  if (hasHist) {
+    children.push(DOM.h('div', { class: 'hist' }, Utils.truncate(String(historicoRaw), 90)));
   }
   return DOM.h('div', {}, children);
+}
+
+/**
+ * Célula Desc. Nat. — só a descrição legível. Sem mostrar código.
+ * Retorna '—' se a natureza não estiver no mapa.
+ */
+function buildDescNatCell(natCode) {
+  const desc = NaturezaMap.describe(natCode);
+  if (!desc) return DOM.h('span', { class: 'nat-empty' }, '—');
+  return DOM.h('span', { class: 'nat-desc' }, desc);
 }
 
 /* ============================================================================
@@ -1406,18 +1512,18 @@ const UI_Hoje = {
       page: 1,
       pageSize: CONFIG.PAGE_SIZE,
     };
-    
+
     const section = DOM.h('section', { id: 'realizados', class: 'reveal' }, [
       this._renderSectionHead(),
       this._renderCard(),
     ]);
-    
+
     this._debouncedSearch = Utils.debounce(value => {
       this._state.filter.q = value;
       this._state.page = 1;
       this._refresh();
     }, CONFIG.SEARCH_DEBOUNCE_MS);
-    
+
     this._refresh();
     return section;
   },
@@ -1443,7 +1549,9 @@ const UI_Hoje = {
       { key: 'numero',     label: 'Título',
         renderCell: t => String(t.numero || '—') },
       { key: 'fornecedor', label: 'Fornecedor',
-        renderCell: t => buildFornecedorCell(t.fornecedor, t.historico, t.natureza) },
+        renderCell: t => buildFornecedorCell(t.fornecedor, t.historico) },
+      { key: 'natureza',   label: 'Desc. Nat.',
+        renderCell: t => buildDescNatCell(t.natureza) },
       { key: 'valor_rs',   label: 'Valor',
         num: true, strong: true, center: true,
         renderCell: t => `R$ ${Utils.fmtBR(t.valor_rs)}` },
@@ -1453,7 +1561,7 @@ const UI_Hoje = {
   _renderCard() {
     const cols = this._columns();
     const tipos = [...new Set(this._data.titulos.map(t => t.tipo).filter(Boolean))].sort();
-    
+
     // Toolbar
     const searchInput = DOM.h('input', {
       id: 'hoje-search',
@@ -1461,21 +1569,20 @@ const UI_Hoje = {
       type: 'text',
       'aria-label': 'Buscar pagamentos realizados',
     });
-    
     searchInput.addEventListener('input', e => this._debouncedSearch(e.target.value));
 
     const searchBox = DOM.h('div', { class: 'search' }, [
       DOM.icon('fa-magnifying-glass'),
       searchInput,
     ]);
-    
+
     const allChip = this._buildFilterChip('', 'Todos', null, true);
     const tipoChips = tipos.map(t => this._buildFilterChip(t, t, Utils.pillClass(t), false));
     const chips = [allChip, ...tipoChips];
 
     const countEl = DOM.h('strong', { id: 'hoje-count' }, '0');
     const totalEl = DOM.h('strong', { id: 'hoje-total' }, 'R$ 0,00');
-    
+
     const toolbarRight = DOM.h('div', { class: 'toolbar-right' }, [
       DOM.h('span', { class: 'lbl' }, 'Total'),
       countEl,
@@ -1483,9 +1590,9 @@ const UI_Hoje = {
       DOM.h('span', { class: 'lbl' }, 'Soma'),
       totalEl,
     ]);
-    
+
     const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, ...chips, toolbarRight]);
-    
+
     // Table
     const thead = DOM.h('thead', {}, DOM.h('tr', {},
       cols.map(c => {
@@ -1502,16 +1609,16 @@ const UI_Hoje = {
         return th;
       })
     ));
-    
+
     const tbody = DOM.h('tbody', { id: 'hoje-tbody' });
     const tfoot = DOM.h('tfoot', { class: 'data', id: 'hoje-tfoot' });
     const table = DOM.h('table', { class: 'data' }, [thead, tbody, tfoot]);
     const tableWrap = DOM.h('div', { class: 'table-wrap' }, table);
-    
+
     const paginationMount = DOM.h('div', { id: 'hoje-pagination' });
 
     this._els = { tbody, tfoot, countEl, totalEl, thead, chips, cols, paginationMount };
-    
+
     return DOM.h('div', { class: 'card' }, [toolbar, tableWrap, paginationMount]);
   },
 
@@ -1521,7 +1628,7 @@ const UI_Hoje = {
       dataset: { tipo: tipoValue },
       type: 'button',
     }, pillCls ? DOM.pill(label, pillCls) : label);
-    
+
     chip.addEventListener('click', () => {
       if (!this._els || !this._els.chips) return;
       this._els.chips.forEach(c => c.classList.remove('active'));
@@ -1530,7 +1637,6 @@ const UI_Hoje = {
       this._state.page = 1;
       this._refresh();
     });
-    
     return chip;
   },
 
@@ -1542,7 +1648,9 @@ const UI_Hoje = {
       if (tipo && t.tipo !== tipo) return false;
       if (q) {
         const query = q.toLowerCase();
-        const blob = [t.fornecedor, t.historico, t.numero, t.natureza, NaturezaMap.get(t.natureza)]
+        // Busca combinada: fornecedor, histórico, título, CÓDIGO da natureza e DESCRIÇÃO da natureza
+        const natDesc = NaturezaMap.get(t.natureza) || '';
+        const blob = [t.fornecedor, t.historico, t.numero, t.natureza, natDesc]
           .map(v => (v || '').toString().toLowerCase())
           .join(' ');
         if (!blob.includes(query)) return false;
@@ -1556,13 +1664,11 @@ const UI_Hoje = {
 
   _refresh() {
     if (!this._els) return;
-    
     const { tbody, tfoot, countEl, totalEl, thead, cols, paginationMount } = this._els;
     const { col, dir } = this._state.sort;
-    
+
     const allFiltered = this._filterAndSort();
     const total = allFiltered.reduce((s, t) => s + (t.valor_rs || 0), 0);
-    
     countEl.textContent = String(allFiltered.length);
     totalEl.textContent = 'R$ ' + Utils.fmtBR(total);
 
@@ -1572,7 +1678,6 @@ const UI_Hoje = {
 
     // TBODY
     DOM.clear(tbody);
-    
     if (pageRows.length === 0) {
       tbody.appendChild(DOM.h('tr', {},
         DOM.h('td', { class: 'empty-row', colspan: cols.length }, 'Nenhum resultado')
@@ -1584,12 +1689,11 @@ const UI_Hoje = {
     // TFOOT
     DOM.clear(tfoot);
     const spanCount = cols.length - 1;
-    
     tfoot.appendChild(DOM.h('tr', {}, [
       DOM.h('td', { colspan: spanCount }, `Total exibido (${allFiltered.length} de ${this._data.titulos.length})`),
       DOM.h('td', { class: 'num center' }, 'R$ ' + Utils.fmtBR(total)),
     ]));
-    
+
     // Paginação
     DOM.clear(paginationMount);
     const pag = Pagination.render({
@@ -1598,7 +1702,6 @@ const UI_Hoje = {
       total: allFiltered.length,
       onPage: p => { this._state.page = p; this._refresh(); this._scrollToTop(); },
     });
-    
     if (pag) paginationMount.appendChild(pag);
 
     // Sort indicators
@@ -1616,7 +1719,6 @@ const UI_Hoje = {
 
   _renderRow(t, cols) {
     const tr = DOM.h('tr', {});
-    
     for (const c of cols) {
       const classes = [];
       if (c.num) classes.push('num');
@@ -1651,9 +1753,9 @@ const UI_Previsto = {
       { key: 'nf_titulo',  label: 'Contas',          icon: 'fa-file-invoice', data: this._data.nf_titulo },
       { key: 'reembolso',  label: 'Reembolsos',     icon: 'fa-receipt',      data: this._data.reembolso },
     ];
-    
+
     const activeCat = this._cats.reduce((a, b) => a.data.length >= b.data.length ? a : b).key;
-    
+
     this._state = {
       activeCat,
       filter: { q: '' },
@@ -1661,18 +1763,18 @@ const UI_Previsto = {
       page: 1,
       pageSize: CONFIG.PAGE_SIZE,
     };
-    
+
     const section = DOM.h('section', { id: 'previsto', class: 'reveal' }, [
       this._renderSectionHead(),
       this._renderCard(),
     ]);
-    
+
     this._debouncedSearch = Utils.debounce(value => {
       this._state.filter.q = value;
       this._state.page = 1;
       this._refresh();
     }, CONFIG.SEARCH_DEBOUNCE_MS);
-    
+
     this._refresh();
     return section;
   },
@@ -1697,13 +1799,16 @@ const UI_Previsto = {
       status:    { key: 'status',      label: 'Status',    renderCell: r => this._renderStatus(r.status) },
       valor:     { key: 'valor_total', label: 'Valor',     num: true, strong: true, center: true,
                    renderCell: r => `R$ ${Utils.fmtBR(r.valor_total)}` },
+      descNat:   { key: 'natureza_cod', label: 'Desc. Nat.',
+                   renderCell: r => buildDescNatCell(r.natureza_cod) },
     };
-    
+
     if (catKey === 'nf_servico') {
       return [
         { key: 'numero_nf',   label: 'NF',         renderCell: r => r.numero_nf || '—' },
         { key: 'fornecedor',  label: 'Fornecedor',
-          renderCell: r => buildFornecedorCell(r.fornecedor, r.observacoes, r.natureza_cod) },
+          renderCell: r => buildFornecedorCell(r.fornecedor, r.observacoes) },
+        common.descNat,
         common.aprovador,
         common.status,
         common.valor,
@@ -1713,7 +1818,8 @@ const UI_Previsto = {
       return [
         { key: 'numero_titulo', label: 'Título', renderCell: r => r.numero_titulo || '—' },
         { key: 'fornecedor',    label: 'Fornecedor',
-          renderCell: r => buildFornecedorCell(r.fornecedor, r.historico, r.natureza_cod) },
+          renderCell: r => buildFornecedorCell(r.fornecedor, r.historico) },
+        common.descNat,
         common.aprovador,
         common.status,
         common.valor,
@@ -1724,7 +1830,8 @@ const UI_Previsto = {
       { key: 'solicitante',      label: 'Solicitante',  renderCell: r => r.solicitante || '—' },
       { key: 'tipo_despesa',     label: 'Tipo despesa', renderCell: r => DOM.pill(r.tipo_despesa || '—') },
       { key: 'fornecedor',       label: 'Beneficiário',
-        renderCell: r => buildFornecedorCell(r.fornecedor, '', r.natureza_cod) },
+        renderCell: r => buildFornecedorCell(r.fornecedor, '') },
+      common.descNat,
       { key: 'tipo_solicitacao', label: 'Solicitação',  renderCell: r => r.tipo_solicitacao || '—' },
       common.aprovador,
       common.valor,
@@ -1761,7 +1868,7 @@ const UI_Previsto = {
     });
 
     const catSummary = DOM.h('div', { class: 'cat-summary' }, catItems);
-    
+
     // Tabs
     const tabs = this._cats.map(c => {
       const isActive = c.key === this._state.activeCat;
@@ -1777,9 +1884,8 @@ const UI_Previsto = {
       tab.addEventListener('click', () => this._switchCat(c.key));
       return tab;
     });
-    
     const tabsBar = DOM.h('div', { class: 'tabs', role: 'tablist' }, tabs);
-    
+
     // Toolbar
     const searchInput = DOM.h('input', {
       id: 'prev-search',
@@ -1787,14 +1893,13 @@ const UI_Previsto = {
       type: 'text',
       'aria-label': 'Buscar prévia de pagamentos',
     });
-    
     searchInput.addEventListener('input', e => this._debouncedSearch(e.target.value));
 
     const searchBox = DOM.h('div', { class: 'search' }, [DOM.icon('fa-magnifying-glass'), searchInput]);
-    
+
     const countEl = DOM.h('strong', { id: 'prev-count' }, '0');
     const totalEl = DOM.h('strong', { id: 'prev-total' }, 'R$ 0,00');
-    
+
     const toolbarRight = DOM.h('div', { class: 'toolbar-right' }, [
       DOM.h('span', { class: 'lbl' }, 'Total'),
       countEl,
@@ -1802,27 +1907,25 @@ const UI_Previsto = {
       DOM.h('span', { class: 'lbl' }, 'Soma'),
       totalEl,
     ]);
-    
+
     const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, toolbarRight]);
 
     const thead = DOM.h('thead');
     const tbody = DOM.h('tbody', { id: 'prev-tbody' });
     const tfoot = DOM.h('tfoot', { class: 'data', id: 'prev-tfoot' });
-    
     const table = DOM.h('table', { class: 'data' }, [thead, tbody, tfoot]);
     const tableWrap = DOM.h('div', { class: 'table-wrap' }, table);
-    
+
     const paginationMount = DOM.h('div', { id: 'prev-pagination' });
 
     this._els = { catItems, tabs, thead, tbody, tfoot, countEl, totalEl, searchInput, paginationMount };
-    
+
     return DOM.h('div', { class: 'card' }, [catSummary, tabsBar, toolbar, tableWrap, paginationMount]);
   },
 
   _switchCat(catKey) {
     if (catKey === this._state.activeCat) return;
     this._state.activeCat = catKey;
-    
     this._state.sort = { col: 'valor_total', dir: -1 };
     this._state.page = 1;
 
@@ -1835,9 +1938,8 @@ const UI_Previsto = {
     const { q } = this._state.filter;
     const { col, dir } = this._state.sort;
     const cat = this._cats.find(c => c.key === this._state.activeCat);
-    
     const validCol = cols.find(c => c.key === col) ? col : cols[cols.length - 1].key;
-    
+
     const rows = cat.data.filter(r => {
       if (!q) return true;
       const query = q.toLowerCase();
@@ -1846,21 +1948,20 @@ const UI_Previsto = {
       const blob = (JSON.stringify(r) + ' ' + natDesc).toLowerCase();
       return blob.includes(query);
     });
-    
+
     rows.sort((a, b) => Utils.compareRows(a, b, validCol, dir));
     return { rows, validCol };
   },
 
   _refresh() {
     if (!this._els) return;
-    
     const { thead, tbody, tfoot, countEl, totalEl, paginationMount } = this._els;
     const { dir } = this._state.sort;
-    
+
     const cat = this._cats.find(c => c.key === this._state.activeCat);
     const cols = this._columnsFor(this._state.activeCat);
     const { rows: allFiltered, validCol } = this._filterAndSort(cols);
-    
+
     const total = allFiltered.reduce((s, r) => s + (r.valor_total || 0), 0);
     countEl.textContent = String(allFiltered.length);
     totalEl.textContent = 'R$ ' + Utils.fmtBR(total);
@@ -1871,29 +1972,24 @@ const UI_Previsto = {
     // THEAD
     DOM.clear(thead);
     const headerRow = DOM.h('tr', {});
-    
     for (const c of cols) {
       const isSorted = c.key === validCol;
-      
       const th = DOM.h('th', {
         class: [c.num ? 'num' : '', c.center ? 'center' : '', isSorted ? 'sorted' : ''].filter(Boolean).join(' ') || null,
         dataset: { key: c.key, dir: isSorted ? (dir > 0 ? ' ↑' : ' ↓') : '' },
       }, c.label);
-      
       th.addEventListener('click', () => {
         if (this._state.sort.col === c.key) this._state.sort.dir *= -1;
         else { this._state.sort.col = c.key; this._state.sort.dir = 1; }
         this._state.page = 1;
         this._refresh();
       });
-      
       headerRow.appendChild(th);
     }
     thead.appendChild(headerRow);
 
     // TBODY
     DOM.clear(tbody);
-    
     if (pageRows.length === 0) {
       tbody.appendChild(DOM.h('tr', {},
         DOM.h('td', { class: 'empty-row', colspan: cols.length },
@@ -1905,13 +2001,12 @@ const UI_Previsto = {
 
     // TFOOT
     DOM.clear(tfoot);
-    
     tfoot.appendChild(DOM.h('tr', {}, [
       DOM.h('td', { colspan: cols.length - 1 },
         `Total exibido (${allFiltered.length} de ${cat.data.length})`),
       DOM.h('td', { class: 'num center' }, 'R$ ' + Utils.fmtBR(total)),
     ]));
-    
+
     // Paginação
     DOM.clear(paginationMount);
     const pag = Pagination.render({
@@ -1920,7 +2015,6 @@ const UI_Previsto = {
       total: allFiltered.length,
       onPage: p => { this._state.page = p; this._refresh(); this._scrollToTop(); },
     });
-    
     if (pag) paginationMount.appendChild(pag);
   },
 
@@ -1932,7 +2026,6 @@ const UI_Previsto = {
   _renderRow(r, cols) {
     const isRisk = Utils.isApprovalStatus(r.status);
     const tr = DOM.h('tr', { class: isRisk ? 'flag-approval' : null });
-    
     for (const c of cols) {
       const classes = [];
       if (c.num) classes.push('num');
@@ -1962,7 +2055,6 @@ const ScrollSpy = {
     this._sections = CONFIG.SECTIONS
       .map(id => ({ id, el: document.getElementById(id) }))
       .filter(s => s.el);
-      
     if (!this._sections.length) return;
 
     this._links.forEach(link => {
@@ -1975,7 +2067,7 @@ const ScrollSpy = {
         this._setActive(targetId);
       });
     });
-    
+
     window.addEventListener('scroll', () => this._onScroll(), { passive: true });
     window.addEventListener('resize', () => this._onScroll(), { passive: true });
     this._onScroll();
@@ -1984,7 +2076,6 @@ const ScrollSpy = {
   _onScroll() {
     if (this._ticking) return;
     this._ticking = true;
-    
     requestAnimationFrame(() => {
       this._update();
       this._ticking = false;
@@ -1994,7 +2085,6 @@ const ScrollSpy = {
   _update() {
     const trigger = window.scrollY + this._offset;
     let activeId = this._sections[0].id;
-    
     for (const { id, el } of this._sections) {
       if (el.offsetTop <= trigger) activeId = id;
     }
@@ -2014,37 +2104,23 @@ const ScrollSpy = {
    ============================================================================ */
 const App = {
   async init() {
-    this._setupBackButton();
     try {
       // Fetch paralelo: data obrigatório, naturezas opcional
       const [data, naturezas] = await Promise.all([
         DataService.loadData(),
         DataService.loadNaturezas(),
       ]);
-      
+
       NaturezaMap.set(naturezas);
       UI_Sidebar.updateStamp(data);
       this._renderAll(data);
       ScrollSpy.init();
 
       console.info(`[App] Dashboard pronto · ${NaturezaMap.size()} naturezas carregadas`);
-      
     } catch (err) {
       console.error('[App] Falha ao carregar dashboard:', err);
       UI_Sidebar.setError();
       this._renderError(err);
-    }
-  },
-
-  _setupBackButton() {
-    const btn = document.querySelector('.btn-hub');
-    const ref = document.referrer;
-    // O botão volta só é escondido se você tiver entrado diretamente via link
-    // Se quiser que ele apareça 100% das vezes, pode remover esse "btn.style.display = 'none'".
-    if (btn && (!ref || !ref.includes(window.location.hostname))) {
-      btn.style.display = 'none';
-    } else if (btn) {
-      btn.style.display = 'flex'; // Garante que o botão use flexbox quando visível
     }
   },
 
@@ -2082,7 +2158,6 @@ const App = {
       ]),
       DOM.h('p', { style: { color: 'var(--subtle)', fontSize: '12px', marginBottom: '20px' } },
         `Detalhe técnico: ${message}`),
-      
       retryBtn,
     ]));
   },
