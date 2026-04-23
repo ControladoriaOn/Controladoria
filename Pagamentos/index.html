@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Pagamentos · Dashboard</title>
 
-<!-- Favicon: tenta o PNG real do repo, com fallback SVG inline (nunca 404) -->
-<link rel="icon" type="image/png" href="favicon.png">
+<!-- Favicon: apontando para raiz do repo (dashboard está em /Pagamentos/).
+     Fallback SVG inline garante que nunca dá 404. -->
+<link rel="icon" type="image/png" href="../favicon.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233C003C'/%3E%3Ctext x='50%25' y='50%25' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23FF6E00' text-anchor='middle' dominant-baseline='central'%3E%E2%82%A3%3C/text%3E%3C/svg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -904,7 +905,7 @@
 <aside class="sidebar" aria-label="Navegação principal">
   <div class="logo">
     <div class="logo-mark">
-      <img src="logo-mascote.jpg"
+      <img src="../logo-mascote.jpg"
            alt="Mascote Controladoria"
            onerror="this.style.display='none'; this.parentNode.textContent='₣';">
     </div>
@@ -940,8 +941,8 @@
       </div>
     </div>
     <!-- Botão "Voltar ao Hub": só aparece se o usuário veio do hub.
-         Controlado por JS (classe .visible). Href aponta para o hub real. -->
-    <a id="btn-hub" class="btn-hub" href="https://controladoriaon.github.io/Controladoria/" rel="noopener" hidden>
+         Controlado por JS (módulo HubLink). Href aponta para a raiz do repo. -->
+    <a id="btn-hub" class="btn-hub" href="../" rel="noopener" hidden>
       <i class="fa-solid fa-arrow-left-long"></i>
       Voltar ao Hub
     </a>
@@ -2115,13 +2116,17 @@ const ScrollSpy = {
 
 /* ============================================================================
    HUB LINK — mostra botão "Voltar ao Hub" apenas se usuário veio do hub
+   Funciona em produção (github.io) E em localhost.
+
    Aceita 3 sinais (qualquer um basta):
-   - document.referrer contém o domínio do hub
-   - URL atual tem ?from=hub (fallback manual, recomendado no link do hub)
-   - sessionStorage tem flag 'came_from_hub' (persiste enquanto a aba vive)
+   - document.referrer é uma página do mesmo origin, no path do hub, mas NÃO
+     no path do próprio dashboard (evita que reload conte como "vindo do hub")
+   - URL atual tem ?from=qualquer_valor (fallback robusto)
+   - sessionStorage tem flag 'came_from_hub' (persiste durante a aba)
    ============================================================================ */
 const HubLink = {
-  HUB_URL: 'controladoriaon.github.io/Controladoria',
+  HUB_PATH_PREFIX: '/Controladoria',          // Path do hub no repo
+  SELF_PATH_PREFIX: '/Controladoria/Pagamentos', // Path do próprio dashboard
   STORAGE_KEY: 'came_from_hub',
 
   init() {
@@ -2130,24 +2135,29 @@ const HubLink = {
 
     if (this._userCameFromHub()) {
       btn.hidden = false;
-      // Persiste pra que navegação interna (anchor links, refresh) não esconda o botão
       try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { /* privacy mode */ }
     }
   },
 
   _userCameFromHub() {
-    // 1. Referrer do navegador
+    // 1. Referrer: same-origin, dentro do path do hub, mas fora do path deste dashboard
     try {
-      if (document.referrer && document.referrer.includes(this.HUB_URL)) return true;
-    } catch (e) { /* cross-origin pode bloquear leitura */ }
+      if (document.referrer) {
+        const ref = new URL(document.referrer);
+        const sameOrigin = ref.origin === location.origin;
+        const isHubPath = ref.pathname.startsWith(this.HUB_PATH_PREFIX);
+        const isSelfPath = ref.pathname.startsWith(this.SELF_PATH_PREFIX);
+        if (sameOrigin && isHubPath && !isSelfPath) return true;
+      }
+    } catch (e) { /* URL inválida ou bloqueada */ }
 
-    // 2. Query string ?from=hub (fallback quando referrer é bloqueado)
+    // 2. Query string ?from=... (coloque no link do hub como seguro extra)
     try {
       const params = new URLSearchParams(location.search);
       if (params.has('from')) return true;
     } catch (e) { /* ignore */ }
 
-    // 3. SessionStorage (persiste durante a sessão, mesmo após refresh)
+    // 3. SessionStorage (mantém o botão após F5 dentro da mesma aba)
     try {
       if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
     } catch (e) { /* privacy mode */ }
