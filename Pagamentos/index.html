@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Pagamentos · Dashboard</title>
 
+<!-- Favicon: tenta o PNG real do repo, com fallback SVG inline (nunca 404) -->
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233C003C'/%3E%3Ctext x='50%25' y='50%25' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23FF6E00' text-anchor='middle' dominant-baseline='central'%3E%E2%82%A3%3C/text%3E%3C/svg%3E">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -104,7 +108,7 @@
     flex-shrink: 0;
   }
   .sidebar .logo-mark {
-    width: 36px; height: 36px; border-radius: 9px;
+    width: 42px; height: 42px; border-radius: 10px;
     background: rgba(255,255,255,0.08);
     backdrop-filter: blur(4px);
     border: 1px solid rgba(255,255,255,0.12);
@@ -112,7 +116,15 @@
     color: var(--orange);
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 18px;
+    font-size: 20px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .sidebar .logo-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .sidebar .logo-text { display: flex; flex-direction: column; line-height: 1.1; }
   .sidebar .logo-text span:first-child { font-family: var(--font-display); font-weight: 500; font-size: 18px; }
@@ -157,7 +169,7 @@
   }
   .sidebar nav a:hover i, .sidebar nav a.active i { color: var(--orange); }
 
-  /* Links "em breve" — desabilitados com badge */
+  /* Links "em breve" — desabilitados com ícone de cadeado */
   .sidebar nav a.coming-soon {
     color: rgba(255,255,255,0.35);
     cursor: not-allowed;
@@ -166,19 +178,15 @@
   }
   .sidebar nav a.coming-soon i { color: rgba(255,255,255,0.25); }
   .sidebar nav a.coming-soon::after {
-    content: 'em breve';
+    content: '\f023'; /* FontAwesome lock */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
     position: absolute;
-    right: 10px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 2px 6px;
-    background: rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.5);
-    border-radius: 4px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.3);
   }
 
   .sidebar-footer {
@@ -254,6 +262,7 @@
     transition: all 0.15s;
     box-shadow: 0 6px 18px -8px rgba(255,110,0,0.55);
   }
+  .btn-hub[hidden] { display: none; }
   .btn-hub:hover {
     background: var(--orange-deep);
     border-color: var(--orange-deep);
@@ -894,7 +903,11 @@
 
 <aside class="sidebar" aria-label="Navegação principal">
   <div class="logo">
-    <div class="logo-mark">₣</div>
+    <div class="logo-mark">
+      <img src="logo-mascote.jpg"
+           alt="Mascote Controladoria"
+           onerror="this.style.display='none'; this.parentNode.textContent='₣';">
+    </div>
     <div class="logo-text">
       <span>Financeiro</span>
       <span>Pagamentos</span>
@@ -913,7 +926,7 @@
     <a href="atualizar.html">
       <i class="fa-solid fa-arrow-up-from-bracket"></i> Atualizar
     </a>
-    <a href="#" class="coming-soon"><i class="fa-solid fa-file-invoice"></i> NFs</a>
+    <a href="#" class="coming-soon"><i class="fa-solid fa-file-invoice"></i> Notas Fiscais</a>
     <a href="#" class="coming-soon"><i class="fa-solid fa-receipt"></i> Reembolsos</a>
     <a href="#" class="coming-soon"><i class="fa-solid fa-gear"></i> Ajustes</a>
   </nav>
@@ -926,8 +939,9 @@
         <span class="stamp-text" id="stamp-text">carregando…</span>
       </div>
     </div>
-    <!-- TODO: Ajuste o href de "Voltar ao Hub" para a URL real do seu hub. -->
-    <a class="btn-hub" href="/" rel="noopener">
+    <!-- Botão "Voltar ao Hub": só aparece se o usuário veio do hub.
+         Controlado por JS (classe .visible). Href aponta para o hub real. -->
+    <a id="btn-hub" class="btn-hub" href="https://controladoriaon.github.io/Controladoria/" rel="noopener" hidden>
       <i class="fa-solid fa-arrow-left-long"></i>
       Voltar ao Hub
     </a>
@@ -2100,8 +2114,47 @@ const ScrollSpy = {
 };
 
 /* ============================================================================
-   APP — orquestração
+   HUB LINK — mostra botão "Voltar ao Hub" apenas se usuário veio do hub
+   Aceita 3 sinais (qualquer um basta):
+   - document.referrer contém o domínio do hub
+   - URL atual tem ?from=hub (fallback manual, recomendado no link do hub)
+   - sessionStorage tem flag 'came_from_hub' (persiste enquanto a aba vive)
    ============================================================================ */
+const HubLink = {
+  HUB_URL: 'controladoriaon.github.io/Controladoria',
+  STORAGE_KEY: 'came_from_hub',
+
+  init() {
+    const btn = DOM.byId('btn-hub');
+    if (!btn) return;
+
+    if (this._userCameFromHub()) {
+      btn.hidden = false;
+      // Persiste pra que navegação interna (anchor links, refresh) não esconda o botão
+      try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { /* privacy mode */ }
+    }
+  },
+
+  _userCameFromHub() {
+    // 1. Referrer do navegador
+    try {
+      if (document.referrer && document.referrer.includes(this.HUB_URL)) return true;
+    } catch (e) { /* cross-origin pode bloquear leitura */ }
+
+    // 2. Query string ?from=hub (fallback quando referrer é bloqueado)
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.has('from')) return true;
+    } catch (e) { /* ignore */ }
+
+    // 3. SessionStorage (persiste durante a sessão, mesmo após refresh)
+    try {
+      if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
+    } catch (e) { /* privacy mode */ }
+
+    return false;
+  },
+};
 const App = {
   async init() {
     try {
@@ -2113,6 +2166,7 @@ const App = {
 
       NaturezaMap.set(naturezas);
       UI_Sidebar.updateStamp(data);
+      HubLink.init();
       this._renderAll(data);
       ScrollSpy.init();
 
