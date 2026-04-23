@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestão de Parcelamentos | ONTIME</title>
-    <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ControladoriaOn/Controladoria/main/favicon.png">
+    
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -17,169 +19,132 @@
 
     <style>
         /* ============================================================
-           CSS VARIABLES — Tema centralizado
+           DESIGN TOKENS — V8
            ============================================================ */
         :root {
-            /* Paleta principal */
-            --purple-deep: #1a0a2e;
-            --purple-main: #3C003C;
-            --purple-light: #5a005a;
-            --purple-glow: rgba(60, 0, 60, 0.4);
-
-            --orange-main: #FF6E00;
-            --orange-hover: #ff8533;
-            --orange-glow: rgba(255, 110, 0, 0.3);
-            --orange-dim: rgba(255, 110, 0, 0.12);
-
-            /* Superfícies */
-            --bg-dark: #0f0a18;
-            --surface-1: #1a1423;
-            --surface-2: #241d2e;
-            --surface-3: #2f273a;
-
-            /* Texto */
-            --text-1: #ffffff;
-            --text-2: #a39eb5;
-            --text-3: #6b6580;
-            --border-color: rgba(255, 255, 255, 0.08);
-
-            /* Status */
-            --status-ok: #10b981;
-            --status-ok-bg: rgba(16, 185, 129, 0.15);
-            --status-warn: #f59e0b;
-            --status-warn-bg: rgba(245, 158, 11, 0.15);
-            --status-err: #ef4444;
-            --status-err-bg: rgba(239, 68, 68, 0.15);
-
-            /* Tipografia */
-            --font-display: 'Syne', sans-serif;
-            --font-body: 'Outfit', sans-serif;
-
-            /* Layout */
-            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
-            --radius-lg: 20px;
+            --bg:              #FAF7F5;
+            --surface:         #FFFFFF;
+            --surface-soft:    #F6F2F6;
+            --border:          #E8E0E8;
+            --border-soft:     #F0EAF0;
+            --ink:             #1A0F1A;
+            --muted:           #6B5E6B;
+            --subtle:          #A89CB0;
+            --plum:            #3C003C;
+            --plum-deep:       #2A0028;
+            --plum-light:      #5C1A5C;
+            --orange:          #FF6E00;
+            --orange-soft:     #FFF1E4;
+            --orange-deep:     #D25500;
+            --orange-dim:      rgba(255, 110, 0, 0.12);
+            --ok:              #1F7A3D;
+            --ok-soft:         #EAF7EE;
+            --warn:            #C77700;
+            --err:             #B91C1C;
+            --err-soft:        #FDF2F2;
+            
+            --font-display:    'Fraunces', 'Times New Roman', serif;
+            --font-body:       'Manrope', system-ui, sans-serif;
+            --font-mono:       'JetBrains Mono', ui-monospace, monospace;
+            
+            --shadow-sm:       0 1px 2px rgba(26,15,26,0.04);
+            --shadow-md:       0 4px 14px -6px rgba(26,15,26,0.08);
+            --shadow-lg:       0 14px 32px -14px rgba(26,15,26,0.15);
+            
+            --radius-lg: 16px;
             --radius-md: 12px;
             --radius-sm: 8px;
-            --sidebar-w: 280px;
+            --sidebar-w: 250px;
         }
 
         /* ============================================================
            RESET & BASE
            ============================================================ */
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
             font-family: var(--font-body);
-            background: var(--bg-dark);
-            color: var(--text-1);
+            background: var(--bg);
+            color: var(--ink);
             display: flex;
             height: 100vh;
             overflow: hidden;
-            background-image:
-                radial-gradient(circle at 15% 50%, rgba(60, 0, 60, 0.15), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(255, 110, 0, 0.05), transparent 25%);
+            -webkit-font-smoothing: antialiased;
         }
 
         /* ============================================================
            SCROLLBAR
            ============================================================ */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--surface-3);
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--orange-main);
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #C0C4C8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #A0A4A8; }
 
         /* ============================================================
-           SIDEBAR
+           SIDEBAR V8
            ============================================================ */
         .sidebar {
             width: var(--sidebar-w);
-            background: linear-gradient(180deg, var(--purple-deep) 0%, var(--surface-1) 100%);
-            border-right: 1px solid var(--border-color);
+            background: linear-gradient(170deg, var(--plum-deep) 0%, var(--plum) 55%, var(--plum-light) 100%);
+            color: rgba(255,255,255,0.9);
+            padding: 24px 18px;
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
             z-index: 100;
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
 
-        .sidebar-brand {
-            height: 90px;
+        .sidebar .logo {
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: 22px;
+            letter-spacing: -0.01em;
+            padding: 4px 10px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 14px;
             display: flex;
             align-items: center;
-            padding: 0 28px;
-            gap: 14px;
-            border-bottom: 1px solid var(--border-color);
-            position: relative;
+            gap: 12px;
+            color: #FFFFFF;
+            flex-shrink: 0;
+        }
+        .sidebar .logo-mark {
+            width: 42px; height: 42px; border-radius: 10px;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.12);
+            display: grid; place-items: center;
             overflow: hidden;
+            flex-shrink: 0;
         }
-
-        .sidebar-brand::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, var(--orange-main), transparent);
-        }
-
-        .sidebar-brand img {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px var(--orange-glow);
-            border: 1px solid rgba(255, 110, 0, 0.3);
-        }
-
-        .sidebar-brand .brand-text {
-            font-family: var(--font-display);
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: 1px;
-        }
-
-        .sidebar-brand .brand-text span {
-            color: var(--orange-main);
-            margin-left: -2px;
+        .sidebar .logo-mark img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .sidebar .logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+        .sidebar .logo-text span:first-child { font-family: var(--font-display); font-weight: 500; font-size: 18px; }
+        .sidebar .logo-text span:last-child {
+            font-family: var(--font-body); font-weight: 600; font-size: 10px;
+            color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.14em; margin-top: 2px;
         }
 
         .sidebar-nav {
-            padding: 24px 16px;
             display: flex;
             flex-direction: column;
             gap: 8px;
             flex: 1;
+            padding-top: 10px;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 14px 18px;
-            color: var(--text-2);
+            gap: 12px;
+            padding: 12px 14px;
+            color: rgba(255,255,255,0.7);
             text-decoration: none;
-            border-radius: var(--radius-md);
-            font-weight: 500;
-            font-size: 15px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 13px;
             transition: all 0.2s;
             border: 1px solid transparent;
             background: none;
@@ -189,75 +154,69 @@
             width: 100%;
         }
 
-        .nav-item i {
-            font-size: 22px;
-            transition: transform 0.2s;
-        }
-
+        .nav-item i { font-size: 20px; transition: transform 0.2s; }
         .nav-item:hover {
-            color: var(--text-1);
-            background: rgba(255, 255, 255, 0.03);
-            border-color: var(--border-color);
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255,255,255,0.1);
         }
-
-        .nav-item:hover i {
-            transform: scale(1.1);
-            color: var(--orange-main);
-        }
-
         .nav-item.active {
-            background: linear-gradient(90deg, rgba(255, 110, 0, 0.1), transparent);
-            color: var(--orange-main);
-            border-color: rgba(255, 110, 0, 0.2);
-            border-left: 3px solid var(--orange-main);
+            background: rgba(255, 110, 0, 0.15);
+            color: #fff;
+            border-color: rgba(255, 110, 0, 0.3);
+            border-left: 3px solid var(--orange);
         }
+        .nav-item.active i { color: var(--orange); }
 
-        /* ============================================================
-           SIDEBAR FOOTER & OVERLAY
-           ============================================================ */
         .sidebar-footer {
-            padding: 16px;
-            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .back-link {
+        .btn-hub {
+            padding: 11px 14px;
+            background: var(--orange);
+            border: 1px solid var(--orange);
+            color: #FFFFFF;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 13px;
+            border-radius: 10px;
+            text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 14px 18px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            color: var(--text-2);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s;
-            width: 100%;
+            transition: all 0.15s;
+            box-shadow: 0 6px 18px -8px rgba(255,110,0,0.55);
         }
-
-        .back-link:hover {
-            background: var(--orange-main);
-            border-color: var(--orange-main);
-            color: #fff;
+        .btn-hub[hidden] { display: none; }
+        .btn-hub:hover {
+            background: var(--orange-deep);
+            border-color: var(--orange-deep);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 24px -8px rgba(255,110,0,0.7);
         }
 
         .sidebar-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.5);
             z-index: 90;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(2px);
         }
 
         .hamburger {
             display: none;
             background: none;
             border: none;
-            color: var(--text-1);
-            font-size: 28px;
+            color: var(--ink);
+            font-size: 26px;
             cursor: pointer;
         }
 
@@ -274,9 +233,9 @@
 
         header {
             height: 80px;
-            background: rgba(15, 10, 24, 0.8);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -288,24 +247,20 @@
             flex-wrap: wrap;
         }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
 
         .page-title {
             font-family: var(--font-display);
-            font-size: 22px;
-            font-weight: 700;
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: -0.015em;
             display: flex;
             align-items: center;
             gap: 10px;
+            color: var(--ink);
         }
 
-        .page-title i {
-            color: var(--orange-main);
-        }
+        .page-title i { color: var(--orange); }
 
         .header-right {
             display: flex;
@@ -318,27 +273,26 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            background: var(--surface-2);
-            border: 1px solid var(--border-color);
-            color: var(--text-2);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--muted);
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
             padding: 8px 16px;
             border-radius: 999px;
         }
 
         .header-pill .dot {
-            width: 7px;
-            height: 7px;
-            background: var(--status-ok);
+            width: 7px; height: 7px;
+            background: var(--ok);
             border-radius: 50%;
             animation: pulse-dot 2.5s infinite;
         }
 
         @keyframes pulse-dot {
-            0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
-            70%  { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+            0%   { box-shadow: 0 0 0 0 rgba(31, 122, 61, 0.5); }
+            70%  { box-shadow: 0 0 0 5px rgba(31, 122, 61, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(31, 122, 61, 0); }
         }
 
         /* ============================================================
@@ -349,41 +303,40 @@
             align-items: center;
             gap: 8px;
             padding: 9px 18px;
-            border-radius: 999px;
+            border-radius: 10px;
             font-family: var(--font-body);
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             border: none;
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-export.excel {
-            background: var(--surface-2);
-            border: 1px solid var(--border-color);
-            color: var(--text-1);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--ink);
         }
 
         .btn-export.excel:hover {
-            border-color: var(--status-ok);
-            color: var(--status-ok);
-            background: rgba(16, 185, 129, 0.05);
+            border-color: var(--ok);
+            color: var(--ok);
+            background: var(--ok-soft);
         }
 
         .btn-export.pdf {
-            background: var(--orange-main);
+            background: var(--orange);
             color: #fff;
-            box-shadow: 0 4px 15px var(--orange-glow);
+            box-shadow: 0 4px 14px -6px rgba(255,110,0,0.5);
         }
 
         .btn-export.pdf:hover {
-            background: var(--orange-hover);
+            background: var(--orange-deep);
             transform: translateY(-1px);
         }
 
-        .btn-export.pdf.loading i {
-            animation: spin 1s linear infinite;
-        }
+        .btn-export.pdf.loading i { animation: spin 1s linear infinite; }
 
         /* ============================================================
            DATA-BASE SELECTOR
@@ -392,16 +345,17 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            background: var(--surface-2);
-            border: 1px solid var(--border-color);
-            padding: 4px 8px;
-            border-radius: 999px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 10px;
+            box-shadow: var(--shadow-sm);
         }
 
         .data-base-selector label {
-            font-size: 10px;
-            color: var(--text-3);
-            font-weight: 600;
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             white-space: nowrap;
@@ -410,19 +364,14 @@
         .data-base-selector select {
             background: transparent;
             border: none;
-            color: var(--text-1);
+            color: var(--ink);
             font-family: var(--font-body);
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             outline: none;
             cursor: pointer;
             appearance: none;
-            padding: 4px 2px;
-        }
-
-        .data-base-selector select option {
-            background: var(--surface-2);
-            color: var(--text-1);
+            padding: 2px;
         }
 
         /* ============================================================
@@ -441,17 +390,15 @@
         .section-title {
             font-family: var(--font-display);
             font-size: 20px;
-            font-weight: 700;
+            font-weight: 600;
             margin-bottom: 24px;
             display: flex;
             align-items: center;
             gap: 10px;
+            letter-spacing: -0.01em;
         }
 
-        .section-title i {
-            color: var(--orange-main);
-            font-size: 24px;
-        }
+        .section-title i { color: var(--orange); font-size: 24px; }
 
         /* ============================================================
            KPI CARDS
@@ -464,66 +411,65 @@
         }
 
         .kpi-card {
-            background: var(--surface-1);
-            border: 1px solid var(--border-color);
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: var(--radius-lg);
-            padding: 28px;
+            padding: 24px;
             position: relative;
             overflow: hidden;
-            box-shadow: var(--shadow-card);
-            transition: border-color 0.3s, transform 0.3s;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s;
         }
 
         .kpi-card:hover {
-            border-color: rgba(255, 255, 255, 0.15);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--subtle);
         }
 
         .kpi-card::before {
             content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
+            position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
         }
 
-        .kpi-card.purple::before { background: var(--purple-light); }
-        .kpi-card.orange::before { background: var(--orange-main); }
-        .kpi-card.green::before  { background: var(--status-ok); }
+        .kpi-card.purple::before { background: var(--plum); }
+        .kpi-card.orange::before { background: var(--orange); }
+        .kpi-card.green::before  { background: var(--ok); }
 
         .kpi-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
         }
 
         .kpi-label {
-            font-size: 13px;
-            color: var(--text-2);
-            font-weight: 500;
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
         .kpi-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
         }
 
-        .kpi-card.purple .kpi-icon { background: rgba(90, 0, 90, 0.15); color: #d8b4fe; }
-        .kpi-card.orange .kpi-icon { background: var(--orange-glow); color: var(--orange-main); }
-        .kpi-card.green .kpi-icon  { background: var(--status-ok-bg); color: var(--status-ok); }
+        .kpi-card.purple .kpi-icon { background: var(--surface-soft); color: var(--plum); }
+        .kpi-card.orange .kpi-icon { background: var(--orange-soft); color: var(--orange-deep); }
+        .kpi-card.green .kpi-icon  { background: var(--ok-soft); color: var(--ok); }
 
+        /* Fonte negrito (700) solicitada para os valores dos KPIs */
         .kpi-value {
             font-family: var(--font-display);
-            font-size: 30px;
-            font-weight: 800;
-            margin-top: 6px;
+            font-size: 28px;
+            font-weight: 700; /* Ajuste feito aqui */
+            color: var(--ink);
+            line-height: 1;
+            letter-spacing: -0.02em;
         }
 
         /* ============================================================
@@ -535,41 +481,34 @@
             gap: 24px;
         }
 
-        .chart-full {
-            grid-column: 1 / -1;
-        }
+        .chart-full { grid-column: 1 / -1; }
 
         .chart-card {
-            background: var(--surface-1);
-            border: 1px solid var(--border-color);
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 24px;
-            box-shadow: var(--shadow-card);
+            box-shadow: var(--shadow-sm);
             transition: border-color 0.3s;
-        }
-
-        .chart-card:hover {
-            border-color: rgba(255, 255, 255, 0.12);
         }
 
         .chart-title {
             font-family: var(--font-display);
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 18px;
+            font-weight: 500;
             margin-bottom: 4px;
+            color: var(--ink);
+            letter-spacing: -0.01em;
         }
 
         .chart-subtitle {
             font-size: 12px;
-            color: var(--text-3);
+            color: var(--muted);
             margin-bottom: 20px;
+            font-weight: 600;
         }
 
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-        }
+        .chart-container { position: relative; height: 300px; width: 100%; }
 
         /* ============================================================
            FILTROS & BADGES
@@ -578,36 +517,27 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            background: var(--orange-dim);
-            border: 1px solid rgba(255, 110, 0, 0.25);
-            color: var(--orange-main);
-            font-size: 13px;
-            font-weight: 600;
-            padding: 6px 14px;
+            background: var(--orange-soft);
+            border: 1px solid var(--orange);
+            color: var(--orange-deep);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
             border-radius: 999px;
             margin-left: 16px;
             animation: fadeUp 0.3s ease;
         }
 
         .filter-badge button {
-            background: none;
-            border: none;
-            color: var(--orange-main);
-            cursor: pointer;
-            font-size: 16px;
-            line-height: 1;
-            padding: 0 0 0 4px;
-            opacity: 0.7;
-            transition: opacity 0.2s;
+            background: none; border: none; color: var(--orange-deep);
+            cursor: pointer; font-size: 16px; line-height: 1; padding: 0 0 0 4px;
+            opacity: 0.7; transition: opacity 0.2s;
         }
-
-        .filter-badge button:hover {
-            opacity: 1;
-        }
+        .filter-badge button:hover { opacity: 1; }
 
         .filter-bar {
-            background: var(--surface-1);
-            border: 1px solid var(--border-color);
+            background: var(--surface);
+            border: 1px solid var(--border);
             border-radius: var(--radius-lg);
             padding: 20px 24px;
             margin-bottom: 20px;
@@ -615,307 +545,166 @@
             align-items: flex-end;
             flex-wrap: wrap;
             gap: 16px;
-            box-shadow: var(--shadow-card);
+            box-shadow: var(--shadow-sm);
         }
 
-        .filter-group {
-            flex: 1;
-            min-width: 140px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
+        .filter-group { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 6px; }
 
         .filter-group label {
-            font-size: 11px;
-            color: var(--text-2);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 11px; color: var(--muted); font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em;
         }
 
         .filter-input {
-            width: 100%;
-            background: var(--surface-2);
-            border: 1px solid var(--border-color);
-            color: var(--text-1);
-            padding: 10px 14px;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-body);
-            font-size: 13px;
-            outline: none;
-            transition: all 0.2s;
-            appearance: none;
+            width: 100%; background: var(--bg); border: 1px solid var(--border);
+            color: var(--ink); padding: 10px 14px; border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; font-weight: 500;
+            outline: none; transition: all 0.2s; appearance: none;
         }
 
         .filter-input:focus {
-            border-color: var(--orange-main);
+            border-color: var(--orange);
             box-shadow: 0 0 0 3px rgba(255, 110, 0, 0.1);
         }
 
-        .filter-input::placeholder {
-            color: var(--text-3);
-        }
+        .filter-input::placeholder { color: var(--subtle); }
 
         .filter-input.has-icon {
             padding-left: 38px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236b6580" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>');
-            background-repeat: no-repeat;
-            background-position: 12px center;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%236B5E6B" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"></path></svg>');
+            background-repeat: no-repeat; background-position: 12px center;
         }
 
         /* ============================================================
            TABELAS
            ============================================================ */
         .table-card {
-            background: var(--surface-1);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-card);
-            overflow: hidden;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden;
         }
 
         .table-bar {
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.2);
+            padding: 16px 24px; border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--surface-soft);
         }
 
         .table-bar-title {
-            font-family: var(--font-display);
-            font-size: 15px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-family: var(--font-display); font-size: 16px; font-weight: 600;
+            display: flex; align-items: center; gap: 8px;
         }
 
-        .table-bar-title i {
-            color: var(--orange-main);
-        }
+        .table-bar-title i { color: var(--orange); }
 
-        .table-responsive {
-            overflow-x: auto;
-        }
+        .table-responsive { overflow-x: auto; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-        }
+        table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; }
 
         th {
-            padding: 14px 20px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-2);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border-color);
-            white-space: nowrap;
-            cursor: pointer;
-            transition: background 0.2s;
-            background: var(--surface-2);
-            position: sticky;
-            top: 0;
-            z-index: 5;
+            padding: 14px 20px; font-size: 11px; font-weight: 700;
+            color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer;
+            transition: background 0.2s; background: var(--surface-soft);
+            position: sticky; top: 0; z-index: 5;
         }
 
-        th:hover {
-            background: var(--surface-3);
-            color: var(--text-1);
-        }
+        th:hover { background: var(--border-soft); color: var(--ink); }
 
-        th i {
-            font-size: 13px;
-            margin-left: 4px;
-            color: var(--text-3);
-            vertical-align: middle;
-        }
-
-        th i.active {
-            color: var(--orange-main);
-        }
+        th i { font-size: 14px; margin-left: 4px; color: var(--subtle); vertical-align: middle; }
+        th i.active { color: var(--orange); }
 
         td {
-            padding: 14px 20px;
-            font-size: 13px;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-1);
-            white-space: nowrap;
+            padding: 14px 20px; font-size: 13px; font-family: var(--font-mono);
+            border-bottom: 1px solid var(--border-soft); color: var(--ink); white-space: nowrap;
         }
 
-        tr:hover td {
-            background: rgba(255, 255, 255, 0.02);
-        }
+        tr:hover td { background: rgba(255, 110, 0, 0.03); }
 
-        td strong {
-            font-weight: 600;
-        }
+        td strong { font-weight: 700; font-family: var(--font-body); }
 
-        .val-destaque {
-            color: var(--orange-main);
-            font-weight: 600;
-        }
+        .val-destaque { color: var(--ink); font-weight: 600; }
 
         /* ============================================================
            STATUS BADGES
            ============================================================ */
         .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 999px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+            border-radius: 999px; font-size: 11px; font-weight: 700;
+            font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.5px;
             border: 1px solid transparent;
         }
 
-        .status-vencer  { background: var(--orange-dim); color: var(--orange-main); border-color: rgba(255, 110, 0, 0.25); }
-        .status-quitada  { background: var(--status-ok-bg); color: var(--status-ok); border-color: rgba(16, 185, 129, 0.3); }
-        .status-atraso   { background: var(--status-err-bg); color: var(--status-err); border-color: rgba(239, 68, 68, 0.3); }
-        .status-default  { background: rgba(255, 255, 255, 0.04); color: var(--text-3); }
+        .status-vencer  { background: var(--orange-soft); color: var(--orange-deep); border-color: rgba(255, 110, 0, 0.2); }
+        .status-quitada { background: var(--ok-soft); color: var(--ok); border-color: rgba(31, 122, 61, 0.2); }
+        .status-atraso  { background: var(--err-soft); color: var(--err); border-color: rgba(185, 28, 28, 0.2); }
+        .status-default { background: var(--surface-soft); color: var(--muted); border-color: var(--border); }
 
         /* ============================================================
            PAGINAÇÃO
            ============================================================ */
         .pagination {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 24px;
-            border-top: 1px solid var(--border-color);
-            font-size: 12px;
-            color: var(--text-2);
-            flex-wrap: wrap;
-            gap: 8px;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 24px; border-top: 1px solid var(--border);
+            font-size: 13px; font-weight: 600; color: var(--muted); flex-wrap: wrap; gap: 8px;
         }
 
-        .pagination-btns {
-            display: flex;
-            gap: 6px;
-        }
+        .pagination-btns { display: flex; gap: 6px; }
 
         .pagination-btns button {
-            background: var(--surface-2);
-            border: 1px solid var(--border-color);
-            color: var(--text-1);
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-family: var(--font-body);
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
+            background: var(--surface); border: 1px solid var(--border); color: var(--ink);
+            padding: 6px 12px; border-radius: 8px; font-family: var(--font-body);
+            font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
 
-        .pagination-btns button:hover:not(:disabled) {
-            border-color: var(--orange-main);
-            color: var(--text-1);
-        }
-
-        .pagination-btns button:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .pagination-btns button.active {
-            background: var(--orange-dim);
-            border-color: var(--orange-main);
-            color: var(--orange-main);
-            font-weight: 600;
-        }
+        .pagination-btns button:hover:not(:disabled) { border-color: var(--orange); color: var(--orange); }
+        .pagination-btns button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pagination-btns button.active { background: var(--orange-soft); border-color: var(--orange); color: var(--orange-deep); }
 
         /* ============================================================
            TABLE FOOTER / TFOOT
            ============================================================ */
         .table-footer {
-            padding: 14px 24px;
-            border-top: 1px solid var(--border-color);
-            font-size: 12px;
-            color: var(--text-2);
-            background: rgba(0, 0, 0, 0.15);
+            padding: 14px 24px; border-top: 1px solid var(--border);
+            font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface-soft);
         }
 
         tfoot td {
-            background: var(--surface-2) !important;
-            font-weight: 700;
-            color: var(--orange-main);
-            border-top: 2px solid var(--orange-dim);
-            font-size: 13px;
+            background: var(--bg) !important; font-weight: 700; color: var(--ink);
+            border-top: 2px solid var(--border); font-size: 14px;
         }
 
         /* ============================================================
            LOADER & ERROR
            ============================================================ */
         #loader {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 60vh;
-            color: var(--text-2);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 60vh; color: var(--muted);
         }
 
         .spinner {
-            width: 44px;
-            height: 44px;
-            border: 3px solid rgba(255, 110, 0, 0.2);
-            border-top-color: var(--orange-main);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 16px;
+            width: 44px; height: 44px;
+            border: 4px solid var(--border-soft); border-top-color: var(--orange);
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(18px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .scroll-section {
-            animation: fadeUp 0.5s ease-out both;
-        }
-
+        .scroll-section { animation: fadeUp 0.5s ease-out both; }
         .scroll-section:nth-child(1) { animation-delay: 0.05s; }
         .scroll-section:nth-child(2) { animation-delay: 0.15s; }
         .scroll-section:nth-child(3) { animation-delay: 0.25s; }
 
-        /* ============================================================
-           RETRY BUTTON (novo)
-           ============================================================ */
         .btn-retry {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 16px;
-            padding: 10px 24px;
-            background: var(--orange-main);
-            color: #fff;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-body);
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
+            display: inline-flex; align-items: center; gap: 8px; margin-top: 16px;
+            padding: 10px 24px; background: var(--orange); color: #fff; border: none;
+            border-radius: 10px; font-family: var(--font-body); font-size: 14px;
+            font-weight: 600; cursor: pointer; transition: background 0.2s;
         }
-
-        .btn-retry:hover {
-            background: var(--orange-hover);
-        }
+        .btn-retry:hover { background: var(--orange-deep); }
 
         /* ============================================================
-           PRINT
+           PRINT & RESPONSIVE
            ============================================================ */
         @media print {
             .sidebar, header, .filter-bar, .pagination { display: none !important; }
@@ -924,35 +713,13 @@
             .table-responsive { max-height: none !important; overflow: visible !important; }
         }
 
-        /* ============================================================
-           RESPONSIVE
-           ============================================================ */
         @media (max-width: 1024px) {
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                transform: translateX(-100%);
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.8);
-            }
-
+            .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1); }
             .sidebar-overlay.visible { display: block; }
             .hamburger { display: block; }
             .content-area { padding: 24px 20px 100px; }
-
-            header {
-                padding: 0 20px;
-                height: auto;
-                min-height: 70px;
-                padding-top: 12px;
-                padding-bottom: 12px;
-            }
-
+            header { padding: 0 20px; height: auto; min-height: 70px; padding-top: 12px; padding-bottom: 12px; }
             .kpi-grid, .charts-grid { grid-template-columns: 1fr; }
             .chart-full { grid-column: auto; }
             .filter-bar { flex-direction: column; }
@@ -969,19 +736,19 @@
 </head>
 <body>
 
-<!-- ================================================================
-     SIDEBAR OVERLAY
-     ================================================================ -->
 <div class="sidebar-overlay" id="sidebarOverlay" role="presentation"></div>
 
-<!-- ================================================================
-     SIDEBAR
-     ================================================================ -->
 <aside class="sidebar" id="sidebar" role="navigation" aria-label="Menu principal">
-    <div class="sidebar-brand">
-        <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Logo ONTIME">
-        <div class="brand-text">ON<span>TIME</span></div>
+    <div class="logo">
+        <div class="logo-mark">
+            <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote" onerror="this.style.display='none'; this.parentNode.textContent='ON';">
+        </div>
+        <div class="logo-text">
+            <span>ONTIME</span>
+            <span>Parcelamentos</span>
+        </div>
     </div>
+    
     <nav class="sidebar-nav" aria-label="Seções do dashboard">
         <button class="nav-item active" data-target="dashboard" aria-current="true">
             <i class="ph-fill ph-chart-pie-slice"></i> Dashboard
@@ -994,15 +761,13 @@
         </button>
     </nav>
     <div class="sidebar-footer">
-        <a href="../" class="back-link" id="backLink">
-            <i class="ph-bold ph-arrow-left"></i> Voltar ao Hub
+        <a id="btn-hub" class="btn-hub" href="../" rel="noopener" hidden>
+            <i class="ph ph-arrow-left"></i>
+            Voltar ao Hub
         </a>
     </div>
 </aside>
 
-<!-- ================================================================
-     MAIN CONTENT
-     ================================================================ -->
 <main class="main-content" id="scroll-container" role="main">
     <header id="main-header">
         <div class="header-left">
@@ -1015,7 +780,7 @@
             <div class="data-base-selector" role="group" aria-label="Selecionar data-base">
                 <label id="labelBase"><i class="ph ph-calendar-blank" style="font-size:14px;vertical-align:middle"></i> Base:</label>
                 <select id="dataBaseMes" aria-labelledby="labelBase"></select>
-                <span style="color:var(--text-3)" aria-hidden="true">/</span>
+                <span style="color:var(--muted)" aria-hidden="true">/</span>
                 <select id="dataBaseAno" aria-labelledby="labelBase"></select>
             </div>
 
@@ -1035,13 +800,11 @@
     <div class="content-area" id="contentArea">
         <div id="loader" role="status" aria-live="polite">
             <div class="spinner" aria-hidden="true"></div>
-            <p>Sincronizando dados...</p>
+            <p style="font-weight:600;">Sincronizando dados...</p>
         </div>
 
         <div id="app-content" style="display:none;flex-direction:column;gap:48px;">
-            <!-- ================================================
-                 SEÇÃO: DASHBOARD
-                 ================================================ -->
+          
             <div id="dashboard" class="scroll-section" data-pdf="capture">
                 <h2 class="section-title">
                     <i class="ph-fill ph-chart-pie-slice"></i> Visão Estratégica
@@ -1089,9 +852,6 @@
                 </div>
             </div>
 
-            <!-- ================================================
-                 SEÇÃO: SINTÉTICO
-                 ================================================ -->
             <div id="sintetico" class="scroll-section" data-pdf="capture">
                 <h2 class="section-title"><i class="ph-fill ph-list-numbers"></i> Resumo Sintético</h2>
                 <div class="filter-bar" id="filterSinteticoBar" role="search" aria-label="Filtros do resumo sintético">
@@ -1134,9 +894,6 @@
                 </div>
             </div>
 
-            <!-- ================================================
-                 SEÇÃO: DETALHADO
-                 ================================================ -->
             <div id="detalhado" class="scroll-section">
                 <h2 class="section-title"><i class="ph-fill ph-table"></i> Detalhamento</h2>
                 <div class="filter-bar" role="search" aria-label="Filtros do detalhamento">
@@ -1207,18 +964,52 @@
 
 <script>
 /* =================================================================
-   ██████╗  ██████╗ ███╗   ██╗███████╗██╗ ██████╗
-  ██╔════╝ ██╔═══██╗████╗  ██║██╔════╝██║██╔════╝
-  ██║      ██║   ██║██╔██╗ ██║█████╗  ██║██║  ███╗
-  ██║      ██║   ██║██║╚██╗██║██╔══╝  ██║██║   ██║
-  ╚██████╗ ╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝
-   ╚═════╝  ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝
-   Configuração centralizada
+   HUB LINK — Validação Inteligente de Origem
+   ================================================================= */
+const HubLink = {
+    HUB_PATH_PREFIX: '/Controladoria',          
+    SELF_PATH_PREFIX: '/Controladoria/Parcelamentos', 
+    STORAGE_KEY: 'came_from_hub_parcelamentos',
+
+    init() {
+        const btn = document.getElementById('btn-hub');
+        if (!btn) return;
+
+        if (this._userCameFromHub()) {
+            btn.hidden = false;
+            try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { }
+        }
+    },
+
+    _userCameFromHub() {
+        try {
+            if (document.referrer) {
+                const ref = new URL(document.referrer);
+                const sameOrigin = ref.origin === location.origin;
+                const isHubPath = ref.pathname.startsWith(this.HUB_PATH_PREFIX);
+                const isSelfPath = ref.pathname.startsWith(this.SELF_PATH_PREFIX);
+                if (sameOrigin && isHubPath && !isSelfPath) return true;
+            }
+        } catch (e) {}
+
+        try {
+            const params = new URLSearchParams(location.search);
+            if (params.has('from')) return true;
+        } catch (e) {}
+
+        try {
+            if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
+        } catch (e) {}
+
+        return false;
+    }
+};
+
+/* =================================================================
+   Configuração centralizada — Atualizado p/ Modo Claro (V8)
    ================================================================= */
 const Config = Object.freeze({
-    // SEGURANÇA: endpoint exposto no client-side.
-    // Ideal: mover para backend/proxy autenticado para proteger a chave da API.
-API_URL: 'https://calm-queen-1204.controladoriaontimegestao.workers.dev',
+    API_URL: 'https://calm-queen-1204.controladoriaontimegestao.workers.dev',
     CAIXA_JAN_2023: 421634,
     ROWS_PER_PAGE_SINT: 20,
     ROWS_PER_PAGE_DET: 50,
@@ -1231,34 +1022,26 @@ API_URL: 'https://calm-queen-1204.controladoriaontimegestao.workers.dev',
 
     NUMERIC_COLS: new Set(['qtdParcela', 'atraso', 'totalDivida', 'parcelaUnit', 'Valor Original', 'Saldo Devedor']),
 
-    // Cores do tema — usadas tanto no CSS-in-JS dos gráficos quanto no PDF
     theme: Object.freeze({
-        bgDark:      [15, 10, 24],
-        surface1:    [26, 20, 35],
-        surface2:    [36, 29, 46],
-        surfaceAlt:  [22, 16, 30],
-        textMuted:   [163, 158, 181],
-        textWhite:   [255, 255, 255],
+        bgDark:      [250, 247, 245],   // Reflete var(--bg) cream no PDF
+        surface1:    [255, 255, 255],
+        surface2:    [246, 242, 246],
+        surfaceAlt:  [250, 247, 245],
+        textMuted:   [107, 94, 107],    // var(--muted)
+        textWhite:   [26, 15, 26],      // var(--ink) texto escuro
         orange:      [255, 110, 0],
-        purple:      [90, 0, 90],
-        green:       [16, 185, 129],
-        kpiPurple:   [216, 180, 254],
-        gridLine:    [47, 39, 58],
+        purple:      [60, 0, 60],
+        green:       [31, 122, 61],
+        kpiPurple:   [92, 26, 92],
+        gridLine:    [232, 224, 232],
 
         orangeHex:   '#FF6E00',
         orangeLight: '#ff9544',
-        purpleHex:   '#5a005a',
+        purpleHex:   '#3C003C',
     }),
 });
 
-
 /* =================================================================
-   ██╗   ██╗████████╗██╗██╗     ███████╗
-   ██║   ██║╚══██╔══╝██║██║     ██╔════╝
-   ██║   ██║   ██║   ██║██║     ███████╗
-   ██║   ██║   ██║   ██║██║     ╚════██║
-   ╚██████╔╝   ██║   ██║███████╗███████║
-    ╚═════╝    ╚═╝   ╚═╝╚══════╝╚══════╝
    Funções utilitárias puras
    ================================================================= */
 const Utils = (() => {
@@ -1282,12 +1065,10 @@ const Utils = (() => {
             }
             return new Date(Date.UTC(year, month, day));
         }
-        // Fallback controlado: ISO 8601 apenas
         if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
             const d = new Date(s);
             return isNaN(d.getTime()) ? null : d;
         }
-        console.warn(`[Parsing] Formato de data não reconhecido: "${s}"`);
         return null;
     };
 
@@ -1317,22 +1098,15 @@ const Utils = (() => {
         return g;
     };
 
-    /**
-     * Lê um campo do registro independente de case (normalizado no fetch).
-     * Após normalização, os campos já estão em camelCase padronizado.
-     */
     const readField = (row, key, fallback = '-') => row[key] ?? fallback;
 
-    /** Checa se contrato está ativo a partir do campo normalizado */
     const isInativo = (ativoStr) => {
         const v = String(ativoStr || '').trim().toLowerCase();
         return v === 'não' || v === 'nao';
     };
 
-    /** Retorna mesAno numérico para comparação rápida */
     const mesAno = (year, month) => year * 100 + month;
 
-    /** Cria elemento DOM com texto seguro (sem innerHTML) */
     const el = (tag, text, className) => {
         const e = document.createElement(tag);
         if (text != null) e.textContent = text;
@@ -1340,7 +1114,6 @@ const Utils = (() => {
         return e;
     };
 
-    /** Cria <option> de forma segura */
     const option = (value, label, selected = false) => {
         const o = document.createElement('option');
         o.value = value;
@@ -1365,14 +1138,7 @@ const Utils = (() => {
     });
 })();
 
-
 /* =================================================================
-   ██████╗  █████╗ ████████╗ █████╗
-   ██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗
-   ██║  ██║███████║   ██║   ███████║
-   ██║  ██║██╔══██║   ██║   ██╔══██║
-   ██████╔╝██║  ██║   ██║   ██║  ██║
-   ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝
    DataService — fetch, normalização, indexação
    ================================================================= */
 const DataService = (() => {
@@ -1381,16 +1147,11 @@ const DataService = (() => {
     let inativoMap = {};
     let nascimentoMap = {};
 
-    // Índices auxiliares para evitar percorrer rawData repetidamente
-    let indexByNumero = {};   // numero → [rows]
+    let indexByNumero = {};
     let uniqueNaturezas = [];
     let uniqueOrgaos = [];
     let uniqueYears = [];
 
-    /**
-     * Mapa de normalização de chaves da API.
-     * Evita problemas com ATIVO/Ativo/ativo ou Orgão/Órgão etc.
-     */
     const KEY_MAP = {
         'numero':      'Número',
         'número':      'Número',
@@ -1427,7 +1188,6 @@ const DataService = (() => {
                 return await res.json();
             } catch (err) {
                 lastError = err;
-                console.warn(`[DataService] Tentativa ${attempt}/${maxRetries} falhou:`, err.message);
                 if (attempt < maxRetries) {
                     await new Promise(r => setTimeout(r, Config.RETRY_DELAY_MS * attempt));
                 }
@@ -1517,17 +1277,12 @@ const DataService = (() => {
             }
 
             map[id].qtdParcela++;
-
             const originalStatus = String(row['Status'] || '').trim().toLowerCase();
 
-            // Só soma se o contrato estiver vivo nesta data base
             if (mesAnoBase < inativo) {
-                // Efeito caixa e parcela do mês
                 if (mesAnoP === mesAnoBase && !originalStatus.includes('encerrado')) {
                     map[id].parcelaUnit += saldoDevedor;
                 }
-
-                // Saldo devedor e dívida futura
                 if (mesAnoP > mesAnoBase || originalStatus === 'a vencer' || originalStatus.includes('atraso')) {
                     map[id].totalDivida += saldoDevedor;
                     if (originalStatus.includes('atraso') && mesAnoP <= mesAnoBase) {
@@ -1536,7 +1291,6 @@ const DataService = (() => {
                 }
             }
         });
-
         consolidatedData = Object.values(map).filter(c => c.totalDivida > 0 || c.parcelaUnit > 0);
     };
 
@@ -1545,7 +1299,6 @@ const DataService = (() => {
         rawData = json
             .map(normalizeKeys)
             .filter(r => r['Número'] || r['Negociação']);
-
         buildLifeCycleMaps();
         buildIndexes();
     };
@@ -1563,15 +1316,8 @@ const DataService = (() => {
     };
 })();
 
-
 /* =================================================================
-    ██████╗██╗  ██╗ █████╗ ██████╗ ████████╗
-   ██╔════╝██║  ██║██╔══██╗██╔══██╗╚══██╔══╝
-   ██║     ███████║███████║██████╔╝   ██║
-   ██║     ██╔══██║██╔══██║██╔══██╗   ██║
-   ╚██████╗██║  ██║██║  ██║██║  ██║   ██║
-    ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
-   ChartManager — criação e atualização de gráficos
+   ChartManager — criação e atualização de gráficos (Ajustado p/ Tema Claro V8)
    ================================================================= */
 const ChartManager = (() => {
     const instances = { abertura: null, quitacao: null, caixa: null };
@@ -1579,7 +1325,7 @@ const ChartManager = (() => {
 
     const registerPlugins = () => {
         if (pluginRegistered) return;
-        Chart.defaults.font.family = "'Outfit', sans-serif";
+        Chart.defaults.font.family = "'Manrope', sans-serif";
         Chart.register(ChartDataLabels);
         pluginRegistered = true;
     };
@@ -1592,18 +1338,18 @@ const ChartManager = (() => {
         plugins: {
             legend: { display: false },
             tooltip: {
-                backgroundColor: 'rgba(15,10,24,0.95)',
+                backgroundColor: 'rgba(26,15,26,0.95)',
                 titleColor: '#fff',
-                bodyColor: '#a39eb5',
-                borderColor: 'rgba(255,255,255,0.1)',
+                bodyColor: '#fff',
+                borderColor: 'rgba(0,0,0,0.1)',
                 borderWidth: 1,
                 padding: 12,
-                cornerRadius: 8,
+                cornerRadius: 10,
                 callbacks: { label: ctx => Utils.fmtD(ctx.raw) },
             },
             datalabels: {
-                color: '#a39eb5',
-                font: { family: "'Outfit'", size: 12.5, weight: 600 },
+                color: '#6B5E6B', // var(--muted)
+                font: { family: "'Manrope'", size: 12.5, weight: 700 },
                 formatter: v => v > 0 ? Utils.fmtD(v) : '',
                 anchor: 'end',
                 align: 'end',
@@ -1614,10 +1360,8 @@ const ChartManager = (() => {
         ...(overrides.extra || {}),
     });
 
-    /** Atualiza um gráfico existente ou cria um novo */
     const upsertChart = (key, canvasId, type, dataFn, optionsFn) => {
         const { data, options } = { data: dataFn(), options: optionsFn() };
-
         if (instances[key]) {
             instances[key].data = data;
             instances[key].options = options;
@@ -1628,7 +1372,6 @@ const ChartManager = (() => {
                 { type, data, options }
             );
         }
-
         return instances[key];
     };
 
@@ -1639,31 +1382,21 @@ const ChartManager = (() => {
         }
     };
 
-    const getChart = (key) => instances[key];
-
     return Object.freeze({
         registerPlugins,
         baseOptions,
         upsertChart,
         destroyChart,
-        getChart,
+        getChart: (key) => instances[key],
     });
 })();
 
-
 /* =================================================================
-   ████████╗ █████╗ ██████╗ ██╗     ███████╗
-   ╚══██╔══╝██╔══██╗██╔══██╗██║     ██╔════╝
-      ██║   ███████║██████╔╝██║     █████╗
-      ██║   ██╔══██║██╔══██╗██║     ██╔══╝
-      ██║   ██║  ██║██████╔╝███████╗███████║
-      ╚═╝   ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝
-   TableRenderer — renderização segura de tabelas (sem innerHTML p/ dados)
+   TableRenderer
    ================================================================= */
 const TableRenderer = (() => {
     const $ = id => document.getElementById(id);
 
-    /** Retorna classe CSS para o badge de status */
     const statusClass = (statusStr) => {
         const lo = String(statusStr || '-').trim().toLowerCase();
         if (lo === 'a vencer') return 'status-vencer';
@@ -1672,17 +1405,16 @@ const TableRenderer = (() => {
         return 'status-default';
     };
 
-    /** Cria uma linha <tr> da tabela sintética de forma segura */
     const createSintRow = (c) => {
         const tr = document.createElement('tr');
         const cells = [
             c.natureza,
             c.tributo,
-            null, // numero (bold)
+            null, 
             c.orgao,
             c.qtdParcela,
-            null, // atraso (colorido)
-            null, // totalDivida (destaque)
+            null, 
+            null, 
             Utils.fmt(c.parcelaUnit),
         ];
 
@@ -1694,8 +1426,8 @@ const TableRenderer = (() => {
                 td.appendChild(strong);
             } else if (i === 5) {
                 td.textContent = c.atraso;
-                td.style.color = c.atraso > 0 ? 'var(--status-err)' : 'var(--status-ok)';
-                td.style.fontWeight = '600';
+                td.style.color = c.atraso > 0 ? 'var(--err)' : 'var(--ok)';
+                td.style.fontWeight = '700';
             } else if (i === 6) {
                 td.textContent = Utils.fmt(c.totalDivida);
                 td.className = 'val-destaque';
@@ -1704,23 +1436,21 @@ const TableRenderer = (() => {
             }
             tr.appendChild(td);
         });
-
         return tr;
     };
 
-    /** Cria uma linha <tr> da tabela detalhada de forma segura */
     const createDetRow = (r) => {
         const tr = document.createElement('tr');
         const status = String(r['Status'] || '-').trim();
 
         const vals = [
             Utils.formatDateBR(r['Data']),
-            null, // numero (bold)
+            null, 
             r['Orgão'] || '-',
             r['Natureza'] || '-',
             Utils.fmt(Utils.num(r['Valor Original'])),
-            null, // saldo devedor (destaque)
-            null, // status badge
+            null, 
+            null, 
         ];
 
         vals.forEach((text, i) => {
@@ -1742,11 +1472,9 @@ const TableRenderer = (() => {
             }
             tr.appendChild(td);
         });
-
         return tr;
     };
 
-    /** Renderiza linhas da tabela sintética */
     const renderSintRows = (data) => {
         const tbody = $('bodySintetico');
         tbody.textContent = '';
@@ -1755,7 +1483,6 @@ const TableRenderer = (() => {
         tbody.appendChild(frag);
     };
 
-    /** Renderiza totais do sintético */
     const renderTotals = (allFilteredData) => {
         const tfoot = $('tfootSintetico');
         tfoot.textContent = '';
@@ -1768,8 +1495,7 @@ const TableRenderer = (() => {
         const tdLabel = document.createElement('td');
         tdLabel.setAttribute('colspan', '6');
         tdLabel.style.textAlign = 'right';
-        tdLabel.style.color = 'var(--text-2)';
-        tdLabel.style.fontWeight = '700';
+        tdLabel.style.color = 'var(--muted)';
         tdLabel.textContent = 'TOTAIS DA PÁGINA (FILTRADO)';
         tr.appendChild(tdLabel);
 
@@ -1785,7 +1511,6 @@ const TableRenderer = (() => {
         tfoot.appendChild(tr);
     };
 
-    /** Renderiza linhas da tabela detalhada */
     const renderDetRows = (data) => {
         const tbody = $('bodyDetalhado');
         tbody.textContent = '';
@@ -1794,33 +1519,19 @@ const TableRenderer = (() => {
         tbody.appendChild(frag);
     };
 
-    /** Atualiza o footer do detalhado */
     const renderDetFooter = (count) => {
         $('detalhadoFooter').textContent = `${count} parcela(s) listada(s)`;
     };
 
-    return Object.freeze({
-        renderSintRows,
-        renderTotals,
-        renderDetRows,
-        renderDetFooter,
-    });
+    return Object.freeze({ renderSintRows, renderTotals, renderDetRows, renderDetFooter });
 })();
 
-
 /* =================================================================
-    █████╗ ██████╗ ██████╗
-   ██╔══██╗██╔══██╗██╔══██╗
-   ███████║██████╔╝██████╔╝
-   ██╔══██║██╔═══╝ ██╔═══╝
-   ██║  ██║██║     ██║
-   ╚═╝  ╚═╝╚═╝     ╚═╝
    App — orquestrador principal
    ================================================================= */
 const App = (() => {
     const $ = id => document.getElementById(id);
 
-    // Estado
     const realNow = new Date();
     const realMonth = realNow.getMonth();
     const realYear = realNow.getFullYear();
@@ -1842,72 +1553,57 @@ const App = (() => {
 
     let dashData = {};
 
-    // ─── Helpers de paginação ────────────────────────────────
-    const getRowsPerPage = (key) =>
-        key === 'sintetico' ? Config.ROWS_PER_PAGE_SINT : Config.ROWS_PER_PAGE_DET;
-
+    const getRowsPerPage = (key) => key === 'sintetico' ? Config.ROWS_PER_PAGE_SINT : Config.ROWS_PER_PAGE_DET;
     const getSlice = (key) => {
         const p = pagination[key];
         const rpp = getRowsPerPage(key);
         return p.data.slice((p.page - 1) * rpp, p.page * rpp);
     };
-
     const totPages = (key) => Math.max(1, Math.ceil(pagination[key].data.length / getRowsPerPage(key)));
 
     const renderPagination = (key, containerId) => {
         const container = $(containerId);
         container.textContent = '';
-
         const t = totPages(key);
         const c = pagination[key].page;
         const cnt = pagination[key].data.length;
         const rpp = getRowsPerPage(key);
+
         const s = cnt === 0 ? 0 : (c - 1) * rpp + 1;
         const e = Math.min(c * rpp, cnt);
 
-        // Span informativo
         const info = Utils.el('span', `${s}–${e} de ${cnt} registros`);
         container.appendChild(info);
 
-        // Botões
         const btnWrap = Utils.el('div', null, 'pagination-btns');
-
         let sp = Math.max(1, c - 2);
         let ep = Math.min(t, sp + 4);
         if (ep - sp < 4) sp = Math.max(1, ep - 4);
 
-        // Prev
         const btnPrev = Utils.el('button');
         btnPrev.innerHTML = '<i class="ph-bold ph-caret-left"></i>';
         btnPrev.disabled = c <= 1;
-        btnPrev.setAttribute('aria-label', 'Página anterior');
         btnPrev.addEventListener('click', () => goPage(key, c - 1));
         btnWrap.appendChild(btnPrev);
 
-        // Números
         for (let i = sp; i <= ep; i++) {
             const btn = Utils.el('button', String(i));
             if (i === c) btn.className = 'active';
-            btn.setAttribute('aria-label', `Página ${i}`);
             btn.addEventListener('click', () => goPage(key, i));
             btnWrap.appendChild(btn);
         }
 
-        // Next
         const btnNext = Utils.el('button');
         btnNext.innerHTML = '<i class="ph-bold ph-caret-right"></i>';
         btnNext.disabled = c >= t;
-        btnNext.setAttribute('aria-label', 'Próxima página');
         btnNext.addEventListener('click', () => goPage(key, c + 1));
         btnWrap.appendChild(btnNext);
-
         container.appendChild(btnWrap);
     };
 
     const goPage = (key, p) => {
         if (p < 1 || p > totPages(key)) return;
         pagination[key].page = p;
-
         if (key === 'sintetico') {
             TableRenderer.renderSintRows(getSlice('sintetico'));
             renderPagination('sintetico', 'paginationSintetico');
@@ -1918,31 +1614,16 @@ const App = (() => {
         }
     };
 
-    // ─── Ordenação ─────────────────────────────────────────
     const doSort = (tbl, col) => {
-        if (sortState[tbl].col === col) {
-            sortState[tbl].dir = sortState[tbl].dir === 'asc' ? 'desc' : 'asc';
-        } else {
-            sortState[tbl].col = col;
-            sortState[tbl].dir = 'asc';
-        }
+        if (sortState[tbl].col === col) sortState[tbl].dir = sortState[tbl].dir === 'asc' ? 'desc' : 'asc';
+        else { sortState[tbl].col = col; sortState[tbl].dir = 'asc'; }
 
-        // Atualizar ícones de sort
         document.querySelectorAll(`#${tbl} th i`).forEach(i => {
             i.className = 'ph-bold ph-caret-up-down';
             i.classList.remove('active');
         });
         const ic = $(`sort-${tbl}-${col}`);
-        if (ic) {
-            ic.className = sortState[tbl].dir === 'asc'
-                ? 'ph-bold ph-caret-up active'
-                : 'ph-bold ph-caret-down active';
-        }
-
-        // Atualizar aria-sort nos th
-        document.querySelectorAll(`#${tbl} th[data-sort-col]`).forEach(th => {
-            th.setAttribute('aria-sort', th.dataset.sortCol === col ? sortState[tbl].dir + 'ending' : 'none');
-        });
+        if (ic) ic.className = sortState[tbl].dir === 'asc' ? 'ph-bold ph-caret-up active' : 'ph-bold ph-caret-down active';
 
         if (tbl === 'sintetico') filterSintetico();
         else filterDetalhado();
@@ -1954,22 +1635,16 @@ const App = (() => {
         return [...arr].sort((a, b) => {
             let va = a[col], vb = b[col];
             if (col === 'Data') {
-                const da = Utils.parseDateBR(va);
-                const db = Utils.parseDateBR(vb);
-                const ta = da ? da.getTime() : 0;
-                const tb = db ? db.getTime() : 0;
+                const ta = Utils.parseDateBR(va)?.getTime() || 0;
+                const tb = Utils.parseDateBR(vb)?.getTime() || 0;
                 return dir === 'asc' ? ta - tb : tb - ta;
             }
-            if (Config.NUMERIC_COLS.has(col)) {
-                return dir === 'asc' ? Utils.num(va) - Utils.num(vb) : Utils.num(vb) - Utils.num(va);
-            }
-            va = String(va || '').toLowerCase();
-            vb = String(vb || '').toLowerCase();
+            if (Config.NUMERIC_COLS.has(col)) return dir === 'asc' ? Utils.num(va) - Utils.num(vb) : Utils.num(vb) - Utils.num(va);
+            va = String(va || '').toLowerCase(); vb = String(vb || '').toLowerCase();
             return dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
         });
     };
 
-    // ─── Sidebar ──────────────────────────────────────────
     const toggleSidebar = () => {
         $('sidebar').classList.toggle('open');
         $('sidebarOverlay').classList.toggle('visible');
@@ -1982,48 +1657,31 @@ const App = (() => {
     };
 
     const initScrollSpy = () => {
-        const ct = $('scroll-container');
-        const hd = $('main-header');
+        const ct = $('scroll-container'), hd = $('main-header');
         const secs = document.querySelectorAll('.scroll-section');
         const navs = document.querySelectorAll('.nav-item');
         if (!ct || !hd) return;
-
         ct.addEventListener('scroll', () => {
             const trigger = hd.getBoundingClientRect().bottom + 100;
             let cur = '';
-            secs.forEach(s => {
-                if (s.getBoundingClientRect().top <= trigger) cur = s.id;
-            });
-            if (ct.scrollHeight - ct.scrollTop <= ct.clientHeight + 2) {
-                cur = secs[secs.length - 1].id;
-            }
-            navs.forEach(n => {
-                const isActive = n.dataset.target === cur;
-                n.classList.toggle('active', isActive);
-                n.setAttribute('aria-current', isActive ? 'true' : 'false');
-            });
+            secs.forEach(s => { if (s.getBoundingClientRect().top <= trigger) cur = s.id; });
+            if (ct.scrollHeight - ct.scrollTop <= ct.clientHeight + 2) cur = secs[secs.length - 1].id;
+            navs.forEach(n => n.classList.toggle('active', n.dataset.target === cur));
         });
     };
 
-    // ─── Data-base selector ──────────────────────────────
     const initDataBaseSelector = () => {
-        const selMes = $('dataBaseMes');
         const selAno = $('dataBaseAno');
-
         selAno.textContent = '';
-        const allowedYears = [realYear - 1, realYear];
-        allowedYears.forEach(y => selAno.appendChild(Utils.option(String(y), String(y), y === currYear)));
-
-        populateMonthSelector(selMes);
+        [realYear - 1, realYear].forEach(y => selAno.appendChild(Utils.option(String(y), String(y), y === currYear)));
+        populateMonthSelector($('dataBaseMes'));
     };
 
     const populateMonthSelector = (selMes) => {
         selMes.textContent = '';
         const maxMonth = currYear === realYear ? realMonth : 11;
         Config.MONTH_NAMES_FULL.forEach((m, i) => {
-            if (i <= maxMonth) {
-                selMes.appendChild(Utils.option(String(i), m, i === currMonth));
-            }
+            if (i <= maxMonth) selMes.appendChild(Utils.option(String(i), m, i === currMonth));
         });
     };
 
@@ -2033,26 +1691,19 @@ const App = (() => {
         let selectedMes = parseInt($('dataBaseMes').value, 10);
         if (selectedMes > maxMonth) selectedMes = maxMonth;
         currMonth = selectedMes;
-
         populateMonthSelector($('dataBaseMes'));
-
         DataService.processConsolidation(currYear, currMonth);
         updateDashboard();
         filterSintetico();
     };
 
-    // ─── Filtros ──────────────────────────────────────────
     const populateFilters = () => {
-        const nats = DataService.getNaturezas();
-        const orgs = DataService.getOrgaos();
-
+        const nats = DataService.getNaturezas(), orgs = DataService.getOrgaos();
         const fillSelect = (id, items, allLabel) => {
-            const sel = $(id);
-            sel.textContent = '';
+            const sel = $(id); sel.textContent = '';
             sel.appendChild(Utils.option('', allLabel));
             items.forEach(it => sel.appendChild(Utils.option(it, it)));
         };
-
         fillSelect('filterSinteticoNatureza', nats, 'Todas');
         fillSelect('filterSinteticoOrgao', orgs, 'Todos');
         fillSelect('filterDetalhadoOrgao', orgs, 'Todos');
@@ -2060,10 +1711,8 @@ const App = (() => {
     };
 
     const populateYears = () => {
-        const yrs = DataService.getYears();
-        const sel = $('filterDetalhadoAno');
-        sel.textContent = '';
-        sel.appendChild(Utils.option('', 'Todos'));
+        const yrs = DataService.getYears(), sel = $('filterDetalhadoAno');
+        sel.textContent = ''; sel.appendChild(Utils.option('', 'Todos'));
         yrs.forEach(y => sel.appendChild(Utils.option(String(y), String(y))));
     };
 
@@ -2073,12 +1722,8 @@ const App = (() => {
         const fO = $('filterSinteticoOrgao').value.toLowerCase();
 
         return DataService.getConsolidated().filter(c => {
-            if (t && !(
-                c.numero.toLowerCase().includes(t) ||
-                c.orgao.toLowerCase().includes(t) ||
-                c.natureza.toLowerCase().includes(t) ||
-                c.tributo.toLowerCase().includes(t)
-            )) return false;
+            if (t && !(c.numero.toLowerCase().includes(t) || c.orgao.toLowerCase().includes(t) ||
+                c.natureza.toLowerCase().includes(t) || c.tributo.toLowerCase().includes(t))) return false;
             if (fN && c.natureza.toLowerCase() !== fN) return false;
             if (fO && c.orgao.toLowerCase() !== fO) return false;
             if (selectedOrgao && c.orgao !== selectedOrgao) return false;
@@ -2092,121 +1737,76 @@ const App = (() => {
     });
 
     const filterDetalhado = Utils.debounce(() => {
-        const t = $('searchDetalhado').value.toLowerCase();
-        const fO = $('filterDetalhadoOrgao').value.toLowerCase();
-        const fN = $('filterDetalhadoNatureza').value.toLowerCase();
-        const fS = $('filterDetalhadoStatus').value.toLowerCase();
-        const fM = $('filterDetalhadoMes').value;
-        const fA = $('filterDetalhadoAno').value;
+        const t = $('searchDetalhado').value.toLowerCase(), fO = $('filterDetalhadoOrgao').value.toLowerCase(),
+              fN = $('filterDetalhadoNatureza').value.toLowerCase(), fS = $('filterDetalhadoStatus').value.toLowerCase(),
+              fM = $('filterDetalhadoMes').value, fA = $('filterDetalhadoAno').value;
 
         let f = DataService.getRawData().filter(r => {
-            const tx =
-                String(r['Número'] || '').toLowerCase().includes(t) ||
-                String(r['Orgão'] || '').toLowerCase().includes(t) ||
-                String(r['Natureza'] || '').toLowerCase().includes(t) ||
-                String(r['Status'] || '').toLowerCase().includes(t);
-            if (!tx) return false;
+            if (t && !(String(r['Número'] || '').toLowerCase().includes(t) || String(r['Orgão'] || '').toLowerCase().includes(t) ||
+                String(r['Natureza'] || '').toLowerCase().includes(t) || String(r['Status'] || '').toLowerCase().includes(t))) return false;
             if (fO && String(r['Orgão'] || '').toLowerCase() !== fO) return false;
             if (fN && String(r['Natureza'] || '').toLowerCase() !== fN) return false;
             if (fS && String(r['Status'] || '').toLowerCase() !== fS) return false;
             if (fM || fA) {
-                const d = Utils.parseDateBR(r['Data']);
-                if (!d) return false;
+                const d = Utils.parseDateBR(r['Data']); if (!d) return false;
                 if (fA && d.getUTCFullYear() !== parseInt(fA, 10)) return false;
                 if (fM && (d.getUTCMonth() + 1) !== parseInt(fM, 10)) return false;
             }
             return true;
         });
-
         lastDetalhadoFiltered = f;
-        const sorted = applySort(f, 'detalhado');
-        renderDetalhado(sorted);
+        renderDetalhado(applySort(f, 'detalhado'));
     });
 
-    // ─── Renderização de seções ──────────────────────────
     const renderSintetico = (data) => {
-        pagination.sintetico.data = data;
-        pagination.sintetico.page = 1;
+        pagination.sintetico.data = data; pagination.sintetico.page = 1;
         TableRenderer.renderSintRows(getSlice('sintetico'));
         renderPagination('sintetico', 'paginationSintetico');
         TableRenderer.renderTotals(currentFilteredSintetico);
     };
 
     const renderDetalhado = (data) => {
-        pagination.detalhado.data = data;
-        pagination.detalhado.page = 1;
+        pagination.detalhado.data = data; pagination.detalhado.page = 1;
         TableRenderer.renderDetRows(getSlice('detalhado'));
         renderPagination('detalhado', 'paginationDetalhado');
         TableRenderer.renderDetFooter(data.length);
     };
 
-    // ─── Órgão filter (clique no gráfico) ────────────────
     const setOrgaoFilter = (orgao) => {
         selectedOrgao = selectedOrgao === orgao ? null : orgao;
-        updateFilterBadge();
-        updateKPIs();
-        updateQuitacaoChart();
-        filterSintetico();
+        updateFilterBadge(); updateKPIs(); updateQuitacaoChart(); filterSintetico();
     };
 
     const clearOrgaoFilter = () => {
         selectedOrgao = null;
-        updateFilterBadge();
-        updateKPIs();
-        updateQuitacaoChart();
-        filterSintetico();
+        updateFilterBadge(); updateKPIs(); updateQuitacaoChart(); filterSintetico();
     };
 
     const updateFilterBadge = () => {
-        const container = $('orgaoFilterBadge');
-        container.textContent = '';
-
+        const container = $('orgaoFilterBadge'); container.textContent = '';
         if (selectedOrgao) {
             const span = Utils.el('span', null, 'filter-badge');
-
-            const icon = document.createElement('i');
-            icon.className = 'ph ph-funnel';
+            const icon = document.createElement('i'); icon.className = 'ph-bold ph-funnel';
             span.appendChild(icon);
-
             span.appendChild(document.createTextNode(` ${selectedOrgao} `));
-
-            const btnClear = document.createElement('button');
-            btnClear.textContent = '\u00D7';
-            btnClear.setAttribute('aria-label', 'Limpar filtro de órgão');
-            btnClear.title = 'Limpar filtro';
-            btnClear.addEventListener('click', clearOrgaoFilter);
-            span.appendChild(btnClear);
-
-            container.appendChild(span);
+            const btnClear = document.createElement('button'); btnClear.textContent = '\u00D7';
+            btnClear.title = 'Limpar filtro'; btnClear.addEventListener('click', clearOrgaoFilter);
+            span.appendChild(btnClear); container.appendChild(span);
         }
     };
 
-    // ─── Dashboard data & KPIs ───────────────────────────
     const computeDashData = () => {
         const consolidated = DataService.getConsolidated();
-        let totalS = 0, aVencerMes = 0;
-        const orgMap = {};
-
+        let totalS = 0, aVencerMes = 0; const orgMap = {};
         consolidated.forEach(c => {
-            totalS += c.totalDivida;
-            aVencerMes += c.parcelaUnit;
+            totalS += c.totalDivida; aVencerMes += c.parcelaUnit;
             orgMap[c.orgao] = (orgMap[c.orgao] || 0) + c.totalDivida;
         });
-
-        dashData = {
-            totalS,
-            contSetSize: consolidated.length,
-            orgMap,
-            caixaM: aVencerMes,
-            aVencerMes,
-            orgEntries: Object.entries(orgMap).sort((a, b) => b[1] - a[1]),
-        };
+        dashData = { totalS, contSetSize: consolidated.length, orgMap, caixaM: aVencerMes, aVencerMes, orgEntries: Object.entries(orgMap).sort((a, b) => b[1] - a[1]) };
     };
 
     const updateKPIs = () => {
-        const mesLabel = `${Config.MONTH_NAMES[currMonth]}/${currYear}`;
-        $('kpi-mes-label').textContent = `A Vencer no Mês (${mesLabel})`;
-
+        $('kpi-mes-label').textContent = `A Vencer no Mês (${Config.MONTH_NAMES[currMonth]}/${currYear})`;
         if (!selectedOrgao) {
             $('kpi-saldo').textContent = Utils.fmtD(dashData.totalS);
             $('kpi-ativas').textContent = dashData.contSetSize;
@@ -2214,11 +1814,7 @@ const App = (() => {
         } else {
             let saldo = 0, mesVal = 0, ids = 0;
             DataService.getConsolidated().forEach(c => {
-                if (c.orgao === selectedOrgao) {
-                    saldo += c.totalDivida;
-                    mesVal += c.parcelaUnit;
-                    ids++;
-                }
+                if (c.orgao === selectedOrgao) { saldo += c.totalDivida; mesVal += c.parcelaUnit; ids++; }
             });
             $('kpi-saldo').textContent = Utils.fmtD(saldo);
             $('kpi-ativas').textContent = ids;
@@ -2226,523 +1822,220 @@ const App = (() => {
         }
     };
 
-    // ─── Gráficos ────────────────────────────────────────
     const updateQuitacaoChart = () => {
-        const consolidated = DataService.getConsolidated();
-        const rawData = DataService.getRawData();
-        const inativoMap = DataService.getInativoMap();
-        const mesAnoBase = Utils.mesAno(currYear, currMonth);
-        const validIds = new Set(consolidated.map(c => c.numero));
-
-        const anoF = {};
+        const consolidated = DataService.getConsolidated(), rawData = DataService.getRawData(),
+              inativoMap = DataService.getInativoMap(), mesAnoBase = Utils.mesAno(currYear, currMonth),
+              validIds = new Set(consolidated.map(c => c.numero)), anoF = {};
         let totalF = 0;
 
         rawData.forEach(row => {
             const id = row['Número'] || row['Negociação'] || 'S/N';
             if (!validIds.has(id)) return;
             if (selectedOrgao && (row['Orgão'] || '-') !== selectedOrgao) return;
+            const d = Utils.parseDateBR(row['Data']); if (!d) return;
 
-            const d = Utils.parseDateBR(row['Data']);
-            if (!d) return;
-
-            const anoP = d.getUTCFullYear();
-            const mesAnoP = Utils.mesAno(anoP, d.getUTCMonth());
-            if (mesAnoP < mesAnoBase) return;
-
-            const inativo = inativoMap[id] || Infinity;
-            if (mesAnoBase >= inativo) return;
+            const anoP = d.getUTCFullYear(), mesAnoP = Utils.mesAno(anoP, d.getUTCMonth());
+            if (mesAnoP < mesAnoBase || mesAnoBase >= (inativoMap[id] || Infinity)) return;
 
             const originalStatus = String(row['Status'] || '').trim().toLowerCase();
             if (mesAnoP > mesAnoBase || originalStatus === 'a vencer' || originalStatus.includes('atraso')) {
                 const saldo = Utils.num(row['Saldo Devedor']);
-                anoF[anoP] = (anoF[anoP] || 0) + saldo;
-                totalF += saldo;
+                anoF[anoP] = (anoF[anoP] || 0) + saldo; totalF += saldo;
             }
         });
 
-        const sy = Object.keys(anoF).map(Number).sort();
-        const qL = [], qD = [];
+        const sy = Object.keys(anoF).map(Number).sort(), qL = [], qD = [];
         let restante = totalF;
-        sy.forEach(y => {
-            if (anoF[y] > 0) {
-                qL.push(String(y));
-                qD.push(restante);
-                restante -= anoF[y];
-            }
-        });
+        sy.forEach(y => { if (anoF[y] > 0) { qL.push(String(y)); qD.push(restante); restante -= anoF[y]; } });
 
-        // Quitação usa destroy/recreate porque a quantidade de barras muda
         ChartManager.destroyChart('quitacao');
         ChartManager.upsertChart('quitacao', 'chartQuitacao', 'bar',
-            () => ({
-                labels: qL,
-                datasets: [{
-                    data: qD,
-                    backgroundColor: Utils.grad('chartQuitacao', Config.theme.orangeHex, Config.theme.orangeLight),
-                    borderRadius: 6,
-                    maxBarThickness: 60,
-                }],
-            }),
-            () => ({
-                ...ChartManager.baseOptions(),
-                scales: {
-                    x: {
-                        display: true,
-                        grid: { display: false },
-                        border: { display: false },
-                        ticks: {
-                            color: '#a39eb5',
-                            font: { family: "'Outfit'", size: 12.5, weight: 500 },
-                        },
-                    },
-                    y: { display: false },
-                },
-            })
+            () => ({ labels: qL, datasets: [{ data: qD, backgroundColor: Utils.grad('chartQuitacao', Config.theme.orangeHex, Config.theme.orangeLight), borderRadius: 6, maxBarThickness: 60 }] }),
+            () => ({ ...ChartManager.baseOptions(), scales: { x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 } } }, y: { display: false } } })
         );
     };
 
     const updateDashboard = () => {
-        computeDashData();
-        updateKPIs();
-        ChartManager.registerPlugins();
-
+        computeDashData(); updateKPIs(); ChartManager.registerPlugins();
         $('caixaSubtitle').textContent = `Comparativo Jan/2023 vs ${Config.MONTH_NAMES[currMonth]}/${currYear}`;
-
         const orgE = dashData.orgEntries;
 
-        // Gráfico Abertura (Débitos por Órgão)
         ChartManager.destroyChart('abertura');
         ChartManager.upsertChart('abertura', 'chartAbertura', 'bar',
+            () => ({ labels: orgE.map(e => e[0]), datasets: [{ data: orgE.map(e => e[1]), backgroundColor: orgE.map(e => e[0] === selectedOrgao ? Config.theme.orangeLight : Config.theme.orangeHex), borderRadius: 6, maxBarThickness: 28 }] }),
             () => ({
-                labels: orgE.map(e => e[0]),
-                datasets: [{
-                    data: orgE.map(e => e[1]),
-                    backgroundColor: orgE.map(e => e[0] === selectedOrgao ? Config.theme.orangeLight : Config.theme.orangeHex),
-                    borderRadius: 5,
-                    maxBarThickness: 28,
-                }],
-            }),
-            () => ({
-                ...ChartManager.baseOptions(),
-                indexAxis: 'y',
-                layout: { padding: { right: 90, top: 20, bottom: 10 } },
-                scales: {
-                    x: { display: false, grace: '15%' },
-                    y: {
-                        display: true,
-                        grid: { display: false },
-                        border: { display: false },
-                        ticks: {
-                            color: '#a39eb5',
-                            font: { family: "'Outfit'", size: 12.5, weight: 500 },
-                            padding: 8,
-                        },
-                    },
-                },
+                ...ChartManager.baseOptions(), indexAxis: 'y', layout: { padding: { right: 90, top: 20, bottom: 10 } },
+                scales: { x: { display: false, grace: '15%' }, y: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 }, padding: 8 } } },
                 onClick: (_evt, elements) => {
                     if (elements.length > 0) {
-                        const idx = elements[0].index;
-                        setOrgaoFilter(orgE[idx][0]);
+                        setOrgaoFilter(orgE[elements[0].index][0]);
                         const chart = ChartManager.getChart('abertura');
-                        if (chart) {
-                            chart.data.datasets[0].backgroundColor =
-                                orgE.map(e => e[0] === selectedOrgao ? Config.theme.orangeLight : Config.theme.orangeHex);
-                            chart.update('none');
-                        }
+                        if (chart) { chart.data.datasets[0].backgroundColor = orgE.map(e => e[0] === selectedOrgao ? Config.theme.orangeLight : Config.theme.orangeHex); chart.update('none'); }
                     }
                 },
-                onHover: (evt, elements) => {
-                    evt.native.target.style.cursor = elements.length ? 'pointer' : 'default';
-                },
+                onHover: (evt, elements) => evt.native.target.style.cursor = elements.length ? 'pointer' : 'default'
             })
         );
 
-        // Gráfico Caixa (Efeito Caixa)
         ChartManager.destroyChart('caixa');
         ChartManager.upsertChart('caixa', 'chartCaixa', 'bar',
-            () => ({
-                labels: ['Jan/2023', `${Config.MONTH_NAMES[currMonth]}/${currYear}`],
-                datasets: [{
-                    data: [Config.CAIXA_JAN_2023, dashData.caixaM],
-                    backgroundColor: [Config.theme.purpleHex, Config.theme.orangeHex],
-                    borderRadius: 6,
-                    maxBarThickness: 90,
-                    barPercentage: 0.8,
-                    categoryPercentage: 0.8,
-                }],
-            }),
-            () => ({
-                ...ChartManager.baseOptions(),
-                plugins: {
-                    ...ChartManager.baseOptions().plugins,
-                    legend: { display: false },
-                },
-                scales: {
-                    x: {
-                        display: true,
-                        grid: { display: false },
-                        border: { display: false },
-                        ticks: {
-                            color: '#a39eb5',
-                            font: { family: "'Outfit'", size: 12.5, weight: 600 },
-                            padding: 10,
-                        },
-                    },
-                    y: { display: false },
-                },
-            })
+            () => ({ labels: ['Jan/2023', `${Config.MONTH_NAMES[currMonth]}/${currYear}`], datasets: [{ data: [Config.CAIXA_JAN_2023, dashData.caixaM], backgroundColor: [Config.theme.purpleHex, Config.theme.orangeHex], borderRadius: 6, maxBarThickness: 90, barPercentage: 0.8, categoryPercentage: 0.8 }] }),
+            () => ({ ...ChartManager.baseOptions(), plugins: { ...ChartManager.baseOptions().plugins, legend: { display: false } }, scales: { x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 700 }, padding: 10 } }, y: { display: false } } })
         );
-
         updateQuitacaoChart();
     };
 
-    // ─── Exportação Excel ────────────────────────────────
     const exportExcel = (type) => {
-        if (typeof XLSX === 'undefined') {
-            alert('Biblioteca de exportação ainda carregando. Tente novamente em instantes.');
-            return;
-        }
+        if (typeof XLSX === 'undefined') { alert('Biblioteca de exportação carregando...'); return; }
         const dateStr = new Date().toISOString().split('T')[0];
         let data, filename, sheetName;
-
         if (type === 'sintetico') {
-            data = currentFilteredSintetico.map(c => ({
-                'Natureza': c.natureza,
-                'Tributo': c.tributo,
-                'Número': c.numero,
-                'Órgão': c.orgao,
-                'Parcelas': c.qtdParcela,
-                'Atraso': c.atraso,
-                'Total Dívida': c.totalDivida,
-                'Valor Parcela': c.parcelaUnit,
-            }));
-            filename = `ONTIME_Sintetico_${dateStr}.xlsx`;
-            sheetName = 'Resumo Sintético';
+            data = currentFilteredSintetico.map(c => ({ 'Natureza': c.natureza, 'Tributo': c.tributo, 'Número': c.numero, 'Órgão': c.orgao, 'Parcelas': c.qtdParcela, 'Atraso': c.atraso, 'Total Dívida': c.totalDivida, 'Valor Parcela': c.parcelaUnit }));
+            filename = `ONTIME_Sintetico_${dateStr}.xlsx`; sheetName = 'Resumo Sintético';
         } else {
-            const source = lastDetalhadoFiltered.length ? lastDetalhadoFiltered : DataService.getRawData();
-            data = source.map(r => ({
-                'Data': Utils.formatDateBR(r['Data']),
-                'Número': r['Número'] || r['Negociação'] || '-',
-                'Órgão': r['Orgão'] || '-',
-                'Natureza': r['Natureza'] || '-',
-                'Valor Original': Utils.num(r['Valor Original']),
-                'Saldo Devedor': Utils.num(r['Saldo Devedor']),
-                'Status': r['Status'] || '-',
-            }));
-            filename = `ONTIME_Detalhado_${dateStr}.xlsx`;
-            sheetName = 'Detalhamento';
+            data = (lastDetalhadoFiltered.length ? lastDetalhadoFiltered : DataService.getRawData()).map(r => ({ 'Data': Utils.formatDateBR(r['Data']), 'Número': r['Número'] || r['Negociação'] || '-', 'Órgão': r['Orgão'] || '-', 'Natureza': r['Natureza'] || '-', 'Valor Original': Utils.num(r['Valor Original']), 'Saldo Devedor': Utils.num(r['Saldo Devedor']), 'Status': r['Status'] || '-' }));
+            filename = `ONTIME_Detalhado_${dateStr}.xlsx`; sheetName = 'Detalhamento';
         }
-
-        if (!data.length) {
-            alert('Sem dados para exportar.');
-            return;
-        }
-
+        if (!data.length) { alert('Sem dados para exportar.'); return; }
         try {
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, sheetName);
-            XLSX.writeFile(wb, filename);
-        } catch (err) {
-            console.error('[Excel] Erro na exportação:', err);
-            alert('Erro ao gerar planilha. Tente novamente.');
-        }
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), sheetName); XLSX.writeFile(wb, filename);
+        } catch (err) { console.error(err); alert('Erro ao gerar planilha.'); }
     };
 
-    // ─── Exportação PDF ──────────────────────────────────
     const exportPDF = async () => {
-        if (typeof jspdf === 'undefined') {
-            alert('Biblioteca de PDF ainda carregando. Tente novamente em instantes.');
-            return;
-        }
-
-        const btn = $('btnExportPDF');
-        const origContent = btn.textContent;
-        const origHTML = btn.innerHTML;
-        btn.classList.add('loading');
-        btn.innerHTML = '<i class="ph-bold ph-spinner"></i> <span>Gerando...</span>';
-
+        if (typeof jspdf === 'undefined') { alert('Biblioteca PDF carregando...'); return; }
+        const btn = $('btnExportPDF'), origHTML = btn.innerHTML;
+        btn.classList.add('loading'); btn.innerHTML = '<i class="ph-bold ph-spinner"></i> <span>Gerando...</span>';
         await new Promise(r => setTimeout(r, 100));
 
         const t = Config.theme;
-
         try {
             const { jsPDF } = jspdf;
             const pdf = new jsPDF('l', 'mm', 'a4');
-            const pageW = pdf.internal.pageSize.getWidth();
-            const pageH = pdf.internal.pageSize.getHeight();
-            const margin = 14;
+            const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight(), margin = 14;
 
-            // ── Página 1: Dashboard ──
+            // Página 1: Dashboard (Ajustado para Fundo Claro V8)
             pdf.setFillColor(...t.bgDark);
             pdf.rect(0, 0, pageW, pageH, 'F');
-
-            pdf.setTextColor(...t.orange);
-            pdf.setFontSize(16);
-            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(...t.purple);
+            pdf.setFontSize(18); pdf.setFont('helvetica', 'bold');
             pdf.text(`Visão Estratégica - Data Base: ${Config.MONTH_NAMES[currMonth]}/${currYear}`, margin, margin + 5);
-
-            pdf.setTextColor(...t.textMuted);
-            pdf.setFontSize(10);
-            pdf.setFont('helvetica', 'normal');
+            pdf.setTextColor(...t.textMuted); pdf.setFontSize(10); pdf.setFont('helvetica', 'normal');
             pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, margin, margin + 12);
 
-            // KPIs
-            const kpiY = margin + 20;
-            const kpiW = (pageW - (margin * 2) - 10) / 3;
-            const kpiH = 26;
-
+            const kpiY = margin + 20, kpiW = (pageW - (margin * 2) - 10) / 3, kpiH = 28;
             const drawKPI = (x, title, value, color) => {
                 pdf.setFillColor(...t.surface1);
                 pdf.rect(x, kpiY, kpiW, kpiH, 'F');
-                pdf.setTextColor(...t.textMuted);
-                pdf.setFontSize(10);
+                // Título KPI
+                pdf.setTextColor(...t.textMuted); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold');
                 pdf.text(title, x + 5, kpiY + 8);
-                pdf.setTextColor(...color);
-                pdf.setFontSize(18);
-                pdf.setFont('helvetica', 'bold');
-                pdf.text(value, x + 5, kpiY + 20);
-                pdf.setFont('helvetica', 'normal');
+                // Valor KPI (Em Tinta escura, pois estamos no modo claro V8)
+                pdf.setTextColor(...t.textWhite); pdf.setFontSize(22); pdf.setFont('helvetica', 'bold');
+                pdf.text(value, x + 5, kpiY + 22);
             };
 
-            drawKPI(margin, 'Saldo Devedor Total', $('kpi-saldo').textContent, t.kpiPurple);
-            drawKPI(margin + kpiW + 5, 'Contratos Ativos', $('kpi-ativas').textContent, t.orange);
-            drawKPI(margin + (kpiW * 2) + 10, `A Vencer ${Config.MONTH_NAMES[currMonth]}/${currYear}`, $('kpi-mes').textContent, t.green);
+            drawKPI(margin, 'SALDO DEVEDOR TOTAL', $('kpi-saldo').textContent, t.purple);
+            drawKPI(margin + kpiW + 5, 'CONTRATOS ATIVOS', $('kpi-ativas').textContent, t.orange);
+            drawKPI(margin + (kpiW * 2) + 10, `A VENCER ${Config.MONTH_NAMES[currMonth]}/${currYear}`.toUpperCase(), $('kpi-mes').textContent, t.green);
 
-            // Charts
-            const chartY = kpiY + kpiH + 8;
-            const chartW = (pageW - (margin * 2) - 8) / 2;
-            const chartH = 68;
-
+            const chartY = kpiY + kpiH + 8, chartW = (pageW - (margin * 2) - 8) / 2, chartH = 68;
             const drawChart = (x, y, w, h, title, chartObj) => {
                 pdf.setFillColor(...t.surface1);
                 pdf.rect(x, y, w, h, 'F');
-                pdf.setTextColor(...t.textWhite);
-                pdf.setFontSize(11);
-                pdf.setFont('helvetica', 'bold');
-                pdf.text(title, x + 5, y + 7);
-                pdf.setFont('helvetica', 'normal');
-                if (chartObj) {
-                    const img = chartObj.toBase64Image('image/png', 1.0);
-                    pdf.addImage(img, 'PNG', x + 2, y + 10, w - 4, h - 12);
-                }
+                pdf.setTextColor(...t.textWhite); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold');
+                pdf.text(title, x + 5, y + 8);
+                if (chartObj) pdf.addImage(chartObj.toBase64Image('image/png', 1.0), 'PNG', x + 2, y + 10, w - 4, h - 12);
             };
 
             drawChart(margin, chartY, chartW, chartH, 'Débitos por Órgão', ChartManager.getChart('abertura'));
             drawChart(margin + chartW + 8, chartY, chartW, chartH, 'Efeito Caixa', ChartManager.getChart('caixa'));
             drawChart(margin, chartY + chartH + 8, pageW - (margin * 2), 65, 'Quitação Prevista', ChartManager.getChart('quitacao'));
 
-            // ── Página 2: Tabela Sintética ──
+            // Página 2: Sintético
             pdf.addPage();
-            pdf.setFillColor(...t.bgDark);
-            pdf.rect(0, 0, pageW, pageH, 'F');
-
-            pdf.setTextColor(...t.orange);
-            pdf.setFontSize(16);
-            pdf.setFont('helvetica', 'bold');
+            pdf.setFillColor(...t.bgDark); pdf.rect(0, 0, pageW, pageH, 'F');
+            pdf.setTextColor(...t.purple); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold');
             pdf.text('Resumo Sintético de Parcelamentos', margin, margin + 5);
-
-            pdf.setTextColor(...t.textMuted);
-            pdf.setFontSize(9);
-            pdf.setFont('helvetica', 'normal');
+            pdf.setTextColor(...t.textMuted); pdf.setFontSize(10); pdf.setFont('helvetica', 'normal');
             pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, margin, margin + 12);
 
-            const rows = currentFilteredSintetico.map(c => [
-                c.natureza, c.tributo, c.numero, c.orgao,
-                c.qtdParcela, c.atraso,
-                Utils.fmt(c.totalDivida), Utils.fmt(c.parcelaUnit),
-            ]);
-
-            let sumDivida = 0, sumParcela = 0;
-            currentFilteredSintetico.forEach(c => { sumDivida += c.totalDivida; sumParcela += c.parcelaUnit; });
+            const rows = currentFilteredSintetico.map(c => [c.natureza, c.tributo, c.numero, c.orgao, c.qtdParcela, c.atraso, Utils.fmt(c.totalDivida), Utils.fmt(c.parcelaUnit)]);
+            let sumDivida = 0, sumParcela = 0; currentFilteredSintetico.forEach(c => { sumDivida += c.totalDivida; sumParcela += c.parcelaUnit; });
             rows.push(['', '', '', '', '', 'TOTAIS', Utils.fmt(sumDivida), Utils.fmt(sumParcela)]);
 
             pdf.autoTable({
                 head: [['Natureza', 'Tributo', 'Número', 'Órgão', 'Parc.', 'Atraso', 'Total Dívida (R$)', 'Vlr Parcela (R$)']],
-                body: rows,
-                startY: margin + 18,
-                theme: 'grid',
-                styles: {
-                    fillColor: t.surface1,
-                    textColor: t.textWhite,
-                    lineColor: t.gridLine,
-                    lineWidth: 0.1,
-                    font: 'helvetica',
-                    fontSize: 9,
-                },
-                headStyles: {
-                    fillColor: t.surface2,
-                    textColor: t.textMuted,
-                    fontStyle: 'bold',
-                    fontSize: 8,
-                },
-                alternateRowStyles: {
-                    fillColor: t.surfaceAlt,
-                },
-                willDrawCell: function (data) {
-                    if (data.row.index === rows.length - 1) {
-                        pdf.setFillColor(...t.surface2);
-                        pdf.setTextColor(...t.orange);
-                        pdf.setFont('helvetica', 'bold');
-                    }
-                },
+                body: rows, startY: margin + 18, theme: 'grid',
+                styles: { fillColor: t.surface1, textColor: t.textWhite, lineColor: t.gridLine, lineWidth: 0.1, font: 'helvetica', fontSize: 9 },
+                headStyles: { fillColor: t.surface2, textColor: t.textMuted, fontStyle: 'bold', fontSize: 8 },
+                alternateRowStyles: { fillColor: t.surfaceAlt },
+                willDrawCell: (data) => { if (data.row.index === rows.length - 1) { pdf.setFillColor(...t.surface2); pdf.setTextColor(...t.orange); pdf.setFont('helvetica', 'bold'); } },
                 margin: { left: 14, right: 14 },
-                didDrawPage: (d) => {
-                    if (d.pageNumber > 1) {
-                        pdf.setFillColor(...t.bgDark);
-                        pdf.rect(0, 0, pageW, pageH, 'F');
-                    }
-                },
+                didDrawPage: (d) => { if (d.pageNumber > 1) { pdf.setFillColor(...t.bgDark); pdf.rect(0, 0, pageW, pageH, 'F'); } },
             });
-
             pdf.save(`ONTIME_Relatorio_${new Date().toISOString().split('T')[0]}.pdf`);
-        } catch (err) {
-            console.error('[PDF] Erro na geração:', err);
-            alert('Erro ao gerar PDF. Tente novamente.');
-        } finally {
-            btn.classList.remove('loading');
-            btn.innerHTML = origHTML;
-        }
+        } catch (err) { console.error(err); alert('Erro ao gerar PDF.'); }
+        finally { btn.classList.remove('loading'); btn.innerHTML = origHTML; }
     };
 
-    // ─── Erro com retry ──────────────────────────────────
     const showError = (message, detail) => {
-        const loader = $('loader');
-        loader.textContent = '';
-
-        const p = Utils.el('p', message);
-        p.style.color = 'var(--status-err)';
-        p.style.fontWeight = '600';
-        loader.appendChild(p);
-
-        if (detail) {
-            const small = Utils.el('small', detail);
-            small.style.color = 'var(--text-3)';
-            loader.appendChild(small);
-        }
-
+        const loader = $('loader'); loader.textContent = '';
+        const p = Utils.el('p', message); p.style.color = 'var(--err)'; p.style.fontWeight = '600'; loader.appendChild(p);
+        if (detail) { const small = Utils.el('small', detail); small.style.color = 'var(--muted)'; loader.appendChild(small); }
         const btnRetry = Utils.el('button', 'Tentar novamente', 'btn-retry');
-        btnRetry.setAttribute('aria-label', 'Tentar carregar dados novamente');
         btnRetry.addEventListener('click', () => {
-            loader.textContent = '';
-            const spinner = Utils.el('div', null, 'spinner');
-            loader.appendChild(spinner);
-            loader.appendChild(Utils.el('p', 'Sincronizando dados...'));
-            init();
+            loader.textContent = ''; loader.appendChild(Utils.el('div', null, 'spinner')); loader.appendChild(Utils.el('p', 'Sincronizando dados...')); init();
         });
         loader.appendChild(btnRetry);
     };
 
-    // ─── Inicialização ───────────────────────────────────
     const init = async () => {
-        // Etapa 1: Fetch
-        try {
-            await DataService.load();
-        } catch (err) {
-            console.error('[Init] Falha no carregamento:', err);
-            showError('Erro ao acessar os dados.', err.message);
-            return;
-        }
-
-        // Etapa 2: Processamento
+        try { await DataService.load(); } catch (err) { showError('Erro ao acessar os dados.', err.message); return; }
         try {
             const st = new Date();
-            $('lastSync').textContent =
-                st.toLocaleDateString('pt-BR') + ' ' +
-                st.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
+            $('lastSync').textContent = st.toLocaleDateString('pt-BR') + ' ' + st.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             DataService.processConsolidation(currYear, currMonth);
-        } catch (err) {
-            console.error('[Init] Falha no processamento:', err);
-            showError('Erro ao processar os dados.', err.message);
-            return;
-        }
-
-        // Etapa 3: Popular filtros
+        } catch (err) { showError('Erro ao processar os dados.', err.message); return; }
+        try { populateFilters(); populateYears(); initDataBaseSelector(); } catch (err) { showError('Erro ao montar os filtros.', err.message); return; }
         try {
-            populateFilters();
-            populateYears();
-            initDataBaseSelector();
-        } catch (err) {
-            console.error('[Init] Falha ao popular filtros:', err);
-            showError('Erro ao montar os filtros.', err.message);
-            return;
-        }
-
-        // Etapa 4: Renderização
-        try {
-            updateDashboard();
-            filterSintetico();
+            updateDashboard(); filterSintetico();
             lastDetalhadoFiltered = DataService.getRawData();
             renderDetalhado(applySort(DataService.getRawData(), 'detalhado'));
-
-            $('loader').style.display = 'none';
-            $('app-content').style.display = 'flex';
+            $('loader').style.display = 'none'; $('app-content').style.display = 'flex';
             initScrollSpy();
-        } catch (err) {
-            console.error('[Init] Falha na renderização:', err);
-            showError('Erro ao renderizar o dashboard.', err.message);
-        }
+        } catch (err) { showError('Erro ao renderizar o dashboard.', err.message); }
     };
 
-    // ─── Event Binding (sem onclick inline) ──────────────
     const bindEvents = () => {
-        // Sidebar
         $('sidebarOverlay').addEventListener('click', toggleSidebar);
         $('btnHamburger').addEventListener('click', toggleSidebar);
-
-        // Nav items
         document.querySelectorAll('.nav-item').forEach(btn => {
-            btn.addEventListener('click', () => {
-                scrollToSection(btn.dataset.target);
-                if (window.innerWidth <= 1024) toggleSidebar();
-            });
+            btn.addEventListener('click', () => { scrollToSection(btn.dataset.target); if (window.innerWidth <= 1024) toggleSidebar(); });
         });
-
-        // Data-base selectors
         $('dataBaseMes').addEventListener('change', changeDataBase);
         $('dataBaseAno').addEventListener('change', changeDataBase);
-
-        // Export buttons
         $('btnExcelSint').addEventListener('click', () => exportExcel('sintetico'));
         $('btnExcelDet').addEventListener('click', () => exportExcel('detalhado'));
         $('btnExportPDF').addEventListener('click', exportPDF);
-
-        // Filtros sintético
         $('searchSintetico').addEventListener('input', filterSintetico);
         $('filterSinteticoNatureza').addEventListener('change', filterSintetico);
         $('filterSinteticoOrgao').addEventListener('change', filterSintetico);
-
-        // Filtros detalhado
         $('searchDetalhado').addEventListener('input', filterDetalhado);
         $('filterDetalhadoOrgao').addEventListener('change', filterDetalhado);
         $('filterDetalhadoNatureza').addEventListener('change', filterDetalhado);
         $('filterDetalhadoStatus').addEventListener('change', filterDetalhado);
         $('filterDetalhadoMes').addEventListener('change', filterDetalhado);
         $('filterDetalhadoAno').addEventListener('change', filterDetalhado);
-
-        // Sort (delegação de evento nos th)
-        document.querySelectorAll('th[data-sort-table]').forEach(th => {
-            th.addEventListener('click', () => {
-                doSort(th.dataset.sortTable, th.dataset.sortCol);
-            });
-        });
-
-        // Back link: ocultar se não veio do mesmo domínio
-        const backLink = $('backLink');
-        const ref = document.referrer;
-        if (backLink && (!ref || !ref.includes(window.location.hostname))) {
-            backLink.style.display = 'none';
-        }
+        document.querySelectorAll('th[data-sort-table]').forEach(th => th.addEventListener('click', () => doSort(th.dataset.sortTable, th.dataset.sortCol)));
     };
 
-    // ─── Boot ────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
+        HubLink.init(); // Inicia a validação da Origem (Sessão / Hub)
         bindEvents();
         init();
     });
 
-    // Exposição pública mínima (para debug, se necessário)
     return { toggleSidebar, scrollToSection };
 })();
 </script>
