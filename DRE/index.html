@@ -294,6 +294,21 @@
   .alert-stale.visible { display: flex; }
   .alert-stale i { font-size: 18px; color: var(--warn); flex-shrink: 0; }
 
+  .alert-info {
+    display: none;
+    align-items: center; gap: 12px;
+    margin: 8px 36px 0;
+    padding: 11px 16px;
+    background: rgba(60,0,60,0.04);
+    border-left: 3px solid var(--plum);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .alert-info.visible { display: flex; }
+  .alert-info i { font-size: 16px; color: var(--plum); flex-shrink: 0; }
+  .alert-info strong { font-weight: 700; color: var(--plum); }
+
   /* ============================================================
      SECTIONS
      ============================================================ */
@@ -408,14 +423,40 @@
   .rank-pos {
     font-family: var(--font-display); font-style: italic;
     color: var(--subtle); font-size: 14px;
+    align-self: start;
+    padding-top: 2px;
   }
   .rank-name {
+    overflow: hidden;
+    display: flex; flex-direction: column; gap: 2px;
+    min-width: 0;
+  }
+  .rank-name .primary {
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .rank-name .secondary {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 11px;
+    color: var(--muted);
     font-weight: 500;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .rank-name .secondary .sep {
+    color: var(--subtle); opacity: 0.6;
+  }
+  .rank-name .secondary .chip-cat {
+    font-size: 10px; padding: 1px 7px; border-radius: 999px;
+    background: var(--orange-dim); color: var(--orange-deep);
+    font-weight: 600;
+    white-space: nowrap;
   }
   .rank-value {
     font-family: var(--font-mono); font-variant-numeric: tabular-nums;
     font-size: 12px; font-weight: 600; text-align: right;
+    align-self: start;
+    padding-top: 2px;
   }
   .rank-meta {
     font-size: 11px; color: var(--subtle); margin-left: 8px; font-weight: 400;
@@ -629,31 +670,65 @@
     border-radius: var(--radius-md);
     overflow: hidden;
   }
-  .tree-header {
+  .tree {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .tree-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  /*
+    Layout da árvore com colunas mensais variáveis:
+    --col-meses: string com as colunas mensais (ex: "85px 85px 85px 85px")
+    --cols: monta o grid completo
+    min-width garante que o scroll horizontal apareça em telas estreitas
+  */
+  .tree-header, .tree-row {
     display: grid;
-    grid-template-columns: 24px 10px 1fr 70px 120px;
+    grid-template-columns: 24px 10px minmax(180px, 1fr) var(--col-meses, '') 85px 110px;
     align-items: center; gap: 14px;
-    padding: 14px 22px;
+    padding: 13px 22px;
+    min-width: min-content;
+  }
+  .tree-header {
     background: var(--plum);
-    color: rgba(255,255,255,0.75);
+    color: rgba(255,255,255,0.78);
     font-size: 10px; font-weight: 700;
     letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 14px 22px;
+    position: sticky; top: 0; z-index: 2;
   }
-  .tree-header > :nth-child(4) { text-align: right; }
-  .tree-header > :nth-child(5) { text-align: right; }
+  .tree-header .tree-col-mes,
+  .tree-header .tree-col-pct,
+  .tree-header .tree-col-valor { text-align: right; }
+  .tree-col-mes {
+    text-align: right;
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: 12px; color: var(--muted); font-weight: 500;
+  }
+  .tree-header .tree-col-mes {
+    font-family: var(--font-body);
+    color: rgba(255,255,255,0.78);
+    font-weight: 700;
+    font-size: 10px;
+  }
+  .tree-col-mes.is-q { color: var(--plum-light); font-weight: 700; background: var(--surface-soft); padding: 2px 6px; border-radius: 4px; }
+  .tree-col-mes.is-ytd { color: #fff; font-weight: 700; background: var(--plum); padding: 2px 6px; border-radius: 4px; }
+  .tree-header .tree-col-mes.is-q,
+  .tree-header .tree-col-mes.is-ytd { background: rgba(255,255,255,0.12); color: #fff; }
 
   .tree-node { border-bottom: 1px solid var(--border-soft); }
   .tree-node:last-child { border-bottom: none; }
 
   .tree-row {
-    display: grid; grid-template-columns: 24px 10px 1fr 70px 120px;
-    align-items: center; gap: 14px;
-    padding: 13px 22px;
     cursor: pointer; transition: background 0.12s;
     position: relative;
   }
   .tree-row::after {
-    /* barra horizontal de preenchimento no rodapé da linha */
     content: '';
     position: absolute; left: 22px; right: 22px; bottom: 0;
     height: 2px; background: var(--cat-color, var(--plum));
@@ -664,13 +739,15 @@
   }
   .tree-row:hover { background: var(--surface-soft); }
   .tree-row.level-1 {
-    font-size: 14px; font-weight: 700;
+    font-size: 13px; font-weight: 700;
     background: var(--surface-alt);
     color: var(--plum);
   }
   .tree-row.level-1::after { opacity: 0.6; height: 3px; }
-  .tree-row.level-2 { font-size: 13px; padding-left: 50px; font-weight: 500; }
-  .tree-row.level-2 { grid-template-columns: 24px 10px 1fr 70px 120px; }
+  .tree-row.level-2 {
+    font-size: 12px; font-weight: 500;
+    padding-left: 50px;
+  }
   .tree-row.level-3 {
     font-size: 12px; padding-left: 78px;
     cursor: default; color: var(--muted);
@@ -692,16 +769,19 @@
     display: inline-block;
   }
   .tree-arrow.expanded { transform: rotate(90deg); }
+  .tree-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
   .tree-value {
     font-family: var(--font-mono); font-variant-numeric: tabular-nums;
-    font-size: 13px; font-weight: 600; text-align: right;
+    font-size: 12px; font-weight: 600; text-align: right;
   }
-  .tree-row.level-1 .tree-value { font-size: 14px; }
-  .tree-row.level-3 .tree-value { font-size: 12px; }
+  .tree-row.level-1 .tree-value { font-size: 13px; }
   .tree-pct {
     font-size: 11px; color: var(--subtle);
     text-align: right; font-family: var(--font-mono); font-weight: 500;
   }
+  .tree-col-mes.zero { color: var(--subtle); opacity: 0.4; }
   .tree-children { display: none; }
   .tree-children.expanded { display: block; }
 
@@ -1060,6 +1140,11 @@
       <span id="alert-stale-text">Estes dados têm mais de 8 dias. Considere atualizar antes de apresentar.</span>
     </div>
 
+    <div class="alert-info" id="alert-provisoes">
+      <i class="ph-bold ph-info"></i>
+      <span id="alert-provisoes-text"></span>
+    </div>
+
     <main class="section-wrap">
 
       <!-- ===== SECTION: RESUMO ===== -->
@@ -1194,8 +1279,6 @@
           </div>
         </div>
 
-        <div class="pagination" id="pagination"></div>
-
       </section>
 
       <!-- ===== SECTION: HIERARQUIA ===== -->
@@ -1213,13 +1296,9 @@
           <div class="section-note">Clique em cada linha para expandir subcategorias e detalhes</div>
         </div>
 
-        <div class="tree reveal d2" id="tree-hierarquia">
-          <div class="tree-header">
-            <span></span>
-            <span></span>
-            <span>Categoria</span>
-            <span>% total</span>
-            <span>Valor</span>
+        <div class="tree reveal d2">
+          <div class="tree-scroll" id="tree-scroll">
+            <div id="tree-hierarquia"></div>
           </div>
         </div>
       </section>
@@ -1319,6 +1398,8 @@
      DADOS EMBUTIDOS: plano gerencial
      ============================================================== -->
 <script id="plano-data" type="application/json">[{"conta":"31010101","ordem":1,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ SERVICOS","dre_id":101},{"conta":"31010102","ordem":2,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA MG","dre_id":101},{"conta":"31010103","ordem":3,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA RJ","dre_id":101},{"conta":"31010104","ordem":4,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA PE","dre_id":101},{"conta":"31010105","ordem":5,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/SERVICOS","dre_id":101},{"conta":"31010106","ordem":6,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA BA","dre_id":101},{"conta":"31010107","ordem":7,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA ENCOMENDA EXP. CUT-OFF","dre_id":101},{"conta":"31010108","ordem":8,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA ES","dre_id":101},{"conta":"31010109","ordem":9,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"ANULACAO DE RECEITA C/ENCOM. EXPRESSA","dre_id":101},{"conta":"31010110","ordem":10,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA PB","dre_id":101},{"conta":"31010111","ordem":11,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"PRE-FATURA","dre_id":101},{"conta":"31010112","ordem":12,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"ESTORNO PROVISAO DE RECEITA","dre_id":101},{"conta":"31020101","ordem":13,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-) COMISSOES SOBRE VENDAS","dre_id":101},{"conta":"31020102","ordem":14,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-) COMISSOES SOBRE VENDAS MG","dre_id":101},{"conta":"31020103","ordem":15,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-) COMISSOES SOBRE VENDAS RJ","dre_id":101},{"conta":"31020104","ordem":16,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-) COMISSOES SOBRE VENDAS PE","dre_id":101},{"conta":"31020105","ordem":17,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-)DESCONTOS INCONDICIONAIS","dre_id":101},{"conta":"31020106","ordem":18,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-)DESCONTOS INCONDICIONAIS MG","dre_id":101},{"conta":"31020107","ordem":19,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-)DESCONTOS INCONDICIONAIS RJ","dre_id":101},{"conta":"31020108","ordem":20,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-)DESCONTOS INCONDICIONAIS PE","dre_id":101},{"conta":"31030101","ordem":21,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITAS EVENTUAIS","dre_id":101},{"conta":"31020201","ordem":22,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS","dre_id":102},{"conta":"31020202","ordem":23,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS MG","dre_id":102},{"conta":"31020203","ordem":24,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS RJ","dre_id":102},{"conta":"31020204","ordem":25,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS PE","dre_id":102},{"conta":"31020205","ordem":26,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO","dre_id":102},{"conta":"31020206","ordem":27,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO MG","dre_id":102},{"conta":"31020207","ordem":28,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO RJ","dre_id":102},{"conta":"31020208","ordem":29,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO PE","dre_id":102},{"conta":"31020209","ordem":30,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO","dre_id":102},{"conta":"31020210","ordem":31,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ISS S/FATURAMENTO","dre_id":102},{"conta":"31020211","ordem":32,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO RJ","dre_id":102},{"conta":"31020212","ordem":33,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO PE","dre_id":102},{"conta":"31020213","ordem":34,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) INSS FATURAMENTO (DESONERACAO)","dre_id":102},{"conta":"31020214","ordem":35,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS BA","dre_id":102},{"conta":"31020215","ordem":36,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS/COFINS CUT-OFF","dre_id":102},{"conta":"31020216","ordem":37,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS CUT-OFF","dre_id":102},{"conta":"31020217","ordem":38,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS ES","dre_id":102},{"conta":"31020218","ordem":39,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(+) PIS S/ANUL DE RECEITA C/ENCOM.","dre_id":102},{"conta":"31020219","ordem":40,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(+) COFINS S/ANUL DE RECEITA C/ENCOM","dre_id":102},{"conta":"31020220","ordem":41,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(+) ICMS S/ANUL DE RECEITA C/ENCOM.","dre_id":102},{"conta":"31020221","ordem":42,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS OUTRAS UFS","dre_id":102},{"conta":"31020222","ordem":43,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS PB","dre_id":102},{"conta":"31020223","ordem":44,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO MG","dre_id":102},{"conta":"31020224","ordem":45,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO BA","dre_id":102},{"conta":"31020225","ordem":46,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO ES","dre_id":102},{"conta":"31020226","ordem":47,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO PB","dre_id":102},{"conta":"31020227","ordem":48,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO BA","dre_id":102},{"conta":"31020228","ordem":49,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO ES","dre_id":102},{"conta":"31020229","ordem":50,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO PB","dre_id":102},{"conta":"31020230","ordem":51,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PROVISAO DE IMPOSTOS","dre_id":102},{"conta":"31020231","ordem":52,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS FRONTEIRA","dre_id":102},{"conta":"31020232","ordem":53,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"ESTORNO (-) PROVISAO DE IMPOSTOS","dre_id":102},{"conta":"33030301","ordem":54,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"FROTA TERC. TRANSF. PJ","dre_id":104},{"conta":"33030302","ordem":55,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"FROTA TERC. TRANSF. PF","dre_id":104},{"conta":"33030901","ordem":56,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"CORREIOS","dre_id":104},{"conta":"33030904","ordem":57,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"(-)CORREIOS CUT-OFF","dre_id":104},{"conta":"33030905","ordem":58,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"MALHA PRIVADA PJ","dre_id":104},{"conta":"33030906","ordem":59,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"MALHA PRIVADA PF","dre_id":104},{"conta":"33030907","ordem":60,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"AGENCIADORES","dre_id":104},{"conta":"33031101","ordem":61,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"AGENCIADOR","dre_id":104},{"conta":"33031301","ordem":62,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"GASTOS COM ASSESSORIA POSTAGEM","dre_id":104},{"conta":"33050401","ordem":63,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"FROTA TERCEIRIZADA PJ","dre_id":104},{"conta":"33050402","ordem":64,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"FROTA TERCEIRIZADA PF","dre_id":104},{"conta":"33050410","ordem":65,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"(-)FROTA TERC.CUT-OFF","dre_id":104},{"conta":"33050411","ordem":66,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"PROVISAO DE FROTA TERCEIRIZADA","dre_id":104},{"conta":"33031108","ordem":67,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM COLETAS","detalhe":"CUSTO COLETAS TERCEIRO","dre_id":104},{"conta":"33030201","ordem":68,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"TRANSF. AEREO TERCEIROS","dre_id":104},{"conta":"33030202","ordem":69,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"FRETES RODOVIARIO","dre_id":104},{"conta":"33030205","ordem":70,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"TRANSF. AEREO PROPRIA","dre_id":104},{"conta":"33050405","ordem":71,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"TRANF. RODO PROPRIA","dre_id":104},{"conta":"33050406","ordem":72,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"TRANF. RODO TERCEIRA","dre_id":104},{"conta":"33050407","ordem":73,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"SURFACE PROPRIA","dre_id":104},{"conta":"33050408","ordem":74,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"SURFACE TERCEIRA","dre_id":104},{"conta":"33030701","ordem":75,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"ESCOLTA","dre_id":104},{"conta":"33030702","ordem":76,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURO AEREO","dre_id":104},{"conta":"33030703","ordem":77,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURO RODOVIARIO","dre_id":104},{"conta":"33030704","ordem":78,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"RASTREAMENTO","dre_id":104},{"conta":"33030705","ordem":79,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURANCA PATRIMONIAL","dre_id":104},{"conta":"33030710","ordem":80,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURANCA PATRIMONIAL C/ ISS","dre_id":104},{"conta":"33050113","ordem":81,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURO DE VEICULOS","dre_id":104},{"conta":"33030501","ordem":82,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"INDENIZACOES/EXTRAVIOS","dre_id":104},{"conta":"33030502","ordem":83,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"(-) RECUP. INDENIZ. EXTRAVIOS","dre_id":104},{"conta":"33030503","ordem":84,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"(-) RECUP. INDEN. EXTRAV. LOTE","dre_id":104},{"conta":"33030504","ordem":85,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"INDENIZACOES EM COBRANCA","dre_id":104},{"conta":"33030505","ordem":86,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"DESCONTO DE INDENIZACOES","dre_id":104},{"conta":"33030510","ordem":87,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"PROV.PERDAS/GANHOS INDENIZACOES","dre_id":104},{"conta":"33030101","ordem":88,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"MATERIAL DE EMBALAGEM","dre_id":104},{"conta":"33030102","ordem":89,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"ETIQUETA","dre_id":104},{"conta":"33030103","ordem":90,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"SACO DE RAFIA","dre_id":104},{"conta":"33030104","ordem":91,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"FLYER","dre_id":104},{"conta":"33030105","ordem":92,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"SUPRIMENTOS INFORM OPERACIONAL","dre_id":104},{"conta":"33030106","ordem":93,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"LACRE","dre_id":104},{"conta":"33030107","ordem":94,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"OUTROS INSUMOS","dre_id":104},{"conta":"33050301","ordem":95,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"PALLETS","dre_id":104},{"conta":"33031104","ordem":96,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"COMBUSTIVEL FROTA","dre_id":104},{"conta":"33031105","ordem":97,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"MANUTENCAO FROTA","dre_id":104},{"conta":"33031106","ordem":98,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"PEDAGIO FROTA","dre_id":104},{"conta":"33031107","ordem":99,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"IPVA/LICENCIAMENTO","dre_id":104},{"conta":"33050101","ordem":100,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"LOCACAO DE EQUIPAMENTOS OPERACIONAL","dre_id":104},{"conta":"33050102","ordem":101,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"COMBUSTIVEL FROTA","dre_id":104},{"conta":"33050103","ordem":102,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"MANUTENCAO FROTA","dre_id":104},{"conta":"33050104","ordem":103,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"AGENCIADORES","dre_id":104},{"conta":"33050105","ordem":104,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"PEDAGIO","dre_id":104},{"conta":"33050107","ordem":105,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"LOCACAO VEICULOS CUSTO","dre_id":104},{"conta":"33030108","ordem":106,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030109","ordem":107,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33030203","ordem":108,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030204","ordem":109,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33030303","ordem":110,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030304","ordem":111,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33030706","ordem":112,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030707","ordem":113,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33030902","ordem":114,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030903","ordem":115,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33031102","ordem":116,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33031103","ordem":117,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33031302","ordem":118,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33031303","ordem":119,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33050403","ordem":120,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33050404","ordem":121,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33010101","ordem":122,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ORDENADOS E SALARIOS","dre_id":105},{"conta":"33010102","ordem":123,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"FERIAS","dre_id":105},{"conta":"33010103","ordem":124,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"13º SALARIOS","dre_id":105},{"conta":"33010104","ordem":125,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ENCARGOS SOCIAIS INSS","dre_id":105},{"conta":"33010105","ordem":126,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ENCARGOS SOCIAIS FGTS","dre_id":105},{"conta":"33010106","ordem":127,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"AVISO PREVIO E INDENIZACOES","dre_id":105},{"conta":"33010107","ordem":128,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ASSISTENCIA MEDICA","dre_id":105},{"conta":"33010108","ordem":129,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"SEGURO DE VIDA EM GRUPO","dre_id":105},{"conta":"33010109","ordem":130,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"CURSOS E TREINAMENTO","dre_id":105},{"conta":"33010110","ordem":131,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"REFEICOES","dre_id":105},{"conta":"33010111","ordem":132,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"VALE-TRANSPORTE","dre_id":105},{"conta":"33010112","ordem":133,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"REMUNERACAO A ESTAGIARIOS","dre_id":105},{"conta":"33010113","ordem":134,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PROCESSOS TRABALHISTAS","dre_id":105},{"conta":"33010114","ordem":135,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"CONTR. SINDICAL PATRONAL","dre_id":105},{"conta":"33010115","ordem":136,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PARTICIPACAO NOS LUCROS","dre_id":105},{"conta":"33010116","ordem":137,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PROVISAO DE FERIAS E ENCARGOS","dre_id":105},{"conta":"33010117","ordem":138,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PROVISAO DE 13 E ENCARGOS","dre_id":105},{"conta":"33010118","ordem":139,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ASSISTENCIA ODONTOLOGICA","dre_id":105},{"conta":"33010119","ordem":140,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"GRATIFICACOES","dre_id":105},{"conta":"33010120","ordem":141,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"HORAS EXTRAS","dre_id":105},{"conta":"33010121","ordem":142,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"MAO DE OBRA TERCEIRIZADA","dre_id":105},{"conta":"33010122","ordem":143,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PROCESSOS TRABALHISTAS","dre_id":105},{"conta":"33010123","ordem":144,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ALIMENTACAO - PAT","dre_id":105},{"conta":"33010124","ordem":145,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"UNIFORMES","dre_id":105},{"conta":"33010127","ordem":146,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"COMBUSTIVEL CUSTO","dre_id":105},{"conta":"33010128","ordem":147,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"COMISSOES SOBRE VENDAS","dre_id":105},{"conta":"33010129","ordem":148,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"AUTONOMOS","dre_id":105},{"conta":"33010130","ordem":149,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"RECRUTAMENTO E SELECAO","dre_id":105},{"conta":"33010131","ordem":150,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"MEDICINA DO TRABALHO","dre_id":105},{"conta":"33050106","ordem":151,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PRESTACAO DE SERVICO PJ","dre_id":105},{"conta":"33050108","ordem":152,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"VIAGENS E ESTADIAS - CUSTO","dre_id":105},{"conta":"33050302","ordem":153,"nivel1":"(-) CUSTOS FIXO","nivel2":"INFRAESTRUTURA","detalhe":"TELEFONIA CUSTO","dre_id":105},{"conta":"33050303","ordem":154,"nivel1":"(-) CUSTOS FIXO","nivel2":"INFRAESTRUTURA","detalhe":"INTERNET","dre_id":105},{"conta":"33050304","ordem":155,"nivel1":"(-) CUSTOS FIXO","nivel2":"INFRAESTRUTURA","detalhe":"ERP-LICENCA","dre_id":105},{"conta":"33050307","ordem":156,"nivel1":"(-) CUSTOS FIXO","nivel2":"INFRAESTRUTURA","detalhe":"LOCACAO EQUIPAMENTOS DE INFORMATICA","dre_id":105},{"conta":"33050501","ordem":157,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"ALUGUEIS E CONDOMINIOS CUSTO","dre_id":105},{"conta":"33050502","ordem":158,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"ENERGIA ELETRICA CUSTO","dre_id":105},{"conta":"33050505","ordem":159,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"BENFEIT. EM IMOV. DE TERCEIROS","dre_id":105},{"conta":"33410101","ordem":160,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"(-) CREDITOS PIS","dre_id":105},{"conta":"33410102","ordem":161,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"(-) CREDITOS COFINS","dre_id":105},{"conta":"33010125","ordem":162,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":105},{"conta":"33010126","ordem":163,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":105},{"conta":"33050305","ordem":164,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":105},{"conta":"33050306","ordem":165,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":105},{"conta":"33050503","ordem":166,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":105},{"conta":"33050504","ordem":167,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":105},{"conta":"35010101","ordem":168,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ORDENADOS E SALARIOS","dre_id":107},{"conta":"35010102","ordem":169,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"FERIAS","dre_id":107},{"conta":"35010103","ordem":170,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"13 SALARIO","dre_id":107},{"conta":"35010104","ordem":171,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ENCARGOS SOCIAIS INSS","dre_id":107},{"conta":"35010105","ordem":172,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ENCARGOS SOCIAIS FGTS","dre_id":107},{"conta":"35010106","ordem":173,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"AVISO PREVIO E INDENIZACOES","dre_id":107},{"conta":"35010107","ordem":174,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ASSISTENCIA MEDICA","dre_id":107},{"conta":"35010108","ordem":175,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"SEGURO DE VIDA EM GRUPO","dre_id":107},{"conta":"35010109","ordem":176,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"CURSOS E TREINAMENTO","dre_id":107},{"conta":"35010110","ordem":177,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"REFEICOES","dre_id":107},{"conta":"35010111","ordem":178,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"VALE-TRANSPORTE","dre_id":107},{"conta":"35010112","ordem":179,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"REMUNERACAO E ESTAGIARIOS","dre_id":107},{"conta":"35010113","ordem":180,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PRO-LABORE","dre_id":107},{"conta":"35010115","ordem":181,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"CONTR. SINDICAL PATRONAL","dre_id":107},{"conta":"35010116","ordem":182,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PARTICIPACAO NOS LUCROS","dre_id":107},{"conta":"35010117","ordem":183,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PROVISAO DE FERIAS E ENCARGOS","dre_id":107},{"conta":"35010118","ordem":184,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PROVISAO DE 13 E ENCARGOS","dre_id":107},{"conta":"35010119","ordem":185,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ASSISTENCIA ODONTOLOGICA","dre_id":107},{"conta":"35010120","ordem":186,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"GRATIFICACOES","dre_id":107},{"conta":"35010121","ordem":187,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"COMISSOES SOBRE VENDAS","dre_id":107},{"conta":"35010122","ordem":188,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"CESTA BASICA","dre_id":107},{"conta":"35010123","ordem":189,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"HORAS EXTRAS","dre_id":107},{"conta":"35010124","ordem":190,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"AUTONOMOS","dre_id":107},{"conta":"35010125","ordem":191,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"COMBUSTIVEL DESPESA","dre_id":107},{"conta":"35010126","ordem":192,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ALIMENTACAO - PAT","dre_id":107},{"conta":"35010127","ordem":193,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"SEGURO DE VIDA EM GRUPO","dre_id":107},{"conta":"35010128","ordem":194,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"RECRUTAMENTO E SELECAO","dre_id":107},{"conta":"35010129","ordem":195,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"MEDICINA  DO TRABALHO","dre_id":107},{"conta":"35010130","ordem":196,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"MAO DE OBRA TERCEIRIZADA","dre_id":107},{"conta":"35110101","ordem":197,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"VIAGENS E ESTADIAS - DESPESA","dre_id":107},{"conta":"35110103","ordem":198,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ASSOCIACOES DE CLASSE","dre_id":107},{"conta":"35110108","ordem":199,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PEDAGIO REEMBOLSO","dre_id":107},{"conta":"35110109","ordem":200,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"KILOMETRAGEM REEMBOLSO","dre_id":107},{"conta":"35110110","ordem":201,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"EVENTOS E CONFRATERNIZACOES","dre_id":107},{"conta":"35110111","ordem":202,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"MANUTENCAO VEICULAR","dre_id":107},{"conta":"35110117","ordem":203,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ESTACIONAMENTO","dre_id":107},{"conta":"35110119","ordem":204,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"OUTRAS DESPESAS C/PESSOAL","dre_id":107},{"conta":"35110120","ordem":205,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"COMBUSTIVEL REEMBOLSO","dre_id":107},{"conta":"35110121","ordem":206,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"LOCACAO VEICULOS DESPESA","dre_id":107},{"conta":"35010114","ordem":207,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"PROCESSOS TRABALHISTA","detalhe":"PROCESSOS TRABALHISTAS","dre_id":107},{"conta":"35110105","ordem":208,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"PROCESSOS TRABALHISTA","detalhe":"LEGAIS E JUDICIAIS","dre_id":107},{"conta":"35030105","ordem":209,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"SEGURO FIANCA","dre_id":107},{"conta":"35050101","ordem":210,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"MATERIAL DE ESCRITORIO","dre_id":107},{"conta":"35050102","ordem":211,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"MATERIAIS AUXILIARES/CONSUMO","dre_id":107},{"conta":"35050103","ordem":212,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"ITENS DE LIMPEZA","dre_id":107},{"conta":"35070101","ordem":213,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"OUTROS SEGUROS","dre_id":107},{"conta":"35090108","ordem":214,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"CORREIOS E MALOTES","dre_id":107},{"conta":"35110104","ordem":215,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"COPA, COZINHA E REFEITORIOS","dre_id":107},{"conta":"35110106","ordem":216,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"TAXAS/EMOLUMENTOS E CARTORIO","dre_id":107},{"conta":"35110107","ordem":217,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"DESPESAS DIVERSAS","dre_id":107},{"conta":"35110112","ordem":218,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"MANUTENCAO E REPAROS","dre_id":107},{"conta":"35110113","ordem":219,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"OUTRAS CONTRIBUICOES","dre_id":107},{"conta":"35110114","ordem":220,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"SERVICOS DE MOTOBOY","dre_id":107},{"conta":"35030101","ordem":221,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"ALUGUEIS E CONDOMINIOS DESPESA","dre_id":107},{"conta":"35030102","ordem":222,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"ENERGIA ELETRICA DESPESA","dre_id":107},{"conta":"35030103","ordem":223,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"TELEFONIA DESPESA","dre_id":107},{"conta":"35030104","ordem":224,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"LOCACAO DE EQUIPAMENTOS DESPESA","dre_id":107},{"conta":"35110102","ordem":225,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"AGUA E ESGOTO","dre_id":107},{"conta":"35050104","ordem":226,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"TI / INFRA","detalhe":"MATERIAIS DE INFORMATICA","dre_id":107},{"conta":"35050105","ordem":227,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"TI / INFRA","detalhe":"BENS DE NATUREZA PERMANENTE","dre_id":107},{"conta":"35110115","ordem":228,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"TI / INFRA","detalhe":"ICMS INCIDENTE NA AQUISICAO DE BENS","dre_id":107},{"conta":"35110118","ordem":229,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"TI / INFRA","detalhe":"MANUTENCAO DE IMOBILIZADO","dre_id":107},{"conta":"35090101","ordem":230,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"ASSESSORIA CONTABIL","dre_id":107},{"conta":"35090102","ordem":231,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"ASSISTENCIA JURIDICA","dre_id":107},{"conta":"35090103","ordem":232,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"AUDITORIA","dre_id":107},{"conta":"35090104","ordem":233,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"OUTROS SERV. PREST. POR PJ","dre_id":107},{"conta":"35090105","ordem":234,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"CONSULTORIA","dre_id":107},{"conta":"35090106","ordem":235,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"MANUTENCAO PREDIAL","dre_id":107},{"conta":"35090107","ordem":236,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"PREST. SERV. DE INFORMATICA","dre_id":107},{"conta":"35090111","ordem":237,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"PREST. SERV. DE LIMPEZA","dre_id":107},{"conta":"35090109","ordem":238,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"CRED FISCAL (ADM)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":107},{"conta":"35090110","ordem":239,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"CRED FISCAL (ADM)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":107},{"conta":"35110116","ordem":240,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"BRINDES","dre_id":108},{"conta":"35170101","ordem":241,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"PROVISAO P CREDITO LIQUIDACAO DUVIDOSA","dre_id":108},{"conta":"36010101","ordem":242,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"PROPAGANDA E PUBLICIDADE","dre_id":108},{"conta":"36010102","ordem":243,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"REPRESENTANTES","dre_id":108},{"conta":"36010104","ordem":244,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"CAMPANHAS E BRINDES","dre_id":108},{"conta":"36010109","ordem":245,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"(-) PIS LEI 10.637/2002","dre_id":108},{"conta":"36010110","ordem":246,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"(-) COFINS LEI 10.637/2002","dre_id":108},{"conta":"37010101","ordem":247,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"JUROS PAGOS OU INCORRIDOS","dre_id":110},{"conta":"37010102","ordem":248,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"DESCONTOS CONCEDIDOS","dre_id":110},{"conta":"37010103","ordem":249,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"I.O.F.","dre_id":110},{"conta":"37010107","ordem":250,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"OUTRAS DESPESAS FINANCEIRAS","dre_id":110},{"conta":"37010108","ordem":251,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"PERDAS NO RECEBIMENTO DE CREDITOS","dre_id":110},{"conta":"37010109","ordem":252,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"VARIACOES DE CONSORCIOS","dre_id":110},{"conta":"37010111","ordem":253,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"MULTAS CONTRATUAIS","dre_id":110},{"conta":"37010112","ordem":254,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"I.O.C.","dre_id":110},{"conta":"37010113","ordem":255,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"IR S/OPERACAO DE CAMBIO","dre_id":110},{"conta":"37010114","ordem":256,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"VARIACAO CAMBIAL PASSIVA","dre_id":110},{"conta":"37030101","ordem":257,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"DESCONTOS OBTIDOS","dre_id":110},{"conta":"37030102","ordem":258,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"JUROS RECEBIDOS OU AUFERIDOS","dre_id":110},{"conta":"37030103","ordem":259,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"RECEITAS DE APLIC.FINANCEIRAS","dre_id":110},{"conta":"37030104","ordem":260,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"JUROS APLICADOS S/EMPRESTIMOS","dre_id":110},{"conta":"37030105","ordem":261,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"RECUPERACAO DE DESPESAS","dre_id":110},{"conta":"37030106","ordem":262,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"(-) PIS LEI 8.451/15","dre_id":110},{"conta":"37030107","ordem":263,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"(-) COFINS LEI 8.451/15","dre_id":110},{"conta":"37030108","ordem":264,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"OUTRAS RECEITAS FINANCEIRAS","dre_id":110},{"conta":"37010104","ordem":265,"nivel1":"RESULTADO FINANCEIRO","nivel2":"DESPESAS BANCARIAS","detalhe":"DESPESAS BANCARIAS","dre_id":110},{"conta":"37010110","ordem":266,"nivel1":"RESULTADO FINANCEIRO","nivel2":"DESPESAS BANCARIAS","detalhe":"JUROS INCORRIDOS S/EMPRESTIMOS","dre_id":110},{"conta":"37010105","ordem":267,"nivel1":"RESULTADO FINANCEIRO","nivel2":"DESPESAS TRIBUTARIA","detalhe":"ENCARGOS SOBRE TRIBUTOS","dre_id":110},{"conta":"37010106","ordem":268,"nivel1":"RESULTADO FINANCEIRO","nivel2":"DESPESAS TRIBUTARIA","detalhe":"JUROS OUTRAS OPERACOES","dre_id":110},{"conta":"37030109","ordem":269,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RECEITA TRIBUTARIA","detalhe":"JUROS SELIC","dre_id":110},{"conta":"34010101","ordem":270,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"RESULTADO POSITIVO PARTIC. SOCIETARIA","dre_id":111},{"conta":"34010102","ordem":271,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"RESULTADO NEGATIVO PARTIC. SOCIETARIA","dre_id":111},{"conta":"34010103","ordem":272,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"DESAGIO NA AQUISICAO DE PARTICIPACAO SOC","dre_id":111},{"conta":"34010104","ordem":273,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"PROVISAO PARA PERDA DE INVESTIMENTO","dre_id":111},{"conta":"35150101","ordem":274,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"MULTA DA FISCALIZACAO","dre_id":111},{"conta":"35150102","ordem":275,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"MULTA DE TRANSITO","dre_id":111},{"conta":"35150103","ordem":276,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"DESPESAS INDEDUTIVEIS","dre_id":111},{"conta":"38010101","ordem":277,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"CUSTO DE ALIENACOES DE IMOBILIZADOS","dre_id":111},{"conta":"38010102","ordem":278,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"CONTINGENCIAS","dre_id":111},{"conta":"38010107","ordem":279,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"PERDAS","dre_id":111},{"conta":"38010108","ordem":280,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"PREJUIZO NAO OPERACIONAL","dre_id":111},{"conta":"38010109","ordem":281,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"BENS INDENIZADOS","dre_id":111},{"conta":"38010110","ordem":282,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"TITULOS INCOBRAVEIS","dre_id":111},{"conta":"38010111","ordem":283,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"PROV.PERDA CREDITO HABILITADO","dre_id":111},{"conta":"38020101","ordem":284,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"RECEITAS DA ALIENACAO DE IMOBILIZADO","dre_id":111},{"conta":"38020102","ordem":285,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"OUTRAS RECEITAS NAO OPERAC.","dre_id":111},{"conta":"38020103","ordem":286,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"RESULTADO DA ALIEN DE ATIVOS NAO CIRCUL","dre_id":111},{"conta":"38020104","ordem":287,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"DESAGIO NA AQUISICAO DE PARTICIPACAO SOC","dre_id":111},{"conta":"38020108","ordem":288,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"LUCRO NAO OPERECIONAL","dre_id":111},{"conta":"38020109","ordem":289,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"INDENIZACOES DE SEGUROS RECEBIDAS","dre_id":111},{"conta":"38020110","ordem":290,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"VENDA ATIVO IMOBILIZADO","dre_id":111},{"conta":"33050109","ordem":291,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"DEPRECIACAO","dre_id":104},{"conta":"33050110","ordem":292,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33050111","ordem":293,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33050112","ordem":294,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"AMORTIZACOES","dre_id":104},{"conta":"35130101","ordem":295,"nivel1":"(-) DEPRECIAÇÃO E AMORTIZAÇÃO","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"DEPRECIACOES","dre_id":112},{"conta":"35130102","ordem":296,"nivel1":"(-) DEPRECIAÇÃO E AMORTIZAÇÃO","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"AMORTIZACOES","dre_id":112},{"conta":"39010101","ordem":297,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"CSLL","detalhe":"CSLL","dre_id":114},{"conta":"39010102","ordem":298,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"CSLL","detalhe":"CSLL DIFERIDO","dre_id":114},{"conta":"39010103","ordem":299,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"CSLL","detalhe":"CSLL - CREDITO FISCAL BASE NEG","dre_id":114},{"conta":"39020101","ordem":300,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"IRPJ","detalhe":"IRPJ","dre_id":114},{"conta":"39020102","ordem":301,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"IRPJ","detalhe":"IRPJ DIFERIDO","dre_id":114},{"conta":"39020103","ordem":302,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"IRPJ","detalhe":"IRPJ - CREDITO FISCAL BASE NEG","dre_id":114}]</script>
+<script id="contas-data" type="application/json">{"1":{"n":"ATIVO","t":"S"},"11":{"n":"ATIVO CIRCULANTE","t":"S"},"1101":{"n":"DISPONIVEL","t":"S"},"110101":{"n":"BENS NUMERARIOS","t":"S"},"11010101":{"n":"CAIXA","t":"A"},"110102":{"n":"BANCOS CONTA MOVIMENTO","t":"S"},"11010201":{"n":"ITAU 8145 01610-4","t":"A"},"11010202":{"n":"ITAU 4807 30612-3","t":"A"},"11010203":{"n":"BRADESCO 1229 50601-0","t":"A"},"11010204":{"n":"SANTANDER S/A 4742 13-003261-5","t":"A"},"11010205":{"n":"SAFRA S/A 22119 0221192","t":"A"},"11010206":{"n":"SANTANDER VINCULADA 290029227","t":"A"},"11010207":{"n":"SANTANDER COBRANCA 290029533","t":"A"},"11010208":{"n":"PARANA BANCO 17533-8","t":"A"},"11010209":{"n":"PARANA BANCO VINCULADA 17566-4","t":"A"},"11010210":{"n":"BANCO DO BRASIL","t":"A"},"11010211":{"n":"SANTANDER 290028752","t":"A"},"11010212":{"n":"BRADESCO 3391 0005060-1","t":"A"},"11010213":{"n":"SANTANDER VINCULADA 29002880-0","t":"A"},"11010214":{"n":"SAFRA S/A 08700 0113917 - C/C","t":"A"},"11010215":{"n":"SAFRA S/A 0087 601121-1 VINCULADA","t":"A"},"11010216":{"n":"DAYCOVAL 8069630","t":"A"},"11010217":{"n":"DAYCOVAL 7327872","t":"A"},"11010218":{"n":"BANCO SANTANDER C/C 130042638","t":"A"},"11010219":{"n":"BANCO SANTANDER C/C 13004272-4","t":"A"},"11010220":{"n":"INDUSTRIAL - 010017009-9","t":"A"},"11010221":{"n":"BANCO ITAU 6103 24492-4","t":"A"},"11010222":{"n":"SANTANDER COBRANCA 13-003261-5","t":"A"},"11010223":{"n":"INDUSTRIAL C/C 010017256-3","t":"A"},"11010224":{"n":"BANCO SANTANDER C/C 290000003110","t":"A"},"11010225":{"n":"BANCO INDUSTRIAL CV 0190172564","t":"A"},"11010226":{"n":"BRADESCO AG.3391 C/C 7624-4","t":"A"},"11010227":{"n":"BANCO ITAU C/C 39532-6","t":"A"},"11010228":{"n":"BANCO INDUSTRIAL CG 0009331420","t":"A"},"11010229":{"n":"BANCO ITAU C/C 58215","t":"A"},"11010230":{"n":"BANCO XP C/C 558530-7","t":"A"},"11010231":{"n":"BANCO INDUSTRIAL CV 0190170090","t":"A"},"11010232":{"n":"DAYCOVAL CTA 6046756","t":"A"},"11010233":{"n":"SANTANDER COBRANCA 84825","t":"A"},"11010234":{"n":"SANTANDER - COBRANCA 00250817","t":"A"},"11010235":{"n":"BANCO ITAU - LINK","t":"A"},"110103":{"n":"APLICACOES FINANCEIRAS","t":"S"},"11010301":{"n":"ITAU S/A 8145 01610-4","t":"A"},"11010302":{"n":"SANTANDER 4742 13.003261-5","t":"A"},"11010303":{"n":"BRADESCO S/A 1229 50601-0","t":"A"},"11010304":{"n":"TITULO DE CAP SANTANDER","t":"A"},"11010305":{"n":"SAFRA S/A 01221192","t":"A"},"11010306":{"n":"TITULO DE CAP SULCAP","t":"A"},"11010310":{"n":"SANTANDER 130032615 CDB","t":"A"},"11010311":{"n":"ITAU APLIC CDB 8145 01610-4","t":"A"},"11010312":{"n":"ITAU 32713-9 CTF","t":"A"},"11010313":{"n":"CAUCOES - ALUGUEIS","t":"A"},"11010314":{"n":"CIOT","t":"A"},"11010315":{"n":"BANCO SAFRA CTA 0113917","t":"A"},"11010316":{"n":"APP - GNRE","t":"A"},"11010319":{"n":"BANCO SANTANDER C/C 13004272-4","t":"A"},"11010320":{"n":"BANCO SANTANDER C/A 130042638","t":"A"},"11010321":{"n":"BANCO ITAU 39532-6 AUT MAIS","t":"A"},"11010322":{"n":"PAMCARD","t":"A"},"11010999":{"n":"MUTUO SOCIOS","t":"A"},"1102":{"n":"CREDITOS","t":"S"},"21020008":{"n":"PIS","t":"A"},"110201":{"n":"CLIENTES","t":"S"},"11020101":{"n":"DUPLICATAS A RECEBER","t":"A"},"11020102":{"n":"ECT ON TIME","t":"A"},"11020103":{"n":"DIVERSOS BACKLOG","t":"A"},"11020104":{"n":"CLIENTES CUT-OFF","t":"A"},"11020120":{"n":"PRE FATURAS","t":"A"},"11020122":{"n":"ON TIME EXPRESS LOGISTICA E TRANSPORTES","t":"A"},"11020123":{"n":"OT SERVICOS DE LOGISICA","t":"A"},"11020199":{"n":"TRANSITORIA DE CLIENTES","t":"A"},"110202":{"n":"(-) DUPLICATAS DESCONTADAS","t":"S"},"11020200":{"n":"(-) PROVISAO DESCONTOS INCONDICIONAIS","t":"A"},"11020201":{"n":"SANTANDER GAR 290000002190","t":"A"},"11020202":{"n":"SANTANDER GAR 290028800","t":"A"},"11020203":{"n":"SANTANDER CG 290029533","t":"A"},"11020204":{"n":"SANTANDER GAR 290000002350","t":"A"},"11020205":{"n":"DAYCOVAL 7327872","t":"A"},"11020206":{"n":"RED ASSET","t":"A"},"11020207":{"n":"SANTANDER GAR 29002922-7","t":"A"},"11020208":{"n":"BANCO INDUSTRIAL","t":"A"},"11020209":{"n":"BANCO INDUSTRIAL CG 9331520","t":"A"},"11020210":{"n":"BANCO XP C/C 558530-7","t":"A"},"11020211":{"n":"GAVEA OPEN FIDC","t":"A"},"110203":{"n":"PROVISAO P/CREDITO L. DUVIDOSA","t":"S"},"11020301":{"n":"PROVISAO P/CREDITO L. DUVIDOSA","t":"A"},"110204":{"n":"(-) CONTAS A RECEBER  CLIENTES N/ IDENTI","t":"S"},"11020401":{"n":"CREDITOS NAO IDENTIFICADOS","t":"A"},"1103":{"n":"OUTROS CREDITOS","t":"S"},"110301":{"n":"OUTROS TITULOS A RECEBER","t":"S"},"11030101":{"n":"INDENIZACOES A RECEBER","t":"A"},"11030102":{"n":"OUTROS CREDITOS","t":"A"},"11030103":{"n":"OUTROS CREDITOS - REVERSA","t":"A"},"11030104":{"n":"COBERTURA DE SEGURADORAS","t":"A"},"11030105":{"n":"(-) PROV PERDAS INDENIZ A RECEBER","t":"A"},"11030106":{"n":"ON TIME EXPRESS","t":"A"},"110303":{"n":"ADIANTAMENTO A TERCEIROS","t":"S"},"11030301":{"n":"ADIANTAMENTO A FORNECEDOR","t":"A"},"11030302":{"n":"ANTECIPACAO DE DIVIDENDOS","t":"A"},"11030303":{"n":"FORNECEDORES NAO IDENTIFICADOS","t":"A"},"11030304":{"n":"REGULARIZACAO","t":"A"},"11030305":{"n":"BGS","t":"A"},"110304":{"n":"CREDITOS COM TERCEIROS","t":"S"},"11030401":{"n":"ADIANTAMENTO PARA VIAGENS","t":"A"},"11030402":{"n":"ADIANTAMENTO DE SALARIO","t":"A"},"11030403":{"n":"ANTECIPACAO DE 13 SALARIO","t":"A"},"11030404":{"n":"ANTECIPACAO DE FERIAS","t":"A"},"11030405":{"n":"INSUFICIENCIA DE SALDO","t":"A"},"11030406":{"n":"ADIANTAMENTO MUTUO","t":"A"},"110305":{"n":"IMPOSTOS A RECUPERAR","t":"S"},"11030501":{"n":"ICMS A RECUPERAR","t":"A"},"11030502":{"n":"IRRF A RECUPERAR","t":"A"},"11030503":{"n":"CSLL/COFINS/PIS A RECUPERAR","t":"A"},"11030504":{"n":"INSS A RECUPERAR","t":"A"},"11030505":{"n":"IRPJ ESTIMATIVA","t":"A"},"11030506":{"n":"CSLL ESTIMATIVA","t":"A"},"11030507":{"n":"PIS A RECUPERAR","t":"A"},"11030508":{"n":"COFINS A RECUPERAR","t":"A"},"11030509":{"n":"SALDO NEGATIVO DE IRPJ","t":"A"},"11030510":{"n":"SALDO NEGATIVO DE CSLL","t":"A"},"11030511":{"n":"IRPJ E CSLL DIFERIDOS","t":"A"},"11030512":{"n":"ISS A COMPENSAR","t":"A"},"11030513":{"n":"COFINS A COMPENSAR","t":"A"},"11030514":{"n":"PIS A COMPENSAR","t":"A"},"11030515":{"n":"PIS CRED.MES SEGUINTE","t":"A"},"11030516":{"n":"COFINS CRED.MES SEGUINTE","t":"A"},"11030517":{"n":"PIS - BASE ICMS","t":"A"},"11030518":{"n":"COFINS - BASE ICMS","t":"A"},"11030519":{"n":"ANTECIPACAO DE PARCTO","t":"A"},"11030520":{"n":"IRRF PAGO DUPLICIDADE","t":"A"},"11030598":{"n":"PERDCOMP-CREDITO HABILITADO","t":"A"},"11030599":{"n":"PERDCOMPS","t":"A"},"11030600":{"n":"PROV.PERDA CREDITO HABILITADO","t":"A"},"1104":{"n":"ESTOQUES","t":"S"},"110401":{"n":"MATERIAIS DE CONSUMO","t":"S"},"11040101":{"n":"ALMOXARIFADO","t":"A"},"1105":{"n":"DESPESA ANTECIPADAS","t":"S"},"110501":{"n":"DESPESAS A AMORTIZAR","t":"S"},"11050101":{"n":"SEGUROS A VENCER","t":"A"},"11050102":{"n":"JUROS A APROPRIAR","t":"A"},"11050103":{"n":"IMP SOBRE OP FINANCEIRAS (IOF)","t":"A"},"11050104":{"n":"DESPESAS ANTECIPADAS","t":"A"},"1108":{"n":"CONTRATO DE MUTUO","t":"S"},"110801":{"n":"CONTRATO DE MUTUO","t":"S"},"11080101":{"n":"CREDITO COM PESSOAS LIGADAS","t":"A"},"11080102":{"n":"SISLOGICA SISTEMAS DE INFORMACAO LTDA","t":"A"},"11080103":{"n":"OUTROS CREDITOS ENTRE CIAS","t":"A"},"11080104":{"n":"SYRNA","t":"A"},"11080105":{"n":"OT SERVICOS","t":"A"},"11080106":{"n":"SYRNA INDENIZACOES","t":"A"},"11080107":{"n":"ON TIME EXPRESS","t":"A"},"11080108":{"n":"3T","t":"A"},"12":{"n":"ATIVO NAO CIRCULANTE","t":"S"},"1201":{"n":"REALIZAVEL A LONGO PRAZO","t":"S"},"120101":{"n":"OUTROS CREDITOS A LONGO PRAZO","t":"S"},"12010101":{"n":"COTAS DE CONSORCIO","t":"A"},"12010102":{"n":"DEPOSITO JUDICIAL","t":"A"},"12010103":{"n":"INDENIZACOES A RECEBER L.P","t":"A"},"12010104":{"n":"IRPJ E CSLL DIFERIDOS","t":"A"},"12010105":{"n":"TITULO DE CAP SULCAP","t":"A"},"12010106":{"n":"TITULO DE CAP SANTANDER","t":"A"},"12010107":{"n":"CRED FISCAL BASE NEGATIVA","t":"A"},"12010108":{"n":"(-) PROV PERDAS INDENIZ A RECEBER LP","t":"A"},"12010109":{"n":"SEGUROS/ASSINATURAS A VENCER L.P","t":"A"},"12010110":{"n":"CAUCOES - ALUGUEIS","t":"A"},"12010111":{"n":"ON TIME - PARCELAMENTO","t":"A"},"12010112":{"n":"SEGURO FIANCA","t":"A"},"12010113":{"n":"PROV CONTINGENCIA A RECEBER","t":"A"},"12010150":{"n":"CREDITO COM PESSOAS LIGADAS","t":"A"},"12010151":{"n":"SYRNA","t":"A"},"12010152":{"n":"OUTROS CREDITOS ENTRE CIAS","t":"A"},"12010153":{"n":"ON TIME EXPRESS","t":"A"},"12010154":{"n":"OT SERVICOS","t":"A"},"12010155":{"n":"LINK INVESTIMENTOS","t":"A"},"12010156":{"n":"MUTUO JCR","t":"A"},"120102":{"n":"DIREITO DE USO IMOVEL - ARRENDAMENTO","t":"A"},"12010201":{"n":"DIREITO DE USO IMOVEL - ARRENDAMENTO","t":"A"},"12010202":{"n":"(-) DEPRECIACAO DO DIREITO DE USO IMOVEL","t":"A"},"1202":{"n":"INVESTIMENTOS","t":"S"},"120201":{"n":"INVESTIMENTOS - OUTROS","t":"S"},"12020101":{"n":"PARTICIPACOES EM OUTRAS CIAS.","t":"A"},"12020102":{"n":"APLICACAO CDB L.P","t":"A"},"12020103":{"n":"SISLOGICA SISTEMAS DE INFORMACAO LTDA","t":"A"},"12020104":{"n":"BGS","t":"A"},"12020150":{"n":"EQUIVALENVIA PATRIMONIAL","t":"A"},"12020199":{"n":"INCORPORACAO","t":"A"},"120202":{"n":"PROVISAO PERDA INVESTIMENTOS","t":"S"},"12020201":{"n":"PROVISAO PERDAS INVESTIMENTOS","t":"A"},"1203":{"n":"IMOBILIZADO","t":"S"},"120301":{"n":"BENS TANGIVEIS","t":"S"},"12030101":{"n":"VEICULOS","t":"A"},"12030102":{"n":"COMPUTADORES E PERIFERICOS","t":"A"},"12030103":{"n":"MAQUINAS E EQUIPAMENTOS","t":"A"},"12030104":{"n":"MOVEIS E UTENSILIOS","t":"A"},"12030105":{"n":"INSTALACOES","t":"A"},"12030106":{"n":"EQUIPAMENTOS DE COMUNICACAO","t":"A"},"12030107":{"n":"BENFEIT. EM IMOV. DE TERCEIROS","t":"A"},"12030108":{"n":"OUTRAS IMOBILIZACOES","t":"A"},"12030109":{"n":"COTAS DE CONSORCIO","t":"A"},"12030110":{"n":"IMOBILIZADO EM ANDAMENTO","t":"A"},"12030150":{"n":"IMOBILIZADOS DE TERCEIROS","t":"A"},"12030151":{"n":"(-)IMOBILIZADOS DE TERCEIROS","t":"A"},"120302":{"n":"(-) DEPRECIACAO ACUMULADA","t":"S"},"12030201":{"n":"(-) DEPREC.ACUM.VEICULOS","t":"A"},"12030202":{"n":"(-) DEPREC.ACUM.COMP.PERIF.","t":"A"},"12030203":{"n":"(-) DEPREC.ACUM.MAQ.E EQUIPS.","t":"A"},"12030204":{"n":"(-) DEPREC.ACUM.MOV.UNTENS.","t":"A"},"12030205":{"n":"(-) DEPREC.ACUM. INSTALACOES","t":"A"},"12030206":{"n":"(-) DEPREC.ACUM.EQUIPS. COM","t":"A"},"12030207":{"n":"(-) AMORT.ACUM.BENF. IMOV.","t":"A"},"12030208":{"n":"(-) DEPREC. ACUM. OUT. IMOBIL.","t":"A"},"12030999":{"n":"IMOBILIZADO - TRANSITORIA","t":"A"},"1204":{"n":"INTANGIVEL","t":"S"},"120401":{"n":"BENS INTANGIVEIS","t":"S"},"12040101":{"n":"MARCAS E PATENTES","t":"A"},"12040102":{"n":"SOFTWARES","t":"A"},"12040103":{"n":"AGIO EM INVESTIMENTOS","t":"A"},"12040104":{"n":"BENFEIT. EM IMOV. DE TERCEIROS","t":"A"},"12040105":{"n":"CARTEIRA NOVOS CLIENTES","t":"A"},"120402":{"n":"(-) AMORTIZACAO ACUMULADA","t":"S"},"12040201":{"n":"(-)AMORT.ACUM.MARCAS/PATENTES","t":"A"},"12040202":{"n":"(-)AMORT.ACUM.SOFTWARES","t":"A"},"12040205":{"n":"(-)AMORTIZACAO CARTEIRA NOVOS CLIENTES","t":"A"},"2":{"n":"PASSIVO","t":"S"},"21":{"n":"PASSIVO CIRCULANTE","t":"S"},"2101":{"n":"INSTITUICOES FINANCEIRAS","t":"S"},"210101":{"n":"EMPRESTIMOS E FINANCIAMENTOS","t":"S"},"21010101":{"n":"ARRENDAMENTO MERCANTIL E FINANCIAMENTOS","t":"A"},"21010102":{"n":"EMPRESTIMOS A PAGAR","t":"A"},"21010103":{"n":"(-) JUROS A TRANSCORRER","t":"A"},"21010104":{"n":"(-) ENCARGOS S/ ARRENDAMENTO","t":"A"},"21010105":{"n":"DAYCOVAL CTA 6046756","t":"A"},"21010106":{"n":"BANCO INDUSTRIAL","t":"A"},"21010107":{"n":"BANCO INDUSTRIAL CV 9329119","t":"A"},"21010108":{"n":"BANCO SANTANDER 2900003110","t":"A"},"21010109":{"n":"BANCO INDUSTRIAL 9331520","t":"A"},"21010110":{"n":"BANCO INDUSTRIAL CG 0009329319","t":"A"},"21010111":{"n":"BANCO ITAU 01610-4","t":"A"},"21010112":{"n":"BANCO DAYCOVAL 7327872","t":"A"},"21010113":{"n":"BANCO INDUSTRIAL CG 0009331420","t":"A"},"21010114":{"n":"BANCO XP C/C 558530-7","t":"A"},"21010115":{"n":"SANTANDER 4742 13-003261-5","t":"A"},"21010116":{"n":"SANTANDER 130042638","t":"A"},"21010150":{"n":"DIREITO DE USO IMOVEL - ARRENDAMENTO","t":"A"},"21010151":{"n":"(-) ENC. FINANCEIROS DIREITO DE USO IMOV","t":"A"},"21010190":{"n":"ITAUCARD - 9794","t":"A"},"21010191":{"n":"ITAUCARD - 4545","t":"A"},"21010192":{"n":"ITAUCARD - 4716","t":"A"},"2103":{"n":"FORNECEDORES NACIONAIS","t":"S"},"210301":{"n":"FORNECEDORES","t":"S"},"21030101":{"n":"FORNECEDORES DIVERSOS","t":"A"},"21030102":{"n":"(-) FORNECEDORES CUT-OFF","t":"A"},"21030103":{"n":"(-) REPRESENTANTES","t":"A"},"21030104":{"n":"PARCELAMENTO CORREIOS","t":"A"},"21030105":{"n":"PARCELAMENTO TAM","t":"A"},"21030106":{"n":"CONTAS A PAGAR","t":"A"},"21030114":{"n":"(-) JUROS PARCEL.CORREIOS","t":"A"},"21030120":{"n":"CORREIOS","t":"A"},"21030121":{"n":"SYRNA SERVICOS DE CONSULTORIA E ASSESSOR","t":"A"},"21030122":{"n":"ON TIME EXPRESS LOGISTICA E TRANSPORTES","t":"A"},"21030123":{"n":"OT SERVICOS DE LOGISICA","t":"A"},"210303123":{"n":"OT SERVICOS DE LOGISICA","t":"A"},"21030900":{"n":"RECEITA FEDERAL DO BRASIL","t":"A"},"21030901":{"n":"SECRETARIA DA FAZENDA","t":"A"},"21030902":{"n":"INSTITUTO NAC.DE PREV.SOCIAL","t":"A"},"21030903":{"n":"PREFEITURA MUNICIPAL","t":"A"},"2105":{"n":"OBRIGACOES TRABALHISTAS","t":"S"},"210501":{"n":"ORDENADOS E SALARIOS","t":"S"},"21050101":{"n":"SALARIOS A PAGAR","t":"A"},"21050102":{"n":"13 SALARIO A PAGAR","t":"A"},"21050103":{"n":"FERIAS A PAGAR","t":"A"},"21050104":{"n":"RESCISOES A PAGAR","t":"A"},"21050105":{"n":"PENSAO JUDICIAL","t":"A"},"21050106":{"n":"PRO LABORE A PAGAR","t":"A"},"21050107":{"n":"AUTONOMOS A PAGAR","t":"A"},"210502":{"n":"CONTRIBUICOES E IMPOSTOS","t":"S"},"21050201":{"n":"INSS A RECOLHER","t":"A"},"21050202":{"n":"INSS DE TERCEIROS A RECOLHER","t":"A"},"21050203":{"n":"FGTS A RECOLHER","t":"A"},"21050204":{"n":"CONTRIB. SINDICAIS A RECOLHER","t":"A"},"21050205":{"n":"IRRF S/SALARIOS A RECOLHER","t":"A"},"2107":{"n":"OBRIGACOES TRIBUTARIAS","t":"S"},"210701":{"n":"IMPOSTOS MUNICIPAIS","t":"S"},"21070101":{"n":"ISS A RECOLHER","t":"A"},"21070102":{"n":"ISS S/NOTA FISCAL A RECOLHER","t":"A"},"210702":{"n":"IMPOSTOS ESTADUAIS","t":"S"},"21070201":{"n":"ICMS A RECOLHER","t":"A"},"21070202":{"n":"ICMS CUT-OFF","t":"A"},"210703":{"n":"IMPOSTOS FEDERAIS","t":"S"},"21070301":{"n":"IRPJ A RECOLHER","t":"A"},"21070302":{"n":"CSLL A RECOLHER","t":"A"},"21070303":{"n":"COFINS A RECOLHER","t":"A"},"21070304":{"n":"PIS A RECOLHER","t":"A"},"21070305":{"n":"IRRF S/ALUGUEL A RECOLHER","t":"A"},"21070306":{"n":"IRRF S/SERV.PF A RECOLHER","t":"A"},"21070307":{"n":"IRRF S/SERV.PJ A RECOLHER","t":"A"},"21070308":{"n":"COFINS/PIS/CSLL A RECOLHER","t":"A"},"21070309":{"n":"PIS/COFINS CUT-OFF","t":"A"},"2109":{"n":"PARCELAMENTOS","t":"S"},"210901":{"n":"PARCELAMENTO DE TRIBUTOS","t":"S"},"21090101":{"n":"PARCELAMETO IRPJ","t":"A"},"21090102":{"n":"PARCELAMENTO CSLL","t":"A"},"21090103":{"n":"PARCELAMENTO PIS","t":"A"},"21090104":{"n":"PARCELAMENTO COFINS","t":"A"},"21090105":{"n":"PARCELAMENTO ICMS","t":"A"},"21090106":{"n":"(-) ENCARGOS PARC TRIBUTOS ICMS","t":"A"},"21090107":{"n":"PIS/COFINS CUT-OFF","t":"A"},"21090108":{"n":"ICMS CUT-OFF","t":"A"},"21090109":{"n":"PARCELAMENTO - ACRESCIMO","t":"A"},"21090110":{"n":"(-) ENCARGOS PARCELAMENTO REFIS","t":"A"},"21090111":{"n":"(-) ENCARGOS PARC TRIBUTOS PIS","t":"A"},"21090112":{"n":"(-) ENCARGOS PARC TRIBUTOS COFINS","t":"A"},"21090113":{"n":"PARCELAMENTO IRRF","t":"A"},"21090114":{"n":"(-) ENCARGOS PARCELAMENTO IRRF","t":"A"},"21090115":{"n":"PARCELAMENTO CSRF","t":"A"},"21090116":{"n":"(-) ENCARGOS PARCELAMENTO CSRF","t":"A"},"21090117":{"n":"PARCELAMENTOS","t":"A"},"21090120":{"n":"PIS PROC 10882.403209","t":"A"},"21090121":{"n":"COFINS PROC 10882.403209","t":"A"},"21090122":{"n":"PIS PROC 10882.400808","t":"A"},"21090123":{"n":"COFINS PROC 10882.400808","t":"A"},"21090124":{"n":"IRRF PROC 10882.402969","t":"A"},"21090125":{"n":"PIS PROC 10882.402969","t":"A"},"21090126":{"n":"COFINS PROC 10882.402969","t":"A"},"21090127":{"n":"CSRF PROC 10882.402969","t":"A"},"21090128":{"n":"PIS PROC 10882.403084","t":"A"},"21090129":{"n":"COFINS PROC 10882.403084","t":"A"},"21090130":{"n":"ICMS PROC 00790796-1","t":"A"},"21090131":{"n":"ICMS PROC 00790792-8","t":"A"},"21090132":{"n":"ICMS PROC 01611545-7","t":"A"},"21090133":{"n":"ICMS PROC 00768353-1","t":"A"},"21090134":{"n":"ICMS PROC 00766259-7","t":"A"},"21090135":{"n":"ICMS PROC 01609030-3","t":"A"},"21090136":{"n":"ICMS PROC 50009742-7","t":"A"},"21090137":{"n":"CP PATRONAL 908212000235883","t":"A"},"21090138":{"n":"CP SEGURADOS 908212000235883","t":"A"},"21090139":{"n":"CP TERCEIROS 908212000235883","t":"A"},"21090140":{"n":"PERT FEDERAL","t":"A"},"21090141":{"n":"PERT PREVIDENCIARIO","t":"A"},"21090142":{"n":"ICMS PROC 00793848-9","t":"A"},"21090143":{"n":"ICMS DIVIDA ATIVA","t":"A"},"21090144":{"n":"ICMS 008109727","t":"A"},"21090145":{"n":"ICMS RJ 017491","t":"A"},"21090146":{"n":"ICMS ES 750343","t":"A"},"21090147":{"n":"ICMS ES 750332","t":"A"},"21090148":{"n":"ICMS MG 2215386.00-24","t":"A"},"21090149":{"n":"ICMS PB 09150120204","t":"A"},"21090150":{"n":"ICMS PB 19014520190","t":"A"},"21090152":{"n":"ICMS SP 20414792-1","t":"A"},"21090154":{"n":"ICMS MG PROC 1208812150041","t":"A"},"21090155":{"n":"INSS 90841200025182562059","t":"A"},"21090156":{"n":"ICMS ES 771397","t":"A"},"21090157":{"n":"ICMS ES 771342","t":"A"},"21090158":{"n":"ICMS ES 771353","t":"A"},"21090159":{"n":"ICMS ES 771364","t":"A"},"2109015901":{"n":"ICMS ES 772970","t":"A"},"2109015902":{"n":"ICMS PE 350425411","t":"A"},"2109015903":{"n":"ICMS PE 20200000350029654","t":"A"},"2109015906":{"n":"PEP DO ICMS 20414775-8","t":"A"},"2109015909":{"n":"ICMS RJ 20200017491","t":"A"},"2109015910":{"n":"ICMS RJ 137502-3","t":"A"},"2109015911":{"n":"ICMS RJ 137421-6","t":"A"},"2109015912":{"n":"ICMS RJ 137555-1","t":"A"},"2109015913":{"n":"ICMS PB 138431","t":"A"},"2109015914":{"n":"ICMS PB 1901452019-0","t":"A"},"2109015915":{"n":"ICMS PE 3812494-20","t":"A"},"2109015916":{"n":"PGFN 00004642051","t":"A"},"2109015917":{"n":"IRRF 10882-406188","t":"A"},"2109015918":{"n":"CSRF 10882-406188","t":"A"},"2109015919":{"n":"PIS 10882-908535","t":"A"},"2109015920":{"n":"IRRF 10882-908718","t":"A"},"2109015921":{"n":"PIS 10882-908718","t":"A"},"2109015922":{"n":"PGFN 00004642119","t":"A"},"2109015923":{"n":"PGFN PREV 00004642183","t":"A"},"2109015924":{"n":"SEFAZ RJ 0054764","t":"A"},"2109015925":{"n":"RFB PREV 00642179301","t":"A"},"2109015926":{"n":"ICMS RJ 2017/137.421-6","t":"A"},"2109015927":{"n":"ICMS RJ 2017/137.502-3","t":"A"},"2109015928":{"n":"ICMS RJ 2017/137.555-1","t":"A"},"2109015929":{"n":"ICMS RJ 2021/279.343-2","t":"A"},"2109015930":{"n":"FEDERAL SIMPLIFICADO","t":"A"},"2109015931":{"n":"ICMS 00853619-3","t":"A"},"2109015932":{"n":"ICMS SP 00853618-2","t":"A"},"2109015933":{"n":"ICMS PE 3812494-20","t":"A"},"2109015934":{"n":"ICMS SP 50064924-8","t":"A"},"2109015935":{"n":"PGFN PROCESSO 8138187","t":"A"},"2109015936":{"n":"ICMS SP PROCESSO 50081490-7","t":"A"},"2109015937":{"n":"ICMS SP PROCESSO 50081489-7","t":"A"},"2109015938":{"n":"ICMS PE 9947998-72","t":"A"},"2109015939":{"n":"PARC.ICMS SP 70100914-1","t":"A"},"2109015940":{"n":"PARC.ICMS SP 70100918-5","t":"A"},"2109015941":{"n":"PARC.ICMS SP 70101126-0","t":"A"},"2109015942":{"n":"PARC.ICMS SP 70100863-4","t":"A"},"2109015943":{"n":"PARC.ICMS SP 70100898-3","t":"A"},"2109015944":{"n":"PARC.ICMS SP 70100853-6","t":"A"},"2109015945":{"n":"PARC.PGFN PERT SP 9822349","t":"A"},"2109015946":{"n":"PARC.PGFN PERT SP 9975638","t":"A"},"2109015947":{"n":"PARC.PGFN PERT SP 10106030","t":"A"},"2109015948":{"n":"PARC.SIMPLIF. SP 582643142420","t":"A"},"2109015949":{"n":"PARC.ESTADUAL PE 2024.00000187679815","t":"A"},"21090160":{"n":"(-) JUROS PIS PROC 10882.403209","t":"A"},"21090161":{"n":"(-) JUROS COFINS PROC 10882.403209","t":"A"},"21090162":{"n":"(-) JUROS PIS PROC 10882.400808","t":"A"},"21090163":{"n":"(-) JUROS COFINS PROC 10882.400808","t":"A"},"21090164":{"n":"(-) JUROS IRRF PROC 10882.402969","t":"A"},"21090165":{"n":"(-) JUROS PIS PROC 10882.402969","t":"A"},"21090166":{"n":"(-) JUROS COFINS PROC 10882.402969","t":"A"},"21090167":{"n":"(-) JUROS CSRF PROC 10882.402969","t":"A"},"21090168":{"n":"(-) JUROS PIS PROC 10882.403084","t":"A"},"21090169":{"n":"(-) JUROS COFINS PROC 10882.403084","t":"A"},"21090170":{"n":"(-) JUROS ICMS PROC 00790796-1","t":"A"},"21090171":{"n":"(-) JUROS ICMS PROC 00790792-8","t":"A"},"21090172":{"n":"(-) JUROS ICMS PROC 01611545-7","t":"A"},"21090173":{"n":"(-) JUROS ICMS PROC 00768353-1","t":"A"},"21090174":{"n":"(-) JUROS ICMS PROC 00766259-7","t":"A"},"21090175":{"n":"(-) JUROS ICMS PROC 01609030-3","t":"A"},"21090176":{"n":"(-) JUROS ICMS PROC 50009742-7","t":"A"},"21090177":{"n":"(-) JUROS CP PATRONAL 908212000235883","t":"A"},"21090178":{"n":"(-) JUROS CP SEGURADOS 908212000235883","t":"A"},"21090179":{"n":"(-) JUROS CP TERCEIROS 908212000235883","t":"A"},"21090180":{"n":"(-) JUROS PERT FEDERAL","t":"A"},"21090181":{"n":"(-) JUROS PERT PREVIDENCIARIO","t":"A"},"21090182":{"n":"(-) JUROS ICMS PROC 00793848-9","t":"A"},"21090183":{"n":"(-) JUROS ICMS DIVIDA ATIVA","t":"A"},"21090184":{"n":"(-) JUROS ICMS 008109727","t":"A"},"21090185":{"n":"(-) JUROS ICMS RJ 138431","t":"A"},"21090186":{"n":"(-) JUROS ICMS ES 750343","t":"A"},"21090187":{"n":"(-) JUROS ICMS ES 750332","t":"A"},"21090188":{"n":"(-) JUROSICMS MG 2215386.00-24","t":"A"},"21090189":{"n":"(-) JUROS ICMS PB 30192351","t":"A"},"21090190":{"n":"(-) JUROS ICMS PB 3019232280","t":"A"},"21090192":{"n":"(-)JUROS ICMS SP 20414792-1","t":"A"},"21090195":{"n":"(-) JUROS INSS 90841200025182562059","t":"A"},"21090196":{"n":"(-) JUROS ICMS ES 771397","t":"A"},"21090197":{"n":"(-) JUROS ICMS ES 771342","t":"A"},"21090198":{"n":"(-) JUROS ICMS ES 771353","t":"A"},"21090199":{"n":"(-) JUROS ICMS ES 771364","t":"A"},"2109019901":{"n":"(-) JUROS ICMS ES 772970","t":"A"},"2109019902":{"n":"(-) JUROS ICMS PE 350425411","t":"A"},"2109019903":{"n":"(-) JUROS ICMS PE 20200000350029654","t":"A"},"2109019906":{"n":"(-) JUROS PEP DO ICMS 20414775-8","t":"A"},"2109019907":{"n":"(-) JUROS ICMS RJ 017491","t":"A"},"2109019908":{"n":"(-) JUROS ICMS MG 1208812150041","t":"A"},"210901991":{"n":"(-) JUROS SELIC PARCTOS","t":"A"},"2109019910":{"n":"(-) JUROS ICMS RJ 137502-3","t":"A"},"2109019911":{"n":"(-) JUROS ICMS RJ 137421-6","t":"A"},"2109019912":{"n":"(-) JUROS ICMS RJ 137555-1","t":"A"},"2109019913":{"n":"(-) JUROS ICMS PB 138431","t":"A"},"2109019914":{"n":"(-) JUROS ICMS PB 1901452019-0","t":"A"},"2109019915":{"n":"(-) JUROS ICMS PE 3812494-20","t":"A"},"2109019916":{"n":"(-) JUROS PGFN 00004642051","t":"A"},"2109019917":{"n":"(-) JUROS IRRF 10882-406188","t":"A"},"2109019918":{"n":"(-) JUROS CSRF 10882-406188","t":"A"},"2109019919":{"n":"(-) JUROS PIS 10882-908535","t":"A"},"2109019920":{"n":"(-) JUROS IRRF 10882-908718","t":"A"},"2109019921":{"n":"(-) JUROS PIS 10882-908718","t":"A"},"2109019924":{"n":"(-) JUROS SEFAZ RJ 0054764","t":"A"},"2109019926":{"n":"(-) JUROS ICMS RJ 2017/137.421-6","t":"A"},"2109019927":{"n":"(-) JUROS ICMS RJ 2017/137.502-3","t":"A"},"2109019928":{"n":"(-) JUROS ICMS RJ 2017/137.555-1","t":"A"},"2109019929":{"n":"(-) JUROS ICMS RJ 2021/279.343-2","t":"A"},"2109019930":{"n":"(-) JUROS FEDERAL SIMPLIFICADO","t":"A"},"2109019931":{"n":"(-) JUROS ICMS 00853619-3","t":"A"},"2109019932":{"n":"(-) JUROS ICMS SP 00853618-2","t":"A"},"2109019933":{"n":"(-) JUROS ICMS PE 3812494-20","t":"A"},"2109019934":{"n":"(-) ICMS SP 50064924-8","t":"A"},"2109019936":{"n":"(-)JUROS ICMS SP PROCESSO 500814907","t":"A"},"2109019938":{"n":"(-)JUROS ICMS PE 9947998-72","t":"A"},"2109019939":{"n":"(-)JUROS PARC.PGFN PERT SP 9822349","t":"A"},"2109019940":{"n":"(-)JUROS PARC.PGFN PERT SP 9975638","t":"A"},"2109019941":{"n":"(-)JUROS PARC.PGFN PERT SP 10106030","t":"A"},"2109019942":{"n":"(-)JUROS PARC.SIMPLIF SP 582643142420","t":"A"},"2109019943":{"n":"(-)JUROS PARC.EST.PE 2024.00000187679815","t":"A"},"2109019945":{"n":"(-)JUROS PGFN PERT SP 9822349","t":"A"},"2109019949":{"n":"(-)JUROS ICMS PE 2024.00000187679815","t":"A"},"2109019971":{"n":"PARCELAMENTOS MUNICIPAIS","t":"A"},"2109019972":{"n":"PARCELAMENTOS ESTADUAIS","t":"A"},"2109019973":{"n":"PARCELAMENTOS FEDERAIS","t":"A"},"2109019974":{"n":"PGE-SP PARCELAMENTO CP","t":"A"},"2109019975":{"n":"PGE-RJ PARCELAMENTO CP","t":"A"},"2109019976":{"n":"PGE-PE PARCELAMENTO CP","t":"A"},"2109019977":{"n":"PGE-PB PARCELAMENTO CP","t":"A"},"2109019978":{"n":"PGE-ES PARCELAMENTO CP","t":"A"},"2109019979":{"n":"PGFN PARCELAMENTO CP","t":"A"},"2109019980":{"n":"RFB PARCELAMENTO CP","t":"A"},"2109019981":{"n":"PREVIDENCIARIO PARCELAMENTO CP","t":"A"},"2109019991":{"n":"(-)JUROS PARCELAMENTOS MUNICIPAIS","t":"A"},"2109019992":{"n":"(-)JUROS PARCELAMENTOS ESTADUAIS","t":"A"},"2109019993":{"n":"(-)JUROS PARCELAMENTOS FEDERAIS","t":"A"},"210903":{"n":"ADIANTAMENTO A TERCEIROS","t":"S"},"21090301":{"n":"ADIANTAMENTO DE CLIENTES","t":"A"},"2110":{"n":"OUTRAS CONTAS A PAGAR","t":"S"},"211001":{"n":"OUTRAS CONTAS A PAGAR","t":"S"},"21100101":{"n":"INDENIZACOES A PAGAR","t":"A"},"21100102":{"n":"PRO-LABORE A PAGAR","t":"A"},"21100103":{"n":"ALUGUEIS A PAGAR","t":"A"},"21100104":{"n":"SEGUROS A PAGAR","t":"A"},"21100105":{"n":"COTAS DE CONSORCIO A PAGAR","t":"A"},"21100106":{"n":"DIVIDENDOS A PAGAR - LINK","t":"A"},"21100107":{"n":"PLR/GRATIFICACOES A PAGAR","t":"A"},"21100108":{"n":"DIVIDENDOS A PAGAR - RONALDO","t":"A"},"21100109":{"n":"DIVIDENDOS A PAGAR - ULTRECH","t":"A"},"21100110":{"n":"(-) PROV PERDAS INDENIZ A PAGAR","t":"A"},"21100111":{"n":"SYRNA INDENIZACOES","t":"A"},"21100112":{"n":"INDENIZACAO DEMANDA JURIDICA","t":"A"},"2111":{"n":"OBRIGACOES DE TERCEIROS","t":"S"},"211101":{"n":"OBRIGACOES DE TERCEIROS","t":"S"},"21110101":{"n":"DEBITO COM PESSOAS LIGADAS","t":"A"},"21110102":{"n":"ON TIME EXPRESS","t":"A"},"21110103":{"n":"OT SERVICOS","t":"A"},"2112":{"n":"PROVISOES","t":"S"},"211201":{"n":"PROVISOES TRABALHISTAS","t":"S"},"21120101":{"n":"PROVISAO PARA FERIAS","t":"A"},"21120102":{"n":"PROVISAO PARA 13 SALARIO","t":"A"},"21120103":{"n":"PROVISAO JURIDICA TRABALHISTA","t":"A"},"211202":{"n":"PROVISOES TRIBUTARIAS","t":"S"},"21120201":{"n":"PROVISAO P/IRPJ","t":"A"},"21120202":{"n":"PROVISAO P/CONTRIB.SOCIAL","t":"A"},"21120203":{"n":"PROVISAO IMPOSTOS","t":"A"},"211203":{"n":"OUTRAS PROVISOES","t":"S"},"21120301":{"n":"PROVISOES FORNECEDORES DIVERSOS","t":"A"},"21120302":{"n":"PROVISOES JURIDICO ADM","t":"A"},"21120303":{"n":"OUTRAS PROVISOES","t":"A"},"22":{"n":"PASSIVO NAO CIRCULANTE","t":"S"},"2201":{"n":"INSTITUICOES FINANCEIRAS","t":"S"},"220101":{"n":"EMPRESTIMOS E FINANCIAMENTOS","t":"S"},"22010101":{"n":"ARRENDAMENTO MERCANTIL E FINANCIAMENTOS","t":"A"},"22010102":{"n":"EMPRESTIMOS A PAGAR","t":"A"},"22010103":{"n":"(-) JUROS A TRANSCORRER LP","t":"A"},"22010104":{"n":"(-) ENCARGOS S/ ARRENDAMENTO LP","t":"A"},"22010150":{"n":"DIREITO DE USO IMOVEL - ARRENDAMENTO","t":"A"},"22010151":{"n":"(-) ENC. FINANCEIROS DIREITO DE USO IMOV","t":"A"},"220102":{"n":"EMPRESTIMOS - JUROS","t":"S"},"22010203":{"n":"(-) JUROS A TRANSCORRER LP","t":"A"},"2202":{"n":"EXIGIVEL A LONGO PRAZO","t":"S"},"220201":{"n":"ADTO P/FUTURO AUM.DE CAPITAL","t":"S"},"22020101":{"n":"ADTO P/FUTURO AUM.DE CAPITAL","t":"A"},"2203":{"n":"PARCELAMENTOS","t":"S"},"220301":{"n":"PARCELAMENTO DE TRIBUTOS","t":"S"},"22030101":{"n":"PARCELAMENTO IRPJ","t":"A"},"22030102":{"n":"PARCELAMENTO CSLL","t":"A"},"22030103":{"n":"PARCELAMENTO PIS","t":"A"},"22030104":{"n":"PARCELAMENTO COFINS","t":"A"},"22030105":{"n":"PARCELAMENTO ICMS","t":"A"},"220301051":{"n":"ICMS SP","t":"A"},"22030106":{"n":"(-) ENCARGOS PARC TRIBUTOS ICMS","t":"A"},"22030107":{"n":"PARCELAMENTO REFIS","t":"A"},"22030108":{"n":"(-) ENCARGOS PARCELAMENTO REFIS","t":"A"},"22030109":{"n":"(-) ENCARGOS PARC TRIBUTOS PIS","t":"A"},"22030110":{"n":"(-) ENCARGOS PARC TRIBUTOS COFINS","t":"A"},"22030111":{"n":"PARCELAMENTO IRRF","t":"A"},"22030112":{"n":"(-) ENCARGOS PARCELAMENTO IRRF","t":"A"},"22030113":{"n":"PARCELAMENTO CSRF","t":"A"},"22030114":{"n":"(-) ENCARGOS PARCELAMENTO CSRF","t":"A"},"22030115":{"n":"ICMS ES 771364001","t":"A"},"22030116":{"n":"(-)JUROS ICMS ES 771364001","t":"A"},"22030117":{"n":"ICMS ES 771386001","t":"A"},"22030118":{"n":"(-)JUROS ICMS ES 771386001","t":"A"},"22030120":{"n":"PIS PROC 10882.403209","t":"A"},"22030121":{"n":"COFINS PROC 10882.403209","t":"A"},"22030122":{"n":"PIS PROC 10882.400808","t":"A"},"22030123":{"n":"COFINS PROC 10882.400808","t":"A"},"22030124":{"n":"IRRF PROC 10882.402969","t":"A"},"22030125":{"n":"PIS PROC 10882.402969","t":"A"},"22030126":{"n":"COFINS PROC 10882.402969","t":"A"},"22030127":{"n":"CSRF PROC 10882.402969","t":"A"},"22030128":{"n":"PIS PROC 10882.403084","t":"A"},"22030129":{"n":"COFINS PROC 10882.403084","t":"A"},"22030130":{"n":"ICMS PROC 00790796-1","t":"A"},"22030131":{"n":"ICMS PROC 00790792-8","t":"A"},"22030132":{"n":"ICMS PROC 01611545-7","t":"A"},"22030133":{"n":"ICMS PROC 00768353-1","t":"A"},"22030134":{"n":"ICMS PROC 00766259-7","t":"A"},"22030135":{"n":"ICMS PROC 01609030-3","t":"A"},"22030136":{"n":"ICMS PROC 50009742-7","t":"A"},"22030137":{"n":"CP PATRONAL 908212000235883","t":"A"},"22030138":{"n":"CP SEGURADOS 908212000235883","t":"A"},"22030139":{"n":"CP TERCEIROS 908212000235883","t":"A"},"22030140":{"n":"PERT FEDERAL","t":"A"},"22030141":{"n":"PERT PREVIDENCIARIO","t":"A"},"22030142":{"n":"ICMS PROC 00793848-9","t":"A"},"22030143":{"n":"ICMS DIVIDA ATIVA","t":"A"},"22030144":{"n":"ICMS 008109727","t":"A"},"22030145":{"n":"ICMS RJ 017491","t":"A"},"22030146":{"n":"ICMS ES 750343","t":"A"},"22030147":{"n":"ICMS ES 750332","t":"A"},"22030148":{"n":"ICMS MG 2215386.00-24","t":"A"},"22030149":{"n":"ICMS PB 09150120204","t":"A"},"22030150":{"n":"ICMS PB 19014520190","t":"A"},"22030151":{"n":"ICMS SP 20414775-8","t":"A"},"22030152":{"n":"ICMS SP 20414792-1","t":"A"},"22030153":{"n":"ICMS PB 1901452019-0","t":"A"},"22030154":{"n":"ICMS MG PROC 1208812150041","t":"A"},"22030155":{"n":"INSS 90841200025182562059","t":"A"},"22030156":{"n":"ICMS ES 771397","t":"A"},"22030157":{"n":"ICMS ES 771342","t":"A"},"22030158":{"n":"ICMS ES 771353","t":"A"},"22030159":{"n":"ICMS ES 771364","t":"A"},"2203015901":{"n":"ICMS ES 772970","t":"A"},"2203015902":{"n":"ICMS PE 20200000350425411","t":"A"},"2203015903":{"n":"ICMS PE 20200000350029654","t":"A"},"2203015904":{"n":"ICMS ES 771364001","t":"A"},"2203015905":{"n":"ICMS MG 5601382829600","t":"A"},"2203015906":{"n":"PEP DO ICMS 20414775-8","t":"A"},"2203015907":{"n":"(-) JUROS ICMS PROC 00810972-7","t":"A"},"2203015908":{"n":"ICMS PROC 50024726-3","t":"A"},"2203015909":{"n":"ICMS PROC 20200017491","t":"A"},"2203015910":{"n":"ICMS RJ 137502-3","t":"A"},"2203015911":{"n":"ICMS RJ 137421-6","t":"A"},"2203015912":{"n":"ICMS RJ 137555-1","t":"A"},"2203015913":{"n":"ICMS PB 138431","t":"A"},"2203015915":{"n":"ICMS PE 3812494-20","t":"A"},"2203015916":{"n":"PGFN 00004642051","t":"A"},"2203015917":{"n":"IRRF 10882-406188","t":"A"},"2203015918":{"n":"CSRF 10882-406188","t":"A"},"2203015919":{"n":"PIS 10882-908535","t":"A"},"2203015920":{"n":"IRRF 10882-908718","t":"A"},"2203015921":{"n":"PIS 10882-908718","t":"A"},"2203015922":{"n":"PGFN 00004642119","t":"A"},"2203015923":{"n":"PGFN PREV 00004642183","t":"A"},"2203015924":{"n":"SEFAZ RJ 0054764","t":"A"},"2203015925":{"n":"RFB PREV 00642179301","t":"A"},"2203015926":{"n":"ICMS RJ 2017/137.421-6","t":"A"},"2203015927":{"n":"ICMS RJ 2017/137.502-3","t":"A"},"2203015928":{"n":"ICMS RJ 2017/137.555-1","t":"A"},"2203015929":{"n":"ICMS RJ 2021/279.343-2","t":"A"},"2203015930":{"n":"FEDERAL SIMPLIFICADO","t":"A"},"2203015931":{"n":"ICMS 00853619-3","t":"A"},"2203015932":{"n":"ICMS SP 00853618-2","t":"A"},"2203015933":{"n":"ICMS PE 3812494-20","t":"A"},"2203015934":{"n":"ICMS SP 50064924-8","t":"A"},"2203015935":{"n":"PARC.PGFN PROCESSO 8138187","t":"A"},"2203015936":{"n":"ICMS SP PROCESSO 50081490-7","t":"A"},"2203015937":{"n":"ICMS SP PROCESSO 50081489-7","t":"A"},"2203015938":{"n":"ICMS PE 9947998-72","t":"A"},"2203015939":{"n":"PARC.ICMS SP 70100914-1","t":"A"},"2203015940":{"n":"PARC.ICMS SP 70100918-5","t":"A"},"2203015941":{"n":"PARC.ICMS SP 70101126-0","t":"A"},"2203015942":{"n":"PARC.ICMS SP 70100863-4","t":"A"},"2203015943":{"n":"PARC.ICMS SP 70100898-3","t":"A"},"2203015944":{"n":"PARC.ICMS SP 70100853-6","t":"A"},"2203015945":{"n":"PARC.PGFN PERT SP 9822349","t":"A"},"2203015949":{"n":"PARC.ESTADUAL PE 2024.00000187679815","t":"A"},"22030160":{"n":"(-) JUROS PIS PROC 10882.403209","t":"A"},"22030161":{"n":"(-) JUROS COFINS PROC 10882.403209","t":"A"},"22030162":{"n":"(-) JUROS PIS PROC 10882.400808","t":"A"},"22030163":{"n":"(-) JUROS COFINS PROC 10882.400808","t":"A"},"22030164":{"n":"(-) JUROS IRRF PROC 10882.402969","t":"A"},"22030165":{"n":"(-) JUROS PIS PROC 10882.402969","t":"A"},"22030166":{"n":"(-) JUROS COFINS PROC 10882.402969","t":"A"},"22030167":{"n":"(-) JUROS CSRF PROC 10882.402969","t":"A"},"22030168":{"n":"(-) JUROS PIS PROC 10882.403084","t":"A"},"22030169":{"n":"(-) JUROS COFINS PROC 10882.403084","t":"A"},"22030170":{"n":"(-) JUROS ICMS PROC 00790796-1","t":"A"},"22030171":{"n":"(-) JUROS ICMS PROC 00790792-8","t":"A"},"22030172":{"n":"(-) JUROS ICMS PROC 01611545-7","t":"A"},"22030173":{"n":"(-) JUROS ICMS PROC 00768353-1","t":"A"},"22030174":{"n":"(-) JUROS ICMS PROC 00766259-7","t":"A"},"22030175":{"n":"(-) JUROS ICMS PROC 01609030-3","t":"A"},"22030176":{"n":"(-) JUROS ICMS PROC 50009742-7","t":"A"},"22030177":{"n":"(-) JUROS CP PATRONAL 908212000235883","t":"A"},"22030178":{"n":"(-) JUROS CP SEGURADOS 908212000235883","t":"A"},"22030179":{"n":"(-) JUROS CP TERCEIROS 908212000235883","t":"A"},"22030180":{"n":"(-) JUROS PERT FEDERAL","t":"A"},"22030181":{"n":"(-) JUROS PERT PREVIDENCIARIO","t":"A"},"22030182":{"n":"(-) JUROS ICMS PROC 00793848-9","t":"A"},"22030183":{"n":"(-) JUROS ICMS DIVIDA ATIVA","t":"A"},"22030184":{"n":"(-) JUROS ICMS 008109727","t":"A"},"22030185":{"n":"(-) JUROS ICMS RJ 138431","t":"A"},"22030186":{"n":"(-) JUROS ICMS ES 750343","t":"A"},"22030187":{"n":"(-) JUROS ICMS ES 750332","t":"A"},"22030188":{"n":"(-) JUROS ICMS MG 2215386.00-24","t":"A"},"22030189":{"n":"(-)JUROS ICMS PB 3019232351","t":"A"},"22030190":{"n":"(-)JUROS ICMS PB 3019232280","t":"A"},"22030191":{"n":"(-)JUROS ICMS SP 20414775-8","t":"A"},"22030192":{"n":"(-)JUROS ICMS SP 20414792-1","t":"A"},"22030193":{"n":"(-)JUROS ICMS PB 1901452019-0","t":"A"},"22030194":{"n":"(-)JUROS ICMS 1208812150041","t":"A"},"22030195":{"n":"(-)JUROS INSS 90841200025182562059","t":"A"},"22030196":{"n":"(-)JUROS ICMS ES 771397","t":"A"},"22030197":{"n":"(-)JUROS ICMS ES 771342","t":"A"},"22030198":{"n":"(-)JUROS ICMS ES 771353","t":"A"},"22030199":{"n":"(-)JUROS ICMS ES 771364","t":"A"},"2203019901":{"n":"(-)JUROS ICMS ES 772970","t":"A"},"2203019902":{"n":"(-)JUROS ICMS PE 20200000350425411","t":"A"},"2203019903":{"n":"(-)JUROS ICMS PE 20200000350029654","t":"A"},"2203019904":{"n":"(-)JUROS ICMS ES 771364001","t":"A"},"2203019905":{"n":"(-)JUROS ICMS MG 5601382829600","t":"A"},"2203019906":{"n":"(-) JUROS PEP DO ICMS 20414775-8","t":"A"},"2203019908":{"n":"(-) JUROS ICMS MG 1208812150041","t":"A"},"2203019909":{"n":"(-) JUROS ICMS RJ 017491","t":"A"},"2203019910":{"n":"(-) JUROS ICMS PROC 137502-3","t":"A"},"2203019911":{"n":"(-) JUROS ICMS PROC 137421-6","t":"A"},"2203019912":{"n":"(-) JUROS ICMS PROC 137555-1","t":"A"},"2203019913":{"n":"(-) JUROS ICMS PROC 138431","t":"A"},"2203019914":{"n":"(-) JUROS SELIC PARCTOS","t":"A"},"2203019915":{"n":"(-) JUROS ICMS PE 3812494-20","t":"A"},"2203019916":{"n":"(-) JUROS PGFN 00004642051","t":"A"},"2203019917":{"n":"(-) JUROS IRRF 10882-406188","t":"A"},"2203019918":{"n":"(-) JUROS CSRF 10882-406188","t":"A"},"2203019919":{"n":"(-) JUROS PIS 10882-908535","t":"A"},"2203019920":{"n":"(-) JUROS IRRF 10882-908718","t":"A"},"2203019921":{"n":"(-) JUROS PIS 10882-908718","t":"A"},"2203019924":{"n":"(-) JUROS SEFAZ RJ 0054764","t":"A"},"2203019926":{"n":"(-) JUROS ICMS RJ 2017/137.421-6","t":"A"},"2203019927":{"n":"(-) JUROS ICMS RJ 2017/137.502-3","t":"A"},"2203019928":{"n":"(-) JUROS ICMS RJ 2017/137.555-1","t":"A"},"2203019929":{"n":"(-) JUROS ICMS RJ 2021/279.343-2","t":"A"},"2203019930":{"n":"(-) JUROS FEDERAL SIMPLIFICADO","t":"A"},"2203019931":{"n":"(-) JUROS ICMS 00853619-3","t":"A"},"2203019932":{"n":"(-) JUROS ICMS SP 00853618-2","t":"A"},"2203019933":{"n":"(-) JUROS ICMS PE 3812494-20","t":"A"},"2203019934":{"n":"(-) ICMS SP 50064924-8","t":"A"},"2203019936":{"n":"(-)JUROS ICMS SP PROCESSO 500814907","t":"A"},"2203019938":{"n":"(-)JUROS ICMS PE 9947998-72","t":"A"},"2203019945":{"n":"(-)JUROS PGFN PERT SP 9822349","t":"A"},"2203019949":{"n":"(-)JUROS ICMS PE 2024.00000187679815","t":"A"},"2203019971":{"n":"PARCELAMENTOS MUNICIPAIS","t":"A"},"2203019972":{"n":"PARCELAMENTOS ESTADUAIS","t":"A"},"2203019973":{"n":"PARCELAMENTOS FEDERAIS","t":"A"},"2203019974":{"n":"PGE-SP PARCELAMENTO LP","t":"A"},"2203019975":{"n":"PGE-RJ PARCELAMENTO LP","t":"A"},"2203019976":{"n":"PGE-PE PARCELAMENTO LP","t":"A"},"2203019977":{"n":"PGE-PB PARCELAMENTO LP","t":"A"},"2203019978":{"n":"PGE-ES PARCELAMENTO LP","t":"A"},"2203019979":{"n":"PGFN PARCELAMENTO LP","t":"A"},"2203019980":{"n":"RFB PARCELAMENTO LP","t":"A"},"2203019981":{"n":"PREVIDENCIARIO PARCELAMENTO LP","t":"A"},"2203019991":{"n":"(-)JUROS PARCELAMENTOS MUNICIPAIS","t":"A"},"2203019992":{"n":"(-)JUROS PARCELAMENTOS ESTADUAIS","t":"A"},"2203019993":{"n":"(-)JUROS PARCELAMENTOS FEDERAIS","t":"A"},"220302":{"n":"PROVISOES","t":"S"},"22030201":{"n":"PROVISAO TRABALHISTA","t":"A"},"22030202":{"n":"PROVISAO CIVEL","t":"A"},"22030203":{"n":"PROVISAO TRIBUTARIA","t":"A"},"22030204":{"n":"PROVISAO P/ CONTINGENCIA","t":"A"},"22030205":{"n":"PROVISAO PARA PERDA COM INVESTIMENTOS","t":"A"},"22030206":{"n":"COFINS RECURSO JUDICIAL","t":"A"},"22030207":{"n":"PIS RECURSO JUDICIAL","t":"A"},"22030208":{"n":"OUTRAS PROVISOES","t":"A"},"22030210":{"n":"PERDAS COM INVESTIMENTOS","t":"A"},"220303":{"n":"OUTRAS CONTAS A PAGAR","t":"S"},"22030301":{"n":"COTAS DE CONSORCIO A PAGAR","t":"A"},"22030302":{"n":"SEGUROS A PAGAR","t":"A"},"22030303":{"n":"PARCELAMENTO CORREIOS","t":"A"},"22030304":{"n":"PARCELAMENTO ON TIME","t":"A"},"22030305":{"n":"PROVISAO DE IMPOSTOS","t":"A"},"22030999":{"n":"TRANSITORIA","t":"A"},"22031001":{"n":"ICMS ES 771364001","t":"A"},"2203195":{"n":"(-)JUROS ICMS ES 771342001","t":"A"},"2204":{"n":"OUTROS DEBITOS","t":"S"},"220401":{"n":"OUTROS DEBITOS","t":"S"},"22040101":{"n":"OT SERVICOS","t":"A"},"22040102":{"n":"DIVIDENDOS A PAGAR - RONALDO","t":"A"},"22040103":{"n":"DIVIDENDOS A PAGAR - ULTRECH","t":"A"},"22040104":{"n":"DIVIDENDOS A PAGAR - LINK","t":"A"},"22040105":{"n":"DEBITO COM PESSOAS LIGADAS","t":"A"},"22040106":{"n":"ON TIME EXPRESS","t":"A"},"22040107":{"n":"SYRNA","t":"A"},"22040108":{"n":"MUTUO JCR","t":"A"},"22040109":{"n":"IBEX FUNDO DE INVESTIMENTO EM PARTICIPAC","t":"A"},"23":{"n":"PATRIMONIO LIQUIDO","t":"S"},"2301":{"n":"CAPITAL SOCIAL","t":"S"},"230101":{"n":"CAPITAL SOCIAL","t":"S"},"23010101":{"n":"CAPITAL SOCIAL","t":"A"},"23010102":{"n":"(-) GASTO COM A EMISSAO DE ACOES","t":"A"},"23010103":{"n":"(-)CAPITAL A INTEGRALIZAR","t":"A"},"2302":{"n":"(-)CAPITAL A INTEGRALIZAR","t":"S"},"230201":{"n":"(-)CAPITAL A INTEGRALIZAR","t":"S"},"23020101":{"n":"(-)CAPITAL A INTEGRALIZAR","t":"A"},"23020102":{"n":"INCORPORACAO DE EMPRESAS","t":"A"},"2303":{"n":"RESERVA DE LUCROS","t":"S"},"230301":{"n":"RESERVA DE LUCROS","t":"S"},"23030101":{"n":"RESERVA LEGAL","t":"A"},"23030102":{"n":"RESERVA DE RETENCAO DE LUCROS","t":"A"},"23030103":{"n":"RESERVA DE CAPITAL","t":"A"},"23030104":{"n":"AFAC","t":"A"},"2304":{"n":"LUCROS ACUMULADOS","t":"S"},"230401":{"n":"LUCROS ACUMULADOS","t":"S"},"23040101":{"n":"LUCROS ACUMULADOS","t":"A"},"2305":{"n":"PREJUIZOS ACUMULADOS","t":"S"},"230501":{"n":"PREJUIZOS ACUMULADOS","t":"S"},"23050101":{"n":"PREJUIZOS ACUMULADOS","t":"A"},"23050102":{"n":"AJUSTE EXERCICIOS ANTERIORES","t":"A"},"2306":{"n":"RESULTADO DO EXERCICIO","t":"S"},"230601":{"n":"RESULTADO DO EXERCICIO","t":"S"},"23060101":{"n":"RESULTADO DO EXERCICIO","t":"A"},"23060102":{"n":"TRANSFERENCIAS","t":"A"},"3":{"n":"RESULTADO","t":"S"},"31":{"n":"RECEITAS LIQUIDA","t":"S"},"3101":{"n":"RECEITAS BRUTA","t":"S"},"310101":{"n":"RECEITAS OPERACIONAIS","t":"S"},"31010101":{"n":"RECEITA C/ SERVICOS","t":"A"},"31010102":{"n":"RECEITA C/ENCOM. EXPRESSA MG","t":"A"},"330501081":{"n":"VIAGENS E ESTADIAS - CUSTO","t":"A"},"330501061":{"n":"PRESTACAO DE SERVIÇOS PJ","t":"A"},"33031109":{"n":"MANUTENCAO FROTA C/PCC ISS","t":"A"},"33030719":{"n":"RASTREAMENTO IR 1%, PCC","t":"A"},"350901021":{"n":"ASSISTENCIA JURIDICA C/IR,PCC","t":"A"},"330101311":{"n":"MEDICINA DO TRABALHO C/PCC","t":"A"},"33030708":{"n":"RASTREAMENTO C/ISS, IR E PCC","t":"A"},"31010104":{"n":"RECEITA C/ENCOM. EXPRESSA PE","t":"A"},"31010105":{"n":"RECEITA C/SERVICOS","t":"A"},"31010106":{"n":"RECEITA C/ENCOM. EXPRESSA BA","t":"A"},"31010107":{"n":"RECEITA ENCOMENDA EXP. CUT-OFF","t":"A"},"31010108":{"n":"RECEITA C/ENCOM. EXPRESSA ES","t":"A"},"31010109":{"n":"ANULACAO DE RECEITA C/ENCOM. EXPRESSA","t":"A"},"31010110":{"n":"RECEITA C/ENCOM. EXPRESSA PB","t":"A"},"31010111":{"n":"PRE FATURAS","t":"A"},"31010112":{"n":"ESTORNO PROVISAO DE RECEITA","t":"A"},"3102":{"n":"DEDUCOES DA RECEITA BRUTA","t":"S"},"310201":{"n":"(-) DEDUCOES","t":"S"},"31020101":{"n":"(-) COMISSOES SOBRE VENDAS","t":"A"},"31020102":{"n":"(-) COMISSOES SOBRE VENDAS MG","t":"A"},"31020103":{"n":"(-) COMISSOES SOBRE VENDAS RJ","t":"A"},"31020104":{"n":"(-) COMISSOES SOBRE VENDAS PE","t":"A"},"31020105":{"n":"(-)DESCONTOS INCONDICIONAIS","t":"A"},"31020106":{"n":"(-)DESCONTOS INCONDICIONAIS MG","t":"A"},"31020107":{"n":"(-)DESCONTOS INCONDICIONAIS RJ","t":"A"},"31020108":{"n":"(-)DESCONTOS INCONDICIONAIS PE","t":"A"},"310202":{"n":"(-) IMPOSTOS INCIDENTES","t":"S"},"31020201":{"n":"(-) ICMS","t":"A"},"31020202":{"n":"(-) ICMS MG","t":"A"},"31020203":{"n":"(-) ICMS RJ","t":"A"},"31020204":{"n":"(-) ICMS PE","t":"A"},"31020205":{"n":"(-) COFINS S/FATURAMENTO","t":"A"},"31020206":{"n":"(-) COFINS S/FATURAMENTO MG","t":"A"},"31020207":{"n":"(-) COFINS S/FATURAMENTO RJ","t":"A"},"31020208":{"n":"(-) COFINS S/FATURAMENTO PE","t":"A"},"31020209":{"n":"(-) PIS S/FATURAMENTO","t":"A"},"31020210":{"n":"(-) ISS S/FATURAMENTO","t":"A"},"31020211":{"n":"(-) PIS S/FATURAMENTO RJ","t":"A"},"31020212":{"n":"(-) PIS S/FATURAMENTO PE","t":"A"},"31020213":{"n":"(-) INSS FATURAMENTO (DESONERACAO)","t":"A"},"31020214":{"n":"(-) ICMS BA","t":"A"},"31020215":{"n":"(-) PIS/COFINS CUT-OFF","t":"A"},"31020216":{"n":"(-) ICMS CUT-OFF","t":"A"},"31020217":{"n":"(-) ICMS ES","t":"A"},"31020218":{"n":"(+) PIS S/ANUL DE RECEITA C/ENCOM.","t":"A"},"31020219":{"n":"(+) COFINS S/ANUL DE RECEITA C/ENCOM","t":"A"},"31020220":{"n":"(+) ICMS S/ANUL DE RECEITA C/ENCOM.","t":"A"},"31020221":{"n":"(-) ICMS OUTRAS UFS","t":"A"},"31020222":{"n":"(-) ICMS PB","t":"A"},"31020223":{"n":"(-) PIS S/FATURAMENTO MG","t":"A"},"31020224":{"n":"(-) PIS S/FATURAMENTO BA","t":"A"},"31020225":{"n":"(-) PIS S/FATURAMENTO ES","t":"A"},"31020226":{"n":"(-) PIS S/FATURAMENTO PB","t":"A"},"31020227":{"n":"(-) COFINS S/FATURAMENTO BA","t":"A"},"31020228":{"n":"(-) COFINS S/FATURAMENTO ES","t":"A"},"31020229":{"n":"(-) COFINS S/FATURAMENTO PB","t":"A"},"31020230":{"n":"(-) PROVISAO DE IMPOSTOS","t":"A"},"31020231":{"n":"(-) ICMS FRONTEIRA","t":"A"},"31020232":{"n":"ESTORNO (-) PROVISAO DE IMPOSTOS","t":"A"},"3103":{"n":"OUTRAS RECEITAS OPERACIONAIS","t":"S"},"310301":{"n":"OUTRAS RECEITAS OPERACIONAIS","t":"S"},"31030101":{"n":"RECEITAS EVENTUAIS","t":"A"},"33":{"n":"CUSTOS","t":"S"},"3301":{"n":"PESSOAL","t":"S"},"330101":{"n":"PESSOAL - OPERACIONAL","t":"S"},"33010101":{"n":"ORDENADOS E SALARIOS","t":"A"},"33010102":{"n":"FERIAS","t":"A"},"33010103":{"n":"13º SALARIOS","t":"A"},"33010104":{"n":"ENCARGOS SOCIAIS INSS","t":"A"},"33010105":{"n":"ENCARGOS SOCIAIS FGTS","t":"A"},"33010106":{"n":"AVISO PREVIO E INDENIZACOES","t":"A"},"33010107":{"n":"ASSISTENCIA MEDICA","t":"A"},"33010108":{"n":"SEGURO DE VIDA EM GRUPO","t":"A"},"33010109":{"n":"CURSOS E TREINAMENTO","t":"A"},"33010110":{"n":"REFEICOES","t":"A"},"33010111":{"n":"VALE-TRANSPORTE","t":"A"},"33010112":{"n":"REMUNERACAO A ESTAGIARIOS","t":"A"},"33010113":{"n":"PROCESSOS TRABALHISTAS","t":"A"},"33010114":{"n":"CONTR. SINDICAL PATRONAL","t":"A"},"33010115":{"n":"PARTICIPACAO NOS LUCROS","t":"A"},"33010116":{"n":"PROVISAO DE FERIAS E ENCARGOS","t":"A"},"33010117":{"n":"PROVISAO DE 13 E ENCARGOS","t":"A"},"33010118":{"n":"ASSISTENCIA ODONTOLOGICA","t":"A"},"33010119":{"n":"GRATIFICACOES","t":"A"},"33010120":{"n":"HORAS EXTRAS","t":"A"},"33010121":{"n":"MAO DE OBRA TERCEIRIZADA","t":"A"},"33010122":{"n":"PROCESSOS TRABALHISTAS","t":"A"},"33010123":{"n":"ALIMENTACAO - PAT","t":"A"},"33010124":{"n":"UNIFORMES","t":"A"},"33010125":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33010126":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"33010127":{"n":"COMBUSTIVEL CUSTO","t":"A"},"33010128":{"n":"COMISSOES SOBRE VENDAS","t":"A"},"33010129":{"n":"AUTONOMOS","t":"A"},"33010130":{"n":"RECRUTAMENTO E SELECAO","t":"A"},"33010131":{"n":"MEDICINA DO TRABALHO","t":"A"},"33010132":{"n":"INSS TERCEIROS","t":"A"},"3303":{"n":"CUSTOS VARIAVEIS","t":"S"},"330301":{"n":"OPERACIONAL","t":"S"},"33030101":{"n":"MATERIAL DE EMBALAGEM","t":"A"},"33030102":{"n":"ETIQUETA","t":"A"},"33030103":{"n":"SACO DE RAFIA","t":"A"},"33030104":{"n":"FLYER","t":"A"},"33030105":{"n":"SUPRIMENTOS INFORM OPERACIONAL","t":"A"},"33030106":{"n":"LACRE","t":"A"},"33030107":{"n":"OUTROS INSUMOS","t":"A"},"33030108":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33030109":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"330302":{"n":"CUSTOS COM TRANSFERENCIA AEREAS","t":"S"},"33030201":{"n":"TRANSF. AEREO TERCEIROS","t":"A"},"33030202":{"n":"FRETES RODOVIARIO","t":"A"},"33030203":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33030204":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"33030205":{"n":"TRANSF. AEREO PROPRIA","t":"A"},"330303":{"n":"NU","t":"S"},"33030301":{"n":"FROTA TERC. TRANSF. PJ","t":"A"},"33030302":{"n":"FROTA TERC. TRANSF. PF","t":"A"},"33030303":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33030304":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"330305":{"n":"INDENIZACOES/EXTRAVIOS/FURTOS","t":"S"},"33030501":{"n":"INDENIZACOES/EXTRAVIOS","t":"A"},"33030502":{"n":"(-) RECUP. INDENIZ. EXTRAVIOS","t":"A"},"33030503":{"n":"(-) RECUP. INDEN. EXTRAV. LOTE","t":"A"},"33030504":{"n":"INDENIZACÔES EM COBRANCA","t":"A"},"33030505":{"n":"DESCONTO DE INDENIZACOES","t":"A"},"33030510":{"n":"PROV.PERDAS/GANHOS INDENIZACOES","t":"A"},"330307":{"n":"GERENCIAMENTO DE RISCO","t":"S"},"33030701":{"n":"ESCOLTA","t":"A"},"33030702":{"n":"SEGURO AEREO","t":"A"},"33030703":{"n":"SEGURO RODOVIARIO","t":"A"},"33030704":{"n":"RASTREAMENTO","t":"A"},"33030705":{"n":"SEGURANCA PATRIMONIAL","t":"A"},"33030706":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33030707":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"33030710":{"n":"SEGURANCA PATRIMONIAL C/ ISS","t":"A"},"330309":{"n":"LAST MILE","t":"S"},"33030901":{"n":"CORREIOS","t":"A"},"33030902":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33030903":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"33030904":{"n":"(-)CORREIOS CUT-OFF","t":"A"},"33030905":{"n":"MALHA PRIVADA PJ","t":"A"},"33030906":{"n":"MALHA PRIVADA PF","t":"A"},"33030907":{"n":"AGENCIADORES","t":"A"},"330311":{"n":"CUSTOS COM COLETAS","t":"S"},"33031101":{"n":"AGENCIADOR","t":"A"},"33031102":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33031103":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"33031104":{"n":"COMBUSTIVEL FROTA","t":"A"},"33031105":{"n":"MANUTENCAO FROTA","t":"A"},"33031106":{"n":"PEDAGIO FROTA","t":"A"},"33031107":{"n":"IPVA/LICENCIAMENTO","t":"A"},"33031108":{"n":"CUSTO COLETAS TERCEIRO","t":"A"},"330313":{"n":"CUSTO COM ASSESSORIA POSTAGEM","t":"S"},"33031301":{"n":"GASTOS COM ASSESSORIA POSTAGEM","t":"A"},"33031302":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33031303":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"3305":{"n":"CUSTOS FIXOS","t":"S"},"330501":{"n":"OPERACIONAL","t":"S"},"33050101":{"n":"LOCACAO DE EQUIPAMENTOS OPERACIONAL","t":"A"},"33050102":{"n":"COMBUSTIVEL FROTA","t":"A"},"33050103":{"n":"MANUTENCAO FROTA","t":"A"},"33050104":{"n":"AGENCIADORES","t":"A"},"33050105":{"n":"PEDAGIO","t":"A"},"33050106":{"n":"PRESTACAO DE SERVICO PJ","t":"A"},"33050107":{"n":"LOCACAO VEICULOS CUSTO","t":"A"},"33050108":{"n":"VIAGENS E ESTADIAS - CUSTO","t":"A"},"33050109":{"n":"DEPRECIACAO","t":"A"},"33050110":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33050111":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"33050112":{"n":"AMORTIZACOES","t":"A"},"33050113":{"n":"SEGURO DE VEICULOS","t":"A"},"33050114":{"n":"ESTACIONAMENTO OPERACIONAL","t":"A"},"330503":{"n":"INFRAESTRUTURA","t":"S"},"33050301":{"n":"PALLETS","t":"A"},"33050302":{"n":"TELEFONIA CUSTO","t":"A"},"33050303":{"n":"INTERNET","t":"A"},"33050304":{"n":"ERP-LICENCA","t":"A"},"33050305":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33050306":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"33050307":{"n":"LOCACAO EQUIPAMENTOS DE INFORMATICA","t":"A"},"330504":{"n":"CUSTOS COM TRANSFERENCIA RODOVIARIA","t":"S"},"33050401":{"n":"FROTA TERCEIRIZADA PJ","t":"A"},"33050402":{"n":"FROTA TERCEIRIZADA PF","t":"A"},"33050403":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33050404":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"33050405":{"n":"TRANF. RODO PROPRIA","t":"A"},"33050406":{"n":"TRANF. RODO TERCEIRA","t":"A"},"33050407":{"n":"SURFACE PROPRIA","t":"A"},"33050408":{"n":"SURFACE TERCEIRA","t":"A"},"33050410":{"n":"(-)FROTA TERC.CUT-OFF","t":"A"},"33050411":{"n":"PROVISAO DE FROTA TERCEIRIZADA","t":"A"},"330505":{"n":"LOCACAO/CONDOMINIOS","t":"S"},"33050501":{"n":"ALUGUEIS E CONDOMINIOS CUSTO","t":"A"},"33050502":{"n":"ENERGIA ELETRICA CUSTO","t":"A"},"33050503":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"33050504":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"33050505":{"n":"BENFEIT. EM IMOV. DE TERCEIROS","t":"A"},"334101":{"n":"CREDITOS TRIBUTARIOS","t":"S"},"33410101":{"n":"(-) CREDITOS PIS","t":"A"},"33410102":{"n":"(-) CREDITOS COFINS","t":"A"},"34":{"n":"RESULT. EQUIV. PATRIM/PROV. PERDA INVEST","t":"S"},"3401":{"n":"RESULTADO EQUIVALENCIA PATRIMONIAL","t":"S"},"340101":{"n":"RESULT EQUIV.PATRIMONIAL/PROV. PERDAS","t":"S"},"34010101":{"n":"RESULTADO POSITIVO PARTIC. SOCIETARIA","t":"A"},"34010102":{"n":"RESULTADO NEGATIVO PARTIC. SOCIETARIA","t":"A"},"34010103":{"n":"DESAGIO NA AQUISICAO DE PARTICIPACAO SOC","t":"A"},"34010104":{"n":"PROVISAO PARA PERDA DE INVESTIMENTO","t":"A"},"35":{"n":"DESPESAS","t":"S"},"3501":{"n":"PESSOAL","t":"S"},"350101":{"n":"PESSOAL - ADMINISTRATIVO","t":"S"},"35010101":{"n":"ORDENADOS E SALARIOS","t":"A"},"35010102":{"n":"FERIAS","t":"A"},"35010103":{"n":"13 SALARIO","t":"A"},"35010104":{"n":"ENCARGOS SOCIAIS INSS","t":"A"},"35010105":{"n":"ENCARGOS SOCIAIS FGTS","t":"A"},"35010106":{"n":"AVISO PREVIO E INDENIZACOES","t":"A"},"35010107":{"n":"ASSISTENCIA MEDICA","t":"A"},"35010108":{"n":"SEGURO DE VIDA EM GRUPO","t":"A"},"35010109":{"n":"CURSOS E TREINAMENTO","t":"A"},"35010110":{"n":"REFEICOES","t":"A"},"35010111":{"n":"VALE-TRANSPORTE","t":"A"},"35010112":{"n":"REMUNERACAO E ESTAGIARIOS","t":"A"},"35010113":{"n":"PRO-LABORE","t":"A"},"35010114":{"n":"PROCESSOS TRABALHISTAS","t":"A"},"35010115":{"n":"CONTR. SINDICAL PATRONAL","t":"A"},"35010116":{"n":"PARTICIPACAO NOS LUCROS","t":"A"},"35010117":{"n":"PROVISAO DE FERIAS E ENCARGOS","t":"A"},"35010118":{"n":"PROVISAO DE 13 E ENCARGOS","t":"A"},"35010119":{"n":"ASSISTENCIA ODONTOLOGICA","t":"A"},"35010120":{"n":"GRATIFICACOES","t":"A"},"35010121":{"n":"COMISSOES SOBRE VENDAS","t":"A"},"35010122":{"n":"CESTA BASICA","t":"A"},"35010123":{"n":"HORAS EXTRAS","t":"A"},"35010124":{"n":"AUTONOMOS","t":"A"},"35010125":{"n":"COMBUSTIVEL DESPESA","t":"A"},"35010126":{"n":"ALIMENTACAO - PAT","t":"A"},"35010127":{"n":"SEGURO DE VIDA EM GRUPO","t":"A"},"35010128":{"n":"RECRUTAMENTO E SELECAO","t":"A"},"35010129":{"n":"MEDICINA  DO TRABALHO","t":"A"},"35010130":{"n":"MAO DE OBRA TERCEIRIZADA","t":"A"},"3503":{"n":"LOCACAO/CONDOMINIOS","t":"S"},"350301":{"n":"OCUPACAO","t":"S"},"35030101":{"n":"ALUGUEIS E CONDOMINIOS DESPESA","t":"A"},"35030102":{"n":"ENERGIA ELETRICA DESPESA","t":"A"},"35030103":{"n":"TELEFONIA DESPESA","t":"A"},"35030104":{"n":"LOCACAO DE EQUIPAMENTOS DESPESA","t":"A"},"35030105":{"n":"SEGURO FIANCA","t":"A"},"3505":{"n":"COMPRA DE MATERIAIS","t":"S"},"350501":{"n":"COMPRA DE MATERIAIS","t":"S"},"35050101":{"n":"MATERIAL DE ESCRITORIO","t":"A"},"35050102":{"n":"MATERIAIS AUXILIARES/CONSUMO","t":"A"},"35050103":{"n":"ITENS DE LIMPEZA","t":"A"},"35050104":{"n":"MATERIAIS DE INFORMATICA","t":"A"},"35050105":{"n":"BENS DE NATUREZA PERMANENTE","t":"A"},"3507":{"n":"SEGUROS","t":"S"},"350701":{"n":"SEGUROS DIVERSOS","t":"S"},"35070101":{"n":"OUTROS SEGUROS","t":"A"},"3509":{"n":"PRESTACAO DE SERVICOS DE TERCE","t":"S"},"350901":{"n":"PRESTACAO DE SERVICOS DE TERCE","t":"S"},"35090101":{"n":"ASSESSORIA CONTABIL","t":"A"},"35090102":{"n":"ASSISTENCIA JURIDICA","t":"A"},"35090103":{"n":"AUDITORIA","t":"A"},"35090104":{"n":"OUTROS SERV. PREST. POR PJ","t":"A"},"35090105":{"n":"CONSULTORIA","t":"A"},"35090106":{"n":"MANUTENCAO PREDIAL","t":"A"},"35090107":{"n":"PREST. SERV. DE INFORMATICA","t":"A"},"35090108":{"n":"CORREIOS E MALOTES","t":"A"},"35090109":{"n":"(-)PIS LEI 10.637/2002","t":"A"},"35090110":{"n":"(-)COFINS LEI 10.637/2002","t":"A"},"35090111":{"n":"PREST. SERV. DE LIMPEZA","t":"A"},"3511":{"n":"DESPESAS DIVERSAS","t":"S"},"351101":{"n":"DESPESAS DIVERSAS","t":"S"},"35110101":{"n":"VIAGENS E ESTADIAS - DESPESA","t":"A"},"35110102":{"n":"AGUA E ESGOTO","t":"A"},"35110103":{"n":"ASSOCIACOES DE CLASSE","t":"A"},"35110104":{"n":"COPA, COZINHA E REFEITORIOS","t":"A"},"35110105":{"n":"LEGAIS E JUDICIAIS","t":"A"},"35110106":{"n":"TAXAS/EMOLUMENTOS E CARTORIO","t":"A"},"35110107":{"n":"DESPESAS DIVERSAS","t":"A"},"35110108":{"n":"PEDAGIO REEMBOLSO","t":"A"},"35110109":{"n":"KILOMETRAGEM REEMBOLSO","t":"A"},"35110110":{"n":"EVENTOS E CONFRATERNIZACOES","t":"A"},"35110111":{"n":"MANUTENCAO VEICULAR","t":"A"},"35110112":{"n":"MANUTENCAO E REPAROS","t":"A"},"35110113":{"n":"OUTRAS CONTRIBUICOES","t":"A"},"35110114":{"n":"SERVICOS DE MOTOBOY","t":"A"},"35110115":{"n":"ICMS INCIDENTE NA AQUISICAO DE BENS","t":"A"},"35110116":{"n":"BRINDES","t":"A"},"35110117":{"n":"ESTACIONAMENTO","t":"A"},"35110118":{"n":"MANUTENCAO DE IMOBILIZADO","t":"A"},"35110119":{"n":"OUTRAS DESPESAS C/PESSOAL","t":"A"},"35110120":{"n":"COMBUSTIVEL REEMBOLSO","t":"A"},"35110121":{"n":"LOCACAO VEICULOS DESPESA","t":"A"},"3513":{"n":"DEPRECIACOES / AMORTIZACOES","t":"S"},"351301":{"n":"DEPRECIACOES / AMORTIZACOES","t":"S"},"35130101":{"n":"DEPRECIACOES","t":"A"},"35130102":{"n":"AMORTIZACOES","t":"A"},"3515":{"n":"DESPESAS INDEDUTIVEIS","t":"S"},"351501":{"n":"DESPESAS INDEDUTIVEIS","t":"S"},"35150101":{"n":"MULTA DA FISCALIZACAO","t":"A"},"35150102":{"n":"MULTA DE TRANSITO","t":"A"},"35150103":{"n":"DESPESAS INDEDUTIVEIS","t":"A"},"3517":{"n":"PROVISAO DE DEVEDORES DUVIDOSO","t":"S"},"351701":{"n":"PROVISAO P CREDITO L DUVIDOSA","t":"S"},"35170101":{"n":"PROVISAO P CREDITO LIQUIDACAO DUVIDOSA","t":"A"},"36":{"n":"DESPESAS COMERCIAIS","t":"S"},"3601":{"n":"DESPESAS COMERCIAIS","t":"S"},"360101":{"n":"DESPESAS COMERCIAIS","t":"S"},"36010101":{"n":"PROPAGANDA E PUBLICIDADE","t":"A"},"36010102":{"n":"REPRESENTANTES","t":"A"},"36010104":{"n":"CAMPANHAS E BRINDES","t":"A"},"36010109":{"n":"(-) PIS LEI 10.637/2002","t":"A"},"36010110":{"n":"(-) COFINS LEI 10.637/2002","t":"A"},"37":{"n":"RESULTADOS FINANCEIROS","t":"S"},"3701":{"n":"DESPESAS FINANCEIRAS","t":"S"},"370101":{"n":"DESPESAS FINANCEIRAS","t":"S"},"37010101":{"n":"JUROS PAGOS OU INCORRIDOS","t":"A"},"37010102":{"n":"DESCONTOS CONCEDIDOS","t":"A"},"37010103":{"n":"I.O.F.","t":"A"},"37010104":{"n":"DESPESAS BANCARIAS","t":"A"},"37010105":{"n":"ENCARGOS SOBRE TRIBUTOS","t":"A"},"37010106":{"n":"JUROS OUTRAS OPERACOES","t":"A"},"37010107":{"n":"OUTRAS DESPESAS FINANCEIRAS","t":"A"},"37010108":{"n":"PERDAS NO RECEBIMENTO DE CREDITOS","t":"A"},"37010109":{"n":"VARIACOES DE CONSORCIOS","t":"A"},"37010110":{"n":"JUROS INCORRIDOS S/EMPRESTIMOS","t":"A"},"37010111":{"n":"MULTAS CONTRATUAIS","t":"A"},"37010112":{"n":"I.O.C.","t":"A"},"37010113":{"n":"IR S/OPERACAO DE CAMBIO","t":"A"},"37010114":{"n":"VARIACAO CAMBIAL PASSIVA","t":"A"},"3703":{"n":"RECEITAS FINANCEIRAS","t":"S"},"370301":{"n":"RECEITAS FINANCEIRAS","t":"S"},"37030101":{"n":"DESCONTOS OBTIDOS","t":"A"},"37030102":{"n":"JUROS RECEBIDOS OU AUFERIDOS","t":"A"},"37030103":{"n":"RECEITAS DE APLIC.FINANCEIRAS","t":"A"},"37030104":{"n":"JUROS APLICADOS S/EMPRESTIMOS","t":"A"},"37030105":{"n":"RECUPERACAO DE DESPESAS","t":"A"},"37030106":{"n":"(-) PIS LEI 8.451/15","t":"A"},"37030107":{"n":"(-) COFINS LEI 8.451/15","t":"A"},"37030108":{"n":"OUTRAS RECEITAS FINANCEIRAS","t":"A"},"37030109":{"n":"JUROS SELIC","t":"A"},"38":{"n":"OUTROS DESPESAS E RECEITAS","t":"S"},"3801":{"n":"OUTRAS DESPESAS","t":"S"},"380101":{"n":"OUTRAS DESPESAS","t":"S"},"38010101":{"n":"CUSTO DE ALIENACOES DE IMOBILIZADOS","t":"A"},"38010102":{"n":"CONTINGENCIAS","t":"A"},"38010107":{"n":"PERDAS","t":"A"},"38010108":{"n":"PREJUIZO NAO OPERACIONAL","t":"A"},"38010109":{"n":"BENS INDENIZADOS","t":"A"},"38010110":{"n":"TITULOS INCOBRAVEIS","t":"A"},"38010111":{"n":"PROV.PERDA CREDITO HABILITADO","t":"A"},"3802":{"n":"OUTRAS RECEITAS","t":"S"},"380201":{"n":"OUTRAS RECEITAS","t":"S"},"38020101":{"n":"RECEITAS DA ALIENACAO DE IMOBILIZADO","t":"A"},"38020102":{"n":"OUTRAS RECEITAS NAO OPERAC.","t":"A"},"38020103":{"n":"RESULTADO DA ALIEN DE ATIVOS NAO CIRCUL","t":"A"},"38020104":{"n":"DESAGIO NA AQUISICAO DE PARTICIPACAO SOC","t":"A"},"38020105":{"n":"PROV CONTINGENCIA","t":"A"},"38020108":{"n":"LUCRO NAO OPERECIONAL","t":"A"},"38020109":{"n":"INDENIZACOES DE SEGUROS RECEBIDAS","t":"A"},"38020110":{"n":"VENDA ATIVO IMOBILIZADO","t":"A"},"39":{"n":"PROVISOES DE CSLL/IRPJ","t":"S"},"3901":{"n":"PROVISOES DE CSLL","t":"S"},"390101":{"n":"PROVISOES DE CSLL","t":"S"},"39010101":{"n":"CSLL","t":"A"},"39010102":{"n":"CSLL DIFERIDO","t":"A"},"39010103":{"n":"CSLL - CREDITO FISCAL BASE NEG","t":"A"},"3902":{"n":"PROVISOES DE IRPJ","t":"S"},"390201":{"n":"PROVISOES DE IRPJ","t":"S"},"39020101":{"n":"IRPJ","t":"A"},"39020102":{"n":"IRPJ DIFERIDO","t":"A"},"39020103":{"n":"IRPJ - CREDITO FISCAL BASE NEG","t":"A"},"6":{"n":"ENCERRAMENTO DO PERIODO","t":"S"},"61":{"n":"ENCERRAMENTO DO PERIODO","t":"S"},"6101":{"n":"ENCERRAMENTO DO PERIODO","t":"S"},"610101":{"n":"ENCERRAMENTO DO PERIODO","t":"S"},"61010101":{"n":"ENCERRAMENTO DO EXERCICIO","t":"A"}}</script>
+<script id="filiais-data" type="application/json">{"01":"ONTIME SP","02":"ONTIME PE","03":"ONTIME MG","04":"ON TIME RJ","05":"ON TIME BA","06":"ON TIME ES","07":"ON TIME PB","08":"ON TIME GO","09":"ON TIME BA","10":"ONTIME PI","1":"ONTIME SP","2":"ONTIME PE","3":"ONTIME MG","4":"ON TIME RJ","5":"ON TIME BA","6":"ON TIME ES","7":"ON TIME PB","8":"ON TIME GO","9":"ON TIME BA"}</script>
 
 <!-- ==============================================================
      APP SCRIPT
@@ -1372,6 +1453,23 @@ function normalizaNomeColuna(s) {
 
 const PLANO_ARR = JSON.parse(document.getElementById('plano-data').textContent);
 const PLANO_IDX = Object.fromEntries(PLANO_ARR.map(p => [String(p.conta), p]));
+
+/* Plano contábil completo (1171 contas) — serve para descrever
+   qualquer conta que apareça nos lançamentos, inclusive patrimoniais. */
+const CONTAS_IDX = JSON.parse(document.getElementById('contas-data').textContent);
+function descConta(cod) {
+  if (!cod) return '';
+  const c = CONTAS_IDX[String(cod)];
+  return c ? c.n : '';
+}
+
+/* Dicionário de filiais ONTIME (hardcoded) */
+const FILIAIS_IDX = JSON.parse(document.getElementById('filiais-data').textContent);
+function descFilial(cod) {
+  if (!cod) return '';
+  const s = String(cod).trim();
+  return FILIAIS_IDX[s] || FILIAIS_IDX[s.padStart(2, '0')] || '';
+}
 
 /* Paleta de gráficos alinhada ao ONTIME */
 const CHART_COLORS = [
@@ -1584,13 +1682,25 @@ function isoMonth(d) { return d.toISOString().slice(0,7); }
 function round2(n) { return Math.round(n*100)/100; }
 
 function aggregate(allRows) {
+  const hoje = new Date();
+  hoje.setHours(23, 59, 59, 999); // inclui todo o dia de hoje
   const enriched = [];
-  let count_desp=0, count_est=0, count_patr=0;
+  let count_desp=0, count_est=0, count_patr=0, count_futuro=0;
+  let totalProvisoes = 0;
   for (const r of allRows) {
     const c = classifica(r);
     if (c.tipo === 'PATRIMONIAL') { count_patr++; continue; }
     const d = toDate(r['Data Lcto']); if (!d) continue;
     const valor = Number(r['Valor']) || 0; if (valor <= 0) continue;
+
+    // Data futura = provisão / lançamento não realizado → não entra no dashboard
+    const ehFuturo = d > hoje;
+    if (ehFuturo) {
+      count_futuro++;
+      if (c.tipo === 'DESPESA') totalProvisoes += valor;
+      continue;
+    }
+
     enriched.push({
       data: d, filial: String(r['Filial']||''), cta: c.conta,
       valor, hist: r['Hist Lanc']||'', forn: normalizaFornecedor(r['CLI/FOR']),
@@ -1603,7 +1713,7 @@ function aggregate(allRows) {
   }
   const despesas = enriched.filter(e => e.tipo === 'DESPESA');
   const estornos = enriched.filter(e => e.tipo === 'ESTORNO');
-  if (despesas.length === 0) throw new Error('Nenhum lançamento de DESPESA encontrado. Verifique se os arquivos são do Protheus e se o plano gerencial está correto.');
+  if (despesas.length === 0) throw new Error('Nenhum lançamento de DESPESA realizado (com data até hoje) encontrado. Pode ser que todos os dados sejam provisões futuras, ou que as contas não estejam cobertas pelo plano gerencial.');
   const total_bruto = despesas.reduce((s,e)=>s+e.valor, 0);
   const total_estornos = estornos.reduce((s,e)=>s+e.valor, 0);
   const total_liquido = total_bruto - total_estornos;
@@ -1652,15 +1762,37 @@ function aggregate(allRows) {
     por_mes_nivel1.push({mes, nivel1, valor: round2(v)});
   }
   por_mes_nivel1.sort((a,b)=> a.mes === b.mes ? a.nivel1.localeCompare(b.nivel1) : a.mes.localeCompare(b.mes));
+  /* Agregação enriquecida por fornecedor:
+     além de valor e docs, guarda breakdown por categoria (N1) e CC
+     para depois descobrir os predominantes. */
   const fornMap = new Map();
   for (const e of despesas) {
     if (!e.forn) continue;
-    const cur = fornMap.get(e.forn) || {valor:0, docs:new Set()};
-    cur.valor += e.valor; if (e.doc) cur.docs.add(e.doc);
-    fornMap.set(e.forn, cur);
+    let cur = fornMap.get(e.forn);
+    if (!cur) {
+      cur = { valor:0, docs:new Set(), cats: new Map(), ccs: new Map() };
+      fornMap.set(e.forn, cur);
+    }
+    cur.valor += e.valor;
+    if (e.doc) cur.docs.add(e.doc);
+    if (e.nivel1) cur.cats.set(e.nivel1, (cur.cats.get(e.nivel1) || 0) + e.valor);
+    if (e.ccd)    cur.ccs.set(e.ccd, (cur.ccs.get(e.ccd) || 0) + e.valor);
   }
   const top_fornecedores = [...fornMap.entries()]
-    .map(([fornecedor, v]) => ({fornecedor, valor:round2(v.valor), qtd:v.docs.size||1}))
+    .map(([fornecedor, v]) => {
+      // categoria predominante = maior valor
+      const catsArr = [...v.cats.entries()].sort((a,b) => b[1]-a[1]);
+      const ccsArr  = [...v.ccs.entries()].sort((a,b) => b[1]-a[1]);
+      return {
+        fornecedor,
+        valor: round2(v.valor),
+        qtd: v.docs.size || 1,
+        cat_principal: catsArr[0] ? catsArr[0][0] : null,
+        cat_outras: Math.max(0, catsArr.length - 1),
+        cc_principal: ccsArr[0] ? ccsArr[0][0] : null,
+        cc_outras: Math.max(0, ccsArr.length - 1),
+      };
+    })
     .sort((a,b)=>b.valor-a.valor).slice(0,30);
   const ccMap = new Map();
   for (const e of despesas) { if (!e.ccd) continue; ccMap.set(e.ccd, (ccMap.get(e.ccd)||0) + e.valor); }
@@ -1672,28 +1804,48 @@ function aggregate(allRows) {
   const por_filial = [...filMap.entries()]
     .map(([filial, valor]) => ({filial, valor:round2(valor)}))
     .sort((a,b)=>b.valor-a.valor);
+  /* Hierarquia com valores mensais: agrega por N1/N2/detalhe acumulando
+     um mapa "ano-mês" -> valor em cada nível. Também descobre quais meses
+     existem nos dados para montar as colunas da árvore. */
+  const mesesComDados = new Set();
   const hier = new Map();
   for (const e of despesas) {
     const n1 = e.nivel1, n2 = e.nivel2, d = e.detalhe;
-    if (!hier.has(n1)) hier.set(n1, {valor:0, n2: new Map()});
-    const e1 = hier.get(n1); e1.valor += e.valor;
-    if (!e1.n2.has(n2)) e1.n2.set(n2, {valor:0, det:new Map()});
-    const e2 = e1.n2.get(n2); e2.valor += e.valor;
-    e2.det.set(d, (e2.det.get(d)||0) + e.valor);
+    const m = isoMonth(e.data);
+    mesesComDados.add(m);
+    if (!hier.has(n1)) hier.set(n1, {valor:0, meses: {}, n2: new Map()});
+    const e1 = hier.get(n1);
+    e1.valor += e.valor;
+    e1.meses[m] = (e1.meses[m] || 0) + e.valor;
+    if (!e1.n2.has(n2)) e1.n2.set(n2, {valor:0, meses: {}, det:new Map()});
+    const e2 = e1.n2.get(n2);
+    e2.valor += e.valor;
+    e2.meses[m] = (e2.meses[m] || 0) + e.valor;
+    if (!e2.det.has(d)) e2.det.set(d, {valor:0, meses: {}});
+    const e3 = e2.det.get(d);
+    e3.valor += e.valor;
+    e3.meses[m] = (e3.meses[m] || 0) + e.valor;
   }
+  const mesesList = [...mesesComDados].sort();
+  const round2Map = (m) => {
+    const out = {};
+    for (const [k, v] of Object.entries(m)) out[k] = round2(v);
+    return out;
+  };
   const hierarquia = [];
   for (const [n1, v1] of hier) {
     const niveis2 = [];
     for (const [n2, v2] of v1.n2) {
       const detalhes = [...v2.det.entries()]
-        .map(([detalhe, valor]) => ({detalhe, valor:round2(valor)}))
+        .map(([detalhe, obj]) => ({detalhe, valor:round2(obj.valor), meses: round2Map(obj.meses)}))
         .sort((a,b)=>b.valor-a.valor);
-      niveis2.push({nivel2:n2, valor:round2(v2.valor), detalhes});
+      niveis2.push({nivel2:n2, valor:round2(v2.valor), meses: round2Map(v2.meses), detalhes});
     }
     niveis2.sort((a,b)=>b.valor-a.valor);
     hierarquia.push({
       nivel1: n1, valor: round2(v1.valor),
       pct_total: round2(v1.valor / total_bruto * 100),
+      meses: round2Map(v1.meses),
       niveis2
     });
   }
@@ -1720,6 +1872,8 @@ function aggregate(allRows) {
       total_linhas_despesa: count_desp,
       total_linhas_estorno: count_est,
       total_linhas_patrimoniais_descartadas: count_patr,
+      total_linhas_futuras_descartadas: count_futuro,
+      total_provisoes_futuras: round2(totalProvisoes),
     },
     kpis: {
       total_bruto: round2(total_bruto),
@@ -1737,7 +1891,7 @@ function aggregate(allRows) {
     },
     series_temporais: {por_dia, por_mes, por_mes_nivel1},
     rankings: {top_fornecedores, top_centros_custo},
-    hierarquia, por_filial, transacoes,
+    hierarquia, hierarquia_meses: mesesList, por_filial, transacoes,
   };
 }
 
@@ -1810,8 +1964,8 @@ const App = {
   filtered: [],
   sortCol: 'valor',
   sortDir: 'desc',
-  page: 1,
-  pageSize: 50,
+  batchSize: 100,       // quantas linhas carregar por batch no scroll infinito
+  visibleCount: 0,      // quantas linhas estão renderizadas agora
   charts: {},
   currentSection: 'resumo',
   periodFilter: 'ytd',
@@ -1844,6 +1998,18 @@ function renderAll(data) {
   } else {
     alertEl.classList.remove('visible');
     dot.classList.remove('stale');
+  }
+
+  // Aviso de provisões futuras ignoradas
+  const provisoesEl = document.getElementById('alert-provisoes');
+  const futurasQtd = data.meta.total_linhas_futuras_descartadas || 0;
+  const futurasValor = data.meta.total_provisoes_futuras || 0;
+  if (futurasQtd > 0) {
+    provisoesEl.classList.add('visible');
+    document.getElementById('alert-provisoes-text').innerHTML =
+      `<strong>${futurasQtd.toLocaleString('pt-BR')} lançamentos futuros</strong> (totalizando ${fmtBRLshort(futurasValor)}) foram identificados como provisões e <strong>não entram neste painel</strong>. Apenas gasto realizado até hoje (${fmtDate(new Date())}) é considerado.`;
+  } else {
+    provisoesEl.classList.remove('visible');
   }
 
   // Render sections
@@ -2005,22 +2171,6 @@ function renderDonut(data) {
   const items = data.hierarquia.slice(0, 8);
   const total = items.reduce((s,i) => s + i.valor, 0);
 
-  // Helper: nome curto das categorias pra caber na fatia
-  const shortLabel = (s) => {
-    if (!s) return '';
-    // Remove prefixo "(-) " e abrevia palavras longas
-    let t = s.replace(/^\(-\)\s*/, '');
-    // "DESPESAS ADMINISTRATIVO" -> "DESP. ADMIN."
-    t = t.replace(/DESPESAS/gi, 'DESP.')
-         .replace(/ADMINISTRATIVO/gi, 'ADMIN.')
-         .replace(/DEPRECIAÇÃO E AMORTIZAÇÃO/gi, 'DEPREC.')
-         .replace(/PROVISÃO PARA IR E CSLL/gi, 'IR/CSLL')
-         .replace(/OUTRAS RECEITAS E DESPESAS/gi, 'OUTRAS')
-         .replace(/CUSTOS VARIAVEL/gi, 'CUSTOS VAR.')
-         .replace(/CUSTOS FIXO/gi, 'CUSTOS FIXOS');
-    return t.length > 18 ? t.slice(0, 16) + '…' : t;
-  };
-
   App.charts.donut = new Chart(ctx, {
     type: 'doughnut',
     data: {
@@ -2057,7 +2207,7 @@ function renderDonut(data) {
             const pct = value / total * 100;
             // Oculta rótulos de fatias muito pequenas (< 3%)
             if (pct < 3) return '';
-            const label = shortLabel(ctx.chart.data.labels[ctx.dataIndex]);
+            const label = shortLabelCat(ctx.chart.data.labels[ctx.dataIndex]);
             return `${label}\n${pct.toFixed(1)}%`;
           },
         }
@@ -2066,16 +2216,47 @@ function renderDonut(data) {
   });
 }
 
+/* Nome curto pras categorias (usado em rótulos compactos) */
+function shortLabelCat(s) {
+  if (!s) return '';
+  let t = s.replace(/^\(-\)\s*/, '');
+  t = t.replace(/DESPESAS/gi, 'DESP.')
+       .replace(/ADMINISTRATIVO/gi, 'ADMIN.')
+       .replace(/DEPRECIAÇÃO E AMORTIZAÇÃO/gi, 'DEPREC.')
+       .replace(/PROVISÃO PARA IR E CSLL/gi, 'IR/CSLL')
+       .replace(/OUTRAS RECEITAS E DESPESAS/gi, 'OUTRAS')
+       .replace(/CUSTOS VARIAVEL/gi, 'CUSTOS VAR.')
+       .replace(/CUSTOS FIXO/gi, 'CUSTOS FIXOS');
+  return t.length > 18 ? t.slice(0, 16) + '…' : t;
+}
+
 /* ---- Top fornecedores ---- */
 function renderTopFornecedores(data) {
   const el = document.getElementById('rank-fornecedores');
   const top = data.rankings.top_fornecedores.slice(0, 10);
-  el.innerHTML = top.map((f,i) => `
-    <div class="rank-row">
-      <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
-      <div class="rank-name" title="${escapeHtml(f.fornecedor)}">${escapeHtml(truncate(f.fornecedor, 40))}<span class="rank-meta">${f.qtd} doc${f.qtd===1?'':'s'}</span></div>
-      <div class="rank-value">${fmtBRLshort(f.valor)}</div>
-    </div>`).join('');
+  el.innerHTML = top.map((f,i) => {
+    // Linha secundária: categoria (chip) + CC predominante + outras
+    const subBits = [];
+    if (f.cat_principal) {
+      const catLabel = shortLabelCat(f.cat_principal);
+      const extra = f.cat_outras > 0 ? ` <span class="sep">+${f.cat_outras}</span>` : '';
+      subBits.push(`<span class="chip-cat" title="${escapeHtml(f.cat_principal)}">${escapeHtml(catLabel)}</span>${extra}`);
+    }
+    if (f.cc_principal) {
+      const extra = f.cc_outras > 0 ? ` <span class="sep">+${f.cc_outras}</span>` : '';
+      subBits.push(`<span class="sep">·</span><span>CC ${escapeHtml(f.cc_principal)}</span>${extra}`);
+    }
+    subBits.push(`<span class="sep">·</span><span>${f.qtd} doc${f.qtd===1?'':'s'}</span>`);
+    return `
+      <div class="rank-row">
+        <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
+        <div class="rank-name">
+          <span class="primary" title="${escapeHtml(f.fornecedor)}">${escapeHtml(truncate(f.fornecedor, 40))}</span>
+          <span class="secondary">${subBits.join('')}</span>
+        </div>
+        <div class="rank-value">${fmtBRLshort(f.valor)}</div>
+      </div>`;
+  }).join('');
 }
 
 /* ---- Stacked chart ---- */
@@ -2126,12 +2307,22 @@ function renderFiliais(data) {
   section.classList.remove('hidden');
   const el = document.getElementById('rank-filiais');
   const total = data.por_filial.reduce((s,f)=>s+f.valor,0);
-  el.innerHTML = data.por_filial.map((f,i) => `
-    <div class="rank-row">
-      <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
-      <div class="rank-name">Filial ${escapeHtml(f.filial)}<span class="rank-meta">${(f.valor/total*100).toFixed(1)}%</span></div>
-      <div class="rank-value">${fmtBRLshort(f.valor)}</div>
-    </div>`).join('');
+  el.innerHTML = data.por_filial.map((f,i) => {
+    // normaliza pra 2 dígitos
+    const cod = String(f.filial).trim();
+    const codDisplay = cod.padStart(2, '0');
+    const nome = descFilial(cod) || 'Filial não identificada';
+    const pct = (f.valor/total*100).toFixed(1);
+    return `
+      <div class="rank-row">
+        <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
+        <div class="rank-name">
+          <span class="primary">${escapeHtml(nome)}</span>
+          <span class="secondary"><span>Filial ${escapeHtml(codDisplay)}</span><span class="sep">·</span><span>${pct}% do total</span></span>
+        </div>
+        <div class="rank-value">${fmtBRLshort(f.valor)}</div>
+      </div>`;
+  }).join('');
 }
 
 /* ---- Centro de custo ---- */
@@ -2143,12 +2334,22 @@ function renderCentroCusto(data) {
     el.innerHTML = '<div style="padding:20px; color:var(--muted); font-size:13px;">Sem dados de centro de custo.</div>';
     return;
   }
-  el.innerHTML = top.map((c,i) => `
-    <div class="rank-row">
-      <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
-      <div class="rank-name">${escapeHtml(c.centro_custo)}<span class="rank-meta">${(c.valor/total*100).toFixed(1)}%</span></div>
-      <div class="rank-value">${fmtBRLshort(c.valor)}</div>
-    </div>`).join('');
+  el.innerHTML = top.map((c,i) => {
+    const cod = c.centro_custo;
+    // CC no Protheus geralmente não tem descrição no plano de contas,
+    // mas se coincidir com alguma conta, mostramos a descrição
+    const desc = descConta(cod);
+    const pct = (c.valor/total*100).toFixed(1);
+    return `
+      <div class="rank-row">
+        <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
+        <div class="rank-name">
+          <span class="primary">${escapeHtml(desc || ('Centro de custo ' + cod))}</span>
+          <span class="secondary"><span>Código ${escapeHtml(cod)}</span><span class="sep">·</span><span>${pct}% do total</span></span>
+        </div>
+        <div class="rank-value">${fmtBRLshort(c.valor)}</div>
+      </div>`;
+  }).join('');
 }
 
 /* ---- Filtros e tabela ---- */
@@ -2188,7 +2389,6 @@ function applyFilters() {
     return true;
   });
   sortFiltered();
-  App.page = 1;
   renderTable();
 }
 function sortFiltered() {
@@ -2204,21 +2404,17 @@ function renderTable() {
   const tbody = document.querySelector('#tbl-transacoes tbody');
   const total = App.filtered.length;
   const totalValor = App.filtered.reduce((s,t)=>s+t.valor, 0);
-  const {page, pageSize} = App;
-  const start = (page-1)*pageSize;
-  const pageRows = App.filtered.slice(start, start+pageSize);
-  tbody.innerHTML = pageRows.length ? pageRows.map(t => `
-    <tr>
-      <td class="nowrap">${fmtDate(t.data)}</td>
-      <td class="nowrap">${escapeHtml(t.doc||'—')}</td>
-      <td>${escapeHtml(truncate(t.fornecedor||'—', 36))}</td>
-      <td><span class="cat-pill">${escapeHtml(truncate(t.nivel1,22))}</span></td>
-      <td>${escapeHtml(truncate(t.nivel2||'—', 24))}</td>
-      <td class="nowrap">${escapeHtml(t.centro_custo||'—')}</td>
-      <td>${escapeHtml(truncate(t.descricao||'—', 36))}</td>
-      <td class="num">${fmtBRL(t.valor)}</td>
-    </tr>`).join('') :
-    `<tr><td colspan="8" style="text-align:center; padding:32px; color: var(--muted);">Nenhum lançamento com esses filtros.</td></tr>`;
+
+  /* Reset virtual pagination state */
+  App.visibleCount = 0;
+  tbody.innerHTML = '';
+
+  if (total === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color: var(--muted);">Nenhum lançamento com esses filtros.</td></tr>`;
+  } else {
+    appendRows(); // carrega primeiro batch
+  }
+
   document.getElementById('table-count').textContent =
     `${total.toLocaleString('pt-BR')} lançamento(s) · total ${fmtBRLshort(totalValor)}`;
   document.querySelectorAll('#tbl-transacoes th').forEach(th => {
@@ -2229,35 +2425,63 @@ function renderTable() {
       th.setAttribute('data-sort-arrow', App.sortDir === 'asc' ? '↑' : '↓');
     }
   });
-  renderPagination(total);
 }
-function renderPagination(total) {
-  const {page, pageSize} = App;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const el = document.getElementById('pagination');
-  if (totalPages <= 1) { el.innerHTML=''; return; }
-  const btns = [];
-  btns.push(`<button data-page="${page-1}" ${page<=1?'disabled':''}>‹</button>`);
-  const windowSize = 5;
-  let from = Math.max(1, page - Math.floor(windowSize/2));
-  let to = Math.min(totalPages, from + windowSize - 1);
-  from = Math.max(1, to - windowSize + 1);
-  if (from > 1) btns.push(`<button data-page="1">1</button>`);
-  if (from > 2) btns.push(`<span style="padding:0 4px; color:var(--subtle);">…</span>`);
-  for (let i=from; i<=to; i++) btns.push(`<button data-page="${i}" class="${i===page?'active':''}">${i}</button>`);
-  if (to < totalPages - 1) btns.push(`<span style="padding:0 4px; color:var(--subtle);">…</span>`);
-  if (to < totalPages) btns.push(`<button data-page="${totalPages}">${totalPages}</button>`);
-  btns.push(`<button data-page="${page+1}" ${page>=totalPages?'disabled':''}>›</button>`);
-  el.innerHTML = btns.join('');
-  el.querySelectorAll('button[data-page]').forEach(b => {
-    b.addEventListener('click', () => {
-      const p = parseInt(b.dataset.page);
-      if (!isNaN(p) && p >= 1 && p <= totalPages) {
-        App.page = p; renderTable();
-        document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth', block:'start'});
+
+/* Adiciona mais um batch de linhas ao final da tabela e configura sentinel */
+function appendRows() {
+  const tbody = document.querySelector('#tbl-transacoes tbody');
+  const batchSize = App.batchSize || 100;
+  const start = App.visibleCount || 0;
+  const end = Math.min(start + batchSize, App.filtered.length);
+  if (start >= App.filtered.length) return;
+
+  const slice = App.filtered.slice(start, end);
+  const html = slice.map(t => `
+    <tr>
+      <td class="nowrap">${fmtDate(t.data)}</td>
+      <td class="nowrap">${escapeHtml(t.doc||'—')}</td>
+      <td>${escapeHtml(truncate(t.fornecedor||'—', 36))}</td>
+      <td><span class="cat-pill">${escapeHtml(truncate(t.nivel1,22))}</span></td>
+      <td>${escapeHtml(truncate(t.nivel2||'—', 24))}</td>
+      <td class="nowrap">${escapeHtml(t.centro_custo||'—')}</td>
+      <td>${escapeHtml(truncate(t.descricao||'—', 36))}</td>
+      <td class="num">${fmtBRL(t.valor)}</td>
+    </tr>`).join('');
+
+  /* Remove sentinel anterior (se houver) */
+  const oldSentinel = tbody.querySelector('.scroll-sentinel');
+  if (oldSentinel) oldSentinel.remove();
+
+  tbody.insertAdjacentHTML('beforeend', html);
+  App.visibleCount = end;
+
+  /* Se ainda há linhas, adiciona sentinel para o observer disparar o próximo batch */
+  if (end < App.filtered.length) {
+    const sentinelHtml = `<tr class="scroll-sentinel"><td colspan="8" style="padding:12px; text-align:center; color:var(--subtle); font-size:11px;">Mostrando ${end.toLocaleString('pt-BR')} de ${App.filtered.length.toLocaleString('pt-BR')} — role para carregar mais</td></tr>`;
+    tbody.insertAdjacentHTML('beforeend', sentinelHtml);
+    observeSentinel();
+  } else if (App.filtered.length > batchSize) {
+    // Chegou ao fim — mostrar mensagem final sutil
+    const endMsg = `<tr class="scroll-end"><td colspan="8" style="padding:12px; text-align:center; color:var(--subtle); font-size:11px;">— fim dos ${App.filtered.length.toLocaleString('pt-BR')} lançamentos —</td></tr>`;
+    tbody.insertAdjacentHTML('beforeend', endMsg);
+  }
+}
+
+/* IntersectionObserver para scroll infinito */
+let _tableObserver = null;
+function observeSentinel() {
+  if (!_tableObserver) {
+    _tableObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          _tableObserver.unobserve(entry.target);
+          appendRows();
+        }
       }
-    });
-  });
+    }, { rootMargin: '300px 0px 300px 0px' });
+  }
+  const sentinel = document.querySelector('.scroll-sentinel');
+  if (sentinel) _tableObserver.observe(sentinel);
 }
 
 function exportCSV() {
@@ -2355,11 +2579,72 @@ function renderHierarchy(data) {
     `;
   }).join('');
 
-  /* ---- Árvore completa enriquecida ---- */
+  /* ---- Árvore completa enriquecida com colunas mensais ---- */
+  const scrollEl = document.getElementById('tree-scroll');
   const el = document.getElementById('tree-hierarquia');
-  // mantém o header fixo e reconstrói só os nodes
-  const header = el.querySelector('.tree-header');
   const totalTop = data.hierarquia.reduce((s,n)=>s+n.valor, 0) || 1;
+
+  /* Determinar quais colunas mostrar (só meses com dados + trimestres fechados + YTD) */
+  const meses = data.hierarquia_meses || [];
+  const mesesCols = meses.map(m => ({key: m, label: fmtMesAno(m), type: 'mes'}));
+
+  /* Agrupar meses por trimestre para montar cabeçalhos de acumulado */
+  const tri = {Q1:['01','02','03'], Q2:['04','05','06'], Q3:['07','08','09'], Q4:['10','11','12']};
+  const trimestresCols = [];
+  for (const [qNome, qMeses] of Object.entries(tri)) {
+    const mesesDoQ = meses.filter(m => qMeses.includes(m.slice(5,7)));
+    // Só mostra o Q se ele está "completo" OU se pelo menos 1 mês dele tem dados
+    if (mesesDoQ.length === 0) continue;
+    trimestresCols.push({key: qNome, mesesAcumulados: mesesDoQ, label: qNome, type: 'q'});
+  }
+
+  /* YTD = total do ano */
+  const ytdCol = meses.length ? {key:'YTD', mesesAcumulados: meses, label: 'YTD', type: 'ytd'} : null;
+
+  /* Monta a lista final de colunas na ordem: meses + trimestres + YTD */
+  const colunas = [...mesesCols, ...trimestresCols];
+  if (ytdCol) colunas.push(ytdCol);
+
+  /* Calcula a largura das colunas mensais — mais largas para não quebrar o valor */
+  const larguraColMes = 82; // px
+  const colTemplate = colunas.map(c => c.type === 'q' || c.type === 'ytd' ? '88px' : `${larguraColMes}px`).join(' ');
+
+  /* Cache para soma acumulada de trimestres/ano */
+  function somaMeses(mapa, mesesList) {
+    let s = 0;
+    for (const m of mesesList) s += (mapa && mapa[m]) || 0;
+    return s;
+  }
+
+  /* Helper: renderiza as N colunas de valores mensais/acumulados para um nó */
+  function colunasHtml(mapa) {
+    return colunas.map(col => {
+      let valor = 0;
+      if (col.type === 'mes') valor = mapa[col.key] || 0;
+      else valor = somaMeses(mapa, col.mesesAcumulados);
+      const cls = 'tree-col-mes' + (col.type === 'q' ? ' is-q' : col.type === 'ytd' ? ' is-ytd' : '') + (valor === 0 ? ' zero' : '');
+      return `<span class="${cls}">${valor === 0 ? '—' : fmtBRLshort(valor)}</span>`;
+    }).join('');
+  }
+
+  const cabecalhoColunas = colunas.map(col => {
+    const cls = 'tree-col-mes' + (col.type === 'q' ? ' is-q' : col.type === 'ytd' ? ' is-ytd' : '');
+    return `<span class="${cls}">${col.label}</span>`;
+  }).join('');
+
+  /* Define CSS custom properties com o número de colunas mensais */
+  scrollEl.style.setProperty('--col-meses', colTemplate);
+
+  const headerHtml = `
+    <div class="tree-header">
+      <span></span>
+      <span></span>
+      <span>Categoria</span>
+      ${cabecalhoColunas}
+      <span class="tree-col-pct">% total</span>
+      <span class="tree-col-valor">Valor</span>
+    </div>
+  `;
 
   const nodesHtml = data.hierarquia.map(n1 => {
     const cor = catColor[n1.nivel1];
@@ -2370,9 +2655,10 @@ function renderHierarchy(data) {
         <div class="tree-row level-1" data-toggle="1" style="--fill:${n1Fill}">
           <span class="tree-arrow"><i class="ph-bold ph-caret-right"></i></span>
           <span class="tree-dot"></span>
-          <div>${escapeHtml(n1.nivel1)}</div>
-          <div class="tree-pct">${n1.pct_total.toFixed(1)}%</div>
-          <div class="tree-value">${fmtBRLshort(n1.valor)}</div>
+          <span class="tree-name">${escapeHtml(n1.nivel1)}</span>
+          ${colunasHtml(n1.meses || {})}
+          <span class="tree-pct">${n1.pct_total.toFixed(1)}%</span>
+          <span class="tree-value">${fmtBRLshort(n1.valor)}</span>
         </div>
         <div class="tree-children">
           ${n1.niveis2.map(n2 => {
@@ -2382,9 +2668,10 @@ function renderHierarchy(data) {
                 <div class="tree-row level-2" data-toggle="1" style="--fill:${n2Fill}">
                   <span class="tree-arrow"><i class="ph-bold ph-caret-right"></i></span>
                   <span class="tree-dot"></span>
-                  <div>${escapeHtml(n2.nivel2)}</div>
-                  <div class="tree-pct">${n2Fill}%</div>
-                  <div class="tree-value">${fmtBRLshort(n2.valor)}</div>
+                  <span class="tree-name">${escapeHtml(n2.nivel2)}</span>
+                  ${colunasHtml(n2.meses || {})}
+                  <span class="tree-pct">${n2Fill}%</span>
+                  <span class="tree-value">${fmtBRLshort(n2.valor)}</span>
                 </div>
                 <div class="tree-children">
                   ${n2.detalhes.map(d => {
@@ -2393,9 +2680,10 @@ function renderHierarchy(data) {
                       <div class="tree-row level-3" style="--cat-color:${cor}; --fill:${dFill}">
                         <span class="tree-arrow">·</span>
                         <span class="tree-dot"></span>
-                        <div>${escapeHtml(d.detalhe)}</div>
-                        <div class="tree-pct">${dFill}%</div>
-                        <div class="tree-value">${fmtBRLshort(d.valor)}</div>
+                        <span class="tree-name">${escapeHtml(d.detalhe)}</span>
+                        ${colunasHtml(d.meses || {})}
+                        <span class="tree-pct">${dFill}%</span>
+                        <span class="tree-value">${fmtBRLshort(d.valor)}</span>
                       </div>
                     `;
                   }).join('')}
@@ -2407,10 +2695,7 @@ function renderHierarchy(data) {
       </div>`;
   }).join('');
 
-  // reconstruir conteúdo mantendo o header
-  el.innerHTML = '';
-  if (header) el.appendChild(header);
-  el.insertAdjacentHTML('beforeend', nodesHtml);
+  el.innerHTML = headerHtml + nodesHtml;
 
   el.querySelectorAll('[data-toggle]').forEach(row => {
     row.addEventListener('click', () => {
@@ -2621,7 +2906,6 @@ async function initViewer() {
       if (App.sortCol === col) App.sortDir = App.sortDir === 'asc' ? 'desc' : 'asc';
       else { App.sortCol = col; App.sortDir = (col === 'valor' || col === 'data') ? 'desc' : 'asc'; }
       sortFiltered();
-      App.page = 1;
       renderTable();
     });
   });
