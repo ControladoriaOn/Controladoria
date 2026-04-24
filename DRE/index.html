@@ -1,677 +1,1964 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>ONTIME CONTROLADORIA</title>
-   <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Financeiro · Diretoria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  /* ==========================================================
+     DESIGN TOKENS — Editorial Financial Report
+     ========================================================== */
+  :root {
+    --bg: #fbf9f4;
+    --bg-card: #ffffff;
+    --bg-sunken: #f3efe5;
+    --ink: #17181a;
+    --ink-muted: #5c5b58;
+    --ink-faded: #8a8782;
+    --border: #e8e4d9;
+    --border-strong: #d8d2c2;
+    --accent: #0d4d3a;
+    --accent-soft: #e3ece8;
+    --amber: #b45309;
+    --amber-soft: #f5ead6;
+    --danger: #991b1b;
+    --danger-soft: #f7e3e3;
 
-    <style>
-        :root {
-            /* Paleta Ontime Premium */
-            --ontime-orange: #FF6E00;
-            --ontime-orange-hover: #e66300;
-            --ontime-orange-light: #fff0e5;
-            --ontime-purple: #3C003C;
-            --ontime-purple-hover: #520052;
-            
-            --bg-body: #f4f5f7;
-            --surface-color: #ffffff;
-            --sidebar-bg: #ffffff;
-            
-            --text-primary: #1a1a1a;
-            --text-secondary: #666666;
-            --border-color: #e2e8f0;
-            --table-header-bg: #f8fafc;
-            
-            --danger-color: #dc2626;
-            --danger-hover: #b91c1c;
-            
-            --font-family: 'Inter', sans-serif;
-        }
+    --serif: 'Fraunces', Georgia, serif;
+    --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
 
-        body {
-            background-color: var(--bg-body); color: var(--text-primary);
-            font-family: var(--font-family); margin: 0; padding: 0;
-            display: flex; height: 100vh; overflow: hidden; box-sizing: border-box;
-        }
+    --chart-palette: #0d4d3a, #b45309, #5c5b58, #a98a3c, #6b7c5a, #8b4513, #4a6b6f, #7d5a4f, #9d7e3e, #3d5c50;
+  }
 
-        * { box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; }
+  body { min-height: 100vh; }
 
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input, select { font: inherit; color: inherit; }
 
-        .main-container { display: flex; width: 100%; height: 100%; }
-      
-/* Estilo da Raposinha no DRE */
-        .brand-img {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            object-fit: cover;
-            box-shadow: 0 0 0 2px rgba(255,110,0,0.3);
-        }
-        /* Sidebar - Estilo Ontime */
-        .sidebar {
-            width: 340px; background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color); display: none;
-            flex-direction: column; flex-shrink: 0; height: 100%;
-            box-shadow: 2px 0 15px rgba(60, 0, 60, 0.05); z-index: 20;
-        }
-        
-        .sidebar-header { 
-            padding: 20px; 
-            background: var(--ontime-purple); 
-            color: #ffffff;
-            border-bottom: 3px solid var(--ontime-orange);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        
-        /* Estilo do botão de voltar */
-        .btn-voltar {
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: color 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .btn-voltar:hover { color: var(--ontime-orange); }
-        .btn-voltar i { font-size: 14px; }
+  ::selection { background: var(--accent); color: var(--bg); }
 
-        .sidebar-header h1 { font-size: 16px; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px;}
-        .sidebar-header h1 i { color: var(--ontime-orange); font-size: 20px; }
-        
-        .sidebar-content { padding: 24px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        
-        .filter-header-wrapper {
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 2px solid var(--border-color); padding-bottom: 8px; margin-bottom: 4px;
-        }
-        .filter-header-wrapper h3 { margin: 0; font-size: 13px; color: var(--ontime-purple); text-transform: uppercase; font-weight: 800; display: flex; align-items: center; gap: 6px; }
-        .filter-header-wrapper h3 i { color: var(--ontime-orange); font-size: 16px; }
-        
-        .btn-reset-filters {
-            background: none; border: none; color: var(--text-secondary); font-size: 11px;
-            font-weight: 600; cursor: pointer; text-decoration: underline; padding: 0;
-            transition: color 0.2s; font-family: var(--font-family);
-        }
-        .btn-reset-filters:hover { color: var(--ontime-orange); }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-        /* Filtros */
-        .filter-group { display: flex; flex-direction: column; gap: 6px; position: relative; }
-        .filter-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
-        .filter-group select { 
-            padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; 
-            font-size: 13px; font-family: var(--font-family); color: var(--text-primary); 
-            outline: none; transition: border 0.2s; background: var(--surface-color); cursor: pointer; 
-        }
-        .filter-group select:focus { border-color: var(--ontime-orange); box-shadow: 0 0 0 3px rgba(255, 110, 0, 0.1); }
-        
-        .custom-select { position: relative; width: 100%; }
-        .cs-header { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--surface-color); cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
-        .cs-header:hover { border-color: var(--ontime-purple); }
-        .cs-header::after { content: "\25BC"; font-size: 10px; color: #94a3b8; }
-        .cs-header-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
-        .cs-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface-color); border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; display: none; flex-direction: column; }
-        .cs-dropdown.show { display: flex; }
-        .cs-search { padding: 10px; border-bottom: 1px solid var(--border-color); }
-        .cs-search input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; outline: none; font-family: var(--font-family); }
-        .cs-search input:focus { border-color: var(--ontime-orange); }
-        .cs-options { max-height: 200px; overflow-y: auto; padding: 5px; }
-        .cs-option { display: flex; align-items: center; gap: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer; border-radius: 4px; }
-        .cs-option:hover { background: var(--ontime-orange-light); color: var(--ontime-purple); font-weight: 500;}
-        .cs-select-all { font-weight: 600; border-bottom: 1px solid var(--border-color); margin-bottom: 4px; padding-bottom: 8px; }
-        .cs-actions { padding: 10px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 8px; background: #f8fafc; border-radius: 0 0 6px 6px; }
-        
-        .checkbox-list { display: flex; flex-direction: column; gap: 8px; max-height: 140px; overflow-y: auto; background: var(--surface-color); padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
-        .checkbox-list label { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--text-primary); }
-        .checkbox-list label:hover { color: var(--ontime-orange); }
-        input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--ontime-orange); }
+  /* ==========================================================
+     LAYOUT
+     ========================================================== */
+  .shell { max-width: 1280px; margin: 0 auto; padding: 48px 40px 80px; }
+  @media (max-width: 720px) { .shell { padding: 28px 20px 60px; } }
 
-        /* Botões */
-        .cs-btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; font-family: var(--font-family); }
-        .cs-btn-ok { background: var(--ontime-orange); color: white; }
-        .cs-btn-ok:hover { background: var(--ontime-orange-hover); }
-        .cs-btn-cancel { background: #e2e8f0; color: #475569; }
-        
-        .btn { border: none; padding: 10px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-family); }
-        .btn i { font-size: 16px; }
-        .btn:hover { transform: translateY(-1px); }
-        
-        .btn-primary { background-color: var(--ontime-orange); color: white; }
-        .btn-primary:hover { background-color: var(--ontime-orange-hover); box-shadow: 0 4px 10px rgba(255, 110, 0, 0.2); }
-        
-        .btn-dark { background-color: var(--ontime-purple); color: white; }
-        .btn-dark:hover { background-color: var(--ontime-purple-hover); box-shadow: 0 4px 10px rgba(60, 0, 60, 0.2); }
-        
-        .btn-outline { background-color: var(--surface-color); color: var(--text-secondary); border: 1px solid #cbd5e1; }
-        .btn-outline:hover { background-color: #f1f5f9; color: var(--ontime-purple); border-color: var(--ontime-purple); }
+  /* Header */
+  .masthead {
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
+    border-bottom: 1px solid var(--ink); padding-bottom: 20px; margin-bottom: 40px;
+  }
+  .masthead-title { font-family: var(--serif); font-weight: 400; font-size: 42px;
+    letter-spacing: -0.02em; line-height: 1; font-variation-settings: "opsz" 80; }
+  .masthead-title em { font-style: italic; font-weight: 300; }
+  .masthead-meta { text-align: right; font-size: 12px; color: var(--ink-muted);
+    letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.6; }
+  @media (max-width: 720px) {
+    .masthead { flex-direction: column; align-items: flex-start; }
+    .masthead-title { font-size: 34px; }
+    .masthead-meta { text-align: left; }
+  }
 
-        /* Área de Conteúdo */
-        .content-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-body); position: relative; min-width: 0; }
-        
-        .top-header-fallback { padding: 24px 30px; background: var(--ontime-purple); color: white; border-bottom: 3px solid var(--ontime-orange); display: flex; align-items: center; gap: 24px; }
-        .top-header-fallback h1 { margin: 0; font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 24px;}
-        .top-header-fallback h1 i { color: var(--ontime-orange); font-size: 24px; }
-        
-        .content-body { padding: 24px; flex: 1; display: flex; flex-direction: column; gap: 20px; min-height: 0; overflow: hidden; }
+  /* ==========================================================
+     LOCK / PASSWORD SCREEN
+     ========================================================== */
+  .lock-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 40px 20px;
+  }
+  .lock-card {
+    max-width: 480px; width: 100%; background: var(--bg-card);
+    border: 1px solid var(--border); padding: 48px 44px;
+  }
+  .lock-eyebrow { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--ink-muted); margin-bottom: 16px; }
+  .lock-title { font-family: var(--serif); font-size: 34px; font-weight: 400;
+    letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 12px; }
+  .lock-title em { font-style: italic; }
+  .lock-desc { color: var(--ink-muted); margin-bottom: 32px; font-size: 14px; }
+  .lock-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .lock-row label { font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--ink-muted); }
+  .lock-row input { padding: 12px 14px; background: var(--bg); border: 1px solid var(--border-strong);
+    border-radius: 0; font-size: 15px; transition: border-color 0.15s; }
+  .lock-row input:focus { border-color: var(--accent); outline: none; }
+  .lock-error { color: var(--danger); font-size: 13px; margin-bottom: 16px;
+    padding: 10px 14px; background: var(--danger-soft); display: none; }
+  .lock-error.visible { display: block; }
+  .lock-actions { display: flex; gap: 12px; margin-top: 8px; }
+  .lock-fallback { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border);
+    font-size: 13px; color: var(--ink-muted); }
+  .lock-fallback input[type=file] { margin-top: 8px; font-size: 13px; }
 
-        /* Upload */
-        .upload-card { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 12px; padding: 40px; text-align: center; max-width: 600px; margin: 40px auto; width: 100%; box-shadow: 0 8px 20px rgba(60, 0, 60, 0.04); }
-        .upload-section { padding: 40px 20px; border: 2px dashed #cbd5e1; border-radius: 12px; background-color: #f8fafc; transition: all 0.3s ease; }
-        .upload-section:hover { border-color: var(--ontime-orange); background-color: var(--ontime-orange-light); }
-        .upload-icon { font-size: 48px; color: var(--ontime-orange); margin-bottom: 16px; }
-        .upload-title { font-size: 18px; font-weight: 800; color: var(--ontime-purple); margin: 0 0 8px 0; }
-        .upload-subtitle { color: var(--text-secondary); font-size: 13px; margin: 0 0 24px 0; }
-        .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; width: 100%; }
+  /* ==========================================================
+     BUTTONS
+     ========================================================== */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 22px; border: 1px solid var(--ink); background: var(--ink); color: var(--bg);
+    font-size: 14px; font-weight: 500; letter-spacing: 0.02em; cursor: pointer;
+    transition: all 0.15s ease; }
+  .btn:hover { background: var(--accent); border-color: var(--accent); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .btn.ghost:hover { background: var(--ink); color: var(--bg); }
+  .btn.small { padding: 8px 16px; font-size: 13px; }
 
-        /* Actions Bar */
-        .actions-bar { display: none; justify-content: space-between; align-items: center; background-color: var(--surface-color); padding: 12px 20px; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 2px 4px rgba(60,0,60,0.02); }
-        .actions-group { display: flex; gap: 12px; }
-        .record-badge { background: #f1f5f9; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--ontime-purple); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 6px;}
-        .record-badge i { color: var(--ontime-orange); }
+  /* ==========================================================
+     TABS
+     ========================================================== */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 40px;
+    overflow-x: auto; }
+  .tab { padding: 14px 24px 14px 0; margin-right: 28px; font-size: 14px; font-weight: 500;
+    color: var(--ink-faded); border-bottom: 2px solid transparent; margin-bottom: -1px;
+    white-space: nowrap; transition: color 0.15s, border-color 0.15s; letter-spacing: 0.02em; }
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+  .tab-num { font-family: var(--serif); font-style: italic; font-size: 12px;
+    color: var(--ink-faded); margin-right: 6px; font-weight: 300; }
 
-        /* Tabela */
-        .table-wrapper { background-color: var(--surface-color); border: 1px solid var(--border-color); border-radius: 8px; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 4px 10px rgba(60, 0, 60, 0.04); flex: 1; }
-        .table-container { overflow: auto; flex: 1; width: 100%; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; white-space: nowrap; background-color: white; }
-        th, td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
-        
-        table th:nth-child(1), table td:nth-child(1) { position: sticky; left: 0; z-index: 11; background-color: var(--surface-color); border-right: 1px solid #e2e8f0; }
-        table th:nth-child(1) { z-index: 12; background-color: var(--table-header-bg); }
-        tbody tr:nth-child(even) td:nth-child(1) { background-color: #f8fafc; }
-        tbody tr:hover td:nth-child(1) { background-color: #f1f5f9; }
+  /* ==========================================================
+     KPI CARDS
+     ========================================================== */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border); margin-bottom: 56px; }
+  @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 500px) { .kpi-grid { grid-template-columns: 1fr; } }
+  .kpi { background: var(--bg-card); padding: 28px 28px 26px; }
+  .kpi-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-muted); margin-bottom: 12px; }
+  .kpi-value { font-family: var(--serif); font-variation-settings: "opsz" 144;
+    font-size: 34px; font-weight: 400; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums; line-height: 1.05; margin-bottom: 6px; }
+  .kpi-value-small { font-size: 24px; }
+  .kpi-sub { font-size: 13px; color: var(--ink-muted); }
+  .kpi-sub .up { color: var(--danger); }
+  .kpi-sub .down { color: var(--accent); }
+  .kpi-sub .flat { color: var(--ink-faded); }
 
-        th { background-color: var(--table-header-bg); position: sticky; top: 0; font-weight: 700; color: var(--ontime-purple); z-index: 10; border-bottom: 2px solid #cbd5e1; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
-        table th:nth-child(n+4), table td:nth-child(n+4) { text-align: right; font-variant-numeric: tabular-nums; }
-        table th:nth-child(1), table td:nth-child(1), table th:nth-child(2), table td:nth-child(2), table th:nth-child(3), table td:nth-child(3) { text-align: left; }
-        tbody tr { background-color: #ffffff; }
-        tbody tr:nth-child(even) { background-color: #f8fafc; }
-        tbody tr:hover { background-color: #f1f5f9; }
-        
-        /* Coluna Consolidado com Identidade Ontime */
-        th.consolidado-col { background-color: var(--ontime-orange-light); color: var(--ontime-purple); font-weight: 800; border-left: 2px solid #ffd1a6; }
-        td.consolidado-col { background-color: var(--ontime-orange-light); font-weight: 700; border-left: 2px solid #ffd1a6; color: var(--ontime-purple); }
-        tbody tr:nth-child(even) td.consolidado-col { background-color: #ffe6d1; }
-        
-        .negative-val { color: var(--danger-color); font-weight: 600; }
-        .zero-val { color: #cbd5e1; }
+  /* ==========================================================
+     SECTIONS
+     ========================================================== */
+  .section { margin-bottom: 56px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+  .section-title { font-family: var(--serif); font-size: 24px; font-weight: 400;
+    letter-spacing: -0.01em; }
+  .section-title em { font-style: italic; font-weight: 300; }
+  .section-note { font-size: 13px; color: var(--ink-muted); }
 
-        /* Toast */
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: white; border-left: 4px solid var(--ontime-orange); padding: 16px 24px; border-radius: 4px; box-shadow: 0 6px 16px rgba(60,0,60,0.15); display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; color: var(--ontime-purple); animation: slideIn 0.3s ease forwards; }
-        .toast.success { border-left-color: var(--ontime-orange); }
-        .toast.success i { color: var(--ontime-orange); font-size: 20px; }
-        .toast.info { border-left-color: var(--ontime-purple); }
-        .toast.info i { color: var(--ontime-purple); font-size: 20px; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-    </style>
+  /* Charts */
+  .chart-card { background: var(--bg-card); border: 1px solid var(--border);
+    padding: 28px; position: relative; }
+  .chart-host { position: relative; height: 340px; }
+  .chart-host.tall { height: 420px; }
+  .two-col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ==========================================================
+     TABELA DE RANKING (top fornecedores)
+     ========================================================== */
+  .rank-list { display: flex; flex-direction: column; gap: 2px; }
+  .rank-row { display: grid; grid-template-columns: 28px 1fr auto; align-items: center;
+    gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .rank-row:last-child { border-bottom: none; }
+  .rank-pos { font-family: var(--serif); font-style: italic; color: var(--ink-faded);
+    font-size: 14px; }
+  .rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank-value { font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 13px; font-weight: 500; text-align: right; }
+  .rank-meta { font-size: 12px; color: var(--ink-faded); margin-left: 8px; }
+
+  /* ==========================================================
+     ABA EXPLORAÇÃO
+     ========================================================== */
+  .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; padding: 20px; background: var(--bg-card); border: 1px solid var(--border);
+    margin-bottom: 24px; }
+  .filter { display: flex; flex-direction: column; gap: 6px; }
+  .filter label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-muted); }
+  .filter input, .filter select {
+    padding: 9px 12px; background: var(--bg); border: 1px solid var(--border-strong);
+    font-size: 14px; width: 100%; }
+  .filter input:focus, .filter select:focus { border-color: var(--accent); outline: none; }
+
+  .table-summary { display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 13px; color: var(--ink-muted); margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .table-wrap { background: var(--bg-card); border: 1px solid var(--border);
+    overflow-x: auto; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data th, table.data td { padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.data th { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-muted); font-weight: 500; background: var(--bg-sunken);
+    position: sticky; top: 0; cursor: pointer; user-select: none; }
+  table.data th:hover { color: var(--ink); }
+  table.data th.sorted::after { content: attr(data-sort-arrow); margin-left: 4px;
+    font-family: var(--serif); font-style: italic; }
+  table.data tbody tr:hover { background: var(--bg-sunken); }
+  table.data td.num { font-family: var(--mono); font-variant-numeric: tabular-nums;
+    text-align: right; white-space: nowrap; }
+  table.data td.nowrap { white-space: nowrap; }
+  table.data .cat-pill { font-size: 11px; padding: 2px 8px;
+    background: var(--accent-soft); color: var(--accent); letter-spacing: 0.02em;
+    display: inline-block; }
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 8px;
+    margin-top: 20px; font-size: 13px; }
+  .pagination button { padding: 6px 12px; border: 1px solid var(--border-strong);
+    background: var(--bg-card); }
+  .pagination button.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ==========================================================
+     ABA HIERARQUIA
+     ========================================================== */
+  .tree { background: var(--bg-card); border: 1px solid var(--border); padding: 8px 0; }
+  .tree-node { border-bottom: 1px solid var(--border); }
+  .tree-node:last-child { border-bottom: none; }
+  .tree-row { display: grid; grid-template-columns: 24px 1fr auto auto;
+    align-items: center; gap: 16px; padding: 14px 24px; cursor: pointer;
+    transition: background 0.1s; }
+  .tree-row:hover { background: var(--bg-sunken); }
+  .tree-row.level-1 { font-size: 16px; font-weight: 500; background: var(--bg-sunken); }
+  .tree-row.level-2 { font-size: 14px; padding-left: 52px; }
+  .tree-row.level-3 { font-size: 13px; padding-left: 80px; cursor: default;
+    color: var(--ink-muted); }
+  .tree-row.level-3:hover { background: transparent; }
+  .tree-arrow { font-family: var(--serif); font-style: italic; font-size: 14px;
+    color: var(--ink-faded); transition: transform 0.2s; display: inline-block; }
+  .tree-arrow.expanded { transform: rotate(90deg); }
+  .tree-row.level-3 .tree-arrow { visibility: hidden; }
+  .tree-value { font-family: var(--mono); font-variant-numeric: tabular-nums;
+    font-size: 14px; }
+  .tree-pct { font-size: 12px; color: var(--ink-faded); min-width: 52px; text-align: right; }
+  .tree-children { display: none; }
+  .tree-children.expanded { display: block; }
+
+  /* ==========================================================
+     ADMIN MODE
+     ========================================================== */
+  .admin-wrap { max-width: 720px; margin: 0 auto; }
+  .admin-title { font-family: var(--serif); font-size: 36px; font-weight: 400;
+    letter-spacing: -0.02em; margin-bottom: 8px; }
+  .admin-title em { font-style: italic; }
+  .admin-desc { color: var(--ink-muted); margin-bottom: 32px; }
+
+  .step { background: var(--bg-card); border: 1px solid var(--border);
+    padding: 28px 32px; margin-bottom: 20px; position: relative; }
+  .step-num { position: absolute; top: -12px; left: 24px; background: var(--bg);
+    padding: 2px 10px; font-family: var(--serif); font-style: italic; font-size: 13px;
+    color: var(--ink-muted); }
+  .step-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .step-desc { font-size: 13px; color: var(--ink-muted); margin-bottom: 16px; }
+
+  .drop-zone { border: 2px dashed var(--border-strong); padding: 28px;
+    text-align: center; transition: all 0.15s; cursor: pointer; }
+  .drop-zone.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .drop-zone.has-file { border-color: var(--accent); background: var(--accent-soft); }
+  .drop-zone.error { border-color: var(--danger); background: var(--danger-soft); }
+  .drop-zone-title { font-weight: 500; margin-bottom: 6px; font-size: 14px; }
+  .drop-zone-hint { font-size: 13px; color: var(--ink-muted); }
+  .drop-zone input[type=file] { display: none; }
+  .file-picked { margin-top: 12px; font-size: 13px; color: var(--accent); }
+
+  .admin-form .lock-row { margin-bottom: 12px; }
+  .admin-status { margin-top: 12px; padding: 12px 16px; font-size: 13px; display: none;
+    white-space: pre-wrap; line-height: 1.5; font-family: var(--sans); }
+  .admin-status.info { background: var(--accent-soft); color: var(--accent); display: block; }
+  .admin-status.error { background: var(--danger-soft); color: var(--danger); display: block; }
+  .admin-status.success { background: var(--accent-soft); color: var(--accent); display: block; }
+
+  .admin-log { background: var(--bg-sunken); font-family: var(--mono); font-size: 12px;
+    padding: 16px; margin-top: 16px; max-height: 220px; overflow-y: auto;
+    white-space: pre-wrap; display: none; }
+  .admin-log.visible { display: block; }
+
+  /* Loading states */
+  .loading { text-align: center; padding: 80px 20px; color: var(--ink-muted); }
+  .loading-title { font-family: var(--serif); font-size: 22px; margin-bottom: 6px;
+    font-style: italic; }
+  .loading-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ink); margin: 0 2px; animation: dotPulse 1.4s ease-in-out infinite; }
+  .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotPulse {
+    0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; }
+  }
+
+  /* Reveal animation on load */
+  @keyframes riseIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .reveal { animation: riseIn 0.5s ease-out both; }
+  .reveal-1 { animation-delay: 0.05s; }
+  .reveal-2 { animation-delay: 0.1s; }
+  .reveal-3 { animation-delay: 0.15s; }
+  .reveal-4 { animation-delay: 0.2s; }
+
+  .hidden { display: none !important; }
+
+  /* Footer */
+  .colophon { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--ink-faded); display: flex; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px; }
+</style>
 </head>
 <body>
 
-    <div id="toast-container"></div>
+<!-- ==============================================================
+     LOADING SCREEN (inicial, antes de decidir o modo)
+     ============================================================== -->
+<div id="initial-loading" class="lock-screen">
+  <div style="text-align: center;">
+    <div class="lock-eyebrow">Carregando</div>
+    <div class="loading-title">Abrindo painel</div>
+    <div style="margin-top: 12px;">
+      <span class="loading-dot"></span>
+      <span class="loading-dot"></span>
+      <span class="loading-dot"></span>
+    </div>
+  </div>
+</div>
 
-    <div class="main-container" id="mainContainer">
-        
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <a href="../" class="btn-voltar"><i class="ph ph-arrow-left"></i> Voltar ao Menu</a>
-                <h1><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote" class="brand-img"> ONTIME CONTROLADORIA</h1>
-            </div>
-            
-            <div class="sidebar-content">
-                <div class="filter-header-wrapper">
-                    <h3><i class="ph ph-funnel"></i> Filtros de Visão</h3>
-                    <button class="btn-reset-filters" onclick="resetarFiltrosUI()">Limpar Tudo</button>
-                </div>
-                
-                <div class="filter-group" id="wrap-conta">
-                    <label>Código da Conta</label>
-                    <div class="custom-select">
-                        <div class="cs-header" onclick="toggleDropdown('conta')"><span class="cs-header-text" id="cs-header-text-conta">(Selecionar Tudo)</span></div>
-                        <div class="cs-dropdown" id="cs-dropdown-conta">
-                            <div class="cs-search"><input type="text" id="cs-search-conta" placeholder="Pesquisar..." oninput="renderDropdownOptions('conta')"></div>
-                            <div class="cs-options" id="cs-options-conta"></div>
-                            <div class="cs-actions">
-                                <button class="cs-btn cs-btn-cancel" onclick="closeDropdown('conta')">Cancelar</button>
-                                <button class="cs-btn cs-btn-ok" onclick="applyDropdown('conta')">Aplicar</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="filter-group" id="wrap-desc">
-                    <label>Descrição</label>
-                    <div class="custom-select">
-                        <div class="cs-header" onclick="toggleDropdown('desc')"><span class="cs-header-text" id="cs-header-text-desc">(Selecionar Tudo)</span></div>
-                        <div class="cs-dropdown" id="cs-dropdown-desc">
-                            <div class="cs-search"><input type="text" id="cs-search-desc" placeholder="Pesquisar..." oninput="renderDropdownOptions('desc')"></div>
-                            <div class="cs-options" id="cs-options-desc"></div>
-                            <div class="cs-actions">
-                                <button class="cs-btn cs-btn-cancel" onclick="closeDropdown('desc')">Cancelar</button>
-                                <button class="cs-btn cs-btn-ok" onclick="applyDropdown('desc')">Aplicar</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="filter-group">
-                    <label>Natureza</label>
-                    <select id="filtroTipo" onchange="aplicarFiltros()"><option value="">Todas</option><option value="SINTÉTICA">Sintética</option><option value="ANALÍTICA">Analítica</option></select>
-                </div>
-                <div class="filter-group">
-                    <label>Movimentação</label>
-                    <select id="filtroMov" onchange="aplicarFiltros()"><option value="">Todas as Contas</option><option value="sim">Sim (Com saldo no período)</option><option value="nao">Não (Zeradas no período)</option></select>
-                </div>
-                <div class="filter-group">
-                    <label>Categoria</label>
-                    <select id="filtroCategoria" onchange="aplicarFiltros()"><option value="">Todas as Categorias</option><option value="ATIVO">Ativo (Iniciadas com 1)</option><option value="PASSIVO">Passivo (Iniciadas com 2)</option><option value="RESULTADO">Resultado (3 em diante)</option></select>
-                </div>
+<!-- ==============================================================
+     VIEWER MODE — senha
+     ============================================================== -->
+<div id="viewer-lock" class="lock-screen hidden">
+  <div class="lock-card reveal reveal-1">
+    <div class="lock-eyebrow">Painel Financeiro</div>
+    <h1 class="lock-title">Área <em>restrita</em></h1>
+    <p class="lock-desc">Este relatório contém informações confidenciais. Digite a senha para continuar.</p>
 
-                <div class="filter-header-wrapper" style="margin-top: 10px;">
-                    <h3><i class="ph ph-calendar-blank"></i> Meses Abertos</h3>
-                </div>
-                <div class="filter-group"><div id="monthCheckboxes" class="checkbox-list"></div></div>
-                
-                <div class="filter-header-wrapper" style="margin-top: 10px;">
-                    <h3><i class="ph ph-list-numbers"></i> Nível de Abertura</h3>
-                </div>
-                <div class="filter-group"><div id="nivelCheckboxes" class="checkbox-list"></div></div>
-            </div>
-        </div>
+    <div id="viewer-lock-error" class="lock-error"></div>
 
-        <div class="content-area">
-            <div class="top-header-fallback" id="fallbackHeader">
-                <a href="../" class="btn-voltar"><i class="ph ph-arrow-left"></i> Voltar ao Menu</a>
-                <h1><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote" class="brand-img"> ONTIME CONTROLADORIA</h1>
-            </div>
+    <form id="viewer-form">
+      <div class="lock-row">
+        <label for="viewer-password">Senha</label>
+        <input id="viewer-password" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="lock-actions">
+        <button type="submit" class="btn">Desbloquear</button>
+      </div>
+    </form>
 
-            <div class="content-body">
-                <div class="upload-card" id="uploadSection">
-                    <div class="upload-section">
-                        <i class="ph-fill ph-file-arrow-up upload-icon"></i>
-                        <h2 class="upload-title">Análise de DRE Totvs</h2>
-                        <p class="upload-subtitle">Faça o upload do XML gerado pelo sistema para iniciar o processamento em tela.</p>
-                        <div class="file-input-wrapper">
-                            <button class="btn btn-primary"><i class="ph ph-folder-open"></i> Selecionar Arquivo XML</button>
-                            <input type="file" id="fileUpload" accept=".xml">
-                        </div>
-                        <p id="fileName" style="margin-top: 20px; color: var(--ontime-orange); font-weight: 600; font-size: 13px;"></p>
-                    </div>
-                </div>
+    <div class="lock-fallback" id="viewer-fallback" style="display:none;">
+      Não foi possível carregar o arquivo de dados do servidor.
+      Carregue manualmente o arquivo <code>dados.enc</code>:
+      <input type="file" id="viewer-manual-file" accept=".enc,.json">
+    </div>
+  </div>
+</div>
 
-                <div class="actions-bar" id="actionButtons">
-                    <div class="record-badge" id="recordCount"><i class="ph-fill ph-list-dashes"></i> Exibindo 0 registros</div>
-                    <div class="actions-group">
-                        <button class="btn btn-outline" id="btnClear" onclick="limparDados()"><i class="ph ph-arrow-u-up-left"></i> Voltar / Limpar</button>
-                        <button class="btn btn-dark" id="btnDownload" onclick="downloadExcel()"><i class="ph ph-microsoft-excel-logo"></i> Exportar (.xlsx)</button>
-                    </div>
-                </div>
+<!-- ==============================================================
+     VIEWER MODE — dashboard
+     ============================================================== -->
+<div id="viewer-dash" class="shell hidden">
 
-                <div class="table-wrapper" id="tableWrapper">
-                    <div class="table-container" id="tableContainer">
-                        <table id="previewTable">
-                            <thead id="tableHead"></thead>
-                            <tbody id="tableBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <header class="masthead reveal reveal-1">
+    <div>
+      <div style="font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+                  color: var(--ink-muted); margin-bottom: 8px;">Painel Financeiro</div>
+      <h1 class="masthead-title">Relatório de <em>Gastos</em></h1>
+    </div>
+    <div class="masthead-meta">
+      <div>Período <span id="meta-periodo" class="mono"></span></div>
+      <div>Atualizado em <span id="meta-atualizado" class="mono"></span></div>
+    </div>
+  </header>
+
+  <nav class="tabs reveal reveal-2" id="tabs">
+    <button class="tab active" data-tab="resumo"><span class="tab-num">i</span>Resumo Executivo</button>
+    <button class="tab" data-tab="exploracao"><span class="tab-num">ii</span>Exploração</button>
+    <button class="tab" data-tab="hierarquia"><span class="tab-num">iii</span>Hierarquia</button>
+  </nav>
+
+  <!-- TAB 1: Resumo -->
+  <section id="tab-resumo" class="tab-panel">
+
+    <div class="kpi-grid reveal reveal-3">
+      <div class="kpi">
+        <div class="kpi-label">Total gasto (período)</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub"><span id="kpi-total-sub"></span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Mês atual</div>
+        <div class="kpi-value" id="kpi-mes">—</div>
+        <div class="kpi-sub" id="kpi-mes-sub"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Variação mensal</div>
+        <div class="kpi-value" id="kpi-var">—</div>
+        <div class="kpi-sub" id="kpi-var-sub"></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Fornecedores distintos</div>
+        <div class="kpi-value" id="kpi-forn">—</div>
+        <div class="kpi-sub" id="kpi-forn-sub"></div>
+      </div>
     </div>
 
-    <script>
-        let fullHeaders = []; let fullData = []; let currentDisplayHeaders = []; let currentDisplayData = [];
-        let dropdownState = { conta: { allItems: [], currentChecked: new Set(), appliedChecked: new Set() }, desc: { allItems: [], currentChecked: new Set(), appliedChecked: new Set() } };
-        
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('#wrap-conta')) closeDropdown('conta');
-            if (!e.target.closest('#wrap-desc')) closeDropdown('desc');
+    <div class="section reveal reveal-4">
+      <div class="section-head">
+        <h2 class="section-title">Evolução <em>mensal</em></h2>
+        <div class="section-note">Gasto total por mês (líquido de estornos)</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-host"><canvas id="chart-mensal"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section reveal reveal-4">
+      <div class="two-col">
+        <div>
+          <div class="section-head">
+            <h2 class="section-title">Por <em>categoria</em></h2>
+          </div>
+          <div class="chart-card">
+            <div class="chart-host"><canvas id="chart-donut"></canvas></div>
+          </div>
+        </div>
+        <div>
+          <div class="section-head">
+            <h2 class="section-title">Top <em>fornecedores</em></h2>
+          </div>
+          <div class="chart-card">
+            <div class="rank-list" id="rank-fornecedores"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section reveal reveal-4">
+      <div class="section-head">
+        <h2 class="section-title">Composição <em>mensal</em> por categoria</h2>
+        <div class="section-note">Barras empilhadas</div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-host tall"><canvas id="chart-stacked"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section" id="section-filiais">
+      <div class="section-head">
+        <h2 class="section-title">Por <em>filial</em></h2>
+      </div>
+      <div class="chart-card">
+        <div class="rank-list" id="rank-filiais"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <h2 class="section-title">Por <em>centro de custo</em></h2>
+      </div>
+      <div class="chart-card">
+        <div class="rank-list" id="rank-centro-custo"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- TAB 2: Exploração -->
+  <section id="tab-exploracao" class="tab-panel hidden">
+
+    <div class="section-head">
+      <h2 class="section-title">Explorar <em>lançamentos</em></h2>
+      <div class="section-note">Top 2.000 transações por valor, agregadas por documento</div>
+    </div>
+
+    <div class="filters">
+      <div class="filter">
+        <label for="f-data-ini">De</label>
+        <input type="date" id="f-data-ini">
+      </div>
+      <div class="filter">
+        <label for="f-data-fim">Até</label>
+        <input type="date" id="f-data-fim">
+      </div>
+      <div class="filter">
+        <label for="f-cat">Categoria</label>
+        <select id="f-cat"><option value="">Todas</option></select>
+      </div>
+      <div class="filter">
+        <label for="f-subcat">Subcategoria</label>
+        <select id="f-subcat"><option value="">Todas</option></select>
+      </div>
+      <div class="filter">
+        <label for="f-forn">Fornecedor contém</label>
+        <input type="text" id="f-forn" placeholder="busca...">
+      </div>
+      <div class="filter">
+        <label for="f-min">Valor mínimo (R$)</label>
+        <input type="number" id="f-min" min="0" step="100" placeholder="0">
+      </div>
+    </div>
+
+    <div class="table-summary">
+      <div id="table-count">—</div>
+      <button class="btn ghost small" id="btn-export">Exportar CSV</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data" id="tbl-transacoes">
+        <thead>
+          <tr>
+            <th data-col="data">Data</th>
+            <th data-col="doc">Documento</th>
+            <th data-col="fornecedor">Fornecedor</th>
+            <th data-col="nivel1">Categoria</th>
+            <th data-col="nivel2">Subcategoria</th>
+            <th data-col="centro_custo">C. Custo</th>
+            <th data-col="descricao">Histórico</th>
+            <th data-col="valor" style="text-align: right;">Valor</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="pagination" id="pagination"></div>
+
+  </section>
+
+  <!-- TAB 3: Hierarquia -->
+  <section id="tab-hierarquia" class="tab-panel hidden">
+    <div class="section-head">
+      <h2 class="section-title">Hierarquia <em>gerencial</em></h2>
+      <div class="section-note">Clique em cada linha para expandir/recolher</div>
+    </div>
+    <div class="tree" id="tree-hierarquia"></div>
+  </section>
+
+  <div class="colophon">
+    <div id="colophon-stats"></div>
+    <div>Painel gerado localmente · dados criptografados com AES-GCM</div>
+  </div>
+
+</div>
+
+<!-- ==============================================================
+     ADMIN MODE
+     ============================================================== -->
+<div id="admin-view" class="shell hidden">
+  <div class="admin-wrap">
+
+    <div class="reveal reveal-1">
+      <div class="lock-eyebrow">Modo administrador</div>
+      <h1 class="admin-title">Atualizar <em>dados</em></h1>
+      <p class="admin-desc">Os arquivos ficam no seu computador. Só o resultado criptografado é gerado para publicação.</p>
+    </div>
+
+    <form id="admin-form" class="admin-form">
+
+      <div class="step reveal reveal-2">
+        <div class="step-num">i</div>
+        <div class="step-title">Arquivo de débitos</div>
+        <div class="step-desc">Arraste o <code>Deb.xlsx</code> exportado do Protheus ou clique para selecionar.</div>
+        <label class="drop-zone" id="drop-deb" for="file-deb">
+          <div class="drop-zone-title">Arraste <code>Deb.xlsx</code> aqui</div>
+          <div class="drop-zone-hint">ou clique para selecionar</div>
+          <div class="file-picked" id="picked-deb"></div>
+          <input type="file" id="file-deb" accept=".xlsx">
+        </label>
+      </div>
+
+      <div class="step reveal reveal-2">
+        <div class="step-num">ii</div>
+        <div class="step-title">Arquivo de créditos</div>
+        <div class="step-desc">Arraste o <code>Cred.xlsx</code> exportado do Protheus ou clique para selecionar.</div>
+        <label class="drop-zone" id="drop-cred" for="file-cred">
+          <div class="drop-zone-title">Arraste <code>Cred.xlsx</code> aqui</div>
+          <div class="drop-zone-hint">ou clique para selecionar</div>
+          <div class="file-picked" id="picked-cred"></div>
+          <input type="file" id="file-cred" accept=".xlsx">
+        </label>
+      </div>
+
+      <div class="step reveal reveal-3">
+        <div class="step-num">iii</div>
+        <div class="step-title">Senha de proteção</div>
+        <div class="step-desc">Esta senha será necessária para qualquer pessoa visualizar o painel. Use uma senha forte e guarde-a em local seguro.</div>
+        <div class="lock-row">
+          <label for="admin-pwd">Senha</label>
+          <input id="admin-pwd" type="password" autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="lock-row">
+          <label for="admin-pwd-confirm">Confirmar senha</label>
+          <input id="admin-pwd-confirm" type="password" autocomplete="new-password" required>
+        </div>
+      </div>
+
+      <div class="step reveal reveal-3">
+        <div class="step-num">iv</div>
+        <div class="step-title">Gerar arquivo</div>
+        <div class="step-desc">Os dados serão processados localmente, comprimidos e criptografados.
+          Em seguida, você vai baixar o <code>dados.enc</code> para subir ao repositório.</div>
+        <button type="submit" class="btn" id="btn-process">Processar e criptografar</button>
+        <button type="button" class="btn ghost" id="btn-inspect" style="margin-left: 8px;">Inspecionar colunas</button>
+        <div class="admin-status" id="admin-status"></div>
+        <div class="admin-log" id="admin-log"></div>
+      </div>
+
+    </form>
+
+    <div class="colophon">
+      <a href="?" style="color: var(--ink-muted);">&larr; Voltar ao modo visualização</a>
+      <div>Os xlsx originais nunca saem da sua máquina</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==============================================================
+     DADOS EMBUTIDOS: plano gerencial
+     ============================================================== -->
+<script id="plano-data" type="application/json">[{"conta":"31010101","ordem":1,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ SERVICOS","dre_id":101},{"conta":"31010102","ordem":2,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA MG","dre_id":101},{"conta":"31010103","ordem":3,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA RJ","dre_id":101},{"conta":"31010104","ordem":4,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA PE","dre_id":101},{"conta":"31010105","ordem":5,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/SERVICOS","dre_id":101},{"conta":"31010106","ordem":6,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA BA","dre_id":101},{"conta":"31010107","ordem":7,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA ENCOMENDA EXP. CUT-OFF","dre_id":101},{"conta":"31010108","ordem":8,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA ES","dre_id":101},{"conta":"31010109","ordem":9,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"ANULACAO DE RECEITA C/ENCOM. EXPRESSA","dre_id":101},{"conta":"31010110","ordem":10,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITA C/ENCOM. EXPRESSA PB","dre_id":101},{"conta":"31010111","ordem":11,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"PRE-FATURA","dre_id":101},{"conta":"31010112","ordem":12,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"ESTORNO PROVISAO DE RECEITA","dre_id":101},{"conta":"31020101","ordem":13,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-) COMISSOES SOBRE VENDAS","dre_id":101},{"conta":"31020102","ordem":14,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-) COMISSOES SOBRE VENDAS MG","dre_id":101},{"conta":"31020103","ordem":15,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-) COMISSOES SOBRE VENDAS RJ","dre_id":101},{"conta":"31020104","ordem":16,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-) COMISSOES SOBRE VENDAS PE","dre_id":101},{"conta":"31020105","ordem":17,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-)DESCONTOS INCONDICIONAIS","dre_id":101},{"conta":"31020106","ordem":18,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-)DESCONTOS INCONDICIONAIS MG","dre_id":101},{"conta":"31020107","ordem":19,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-)DESCONTOS INCONDICIONAIS RJ","dre_id":101},{"conta":"31020108","ordem":20,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"(-)DESCONTOS INCONDICIONAIS PE","dre_id":101},{"conta":"31030101","ordem":21,"nivel1":"RECEITA BRUTA","nivel2":"RECEITA C/ SERVICOS","detalhe":"RECEITAS EVENTUAIS","dre_id":101},{"conta":"31020201","ordem":22,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS","dre_id":102},{"conta":"31020202","ordem":23,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS MG","dre_id":102},{"conta":"31020203","ordem":24,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS RJ","dre_id":102},{"conta":"31020204","ordem":25,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS PE","dre_id":102},{"conta":"31020205","ordem":26,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO","dre_id":102},{"conta":"31020206","ordem":27,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO MG","dre_id":102},{"conta":"31020207","ordem":28,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO RJ","dre_id":102},{"conta":"31020208","ordem":29,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO PE","dre_id":102},{"conta":"31020209","ordem":30,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO","dre_id":102},{"conta":"31020210","ordem":31,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ISS S/FATURAMENTO","dre_id":102},{"conta":"31020211","ordem":32,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO RJ","dre_id":102},{"conta":"31020212","ordem":33,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO PE","dre_id":102},{"conta":"31020213","ordem":34,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) INSS FATURAMENTO (DESONERACAO)","dre_id":102},{"conta":"31020214","ordem":35,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS BA","dre_id":102},{"conta":"31020215","ordem":36,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS/COFINS CUT-OFF","dre_id":102},{"conta":"31020216","ordem":37,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS CUT-OFF","dre_id":102},{"conta":"31020217","ordem":38,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS ES","dre_id":102},{"conta":"31020218","ordem":39,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(+) PIS S/ANUL DE RECEITA C/ENCOM.","dre_id":102},{"conta":"31020219","ordem":40,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(+) COFINS S/ANUL DE RECEITA C/ENCOM","dre_id":102},{"conta":"31020220","ordem":41,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(+) ICMS S/ANUL DE RECEITA C/ENCOM.","dre_id":102},{"conta":"31020221","ordem":42,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS OUTRAS UFS","dre_id":102},{"conta":"31020222","ordem":43,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS PB","dre_id":102},{"conta":"31020223","ordem":44,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO MG","dre_id":102},{"conta":"31020224","ordem":45,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO BA","dre_id":102},{"conta":"31020225","ordem":46,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO ES","dre_id":102},{"conta":"31020226","ordem":47,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PIS S/FATURAMENTO PB","dre_id":102},{"conta":"31020227","ordem":48,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO BA","dre_id":102},{"conta":"31020228","ordem":49,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO ES","dre_id":102},{"conta":"31020229","ordem":50,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) COFINS S/FATURAMENTO PB","dre_id":102},{"conta":"31020230","ordem":51,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) PROVISAO DE IMPOSTOS","dre_id":102},{"conta":"31020231","ordem":52,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"(-) ICMS FRONTEIRA","dre_id":102},{"conta":"31020232","ordem":53,"nivel1":"(-) DEDUÇÕES","nivel2":"(-) IMPOSTOS","detalhe":"ESTORNO (-) PROVISAO DE IMPOSTOS","dre_id":102},{"conta":"33030301","ordem":54,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"FROTA TERC. TRANSF. PJ","dre_id":104},{"conta":"33030302","ordem":55,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"FROTA TERC. TRANSF. PF","dre_id":104},{"conta":"33030901","ordem":56,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"CORREIOS","dre_id":104},{"conta":"33030904","ordem":57,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"(-)CORREIOS CUT-OFF","dre_id":104},{"conta":"33030905","ordem":58,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"MALHA PRIVADA PJ","dre_id":104},{"conta":"33030906","ordem":59,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"MALHA PRIVADA PF","dre_id":104},{"conta":"33030907","ordem":60,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"AGENCIADORES","dre_id":104},{"conta":"33031101","ordem":61,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"AGENCIADOR","dre_id":104},{"conta":"33031301","ordem":62,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"GASTOS COM ASSESSORIA POSTAGEM","dre_id":104},{"conta":"33050401","ordem":63,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"FROTA TERCEIRIZADA PJ","dre_id":104},{"conta":"33050402","ordem":64,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"FROTA TERCEIRIZADA PF","dre_id":104},{"conta":"33050410","ordem":65,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"(-)FROTA TERC.CUT-OFF","dre_id":104},{"conta":"33050411","ordem":66,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"LAST MILE","detalhe":"PROVISAO DE FROTA TERCEIRIZADA","dre_id":104},{"conta":"33031108","ordem":67,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM COLETAS","detalhe":"CUSTO COLETAS TERCEIRO","dre_id":104},{"conta":"33030201","ordem":68,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"TRANSF. AEREO TERCEIROS","dre_id":104},{"conta":"33030202","ordem":69,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"FRETES RODOVIARIO","dre_id":104},{"conta":"33030205","ordem":70,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"TRANSF. AEREO PROPRIA","dre_id":104},{"conta":"33050405","ordem":71,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"TRANF. RODO PROPRIA","dre_id":104},{"conta":"33050406","ordem":72,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"TRANF. RODO TERCEIRA","dre_id":104},{"conta":"33050407","ordem":73,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"SURFACE PROPRIA","dre_id":104},{"conta":"33050408","ordem":74,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS COM TRANSFERÊNCIA","detalhe":"SURFACE TERCEIRA","dre_id":104},{"conta":"33030701","ordem":75,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"ESCOLTA","dre_id":104},{"conta":"33030702","ordem":76,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURO AEREO","dre_id":104},{"conta":"33030703","ordem":77,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURO RODOVIARIO","dre_id":104},{"conta":"33030704","ordem":78,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"RASTREAMENTO","dre_id":104},{"conta":"33030705","ordem":79,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURANCA PATRIMONIAL","dre_id":104},{"conta":"33030710","ordem":80,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURANCA PATRIMONIAL C/ ISS","dre_id":104},{"conta":"33050113","ordem":81,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"GERENCIAMENTO DE RISCO","detalhe":"SEGURO DE VEICULOS","dre_id":104},{"conta":"33030501","ordem":82,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"INDENIZACOES/EXTRAVIOS","dre_id":104},{"conta":"33030502","ordem":83,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"(-) RECUP. INDENIZ. EXTRAVIOS","dre_id":104},{"conta":"33030503","ordem":84,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"(-) RECUP. INDEN. EXTRAV. LOTE","dre_id":104},{"conta":"33030504","ordem":85,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"INDENIZACOES EM COBRANCA","dre_id":104},{"conta":"33030505","ordem":86,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"DESCONTO DE INDENIZACOES","dre_id":104},{"conta":"33030510","ordem":87,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"INDENIZACOES/EXTRAVIOS/FURTOS","detalhe":"PROV.PERDAS/GANHOS INDENIZACOES","dre_id":104},{"conta":"33030101","ordem":88,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"MATERIAL DE EMBALAGEM","dre_id":104},{"conta":"33030102","ordem":89,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"ETIQUETA","dre_id":104},{"conta":"33030103","ordem":90,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"SACO DE RAFIA","dre_id":104},{"conta":"33030104","ordem":91,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"FLYER","dre_id":104},{"conta":"33030105","ordem":92,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"SUPRIMENTOS INFORM OPERACIONAL","dre_id":104},{"conta":"33030106","ordem":93,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"LACRE","dre_id":104},{"conta":"33030107","ordem":94,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"OUTROS INSUMOS","dre_id":104},{"conta":"33050301","ordem":95,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"MATERIAIS DE INSUMO","detalhe":"PALLETS","dre_id":104},{"conta":"33031104","ordem":96,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"COMBUSTIVEL FROTA","dre_id":104},{"conta":"33031105","ordem":97,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"MANUTENCAO FROTA","dre_id":104},{"conta":"33031106","ordem":98,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"PEDAGIO FROTA","dre_id":104},{"conta":"33031107","ordem":99,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"IPVA/LICENCIAMENTO","dre_id":104},{"conta":"33050101","ordem":100,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"LOCACAO DE EQUIPAMENTOS OPERACIONAL","dre_id":104},{"conta":"33050102","ordem":101,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"COMBUSTIVEL FROTA","dre_id":104},{"conta":"33050103","ordem":102,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"MANUTENCAO FROTA","dre_id":104},{"conta":"33050104","ordem":103,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"AGENCIADORES","dre_id":104},{"conta":"33050105","ordem":104,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"PEDAGIO","dre_id":104},{"conta":"33050107","ordem":105,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CUSTOS OPERACIONAIS","detalhe":"LOCACAO VEICULOS CUSTO","dre_id":104},{"conta":"33030108","ordem":106,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030109","ordem":107,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33030203","ordem":108,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030204","ordem":109,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33030303","ordem":110,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030304","ordem":111,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33030706","ordem":112,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030707","ordem":113,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33030902","ordem":114,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33030903","ordem":115,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33031102","ordem":116,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33031103","ordem":117,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33031302","ordem":118,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33031303","ordem":119,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33050403","ordem":120,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33050404","ordem":121,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"CRED FISCAL (C.V)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33010101","ordem":122,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ORDENADOS E SALARIOS","dre_id":105},{"conta":"33010102","ordem":123,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"FERIAS","dre_id":105},{"conta":"33010103","ordem":124,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"13º SALARIOS","dre_id":105},{"conta":"33010104","ordem":125,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ENCARGOS SOCIAIS INSS","dre_id":105},{"conta":"33010105","ordem":126,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ENCARGOS SOCIAIS FGTS","dre_id":105},{"conta":"33010106","ordem":127,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"AVISO PREVIO E INDENIZACOES","dre_id":105},{"conta":"33010107","ordem":128,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ASSISTENCIA MEDICA","dre_id":105},{"conta":"33010108","ordem":129,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"SEGURO DE VIDA EM GRUPO","dre_id":105},{"conta":"33010109","ordem":130,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"CURSOS E TREINAMENTO","dre_id":105},{"conta":"33010110","ordem":131,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"REFEICOES","dre_id":105},{"conta":"33010111","ordem":132,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"VALE-TRANSPORTE","dre_id":105},{"conta":"33010112","ordem":133,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"REMUNERACAO A ESTAGIARIOS","dre_id":105},{"conta":"33010113","ordem":134,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PROCESSOS TRABALHISTAS","dre_id":105},{"conta":"33010114","ordem":135,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"CONTR. SINDICAL PATRONAL","dre_id":105},{"conta":"33010115","ordem":136,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PARTICIPACAO NOS LUCROS","dre_id":105},{"conta":"33010116","ordem":137,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PROVISAO DE FERIAS E ENCARGOS","dre_id":105},{"conta":"33010117","ordem":138,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PROVISAO DE 13 E ENCARGOS","dre_id":105},{"conta":"33010118","ordem":139,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ASSISTENCIA ODONTOLOGICA","dre_id":105},{"conta":"33010119","ordem":140,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"GRATIFICACOES","dre_id":105},{"conta":"33010120","ordem":141,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"HORAS EXTRAS","dre_id":105},{"conta":"33010121","ordem":142,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"MAO DE OBRA TERCEIRIZADA","dre_id":105},{"conta":"33010122","ordem":143,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PROCESSOS TRABALHISTAS","dre_id":105},{"conta":"33010123","ordem":144,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"ALIMENTACAO - PAT","dre_id":105},{"conta":"33010124","ordem":145,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"UNIFORMES","dre_id":105},{"conta":"33010127","ordem":146,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"COMBUSTIVEL CUSTO","dre_id":105},{"conta":"33010128","ordem":147,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"COMISSOES SOBRE VENDAS","dre_id":105},{"conta":"33010129","ordem":148,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"AUTONOMOS","dre_id":105},{"conta":"33010130","ordem":149,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"RECRUTAMENTO E SELECAO","dre_id":105},{"conta":"33010131","ordem":150,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"MEDICINA DO TRABALHO","dre_id":105},{"conta":"33050106","ordem":151,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"PRESTACAO DE SERVICO PJ","dre_id":105},{"conta":"33050108","ordem":152,"nivel1":"(-) CUSTOS FIXO","nivel2":"CUSTOS PESSOAL","detalhe":"VIAGENS E ESTADIAS - CUSTO","dre_id":105},{"conta":"33050302","ordem":153,"nivel1":"(-) CUSTOS FIXO","nivel2":"INFRAESTRUTURA","detalhe":"TELEFONIA CUSTO","dre_id":105},{"conta":"33050303","ordem":154,"nivel1":"(-) CUSTOS FIXO","nivel2":"INFRAESTRUTURA","detalhe":"INTERNET","dre_id":105},{"conta":"33050304","ordem":155,"nivel1":"(-) CUSTOS FIXO","nivel2":"INFRAESTRUTURA","detalhe":"ERP-LICENCA","dre_id":105},{"conta":"33050307","ordem":156,"nivel1":"(-) CUSTOS FIXO","nivel2":"INFRAESTRUTURA","detalhe":"LOCACAO EQUIPAMENTOS DE INFORMATICA","dre_id":105},{"conta":"33050501","ordem":157,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"ALUGUEIS E CONDOMINIOS CUSTO","dre_id":105},{"conta":"33050502","ordem":158,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"ENERGIA ELETRICA CUSTO","dre_id":105},{"conta":"33050505","ordem":159,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"BENFEIT. EM IMOV. DE TERCEIROS","dre_id":105},{"conta":"33410101","ordem":160,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"(-) CREDITOS PIS","dre_id":105},{"conta":"33410102","ordem":161,"nivel1":"(-) CUSTOS FIXO","nivel2":"OCUPAÇÃO CUSTO","detalhe":"(-) CREDITOS COFINS","dre_id":105},{"conta":"33010125","ordem":162,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":105},{"conta":"33010126","ordem":163,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":105},{"conta":"33050305","ordem":164,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":105},{"conta":"33050306","ordem":165,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":105},{"conta":"33050503","ordem":166,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":105},{"conta":"33050504","ordem":167,"nivel1":"(-) CUSTOS FIXO","nivel2":"CRED FISCAL (C.F)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":105},{"conta":"35010101","ordem":168,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ORDENADOS E SALARIOS","dre_id":107},{"conta":"35010102","ordem":169,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"FERIAS","dre_id":107},{"conta":"35010103","ordem":170,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"13 SALARIO","dre_id":107},{"conta":"35010104","ordem":171,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ENCARGOS SOCIAIS INSS","dre_id":107},{"conta":"35010105","ordem":172,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ENCARGOS SOCIAIS FGTS","dre_id":107},{"conta":"35010106","ordem":173,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"AVISO PREVIO E INDENIZACOES","dre_id":107},{"conta":"35010107","ordem":174,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ASSISTENCIA MEDICA","dre_id":107},{"conta":"35010108","ordem":175,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"SEGURO DE VIDA EM GRUPO","dre_id":107},{"conta":"35010109","ordem":176,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"CURSOS E TREINAMENTO","dre_id":107},{"conta":"35010110","ordem":177,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"REFEICOES","dre_id":107},{"conta":"35010111","ordem":178,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"VALE-TRANSPORTE","dre_id":107},{"conta":"35010112","ordem":179,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"REMUNERACAO E ESTAGIARIOS","dre_id":107},{"conta":"35010113","ordem":180,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PRO-LABORE","dre_id":107},{"conta":"35010115","ordem":181,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"CONTR. SINDICAL PATRONAL","dre_id":107},{"conta":"35010116","ordem":182,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PARTICIPACAO NOS LUCROS","dre_id":107},{"conta":"35010117","ordem":183,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PROVISAO DE FERIAS E ENCARGOS","dre_id":107},{"conta":"35010118","ordem":184,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PROVISAO DE 13 E ENCARGOS","dre_id":107},{"conta":"35010119","ordem":185,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ASSISTENCIA ODONTOLOGICA","dre_id":107},{"conta":"35010120","ordem":186,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"GRATIFICACOES","dre_id":107},{"conta":"35010121","ordem":187,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"COMISSOES SOBRE VENDAS","dre_id":107},{"conta":"35010122","ordem":188,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"CESTA BASICA","dre_id":107},{"conta":"35010123","ordem":189,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"HORAS EXTRAS","dre_id":107},{"conta":"35010124","ordem":190,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"AUTONOMOS","dre_id":107},{"conta":"35010125","ordem":191,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"COMBUSTIVEL DESPESA","dre_id":107},{"conta":"35010126","ordem":192,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ALIMENTACAO - PAT","dre_id":107},{"conta":"35010127","ordem":193,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"SEGURO DE VIDA EM GRUPO","dre_id":107},{"conta":"35010128","ordem":194,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"RECRUTAMENTO E SELECAO","dre_id":107},{"conta":"35010129","ordem":195,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"MEDICINA  DO TRABALHO","dre_id":107},{"conta":"35010130","ordem":196,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"MAO DE OBRA TERCEIRIZADA","dre_id":107},{"conta":"35110101","ordem":197,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"VIAGENS E ESTADIAS - DESPESA","dre_id":107},{"conta":"35110103","ordem":198,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ASSOCIACOES DE CLASSE","dre_id":107},{"conta":"35110108","ordem":199,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"PEDAGIO REEMBOLSO","dre_id":107},{"conta":"35110109","ordem":200,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"KILOMETRAGEM REEMBOLSO","dre_id":107},{"conta":"35110110","ordem":201,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"EVENTOS E CONFRATERNIZACOES","dre_id":107},{"conta":"35110111","ordem":202,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"MANUTENCAO VEICULAR","dre_id":107},{"conta":"35110117","ordem":203,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"ESTACIONAMENTO","dre_id":107},{"conta":"35110119","ordem":204,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"OUTRAS DESPESAS C/PESSOAL","dre_id":107},{"conta":"35110120","ordem":205,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"COMBUSTIVEL REEMBOLSO","dre_id":107},{"conta":"35110121","ordem":206,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS PESSOAL","detalhe":"LOCACAO VEICULOS DESPESA","dre_id":107},{"conta":"35010114","ordem":207,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"PROCESSOS TRABALHISTA","detalhe":"PROCESSOS TRABALHISTAS","dre_id":107},{"conta":"35110105","ordem":208,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"PROCESSOS TRABALHISTA","detalhe":"LEGAIS E JUDICIAIS","dre_id":107},{"conta":"35030105","ordem":209,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"SEGURO FIANCA","dre_id":107},{"conta":"35050101","ordem":210,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"MATERIAL DE ESCRITORIO","dre_id":107},{"conta":"35050102","ordem":211,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"MATERIAIS AUXILIARES/CONSUMO","dre_id":107},{"conta":"35050103","ordem":212,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"ITENS DE LIMPEZA","dre_id":107},{"conta":"35070101","ordem":213,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"OUTROS SEGUROS","dre_id":107},{"conta":"35090108","ordem":214,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"CORREIOS E MALOTES","dre_id":107},{"conta":"35110104","ordem":215,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"COPA, COZINHA E REFEITORIOS","dre_id":107},{"conta":"35110106","ordem":216,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"TAXAS/EMOLUMENTOS E CARTORIO","dre_id":107},{"conta":"35110107","ordem":217,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"DESPESAS DIVERSAS","dre_id":107},{"conta":"35110112","ordem":218,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"MANUTENCAO E REPAROS","dre_id":107},{"conta":"35110113","ordem":219,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"OUTRAS CONTRIBUICOES","dre_id":107},{"conta":"35110114","ordem":220,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"DESPESAS DIVERSAS*","detalhe":"SERVICOS DE MOTOBOY","dre_id":107},{"conta":"35030101","ordem":221,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"ALUGUEIS E CONDOMINIOS DESPESA","dre_id":107},{"conta":"35030102","ordem":222,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"ENERGIA ELETRICA DESPESA","dre_id":107},{"conta":"35030103","ordem":223,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"TELEFONIA DESPESA","dre_id":107},{"conta":"35030104","ordem":224,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"LOCACAO DE EQUIPAMENTOS DESPESA","dre_id":107},{"conta":"35110102","ordem":225,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"OCUPAÇÃO DESPESA","detalhe":"AGUA E ESGOTO","dre_id":107},{"conta":"35050104","ordem":226,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"TI / INFRA","detalhe":"MATERIAIS DE INFORMATICA","dre_id":107},{"conta":"35050105","ordem":227,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"TI / INFRA","detalhe":"BENS DE NATUREZA PERMANENTE","dre_id":107},{"conta":"35110115","ordem":228,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"TI / INFRA","detalhe":"ICMS INCIDENTE NA AQUISICAO DE BENS","dre_id":107},{"conta":"35110118","ordem":229,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"TI / INFRA","detalhe":"MANUTENCAO DE IMOBILIZADO","dre_id":107},{"conta":"35090101","ordem":230,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"ASSESSORIA CONTABIL","dre_id":107},{"conta":"35090102","ordem":231,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"ASSISTENCIA JURIDICA","dre_id":107},{"conta":"35090103","ordem":232,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"AUDITORIA","dre_id":107},{"conta":"35090104","ordem":233,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"OUTROS SERV. PREST. POR PJ","dre_id":107},{"conta":"35090105","ordem":234,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"CONSULTORIA","dre_id":107},{"conta":"35090106","ordem":235,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"MANUTENCAO PREDIAL","dre_id":107},{"conta":"35090107","ordem":236,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"PREST. SERV. DE INFORMATICA","dre_id":107},{"conta":"35090111","ordem":237,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"SERVIÇOS DE TERCEIROS","detalhe":"PREST. SERV. DE LIMPEZA","dre_id":107},{"conta":"35090109","ordem":238,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"CRED FISCAL (ADM)","detalhe":"(-)PIS LEI 10.637/2002","dre_id":107},{"conta":"35090110","ordem":239,"nivel1":"(-) DESPESAS ADMINISTRATIVO","nivel2":"CRED FISCAL (ADM)","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":107},{"conta":"35110116","ordem":240,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"BRINDES","dre_id":108},{"conta":"35170101","ordem":241,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"PROVISAO P CREDITO LIQUIDACAO DUVIDOSA","dre_id":108},{"conta":"36010101","ordem":242,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"PROPAGANDA E PUBLICIDADE","dre_id":108},{"conta":"36010102","ordem":243,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"REPRESENTANTES","dre_id":108},{"conta":"36010104","ordem":244,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"CAMPANHAS E BRINDES","dre_id":108},{"conta":"36010109","ordem":245,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"(-) PIS LEI 10.637/2002","dre_id":108},{"conta":"36010110","ordem":246,"nivel1":"(-) DESPESAS COMERCIAL","nivel2":"DESPESA COMERCIAL","detalhe":"(-) COFINS LEI 10.637/2002","dre_id":108},{"conta":"37010101","ordem":247,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"JUROS PAGOS OU INCORRIDOS","dre_id":110},{"conta":"37010102","ordem":248,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"DESCONTOS CONCEDIDOS","dre_id":110},{"conta":"37010103","ordem":249,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"I.O.F.","dre_id":110},{"conta":"37010107","ordem":250,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"OUTRAS DESPESAS FINANCEIRAS","dre_id":110},{"conta":"37010108","ordem":251,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"PERDAS NO RECEBIMENTO DE CREDITOS","dre_id":110},{"conta":"37010109","ordem":252,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"VARIACOES DE CONSORCIOS","dre_id":110},{"conta":"37010111","ordem":253,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"MULTAS CONTRATUAIS","dre_id":110},{"conta":"37010112","ordem":254,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"I.O.C.","dre_id":110},{"conta":"37010113","ordem":255,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"IR S/OPERACAO DE CAMBIO","dre_id":110},{"conta":"37010114","ordem":256,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"VARIACAO CAMBIAL PASSIVA","dre_id":110},{"conta":"37030101","ordem":257,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"DESCONTOS OBTIDOS","dre_id":110},{"conta":"37030102","ordem":258,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"JUROS RECEBIDOS OU AUFERIDOS","dre_id":110},{"conta":"37030103","ordem":259,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"RECEITAS DE APLIC.FINANCEIRAS","dre_id":110},{"conta":"37030104","ordem":260,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"JUROS APLICADOS S/EMPRESTIMOS","dre_id":110},{"conta":"37030105","ordem":261,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"RECUPERACAO DE DESPESAS","dre_id":110},{"conta":"37030106","ordem":262,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"(-) PIS LEI 8.451/15","dre_id":110},{"conta":"37030107","ordem":263,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"(-) COFINS LEI 8.451/15","dre_id":110},{"conta":"37030108","ordem":264,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RESULTADO FINANCEIRO","detalhe":"OUTRAS RECEITAS FINANCEIRAS","dre_id":110},{"conta":"37010104","ordem":265,"nivel1":"RESULTADO FINANCEIRO","nivel2":"DESPESAS BANCARIAS","detalhe":"DESPESAS BANCARIAS","dre_id":110},{"conta":"37010110","ordem":266,"nivel1":"RESULTADO FINANCEIRO","nivel2":"DESPESAS BANCARIAS","detalhe":"JUROS INCORRIDOS S/EMPRESTIMOS","dre_id":110},{"conta":"37010105","ordem":267,"nivel1":"RESULTADO FINANCEIRO","nivel2":"DESPESAS TRIBUTARIA","detalhe":"ENCARGOS SOBRE TRIBUTOS","dre_id":110},{"conta":"37010106","ordem":268,"nivel1":"RESULTADO FINANCEIRO","nivel2":"DESPESAS TRIBUTARIA","detalhe":"JUROS OUTRAS OPERACOES","dre_id":110},{"conta":"37030109","ordem":269,"nivel1":"RESULTADO FINANCEIRO","nivel2":"RECEITA TRIBUTARIA","detalhe":"JUROS SELIC","dre_id":110},{"conta":"34010101","ordem":270,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"RESULTADO POSITIVO PARTIC. SOCIETARIA","dre_id":111},{"conta":"34010102","ordem":271,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"RESULTADO NEGATIVO PARTIC. SOCIETARIA","dre_id":111},{"conta":"34010103","ordem":272,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"DESAGIO NA AQUISICAO DE PARTICIPACAO SOC","dre_id":111},{"conta":"34010104","ordem":273,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"PROVISAO PARA PERDA DE INVESTIMENTO","dre_id":111},{"conta":"35150101","ordem":274,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"MULTA DA FISCALIZACAO","dre_id":111},{"conta":"35150102","ordem":275,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"MULTA DE TRANSITO","dre_id":111},{"conta":"35150103","ordem":276,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"DESPESAS INDEDUTIVEIS","dre_id":111},{"conta":"38010101","ordem":277,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"CUSTO DE ALIENACOES DE IMOBILIZADOS","dre_id":111},{"conta":"38010102","ordem":278,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"CONTINGENCIAS","dre_id":111},{"conta":"38010107","ordem":279,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"PERDAS","dre_id":111},{"conta":"38010108","ordem":280,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"PREJUIZO NAO OPERACIONAL","dre_id":111},{"conta":"38010109","ordem":281,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"BENS INDENIZADOS","dre_id":111},{"conta":"38010110","ordem":282,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"TITULOS INCOBRAVEIS","dre_id":111},{"conta":"38010111","ordem":283,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"PROV.PERDA CREDITO HABILITADO","dre_id":111},{"conta":"38020101","ordem":284,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"RECEITAS DA ALIENACAO DE IMOBILIZADO","dre_id":111},{"conta":"38020102","ordem":285,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"OUTRAS RECEITAS NAO OPERAC.","dre_id":111},{"conta":"38020103","ordem":286,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"RESULTADO DA ALIEN DE ATIVOS NAO CIRCUL","dre_id":111},{"conta":"38020104","ordem":287,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"DESAGIO NA AQUISICAO DE PARTICIPACAO SOC","dre_id":111},{"conta":"38020108","ordem":288,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"LUCRO NAO OPERECIONAL","dre_id":111},{"conta":"38020109","ordem":289,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"INDENIZACOES DE SEGUROS RECEBIDAS","dre_id":111},{"conta":"38020110","ordem":290,"nivel1":"OUTRAS RECEITAS E DESPESAS","nivel2":"OUTRAS RECEITAS E DESPESAS","detalhe":"VENDA ATIVO IMOBILIZADO","dre_id":111},{"conta":"33050109","ordem":291,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"DEPRECIACAO","dre_id":104},{"conta":"33050110","ordem":292,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"(-)PIS LEI 10.637/2002","dre_id":104},{"conta":"33050111","ordem":293,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"(-)COFINS LEI 10.637/2002","dre_id":104},{"conta":"33050112","ordem":294,"nivel1":"(-) CUSTOS VARIAVEL","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"AMORTIZACOES","dre_id":104},{"conta":"35130101","ordem":295,"nivel1":"(-) DEPRECIAÇÃO E AMORTIZAÇÃO","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"DEPRECIACOES","dre_id":112},{"conta":"35130102","ordem":296,"nivel1":"(-) DEPRECIAÇÃO E AMORTIZAÇÃO","nivel2":"DEPRECIAÇÃO E AMORTIZAÇÃO","detalhe":"AMORTIZACOES","dre_id":112},{"conta":"39010101","ordem":297,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"CSLL","detalhe":"CSLL","dre_id":114},{"conta":"39010102","ordem":298,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"CSLL","detalhe":"CSLL DIFERIDO","dre_id":114},{"conta":"39010103","ordem":299,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"CSLL","detalhe":"CSLL - CREDITO FISCAL BASE NEG","dre_id":114},{"conta":"39020101","ordem":300,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"IRPJ","detalhe":"IRPJ","dre_id":114},{"conta":"39020102","ordem":301,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"IRPJ","detalhe":"IRPJ DIFERIDO","dre_id":114},{"conta":"39020103","ordem":302,"nivel1":"(-) PROVISÃO PARA IR E CSLL","nivel2":"IRPJ","detalhe":"IRPJ - CREDITO FISCAL BASE NEG","dre_id":114}]</script>
+
+<!-- ==============================================================
+     APP
+     ============================================================== -->
+<script>
+'use strict';
+
+/* ===========================================================
+   CONSTANTES
+   =========================================================== */
+const CATEGORIAS_DESPESA = new Set([
+  "(-) CUSTOS VARIAVEL",
+  "(-) CUSTOS FIXO",
+  "(-) DESPESAS ADMINISTRATIVO",
+  "(-) DESPESAS COMERCIAL",
+  "(-) DEDUÇÕES",
+  "(-) DEPRECIAÇÃO E AMORTIZAÇÃO",
+  "(-) PROVISÃO PARA IR E CSLL",
+  "OUTRAS RECEITAS E DESPESAS",
+]);
+
+/* Colunas que precisamos, com os sinônimos aceitos.
+   A chave é o nome canônico (usado no resto do código).
+   Normalização: lowercase, sem acentos, sem #, espaços colapsados, trim. */
+const COLUNAS_ALIASES = {
+  "Data Lcto":    ["data lcto", "data lancamento", "data lanc", "dt lcto", "dt lanc", "data"],
+  "Filial":       ["filial", "cod filial", "codigo filial", "filial orig"],
+  "Cta Debito":   ["cta debito", "conta debito", "cta deb", "conta deb"],
+  "Cta Credito":  ["cta credito", "conta credito", "cta cred", "conta cred"],
+  "Valor":        ["valor", "valor lcto", "valor lancamento", "vlr", "vlr lcto", "valor moeda1"],
+  "Hist Lanc":    ["hist lanc", "historico", "historico lanc", "hist lancamento", "historico lancamento"],
+  "CLI/FOR":      ["cli for", "cliente fornecedor", "cli fornec", "cliente/fornecedor", "clifor"],
+  "C Custo Deb":  ["c custo deb", "centro custo deb", "cc deb", "cc debito", "centro de custo deb"],
+  "C Custo Crd":  ["c custo crd", "c custo cred", "centro custo crd", "centro custo cred", "cc cred", "cc credito"],
+  "Numero Doc":   ["numero doc", "num doc", "n doc", "numero documento", "nr doc", "documento"],
+  "Rotina":       ["rotina", "origem", "programa"],
+};
+const COLUNAS_NECESSARIAS = Object.keys(COLUNAS_ALIASES);
+
+/* Inverter o mapa: normalizado -> canônico */
+const NORM_TO_CANONICAL = {};
+for (const [canon, aliases] of Object.entries(COLUNAS_ALIASES)) {
+  for (const a of aliases) NORM_TO_CANONICAL[a] = canon;
+}
+
+/* Normaliza um nome de coluna: remove acentos, #, lowercase, colapsa espaços */
+function normalizaNomeColuna(s) {
+  if (s == null) return '';
+  return String(s)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // remove acentos
+    .replace(/[#*]/g, '')                                // remove #, *
+    .replace(/[\/._\-]/g, ' ')                           // troca separadores por espaço
+    .replace(/\s+/g, ' ')                                // colapsa espaços
+    .trim()
+    .toLowerCase();
+}
+
+const PLANO_ARR = JSON.parse(document.getElementById('plano-data').textContent);
+const PLANO_IDX = Object.fromEntries(PLANO_ARR.map(p => [String(p.conta), p]));
+
+const CHART_COLORS = ['#0d4d3a','#b45309','#5c5b58','#a98a3c','#6b7c5a','#8b4513','#4a6b6f','#7d5a4f','#9d7e3e','#3d5c50'];
+
+/* ===========================================================
+   FORMATAÇÃO
+   =========================================================== */
+const fmtBRL = n => 'R$ ' + (Number(n)||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtBRLshort = n => {
+  const v = Number(n) || 0;
+  const abs = Math.abs(v);
+  if (abs >= 1e6) return 'R$ ' + (v/1e6).toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' M';
+  if (abs >= 1e3) return 'R$ ' + (v/1e3).toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' k';
+  return fmtBRL(v);
+};
+const fmtDate = s => {
+  if (!s) return '—';
+  const d = (s instanceof Date) ? s : new Date(s);
+  if (isNaN(d)) return String(s);
+  return d.toLocaleDateString('pt-BR');
+};
+const fmtMesAno = isoMes => {
+  const [y,m] = isoMes.split('-');
+  const nomes = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  return nomes[parseInt(m)-1] + '/' + y.slice(2);
+};
+const fmtPct = n => (n>0?'+':'') + n.toFixed(1) + '%';
+
+/* ===========================================================
+   CRIPTOGRAFIA
+   =========================================================== */
+function b64encode(buf) {
+  const bytes = new Uint8Array(buf);
+  let s = '';
+  const chunk = 0x8000;
+  for (let i=0; i<bytes.length; i+=chunk) {
+    s += String.fromCharCode.apply(null, bytes.subarray(i, i+chunk));
+  }
+  return btoa(s);
+}
+function b64decode(str) {
+  const s = atob(str);
+  const bytes = new Uint8Array(s.length);
+  for (let i=0; i<s.length; i++) bytes[i] = s.charCodeAt(i);
+  return bytes;
+}
+
+async function deriveKey(password, salt, iterations) {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(password),
+    {name:'PBKDF2'}, false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations, hash:'SHA-256'},
+    keyMaterial,
+    {name:'AES-GCM', length:256},
+    false, ['encrypt','decrypt']
+  );
+}
+
+async function gzipString(str) {
+  const cs = new CompressionStream('gzip');
+  const writer = cs.writable.getWriter();
+  writer.write(new TextEncoder().encode(str)); writer.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function gunzipToString(bytes) {
+  const ds = new DecompressionStream('gzip');
+  const writer = ds.writable.getWriter();
+  writer.write(bytes); writer.close();
+  return await new Response(ds.readable).text();
+}
+
+async function encryptPayload(plainObj, password) {
+  const json = JSON.stringify(plainObj);
+  const compressed = await gzipString(json);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const iterations = 600000;
+  const key = await deriveKey(password, salt, iterations);
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, compressed);
+  return {
+    v: 1,
+    kdf: 'PBKDF2-SHA256',
+    iter: iterations,
+    salt: b64encode(salt),
+    iv: b64encode(iv),
+    ct: b64encode(ct)
+  };
+}
+
+async function decryptPayload(envelope, password) {
+  if (envelope.v !== 1) throw new Error('Formato não suportado (v=' + envelope.v + ')');
+  const salt = b64decode(envelope.salt);
+  const iv = b64decode(envelope.iv);
+  const ct = b64decode(envelope.ct);
+  const key = await deriveKey(password, salt, envelope.iter);
+  let compressed;
+  try {
+    compressed = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, ct);
+  } catch (e) {
+    throw new Error('Senha incorreta');
+  }
+  const json = await gunzipToString(new Uint8Array(compressed));
+  return JSON.parse(json);
+}
+
+/* ===========================================================
+   XLSX (carregado sob demanda)
+   =========================================================== */
+async function ensureSheetJS() {
+  if (window.XLSX) return;
+  await new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = res;
+    s.onerror = () => rej(new Error('Não foi possível carregar a biblioteca SheetJS. Verifique sua conexão.'));
+    document.head.appendChild(s);
+  });
+}
+
+async function parseXlsx(file) {
+  await ensureSheetJS();
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(new Uint8Array(buf), {type:'array', cellDates:true, raw:false});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  if (!ws) throw new Error('Planilha sem aba visível no arquivo ' + file.name);
+
+  /* Ler como matriz crua (linhas como arrays) — permite descobrir a linha do cabeçalho */
+  const matrix = XLSX.utils.sheet_to_json(ws, {defval:null, raw:true, header:1, blankrows:false});
+  if (!matrix.length) throw new Error('Arquivo ' + file.name + ' está vazio.');
+
+  /* Procurar a linha de cabeçalho: é aquela que tem maior número de colunas reconhecidas.
+     Varre as primeiras 15 linhas pra lidar com relatórios Protheus que têm título antes. */
+  let melhorLinha = -1;
+  let melhorScore = 0;
+  let melhorNormalizadas = null;
+  const maxScan = Math.min(15, matrix.length);
+
+  for (let i = 0; i < maxScan; i++) {
+    const row = matrix[i];
+    if (!row) continue;
+    const normalizadas = row.map(c => normalizaNomeColuna(c));
+    let score = 0;
+    for (const n of normalizadas) {
+      if (n && NORM_TO_CANONICAL[n]) score++;
+    }
+    if (score > melhorScore) {
+      melhorScore = score;
+      melhorLinha = i;
+      melhorNormalizadas = normalizadas;
+    }
+  }
+
+  if (melhorLinha < 0 || melhorScore === 0) {
+    const primeiras = matrix.slice(0, 3).map((r,i) =>
+      `  linha ${i+1}: ${(r||[]).slice(0,6).map(c => c==null?'(vazio)':String(c).slice(0,30)).join(' | ')}`
+    ).join('\n');
+    throw new Error(
+      'Não foi possível localizar o cabeçalho em ' + file.name + '.\n' +
+      'Amostra das primeiras linhas:\n' + primeiras
+    );
+  }
+
+  /* Montar mapeamento: posição da coluna -> nome canônico */
+  const posCanon = {};
+  const encontradas = new Set();
+  const extras = []; // colunas do arquivo que não reconhecemos (só pra diagnóstico)
+  for (let pos = 0; pos < melhorNormalizadas.length; pos++) {
+    const n = melhorNormalizadas[pos];
+    if (!n) continue;
+    const canon = NORM_TO_CANONICAL[n];
+    if (canon && !encontradas.has(canon)) {
+      posCanon[pos] = canon;
+      encontradas.add(canon);
+    } else if (!canon) {
+      extras.push(matrix[melhorLinha][pos]);
+    }
+  }
+
+  /* Checar quais colunas necessárias ainda faltam */
+  const faltando = COLUNAS_NECESSARIAS.filter(c => !encontradas.has(c));
+  if (faltando.length) {
+    const tudoQueVi = (matrix[melhorLinha]||[]).filter(c => c!=null && String(c).trim()).map(c => String(c).trim());
+    throw new Error(
+      'Colunas obrigatórias não encontradas em ' + file.name + ': ' + faltando.join(', ') + '.\n\n' +
+      'Cabeçalho detectado na linha ' + (melhorLinha+1) + '. Colunas vistas no arquivo:\n' +
+      tudoQueVi.map(c => '  • ' + c).join('\n') + '\n\n' +
+      'Se alguma dessas colunas corresponde a uma das faltantes com outro nome, me avise o nome exato para adicionar ao reconhecedor.'
+    );
+  }
+
+  /* Converter linhas de dados para objetos usando os nomes canônicos */
+  const dataRows = matrix.slice(melhorLinha + 1);
+  const out = [];
+  for (const row of dataRows) {
+    if (!row || row.every(c => c == null || c === '')) continue;
+    const obj = {};
+    for (const [pos, canon] of Object.entries(posCanon)) {
+      obj[canon] = row[pos];
+    }
+    /* Sanidade mínima: precisa ter ao menos data ou valor */
+    if (obj['Data Lcto'] == null && obj['Valor'] == null) continue;
+    out.push(obj);
+  }
+
+  if (out.length === 0) {
+    throw new Error('Cabeçalho reconhecido em ' + file.name + ', mas nenhuma linha de dados válida foi encontrada abaixo dele.');
+  }
+
+  return out;
+}
+
+/* ===========================================================
+   CLASSIFICAÇÃO E AGREGAÇÃO
+   =========================================================== */
+function normalizaConta(c) {
+  if (c == null) return '';
+  return String(c).split('.')[0].trim();
+}
+function normalizaFornecedor(v) {
+  if (v == null) return '';
+  return String(v).trim();
+}
+
+function classifica(row) {
+  const cd = normalizaConta(row['Cta Debito']);
+  const cc = normalizaConta(row['Cta Credito']);
+  const pd = PLANO_IDX[cd];
+  const pc = PLANO_IDX[cc];
+  if (pd && CATEGORIAS_DESPESA.has(pd.nivel1)) {
+    return {tipo:'DESPESA', nivel1:pd.nivel1, nivel2:pd.nivel2, detalhe:pd.detalhe, conta:cd};
+  }
+  if (pc && CATEGORIAS_DESPESA.has(pc.nivel1)) {
+    return {tipo:'ESTORNO', nivel1:pc.nivel1, nivel2:pc.nivel2, detalhe:pc.detalhe, conta:cc};
+  }
+  return {tipo:'PATRIMONIAL'};
+}
+
+function toDate(v) {
+  if (v instanceof Date) return v;
+  if (typeof v === 'number') {
+    return new Date(Date.UTC(1899,11,30) + v * 86400000);
+  }
+  if (typeof v === 'string') {
+    const d = new Date(v);
+    return isNaN(d) ? null : d;
+  }
+  return null;
+}
+function isoDay(d) {
+  return d.toISOString().slice(0,10);
+}
+function isoMonth(d) {
+  return d.toISOString().slice(0,7);
+}
+
+function aggregate(allRows) {
+  // Classifica
+  const enriched = [];
+  let count_desp=0, count_est=0, count_patr=0;
+  for (const r of allRows) {
+    const c = classifica(r);
+    if (c.tipo === 'PATRIMONIAL') { count_patr++; continue; }
+    const d = toDate(r['Data Lcto']);
+    if (!d) continue;
+    const valor = Number(r['Valor']) || 0;
+    if (valor <= 0) continue;
+    enriched.push({
+      data: d,
+      filial: String(r['Filial']||''),
+      cta: c.conta,
+      valor,
+      hist: r['Hist Lanc']||'',
+      forn: normalizaFornecedor(r['CLI/FOR']),
+      ccd: String(r['C Custo Deb']||'').trim(),
+      ccc: String(r['C Custo Cred']||r['C Custo Crd']||'').trim(),
+      doc: String(r['Numero Doc']||'').trim(),
+      tipo: c.tipo,
+      nivel1: c.nivel1,
+      nivel2: c.nivel2,
+      detalhe: c.detalhe,
+    });
+    if (c.tipo === 'DESPESA') count_desp++; else count_est++;
+  }
+
+  const despesas = enriched.filter(e => e.tipo === 'DESPESA');
+  const estornos = enriched.filter(e => e.tipo === 'ESTORNO');
+  if (despesas.length === 0) throw new Error('Nenhum lançamento de DESPESA encontrado. Verifique se os arquivos são do Protheus e se o plano gerencial está correto.');
+
+  const total_bruto = despesas.reduce((s,e)=>s+e.valor, 0);
+  const total_estornos = estornos.reduce((s,e)=>s+e.valor, 0);
+  const total_liquido = total_bruto - total_estornos;
+
+  // Período
+  const datas = despesas.map(e => e.data).sort((a,b)=>a-b);
+  const ini = datas[0], fim = datas[datas.length-1];
+
+  // KPIs
+  const lastY = fim.getFullYear(), lastM = fim.getMonth();
+  const prevY = lastM === 0 ? lastY - 1 : lastY;
+  const prevM = lastM === 0 ? 11 : lastM - 1;
+  let totalMesAtual = 0, totalMesAnterior = 0;
+  for (const e of despesas) {
+    const y = e.data.getFullYear(), m = e.data.getMonth();
+    if (y === lastY && m === lastM) totalMesAtual += e.valor;
+    if (y === prevY && m === prevM) totalMesAnterior += e.valor;
+  }
+  const varPct = totalMesAnterior > 0 ? (totalMesAtual - totalMesAnterior) / totalMesAnterior * 100 : null;
+  const fornecedoresUnicos = new Set(despesas.filter(e=>e.forn).map(e=>e.forn)).size;
+
+  // Séries temporais
+  const porDiaMap = new Map();
+  const porMesMap = new Map();
+  const porMesN1Map = new Map();
+  for (const e of despesas) {
+    const d = isoDay(e.data), m = isoMonth(e.data);
+    porDiaMap.set(d, (porDiaMap.get(d)||0) + e.valor);
+    porMesMap.set(m, (porMesMap.get(m)||0) + e.valor);
+    const k = m + '|' + e.nivel1;
+    porMesN1Map.set(k, (porMesN1Map.get(k)||0) + e.valor);
+  }
+  const por_dia = [...porDiaMap.entries()].sort().map(([data,valor])=>({data,valor:round2(valor)}));
+  const por_mes = [...porMesMap.entries()].sort().map(([mes,valor])=>({mes,valor:round2(valor)}));
+  const por_mes_nivel1 = [];
+  for (const [k,v] of porMesN1Map) {
+    const [mes, nivel1] = k.split('|');
+    por_mes_nivel1.push({mes, nivel1, valor: round2(v)});
+  }
+  por_mes_nivel1.sort((a,b)=> a.mes === b.mes ? a.nivel1.localeCompare(b.nivel1) : a.mes.localeCompare(b.mes));
+
+  // Rankings
+  const fornMap = new Map();
+  for (const e of despesas) {
+    if (!e.forn) continue;
+    const cur = fornMap.get(e.forn) || {valor:0, docs:new Set()};
+    cur.valor += e.valor;
+    if (e.doc) cur.docs.add(e.doc);
+    fornMap.set(e.forn, cur);
+  }
+  const top_fornecedores = [...fornMap.entries()]
+    .map(([fornecedor, v]) => ({fornecedor, valor:round2(v.valor), qtd:v.docs.size||1}))
+    .sort((a,b)=>b.valor-a.valor).slice(0,30);
+
+  const ccMap = new Map();
+  for (const e of despesas) {
+    if (!e.ccd) continue;
+    ccMap.set(e.ccd, (ccMap.get(e.ccd)||0) + e.valor);
+  }
+  const top_centros_custo = [...ccMap.entries()]
+    .map(([centro_custo, valor]) => ({centro_custo, valor:round2(valor)}))
+    .sort((a,b)=>b.valor-a.valor).slice(0,15);
+
+  // Por filial
+  const filMap = new Map();
+  for (const e of despesas) {
+    filMap.set(e.filial, (filMap.get(e.filial)||0) + e.valor);
+  }
+  const por_filial = [...filMap.entries()]
+    .map(([filial, valor]) => ({filial, valor:round2(valor)}))
+    .sort((a,b)=>b.valor-a.valor);
+
+  // Hierarquia N1 -> N2 -> detalhe
+  const hier = new Map();
+  for (const e of despesas) {
+    const n1 = e.nivel1, n2 = e.nivel2, d = e.detalhe;
+    if (!hier.has(n1)) hier.set(n1, {valor:0, n2: new Map()});
+    const e1 = hier.get(n1); e1.valor += e.valor;
+    if (!e1.n2.has(n2)) e1.n2.set(n2, {valor:0, det:new Map()});
+    const e2 = e1.n2.get(n2); e2.valor += e.valor;
+    e2.det.set(d, (e2.det.get(d)||0) + e.valor);
+  }
+  const hierarquia = [];
+  for (const [n1, v1] of hier) {
+    const niveis2 = [];
+    for (const [n2, v2] of v1.n2) {
+      const detalhes = [...v2.det.entries()]
+        .map(([detalhe, valor]) => ({detalhe, valor:round2(valor)}))
+        .sort((a,b)=>b.valor-a.valor);
+      niveis2.push({nivel2:n2, valor:round2(v2.valor), detalhes});
+    }
+    niveis2.sort((a,b)=>b.valor-a.valor);
+    hierarquia.push({
+      nivel1: n1, valor: round2(v1.valor),
+      pct_total: round2(v1.valor / total_bruto * 100),
+      niveis2
+    });
+  }
+  hierarquia.sort((a,b)=>b.valor-a.valor);
+
+  // Transações agregadas por documento (top 2000)
+  const txMap = new Map();
+  for (const e of despesas) {
+    const key = [isoDay(e.data), e.doc, e.forn, e.filial, e.nivel1, e.nivel2, e.detalhe, e.ccd].join('|');
+    const cur = txMap.get(key);
+    if (cur) {
+      cur.valor += e.valor;
+    } else {
+      txMap.set(key, {
+        data: isoDay(e.data), doc: e.doc, fornecedor: e.forn, filial: e.filial,
+        centro_custo: e.ccd, nivel1: e.nivel1, nivel2: e.nivel2, detalhe: e.detalhe,
+        descricao: e.hist, valor: e.valor
+      });
+    }
+  }
+  const transacoes = [...txMap.values()]
+    .sort((a,b)=>b.valor-a.valor).slice(0, 2000)
+    .map(t => ({...t, valor: round2(t.valor)}));
+
+  return {
+    meta: {
+      gerado_em: new Date().toISOString(),
+      periodo: {inicio: isoDay(ini), fim: isoDay(fim)},
+      total_linhas_processadas: allRows.length,
+      total_linhas_despesa: count_desp,
+      total_linhas_estorno: count_est,
+      total_linhas_patrimoniais_descartadas: count_patr,
+    },
+    kpis: {
+      total_bruto: round2(total_bruto),
+      total_estornos: round2(total_estornos),
+      total_liquido: round2(total_liquido),
+      mes_atual_label: `${String(lastM+1).padStart(2,'0')}/${lastY}`,
+      mes_atual_valor: round2(totalMesAtual),
+      mes_anterior_valor: round2(totalMesAnterior),
+      mes_variacao_pct: varPct === null ? null : round2(varPct),
+      qtd_lancamentos: count_desp,
+      qtd_fornecedores: fornecedoresUnicos,
+    },
+    series_temporais: {por_dia, por_mes, por_mes_nivel1},
+    rankings: {top_fornecedores, top_centros_custo},
+    hierarquia,
+    por_filial,
+    transacoes,
+  };
+}
+
+function round2(n) { return Math.round(n*100)/100; }
+
+/* ===========================================================
+   RENDERIZAÇÃO DO DASHBOARD
+   =========================================================== */
+const App = {
+  data: null,
+  filtered: [],
+  sortCol: 'valor',
+  sortDir: 'desc',
+  page: 1,
+  pageSize: 50,
+  charts: {},
+};
+
+function renderAll(data) {
+  App.data = data;
+  document.getElementById('viewer-dash').classList.remove('hidden');
+
+  // Meta
+  document.getElementById('meta-periodo').textContent =
+    fmtDate(data.meta.periodo.inicio) + ' – ' + fmtDate(data.meta.periodo.fim);
+  document.getElementById('meta-atualizado').textContent = fmtDate(data.meta.gerado_em);
+  document.getElementById('colophon-stats').textContent =
+    `${data.meta.total_linhas_processadas.toLocaleString('pt-BR')} lançamentos processados · ${data.kpis.qtd_lancamentos.toLocaleString('pt-BR')} despesas · ${data.kpis.qtd_fornecedores.toLocaleString('pt-BR')} fornecedores`;
+
+  renderKpis(data);
+  renderMonthlyChart(data);
+  renderDonut(data);
+  renderTopFornecedores(data);
+  renderStackedChart(data);
+  renderFiliais(data);
+  renderCentroCusto(data);
+  populateFilters(data);
+  applyFilters();
+  renderHierarchy(data);
+}
+
+function renderKpis(data) {
+  const k = data.kpis;
+  // Total
+  const tEl = document.getElementById('kpi-total');
+  tEl.textContent = fmtBRLshort(k.total_liquido);
+  if (k.total_liquido > 999999) tEl.classList.add('kpi-value-small');
+  document.getElementById('kpi-total-sub').innerHTML =
+    `Bruto ${fmtBRLshort(k.total_bruto)} · estornos ${fmtBRLshort(k.total_estornos)}`;
+
+  // Mês atual
+  const mEl = document.getElementById('kpi-mes');
+  mEl.textContent = fmtBRLshort(k.mes_atual_valor);
+  if (k.mes_atual_valor > 999999) mEl.classList.add('kpi-value-small');
+  document.getElementById('kpi-mes-sub').textContent = k.mes_atual_label;
+
+  // Variação
+  const varEl = document.getElementById('kpi-var');
+  const varSub = document.getElementById('kpi-var-sub');
+  if (k.mes_variacao_pct === null) {
+    varEl.textContent = '—';
+    varSub.innerHTML = '<span class="flat">sem mês anterior</span>';
+  } else {
+    varEl.textContent = fmtPct(k.mes_variacao_pct);
+    const cls = k.mes_variacao_pct > 0 ? 'up' : 'down';
+    varSub.innerHTML = `<span class="${cls}">vs. ${fmtBRLshort(k.mes_anterior_valor)} no mês anterior</span>`;
+  }
+
+  // Fornecedores
+  document.getElementById('kpi-forn').textContent = k.qtd_fornecedores.toLocaleString('pt-BR');
+  document.getElementById('kpi-forn-sub').textContent = `em ${k.qtd_lancamentos.toLocaleString('pt-BR')} lançamentos`;
+}
+
+function getChartBase() {
+  return {
+    maintainAspectRatio: false,
+    responsive: true,
+    font: {family: "'IBM Plex Sans', sans-serif"},
+    plugins: {
+      legend: {
+        labels: {font:{family:"'IBM Plex Sans', sans-serif", size:12}, color:'#5c5b58'}
+      },
+      tooltip: {
+        backgroundColor: '#17181a',
+        titleFont: {family:"'IBM Plex Sans', sans-serif", weight:'500'},
+        bodyFont: {family:"'IBM Plex Mono', monospace"},
+        padding: 12,
+        cornerRadius: 0,
+        displayColors: true,
+      }
+    }
+  };
+}
+
+function destroyChart(key) {
+  if (App.charts[key]) { App.charts[key].destroy(); delete App.charts[key]; }
+}
+
+function renderMonthlyChart(data) {
+  destroyChart('mensal');
+  const ctx = document.getElementById('chart-mensal').getContext('2d');
+  const labels = data.series_temporais.por_mes.map(p => fmtMesAno(p.mes));
+  const vals = data.series_temporais.por_mes.map(p => p.valor);
+  App.charts.mensal = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Gasto mensal',
+        data: vals,
+        borderColor: '#0d4d3a',
+        backgroundColor: 'rgba(13,77,58,0.08)',
+        fill: true,
+        tension: 0.3,
+        borderWidth: 2,
+        pointBackgroundColor: '#0d4d3a',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      ...getChartBase(),
+      plugins: {
+        ...getChartBase().plugins,
+        legend: {display: false},
+        tooltip: {
+          ...getChartBase().plugins.tooltip,
+          callbacks: { label: ctx => fmtBRL(ctx.parsed.y) }
+        }
+      },
+      scales: {
+        x: { grid:{display:false}, ticks:{color:'#5c5b58'} },
+        y: { beginAtZero: true, grid:{color:'#e8e4d9'},
+             ticks:{color:'#5c5b58', callback:v => fmtBRLshort(v)} }
+      }
+    }
+  });
+}
+
+function renderDonut(data) {
+  destroyChart('donut');
+  const ctx = document.getElementById('chart-donut').getContext('2d');
+  const items = data.hierarquia.slice(0, 8);
+  App.charts.donut = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: items.map(i => i.nivel1),
+      datasets: [{
+        data: items.map(i => i.valor),
+        backgroundColor: CHART_COLORS,
+        borderColor: '#ffffff',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      ...getChartBase(),
+      cutout: '60%',
+      plugins: {
+        ...getChartBase().plugins,
+        legend: { position:'right', labels:{boxWidth:12, padding:12, font:{size:11}, color:'#17181a'} },
+        tooltip: {
+          ...getChartBase().plugins.tooltip,
+          callbacks: {
+            label: ctx => {
+              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+              const pct = (ctx.parsed/total*100).toFixed(1);
+              return `${fmtBRL(ctx.parsed)}  (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderTopFornecedores(data) {
+  const el = document.getElementById('rank-fornecedores');
+  const top = data.rankings.top_fornecedores.slice(0, 10);
+  const maxVal = top[0]?.valor || 1;
+  el.innerHTML = top.map((f,i) => `
+    <div class="rank-row">
+      <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
+      <div class="rank-name" title="${escapeHtml(f.fornecedor)}">${escapeHtml(truncate(f.fornecedor, 45))}<span class="rank-meta">${f.qtd} doc${f.qtd===1?'':'s'}</span></div>
+      <div class="rank-value">${fmtBRLshort(f.valor)}</div>
+    </div>`).join('');
+}
+
+function renderStackedChart(data) {
+  destroyChart('stacked');
+  const ctx = document.getElementById('chart-stacked').getContext('2d');
+  const meses = [...new Set(data.series_temporais.por_mes_nivel1.map(p=>p.mes))].sort();
+  const categorias = [...new Set(data.series_temporais.por_mes_nivel1.map(p=>p.nivel1))];
+  // Ordenar categorias por total desc para cores consistentes
+  const totalPorCat = {};
+  for (const p of data.series_temporais.por_mes_nivel1) {
+    totalPorCat[p.nivel1] = (totalPorCat[p.nivel1]||0) + p.valor;
+  }
+  categorias.sort((a,b) => totalPorCat[b] - totalPorCat[a]);
+
+  const datasets = categorias.map((cat, i) => {
+    const byMes = {};
+    for (const p of data.series_temporais.por_mes_nivel1) {
+      if (p.nivel1 === cat) byMes[p.mes] = p.valor;
+    }
+    return {
+      label: cat,
+      data: meses.map(m => byMes[m] || 0),
+      backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
+      borderWidth: 0,
+    };
+  });
+
+  App.charts.stacked = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: meses.map(fmtMesAno), datasets },
+    options: {
+      ...getChartBase(),
+      plugins: {
+        ...getChartBase().plugins,
+        legend: { position:'bottom', labels:{boxWidth:12, padding:10, font:{size:11}, color:'#17181a'} },
+        tooltip: {
+          ...getChartBase().plugins.tooltip,
+          callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtBRL(ctx.parsed.y)}` }
+        }
+      },
+      scales: {
+        x: { stacked:true, grid:{display:false}, ticks:{color:'#5c5b58'} },
+        y: { stacked:true, beginAtZero:true, grid:{color:'#e8e4d9'},
+             ticks:{color:'#5c5b58', callback:v => fmtBRLshort(v)} }
+      }
+    }
+  });
+}
+
+function renderFiliais(data) {
+  const section = document.getElementById('section-filiais');
+  if (!data.por_filial || data.por_filial.length <= 1) {
+    section.classList.add('hidden');
+    return;
+  }
+  section.classList.remove('hidden');
+  const el = document.getElementById('rank-filiais');
+  const total = data.por_filial.reduce((s,f)=>s+f.valor,0);
+  el.innerHTML = data.por_filial.map((f,i) => `
+    <div class="rank-row">
+      <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
+      <div class="rank-name">Filial ${escapeHtml(f.filial)}<span class="rank-meta">${(f.valor/total*100).toFixed(1)}%</span></div>
+      <div class="rank-value">${fmtBRLshort(f.valor)}</div>
+    </div>`).join('');
+}
+
+function renderCentroCusto(data) {
+  const el = document.getElementById('rank-centro-custo');
+  const top = data.rankings.top_centros_custo.slice(0, 15);
+  const total = top.reduce((s,c)=>s+c.valor,0);
+  if (top.length === 0) {
+    el.innerHTML = '<div style="padding:20px; color:var(--ink-muted); font-size:13px;">Sem dados de centro de custo.</div>';
+    return;
+  }
+  el.innerHTML = top.map((c,i) => `
+    <div class="rank-row">
+      <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
+      <div class="rank-name">${escapeHtml(c.centro_custo)}<span class="rank-meta">${(c.valor/total*100).toFixed(1)}%</span></div>
+      <div class="rank-value">${fmtBRLshort(c.valor)}</div>
+    </div>`).join('');
+}
+
+/* ===========================================================
+   ABA EXPLORAÇÃO - filtros, ordenação, paginação, CSV
+   =========================================================== */
+function populateFilters(data) {
+  const cats = [...new Set(data.transacoes.map(t => t.nivel1))].sort();
+  const selCat = document.getElementById('f-cat');
+  selCat.innerHTML = '<option value="">Todas</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+
+  const ini = document.getElementById('f-data-ini');
+  const fim = document.getElementById('f-data-fim');
+  ini.min = data.meta.periodo.inicio; ini.max = data.meta.periodo.fim;
+  fim.min = data.meta.periodo.inicio; fim.max = data.meta.periodo.fim;
+}
+
+function updateSubcatFilter() {
+  const cat = document.getElementById('f-cat').value;
+  const sel = document.getElementById('f-subcat');
+  const cur = sel.value;
+  let subs = [];
+  if (cat) {
+    subs = [...new Set(App.data.transacoes.filter(t=>t.nivel1===cat).map(t=>t.nivel2))].sort();
+  } else {
+    subs = [...new Set(App.data.transacoes.map(t=>t.nivel2))].sort();
+  }
+  sel.innerHTML = '<option value="">Todas</option>' + subs.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  if (subs.includes(cur)) sel.value = cur;
+}
+
+function applyFilters() {
+  const ini = document.getElementById('f-data-ini').value;
+  const fim = document.getElementById('f-data-fim').value;
+  const cat = document.getElementById('f-cat').value;
+  const sub = document.getElementById('f-subcat').value;
+  const forn = document.getElementById('f-forn').value.trim().toLowerCase();
+  const min = Number(document.getElementById('f-min').value) || 0;
+
+  App.filtered = App.data.transacoes.filter(t => {
+    if (ini && t.data < ini) return false;
+    if (fim && t.data > fim) return false;
+    if (cat && t.nivel1 !== cat) return false;
+    if (sub && t.nivel2 !== sub) return false;
+    if (forn && !(t.fornecedor||'').toLowerCase().includes(forn)) return false;
+    if (min && t.valor < min) return false;
+    return true;
+  });
+
+  sortFiltered();
+  App.page = 1;
+  renderTable();
+}
+
+function sortFiltered() {
+  const {sortCol, sortDir} = App;
+  const mult = sortDir === 'asc' ? 1 : -1;
+  App.filtered.sort((a,b) => {
+    const va = a[sortCol], vb = b[sortCol];
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mult;
+    return String(va||'').localeCompare(String(vb||''), 'pt-BR') * mult;
+  });
+}
+
+function renderTable() {
+  const tbody = document.querySelector('#tbl-transacoes tbody');
+  const total = App.filtered.length;
+  const totalValor = App.filtered.reduce((s,t)=>s+t.valor, 0);
+  const {page, pageSize} = App;
+  const start = (page-1)*pageSize;
+  const pageRows = App.filtered.slice(start, start+pageSize);
+
+  tbody.innerHTML = pageRows.map(t => `
+    <tr>
+      <td class="nowrap">${fmtDate(t.data)}</td>
+      <td class="nowrap">${escapeHtml(t.doc||'—')}</td>
+      <td>${escapeHtml(truncate(t.fornecedor||'—', 40))}</td>
+      <td><span class="cat-pill">${escapeHtml(t.nivel1)}</span></td>
+      <td>${escapeHtml(truncate(t.nivel2||'—', 28))}</td>
+      <td class="nowrap">${escapeHtml(t.centro_custo||'—')}</td>
+      <td>${escapeHtml(truncate(t.descricao||'—', 40))}</td>
+      <td class="num">${fmtBRL(t.valor)}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('table-count').textContent =
+    `${total.toLocaleString('pt-BR')} lançamento(s) · total ${fmtBRLshort(totalValor)}`;
+
+  // Sort arrows
+  document.querySelectorAll('#tbl-transacoes th').forEach(th => {
+    th.classList.remove('sorted');
+    th.removeAttribute('data-sort-arrow');
+    if (th.dataset.col === App.sortCol) {
+      th.classList.add('sorted');
+      th.setAttribute('data-sort-arrow', App.sortDir === 'asc' ? '↑' : '↓');
+    }
+  });
+
+  // Pagination
+  renderPagination(total);
+}
+
+function renderPagination(total) {
+  const {page, pageSize} = App;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const el = document.getElementById('pagination');
+  if (totalPages <= 1) { el.innerHTML=''; return; }
+
+  const btns = [];
+  btns.push(`<button data-page="${page-1}" ${page<=1?'disabled':''}>‹ anterior</button>`);
+
+  // Show window of pages
+  const windowSize = 5;
+  let from = Math.max(1, page - Math.floor(windowSize/2));
+  let to = Math.min(totalPages, from + windowSize - 1);
+  from = Math.max(1, to - windowSize + 1);
+  if (from > 1) btns.push(`<button data-page="1">1</button>`);
+  if (from > 2) btns.push(`<span style="padding:0 4px; color:var(--ink-faded);">…</span>`);
+  for (let i=from; i<=to; i++) {
+    btns.push(`<button data-page="${i}" class="${i===page?'active':''}">${i}</button>`);
+  }
+  if (to < totalPages - 1) btns.push(`<span style="padding:0 4px; color:var(--ink-faded);">…</span>`);
+  if (to < totalPages) btns.push(`<button data-page="${totalPages}">${totalPages}</button>`);
+
+  btns.push(`<button data-page="${page+1}" ${page>=totalPages?'disabled':''}>próxima ›</button>`);
+  el.innerHTML = btns.join('');
+  el.querySelectorAll('button[data-page]').forEach(b => {
+    b.addEventListener('click', () => {
+      const p = parseInt(b.dataset.page);
+      if (!isNaN(p) && p >= 1 && p <= totalPages) {
+        App.page = p;
+        renderTable();
+        document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    });
+  });
+}
+
+function exportCSV() {
+  const rows = App.filtered;
+  if (rows.length === 0) { alert('Nenhuma linha para exportar.'); return; }
+  const cols = ['data','doc','fornecedor','filial','centro_custo','nivel1','nivel2','detalhe','descricao','valor'];
+  const header = ['Data','Documento','Fornecedor','Filial','Centro de Custo','Categoria','Subcategoria','Detalhe','Histórico','Valor'];
+  const csv = [header.join(';')].concat(
+    rows.map(r => cols.map(c => csvEscape(r[c])).join(';'))
+  ).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `lancamentos_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function csvEscape(v) {
+  if (v == null) return '';
+  const s = typeof v === 'number' ? String(v).replace('.', ',') : String(v);
+  if (/[";\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+/* ===========================================================
+   ABA HIERARQUIA
+   =========================================================== */
+function renderHierarchy(data) {
+  const el = document.getElementById('tree-hierarquia');
+  el.innerHTML = data.hierarquia.map(n1 => `
+    <div class="tree-node" data-level="1">
+      <div class="tree-row level-1" data-toggle="1">
+        <span class="tree-arrow">▸</span>
+        <div>${escapeHtml(n1.nivel1)}</div>
+        <div class="tree-pct">${n1.pct_total.toFixed(1)}%</div>
+        <div class="tree-value">${fmtBRLshort(n1.valor)}</div>
+      </div>
+      <div class="tree-children">
+        ${n1.niveis2.map(n2 => `
+          <div class="tree-node" data-level="2">
+            <div class="tree-row level-2" data-toggle="1">
+              <span class="tree-arrow">▸</span>
+              <div>${escapeHtml(n2.nivel2)}</div>
+              <div class="tree-pct">${(n2.valor/n1.valor*100).toFixed(1)}%</div>
+              <div class="tree-value">${fmtBRLshort(n2.valor)}</div>
+            </div>
+            <div class="tree-children">
+              ${n2.detalhes.map(d => `
+                <div class="tree-row level-3">
+                  <span class="tree-arrow">·</span>
+                  <div>${escapeHtml(d.detalhe)}</div>
+                  <div class="tree-pct">${(d.valor/n2.valor*100).toFixed(1)}%</div>
+                  <div class="tree-value">${fmtBRLshort(d.valor)}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`).join('');
+
+  el.querySelectorAll('[data-toggle]').forEach(row => {
+    row.addEventListener('click', () => {
+      const children = row.nextElementSibling;
+      const arrow = row.querySelector('.tree-arrow');
+      if (children.classList.contains('expanded')) {
+        children.classList.remove('expanded');
+        arrow.classList.remove('expanded');
+      } else {
+        children.classList.add('expanded');
+        arrow.classList.add('expanded');
+      }
+    });
+  });
+}
+
+/* ===========================================================
+   UTILS
+   =========================================================== */
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+function truncate(s, n) {
+  if (!s) return '';
+  return s.length > n ? s.slice(0, n-1) + '…' : s;
+}
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+function downloadEnc(envelope) {
+  const blob = new Blob([JSON.stringify(envelope)], {type:'application/octet-stream'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'dados.enc';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ===========================================================
+   TABS
+   =========================================================== */
+function setupTabs() {
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(t => {
+    t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      const name = t.dataset.tab;
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById('tab-' + name).classList.remove('hidden');
+    });
+  });
+}
+
+/* ===========================================================
+   VIEWER MODE
+   =========================================================== */
+async function tryFetchEnc() {
+  try {
+    const res = await fetch('dados.enc', {cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+async function initViewer() {
+  hide('initial-loading');
+  show('viewer-lock');
+
+  let envelope = await tryFetchEnc();
+  if (!envelope) {
+    document.getElementById('viewer-fallback').style.display = 'block';
+  }
+
+  const form = document.getElementById('viewer-form');
+  const errEl = document.getElementById('viewer-lock-error');
+  const fileInput = document.getElementById('viewer-manual-file');
+
+  fileInput.addEventListener('change', async () => {
+    if (!fileInput.files[0]) return;
+    try {
+      const text = await fileInput.files[0].text();
+      envelope = JSON.parse(text);
+      errEl.classList.remove('visible');
+      document.getElementById('viewer-fallback').style.display = 'none';
+      errEl.textContent = 'Arquivo carregado. Digite a senha e desbloqueie.';
+      errEl.classList.add('visible');
+      errEl.style.background = 'var(--accent-soft)';
+      errEl.style.color = 'var(--accent)';
+    } catch (e) {
+      errEl.textContent = 'Arquivo inválido: ' + e.message;
+      errEl.classList.add('visible');
+    }
+  });
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    errEl.classList.remove('visible');
+    if (!envelope) {
+      errEl.textContent = 'Nenhum arquivo de dados disponível.';
+      errEl.classList.add('visible');
+      return;
+    }
+    const pwd = document.getElementById('viewer-password').value;
+    const btn = form.querySelector('button[type=submit]');
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Descriptografando…';
+    try {
+      const data = await decryptPayload(envelope, pwd);
+      hide('viewer-lock');
+      renderAll(data);
+      setupTabs();
+      // Guardar senha na sessão para F5 rápido
+      try { sessionStorage.setItem('_pwd', pwd); } catch(_){}
+    } catch (e) {
+      errEl.textContent = e.message || 'Falha ao descriptografar.';
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
+  });
+
+  // Tenta auto-unlock via sessão
+  const cached = (() => { try { return sessionStorage.getItem('_pwd'); } catch(_){ return null; } })();
+  if (cached && envelope) {
+    try {
+      const data = await decryptPayload(envelope, cached);
+      hide('viewer-lock');
+      renderAll(data);
+      setupTabs();
+    } catch(_) { /* senha errada, segue fluxo manual */ }
+  }
+
+  // Listeners dos filtros
+  ['f-data-ini','f-data-fim','f-cat','f-subcat','f-forn','f-min'].forEach(id => {
+    const el = document.getElementById(id);
+    const evt = el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(evt, () => {
+      if (id === 'f-cat') updateSubcatFilter();
+      applyFilters();
+    });
+  });
+  document.getElementById('btn-export').addEventListener('click', exportCSV);
+
+  // Sort da tabela
+  document.querySelectorAll('#tbl-transacoes th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (App.sortCol === col) {
+        App.sortDir = App.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        App.sortCol = col;
+        App.sortDir = (col === 'valor' || col === 'data') ? 'desc' : 'asc';
+      }
+      sortFiltered();
+      App.page = 1;
+      renderTable();
+    });
+  });
+}
+
+/* ===========================================================
+   ADMIN MODE
+   =========================================================== */
+const adminState = { fileDeb: null, fileCred: null };
+
+function adminLog(msg) {
+  const el = document.getElementById('admin-log');
+  el.classList.add('visible');
+  el.textContent += `[${new Date().toLocaleTimeString('pt-BR')}] ${msg}\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function adminStatus(msg, type) {
+  const el = document.getElementById('admin-status');
+  el.className = 'admin-status ' + (type || 'info');
+  el.textContent = msg;
+}
+
+function setupDropZone(zoneId, inputId, stateKey, pickedId) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  const picked = document.getElementById(pickedId);
+
+  const setFile = (f) => {
+    if (!f) return;
+    if (!f.name.toLowerCase().endsWith('.xlsx')) {
+      zone.classList.add('error');
+      picked.textContent = 'Arquivo precisa ser .xlsx';
+      return;
+    }
+    adminState[stateKey] = f;
+    zone.classList.add('has-file');
+    zone.classList.remove('error');
+    picked.textContent = '✓ ' + f.name + ' (' + (f.size/1024).toFixed(0) + ' KB)';
+  };
+
+  input.addEventListener('change', () => setFile(input.files[0]));
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag');
+    setFile(e.dataTransfer.files[0]);
+  });
+}
+
+async function initAdmin() {
+  hide('initial-loading');
+  show('admin-view');
+
+  setupDropZone('drop-deb', 'file-deb', 'fileDeb', 'picked-deb');
+  setupDropZone('drop-cred', 'file-cred', 'fileCred', 'picked-cred');
+
+  document.getElementById('admin-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const btn = document.getElementById('btn-process');
+    const origText = btn.textContent;
+    const logEl = document.getElementById('admin-log');
+    logEl.textContent = '';
+
+    const pwd = document.getElementById('admin-pwd').value;
+    const pwdC = document.getElementById('admin-pwd-confirm').value;
+
+    if (!adminState.fileDeb || !adminState.fileCred) {
+      adminStatus('Selecione os dois arquivos antes de processar.', 'error');
+      return;
+    }
+    if (pwd.length < 8) {
+      adminStatus('A senha precisa ter pelo menos 8 caracteres.', 'error');
+      return;
+    }
+    if (pwd !== pwdC) {
+      adminStatus('As senhas não coincidem.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Processando…';
+    adminStatus('Processando, aguarde…', 'info');
+
+    try {
+      adminLog('Carregando biblioteca de xlsx…');
+      await ensureSheetJS();
+
+      adminLog('Lendo ' + adminState.fileDeb.name + '…');
+      const rowsDeb = await parseXlsx(adminState.fileDeb);
+      adminLog('  ' + rowsDeb.length.toLocaleString('pt-BR') + ' linhas');
+
+      adminLog('Lendo ' + adminState.fileCred.name + '…');
+      const rowsCred = await parseXlsx(adminState.fileCred);
+      adminLog('  ' + rowsCred.length.toLocaleString('pt-BR') + ' linhas');
+
+      adminLog('Classificando e agregando…');
+      const dados = aggregate([...rowsDeb, ...rowsCred]);
+      adminLog('  ' + dados.meta.total_linhas_despesa.toLocaleString('pt-BR') + ' despesas · '
+             + dados.meta.total_linhas_estorno.toLocaleString('pt-BR') + ' estornos · '
+             + dados.meta.total_linhas_patrimoniais_descartadas.toLocaleString('pt-BR') + ' patrimoniais (descartadas)');
+      adminLog('  período: ' + dados.meta.periodo.inicio + ' a ' + dados.meta.periodo.fim);
+      adminLog('  total líquido: ' + fmtBRL(dados.kpis.total_liquido));
+
+      adminLog('Comprimindo e criptografando…');
+      const envelope = await encryptPayload(dados, pwd);
+
+      const jsonStr = JSON.stringify(envelope);
+      adminLog('Arquivo gerado: ' + (jsonStr.length/1024).toFixed(0) + ' KB');
+
+      adminStatus('Arquivo criptografado gerado. O download começou automaticamente. Agora comite o dados.enc no repositório.', 'success');
+      downloadEnc(envelope);
+
+    } catch (e) {
+      console.error(e);
+      adminLog('ERRO: ' + e.message);
+      adminStatus('Erro: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  });
+
+  /* Botão de inspeção: lê os xlsx e mostra quais colunas bateram
+     com os nomes canônicos e quais não. Ajuda a diagnosticar antes de processar. */
+  document.getElementById('btn-inspect').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-inspect');
+    const orig = btn.textContent;
+    const logEl = document.getElementById('admin-log');
+    logEl.textContent = '';
+
+    if (!adminState.fileDeb && !adminState.fileCred) {
+      adminStatus('Selecione ao menos um arquivo para inspecionar.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Inspecionando…';
+    adminStatus('Lendo arquivos para inspeção…', 'info');
+
+    try {
+      await ensureSheetJS();
+      const arquivos = [adminState.fileDeb, adminState.fileCred].filter(Boolean);
+      let relatorio = '';
+
+      for (const f of arquivos) {
+        adminLog('— ' + f.name + ' —');
+        const buf = await f.arrayBuffer();
+        const wb = XLSX.read(new Uint8Array(buf), {type:'array', cellDates:true, raw:false});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const matrix = XLSX.utils.sheet_to_json(ws, {defval:null, raw:true, header:1, blankrows:false});
+
+        /* Procura o cabeçalho (mesma lógica do parseXlsx) */
+        let melhorLinha = -1, melhorScore = 0, melhorNorm = null;
+        const maxScan = Math.min(15, matrix.length);
+        for (let i = 0; i < maxScan; i++) {
+          const row = matrix[i] || [];
+          const norm = row.map(c => normalizaNomeColuna(c));
+          let score = 0;
+          for (const n of norm) if (n && NORM_TO_CANONICAL[n]) score++;
+          if (score > melhorScore) { melhorScore = score; melhorLinha = i; melhorNorm = norm; }
+        }
+
+        if (melhorLinha < 0) {
+          adminLog('  ✗ nenhuma linha de cabeçalho reconhecível');
+          continue;
+        }
+
+        adminLog('  cabeçalho na linha ' + (melhorLinha+1) + ' (' + melhorScore + ' colunas reconhecidas)');
+        const encontradas = new Set();
+        const extras = [];
+        melhorNorm.forEach((n, pos) => {
+          const orig = matrix[melhorLinha][pos];
+          if (!n || orig == null) return;
+          const canon = NORM_TO_CANONICAL[n];
+          if (canon) {
+            encontradas.add(canon);
+            adminLog('  ✓ "' + orig + '" → ' + canon);
+          } else {
+            extras.push(orig);
+          }
         });
-
-        function escapeHtml(text) { return text.replace(/"/g, '&quot;'); }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            const icon = type === 'success' ? 'ph-check-circle' : 'ph-info';
-            toast.innerHTML = `<i class="ph-fill ${icon}"></i> <span>${message}</span>`;
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease forwards';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+        const faltando = COLUNAS_NECESSARIAS.filter(c => !encontradas.has(c));
+        if (faltando.length) {
+          adminLog('  ✗ faltando: ' + faltando.join(', '));
+          if (extras.length) {
+            adminLog('  colunas do arquivo não reconhecidas (pode ser uma delas):');
+            extras.forEach(e => adminLog('      • ' + e));
+          }
+        } else {
+          adminLog('  ✓ todas as colunas obrigatórias foram encontradas');
         }
+        adminLog(''); // linha em branco
+      }
 
-        document.getElementById('fileUpload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            document.getElementById('fileName').textContent = "Processando arquivo...";
-            const reader = new FileReader();
-            reader.onload = function(e) { processData(e.target.result); };
-            reader.readAsText(file);
-        });
+      adminStatus('Inspeção concluída — veja o log abaixo.', 'info');
+    } catch (e) {
+      console.error(e);
+      adminLog('ERRO: ' + e.message);
+      adminStatus('Erro na inspeção: ' + e.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  });
+}
 
-        function processData(xmlText) {
-            const parser = new DOMParser(); const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-            const rows = xmlDoc.getElementsByTagName("Row"); let headerFound = false;
-            fullHeaders = []; fullData = [];
-            
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i]; const cells = row.getElementsByTagName("Cell");
-                if (!cells || cells.length === 0) continue;
-                const firstDataNode = cells[0].getElementsByTagName("Data")[0];
-                let codigoOriginal = firstDataNode ? firstDataNode.textContent.trim() : "";
-                let codigoTratado = codigoOriginal;
+/* ===========================================================
+   ROUTER
+   =========================================================== */
+(function main() {
+  const isAdmin = new URLSearchParams(location.search).has('admin');
+  if (isAdmin) initAdmin();
+  else initViewer();
+})();
+</script>
 
-                if (codigoOriginal === "CODIGO") {
-                    if (!headerFound) {
-                        headerFound = true;
-                        for(let j = 0; j < cells.length; j++) {
-                            let dNode = cells[j].getElementsByTagName("Data")[0];
-                            let headerText = dNode ? dNode.textContent : "";
-                            const matchPeriodo = headerText.match(/PERIODO\s+0?(\d+)/i);
-                            if (matchPeriodo) {
-                                const mesNum = parseInt(matchPeriodo[1], 10);
-                                const mesesArr = ["", "JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
-                                if (mesNum >= 1 && mesNum <= 12) headerText = `${mesesArr[mesNum]}/26`;
-                            }
-                            fullHeaders.push(headerText);
-                        }
-                    }
-                    continue;
-                }
-
-                if (!codigoOriginal) continue;
-                codigoTratado = codigoOriginal.replace(/\./g, '');
-                let isResultado = codigoTratado.length > 0 && parseInt(codigoTratado.charAt(0)) >= 3;
-                let prevAccumVal = 0; let rowData = [];
-                for (let j = 0; j < cells.length; j++) {
-                    let dataNode = cells[j].getElementsByTagName("Data")[0];
-                    let valStr = dataNode ? dataNode.textContent : "";
-                    if (j === 0) valStr = codigoTratado;
-                    if (j >= 3) {
-                        if (isResultado) {
-                            let currentAccum = parseRawToFloat(valStr, codigoTratado);
-                            let monthlyVal = currentAccum - prevAccumVal;
-                            prevAccumVal = currentAccum;
-                            valStr = formatFloatBR(monthlyVal);
-                        } else {
-                            if (valStr.trim() === "") valStr = "0";
-                            else valStr = formatarValorOriginal(valStr, codigoTratado);
-                        }
-                    }
-                    rowData.push(valStr);
-                }
-                fullData.push(rowData);
-            }
-
-            renderMonthCheckboxes(); inicializarDropdownsMultiplos(); popularNiveis();
-            document.getElementById('uploadSection').style.display = 'none';
-            document.getElementById('fallbackHeader').style.display = 'none';
-            document.getElementById('sidebar').style.display = 'flex';
-            document.getElementById('actionButtons').style.display = 'flex';
-            document.getElementById('tableWrapper').style.display = 'flex';
-            aplicarFiltros();
-            showToast("DRE processado com sucesso!", "success");
-        }
-
-        function inicializarDropdownsMultiplos() {
-            const contasUnicas = [...new Set(fullData.map(r => r[0]))].filter(Boolean).sort();
-            const descUnicas = [...new Set(fullData.map(r => r[1]))].filter(Boolean).sort();
-            dropdownState.conta.allItems = contasUnicas; dropdownState.conta.appliedChecked = new Set(contasUnicas);
-            dropdownState.desc.allItems = descUnicas; dropdownState.desc.appliedChecked = new Set(descUnicas);
-            updateHeaderText('conta'); updateHeaderText('desc');
-        }
-
-        function toggleDropdown(id) {
-            const dropdown = document.getElementById(`cs-dropdown-${id}`);
-            const isOpen = dropdown.classList.contains('show');
-            closeDropdown('conta'); closeDropdown('desc');
-            if (!isOpen) {
-                dropdownState[id].currentChecked = new Set(dropdownState[id].appliedChecked);
-                document.getElementById(`cs-search-${id}`).value = ''; 
-                renderDropdownOptions(id); dropdown.classList.add('show');
-            }
-        }
-
-        function closeDropdown(id) { document.getElementById(`cs-dropdown-${id}`).classList.remove('show'); }
-
-        function renderDropdownOptions(id) {
-            const state = dropdownState[id]; const container = document.getElementById(`cs-options-${id}`);
-            const searchVal = document.getElementById(`cs-search-${id}`).value.toLowerCase();
-            let html = `<label class="cs-option cs-select-all"><input type="checkbox" id="cs-all-${id}" onchange="toggleSelectAll('${id}', this.checked)"> (Selecionar Tudo)</label>`;
-            let allFilteredChecked = true; let filteredCount = 0;
-            state.allItems.forEach(item => {
-                if(item.toLowerCase().includes(searchVal)) {
-                    filteredCount++; const isChecked = state.currentChecked.has(item);
-                    if(!isChecked) allFilteredChecked = false;
-                    html += `<label class="cs-option"><input type="checkbox" value="${escapeHtml(item)}" ${isChecked ? 'checked' : ''} onchange="toggleItem('${id}', this.value, this.checked)"> ${item}</label>`;
-                }
-            });
-            container.innerHTML = html;
-            const allCb = document.getElementById(`cs-all-${id}`);
-            if(filteredCount === 0) { allCb.checked = false; allCb.disabled = true; } else { allCb.checked = allFilteredChecked; allCb.disabled = false; }
-        }
-
-        function toggleSelectAll(id, checked) {
-            const state = dropdownState[id]; const searchVal = document.getElementById(`cs-search-${id}`).value.toLowerCase();
-            state.allItems.forEach(item => { if (item.toLowerCase().includes(searchVal)) { checked ? state.currentChecked.add(item) : state.currentChecked.delete(item); } });
-            renderDropdownOptions(id);
-        }
-
-        function toggleItem(id, value, checked) {
-            const state = dropdownState[id]; checked ? state.currentChecked.add(value) : state.currentChecked.delete(value);
-            renderDropdownOptions(id);
-        }
-
-        function applyDropdown(id) { dropdownState[id].appliedChecked = new Set(dropdownState[id].currentChecked); updateHeaderText(id); closeDropdown(id); aplicarFiltros(); }
-
-        function updateHeaderText(id) {
-            const state = dropdownState[id]; const textEl = document.getElementById(`cs-header-text-${id}`);
-            if (state.appliedChecked.size === state.allItems.length) textEl.textContent = "(Selecionar Tudo)";
-            else if (state.appliedChecked.size === 0) textEl.textContent = "Nenhum selecionado";
-            else if (state.appliedChecked.size === 1) textEl.textContent = Array.from(state.appliedChecked)[0];
-            else textEl.textContent = `${state.appliedChecked.size} selecionados`;
-        }
-
-        function popularNiveis() {
-            const containerNivel = document.getElementById('nivelCheckboxes'); containerNivel.innerHTML = '';
-            const tamanhos = [...new Set(fullData.map(r => (r[0] || "").length))].filter(l => l > 0).sort((a, b) => a - b);
-            let html = `<label style="font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 4px;"><input type="checkbox" id="cb-nivel-all" checked onchange="toggleTodosNiveis(this.checked)"> (Selecionar Todos)</label>`;
-            tamanhos.forEach((t, i) => { html += `<label><input type="checkbox" class="nivel-cb" value="${t}" checked onchange="updateNiveisSelectAll(); aplicarFiltros()"> Nível ${i + 1} (${t} dígito${t > 1 ? 's' : ''})</label>`; });
-            containerNivel.innerHTML = html;
-        }
-
-        function toggleTodosNiveis(checked) { document.querySelectorAll('.nivel-cb').forEach(cb => cb.checked = checked); aplicarFiltros(); }
-        function updateNiveisSelectAll() {
-            const allChecked = Array.from(document.querySelectorAll('.nivel-cb')).every(cb => cb.checked);
-            const selectAllCb = document.getElementById('cb-nivel-all'); if (selectAllCb) selectAllCb.checked = allChecked;
-        }
-
-        function renderMonthCheckboxes() {
-            const cbContainer = document.getElementById('monthCheckboxes'); let html = '';
-            for(let i = 3; i < fullHeaders.length; i++) html += `<label><input type="checkbox" class="month-cb" value="${i}" checked onchange="aplicarFiltros()"> ${fullHeaders[i]}</label>`;
-            cbContainer.innerHTML = html;
-        }
-
-        function resetarFiltrosUI() {
-            document.getElementById('filtroTipo').value = '';
-            document.getElementById('filtroMov').value = '';
-            document.getElementById('filtroCategoria').value = '';
-            
-            document.querySelectorAll('.month-cb, .nivel-cb').forEach(cb => cb.checked = true);
-            const selectAllCb = document.getElementById('cb-nivel-all');
-            if (selectAllCb) selectAllCb.checked = true;
-
-            dropdownState.conta.appliedChecked = new Set(dropdownState.conta.allItems);
-            dropdownState.desc.appliedChecked = new Set(dropdownState.desc.allItems);
-            updateHeaderText('conta'); updateHeaderText('desc');
-
-            aplicarFiltros();
-            showToast("Filtros redefinidos ao padrão.", "info");
-        }
-
-        function parseRawToFloat(valStr, codigo) {
-            if (!valStr || valStr.trim() === "") return 0;
-            let trimmed = valStr.trim(); const lastChar = trimmed.slice(-1).toUpperCase();
-            let numStr = trimmed; let isNegative = false;
-            if (lastChar === 'D' || lastChar === 'C') {
-                numStr = trimmed.slice(0, -1).trim();
-                isNegative = codigo.startsWith('1') ? (lastChar === 'C') : (lastChar === 'D');
-            } else if (numStr.startsWith('(') && numStr.endsWith(')')) { isNegative = true; numStr = numStr.slice(1, -1).trim(); }
-            numStr = numStr.includes(',') ? numStr.replace(/\./g, '').replace(',', '.') : numStr.replace(/\./g, '');
-            let num = parseFloat(numStr); return isNaN(num) ? 0 : (isNegative ? -num : num);
-        }
-
-        function formatarValorOriginal(valStr, codigo) {
-            let trimmed = valStr.trim(); const lastChar = trimmed.slice(-1).toUpperCase();
-            if (lastChar !== 'D' && lastChar !== 'C') return valStr;
-            let numStr = trimmed.slice(0, -1).trim();
-            let isNegative = codigo.startsWith('1') ? (lastChar === 'C') : (lastChar === 'D');
-            return isNegative ? `(${numStr})` : numStr;
-        }
-
-        function parseFloatBR(valStr) {
-            if (!valStr || valStr === "0") return 0;
-            let str = String(valStr).trim(); let isNegative = str.startsWith('(') && str.endsWith(')');
-            if (isNegative) str = str.slice(1, -1).trim();
-            str = str.includes(',') ? str.replace(/\./g, '').replace(',', '.') : str.replace(/\./g, '');
-            let num = parseFloat(str); return isNaN(num) ? 0 : (isNegative ? -num : num);
-        }
-
-        function formatFloatBR(num) {
-            if (num === 0) return "0";
-            let str = Math.abs(num).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            return num < 0 ? `(${str})` : str;
-        }
-
-        function aplicarFiltros() {
-            const filtroTipo = document.getElementById('filtroTipo').value.toUpperCase();
-            const filtroMov = document.getElementById('filtroMov').value;
-            const filtroCategoria = document.getElementById('filtroCategoria').value;
-
-            const selectedMonthIdxs = Array.from(document.querySelectorAll('.month-cb:checked')).map(cb => parseInt(cb.value));
-            const selectedNiveis = new Set(Array.from(document.querySelectorAll('.nivel-cb:checked')).map(cb => parseInt(cb.value)));
-
-            currentDisplayHeaders = [fullHeaders[0], fullHeaders[1], fullHeaders[2], ...selectedMonthIdxs.map(idx => fullHeaders[idx]), "CONSOLIDADO"]; 
-            currentDisplayData = [];
-
-            const selectedContas = dropdownState.conta.appliedChecked; const selectedDescs = dropdownState.desc.appliedChecked;
-
-            fullData.forEach(row => {
-                const conta = row[0] || ""; const desc = row[1] || ""; const tipo = (row[2] || "").toUpperCase();
-
-                let matchCategoria = true;
-                if (filtroCategoria !== "" && conta.length > 0) {
-                    const digito = parseInt(conta.charAt(0), 10);
-                    matchCategoria = filtroCategoria === "ATIVO" ? digito === 1 : (filtroCategoria === "PASSIVO" ? digito === 2 : digito >= 3);
-                }
-
-                if(!selectedContas.has(conta) || !selectedDescs.has(desc) || (filtroTipo !== "" && !tipo.includes(filtroTipo)) || !matchCategoria || (conta.length > 0 && !selectedNiveis.has(conta.length))) return;
-
-                let consolidadoVal = 0; let hasMov = false; let newRow = [row[0], row[1], row[2]];
-                
-                selectedMonthIdxs.forEach(idx => {
-                    let vStr = row[idx] || "0"; newRow.push(vStr);
-                    consolidadoVal += parseFloatBR(vStr);
-                    let cleanStr = vStr.replace(/[()]/g, '').trim();
-                    if (cleanStr !== "" && cleanStr !== "0" && cleanStr !== "0,00" && cleanStr !== "0.00") hasMov = true;
-                });
-                
-                if ((filtroMov === "sim" && !hasMov) || (filtroMov === "nao" && hasMov)) return;
-
-                newRow.push(formatFloatBR(consolidadoVal)); currentDisplayData.push(newRow);
-            });
-
-            renderTable();
-        }
-
-        function renderTable() {
-            const thead = document.getElementById('tableHead'); const tbody = document.getElementById('tableBody');
-            thead.innerHTML = ''; tbody.innerHTML = '';
-            document.getElementById('recordCount').innerHTML = `<i class="ph-fill ph-list-dashes"></i> Exibindo ${currentDisplayData.length} registros`;
-            
-            if (currentDisplayData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${currentDisplayHeaders.length || 1}" style="text-align: center; padding: 20px;">Nenhum resultado encontrado.</td></tr>`;
-                return;
-            }
-
-            const trHead = document.createElement('tr');
-            currentDisplayHeaders.forEach((col, idx) => {
-                const th = document.createElement('th'); th.textContent = col;
-                if(idx === currentDisplayHeaders.length - 1) th.className = 'consolidado-col';
-                trHead.appendChild(th);
-            });
-            thead.appendChild(trHead);
-
-            currentDisplayData.forEach((row) => {
-                const tr = document.createElement('tr');
-                row.forEach((col, index) => {
-                    const td = document.createElement('td'); td.textContent = col;
-                    if (index === currentDisplayHeaders.length - 1) {
-                        td.className = 'consolidado-col';
-                        if (col.startsWith('(') && col.endsWith(')')) td.style.color = "var(--danger-color)";
-                    } else if (col.startsWith('(') && col.endsWith(')')) td.className = 'negative-val';
-                    else if (col === "0" && index >= 3) td.className = 'zero-val';
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        }
-
-        function downloadExcel() {
-            if (currentDisplayData.length === 0) { showToast("Não há dados para exportar", "info"); return; }
-            const exportArray = [currentDisplayHeaders];
-            currentDisplayData.forEach(row => {
-                exportArray.push(row.map((cell, index) => index >= 3 ? parseFloatBR(cell) : cell));
-            });
-            const worksheet = XLSX.utils.aoa_to_sheet(exportArray); const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "DRE_Tratado");
-            XLSX.writeFile(workbook, "BP-DRE-12M.xlsx");
-            showToast("Planilha exportada com sucesso!", "success");
-        }
-
-        function limparDados() {
-            document.getElementById('fileUpload').value = ''; document.getElementById('fileName').textContent = '';
-            document.getElementById('uploadSection').style.display = 'block'; document.getElementById('fallbackHeader').style.display = 'flex';
-            document.getElementById('sidebar').style.display = 'none'; document.getElementById('actionButtons').style.display = 'none';
-            document.getElementById('tableWrapper').style.display = 'none';
-            document.getElementById('tableHead').innerHTML = ''; document.getElementById('tableBody').innerHTML = '';
-            document.getElementById('filtroTipo').value = ''; document.getElementById('filtroMov').value = ''; document.getElementById('filtroCategoria').value = ''; 
-            document.getElementById('monthCheckboxes').innerHTML = '';
-            if (document.getElementById('nivelCheckboxes')) document.getElementById('nivelCheckboxes').innerHTML = '';
-            fullHeaders = []; fullData = []; currentDisplayHeaders = []; currentDisplayData = [];
-            dropdownState = { conta: { allItems: [], currentChecked: new Set(), appliedChecked: new Set() }, desc: { allItems: [], currentChecked: new Set(), appliedChecked: new Set() } };
-        }
-        // --- CONTROLE DO BOTÃO VOLTAR ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const botoesVoltar = document.querySelectorAll('a[href="../"]');
-            const referrer = document.referrer;
-            const currentHost = window.location.hostname;
-            
-            if (!referrer || !referrer.includes(currentHost)) {
-                botoesVoltar.forEach(btn => btn.style.display = 'none');
-            }
-        });
-        // --------------------------------
-    </script>
 </body>
 </html>
