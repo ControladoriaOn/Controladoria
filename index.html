@@ -170,13 +170,6 @@
 </div>
 
 <main>
-    <div class="toolbar">
-        <div class="search-wrap">
-            <i class="ph ph-magnifying-glass"></i>
-            <input class="search-input" type="text" id="search" placeholder="Procurar ferramenta..." autocomplete="off">
-        </div>
-    </div>
-
     <div class="section-label">Ferramentas disponíveis</div>
 
     <div class="tools-grid" id="grid">
@@ -274,40 +267,6 @@
 </footer>
 
 <script>
-    const searchInput = document.getElementById('search');
-    const cards = document.querySelectorAll('.tool-card');
-    const grid = document.getElementById('grid');
-
-    function searchCards() {
-        const query = searchInput.value.toLowerCase();
-        let visible = 0;
-
-        cards.forEach(card => {
-            const title = card.dataset.title.toLowerCase();
-            const desc = card.querySelector('.card-desc').textContent.toLowerCase();
-
-            if (title.includes(query) || desc.includes(query)) {
-                card.style.display = '';
-                visible++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-
-        const existing = grid.querySelector('.empty-state');
-        if (existing) existing.remove();
-
-        if (visible === 0) {
-            grid.insertAdjacentHTML('beforeend', `
-                <div class="empty-state">
-                    <i class="ph ph-magnifying-glass"></i>
-                    <p>Nenhuma ferramenta encontrada para "<strong>${searchInput.value}</strong>"</p>
-                </div>
-            `);
-        }
-    }
-
-    searchInput.addEventListener('input', searchCards);
     document.getElementById('last-update').textContent = new Date().getFullYear();
 </script>
 
