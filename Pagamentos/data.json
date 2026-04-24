@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-04-24T13:43:44.036-03:00",
+    "generated_at": "2026-04-24T16:33:00.388-03:00",
     "data_hoje": "2026-04-24",
     "data_amanha": "2026-04-27"
   },
@@ -14,7 +14,8 @@
     "maior": {
       "fornecedor": "ONE WAY ADMINISTRADO",
       "valor": 64040.78,
-      "historico": "PRESTAA‡AƒO DE SERVIA‡OS ONE WAY 1Aª QUINZ ABRIL26"
+      "historico": "PRESTAA‡AƒO DE SERVIA‡OS ONE WAY 1Aª QUINZ ABRIL26",
+      "natureza": "33010121"
     },
     "titulos": [
       {
