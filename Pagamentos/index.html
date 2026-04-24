@@ -6,7 +6,7 @@
 <title>Pagamentos · Dashboard</title>
 
 <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ControladoriaOn/Controladoria/main/favicon.png">
-<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ControladoriaOn/Controladoria/main/favicon.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -49,11 +49,9 @@
     --shadow-lg:       0 14px 32px -14px rgba(26,15,26,0.15);
   }
 
-  * { box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  html { scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
   body {
     font-family: var(--font-body);
     background: var(--bg);
@@ -66,7 +64,7 @@
   section[id] { scroll-margin-top: 100px; }
 
   /* ============================================================
-     SIDEBAR — position: fixed garante que nunca saia da tela
+     SIDEBAR
      ============================================================ */
   .sidebar {
     width: 240px;
@@ -85,13 +83,11 @@
     overflow-y: auto;
     overflow-x: hidden;
   }
-  /* Scrollbar fina e discreta no fundo plum */
-  .sidebar::-webkit-scrollbar { width: 6px;
-  }
+  .sidebar::-webkit-scrollbar { width: 6px; }
   .sidebar::-webkit-scrollbar-track { background: transparent; }
   .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-  .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2);
-  }
+  .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  
   .sidebar .logo {
     font-family: var(--font-display);
     font-weight: 500;
@@ -126,8 +122,7 @@
     display: block;
   }
   .sidebar .logo-text { display: flex; flex-direction: column; line-height: 1.1; }
-  .sidebar .logo-text span:first-child { font-family: var(--font-display);
-    font-weight: 500; font-size: 18px; }
+  .sidebar .logo-text span:first-child { font-family: var(--font-display); font-weight: 500; font-size: 18px; }
   .sidebar .logo-text span:last-child {
     font-family: var(--font-body);
     font-weight: 600;
@@ -138,8 +133,7 @@
     margin-top: 2px;
   }
 
-  .sidebar nav { display: flex; flex-direction: column; gap: 3px;
-  }
+  .sidebar nav { display: flex; flex-direction: column; gap: 3px; }
   .sidebar nav a {
     text-decoration: none;
     color: rgba(255,255,255,0.7);
@@ -168,8 +162,7 @@
     color: rgba(255,255,255,0.5);
     transition: color 0.15s;
   }
-  .sidebar nav a:hover i, .sidebar nav a.active i { color: var(--orange);
-  }
+  .sidebar nav a:hover i, .sidebar nav a.active i { color: var(--orange); }
 
   .sidebar-footer {
     margin-top: auto;
@@ -198,10 +191,9 @@
     flex-shrink: 0;
     animation: pulse-dot 2.5s infinite;
   }
-  .sidebar-stamp.stale .dot { background: var(--orange); animation: pulse-dot-warn 2.5s infinite;
-  }
-  .sidebar-stamp.error .dot { background: #ef4444; animation: pulse-dot-err 2.5s infinite;
-  }
+  .sidebar-stamp.stale .dot { background: var(--orange); animation: pulse-dot-warn 2.5s infinite; }
+  .sidebar-stamp.error .dot { background: #ef4444; animation: pulse-dot-err 2.5s infinite; }
+  
   .sidebar-stamp .stamp-label {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -211,19 +203,12 @@
     display: block;
     margin-bottom: 2px;
   }
-  .sidebar-stamp .stamp-text {
-    color: #FFFFFF;
-    font-weight: 500;
-    font-size: 11.5px;
-  }
+  .sidebar-stamp .stamp-text { color: #FFFFFF; font-weight: 500; font-size: 11.5px; }
 
   @keyframes pulse-dot {
-    0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.55);
-    }
-    70%  { box-shadow: 0 0 0 6px rgba(74,222,128,0);
-    }
-    100% { box-shadow: 0 0 0 0 rgba(74,222,128,0);
-    }
+    0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.55); }
+    70%  { box-shadow: 0 0 0 6px rgba(74,222,128,0); }
+    100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
   }
   @keyframes pulse-dot-warn {
     0%{box-shadow:0 0 0 0 rgba(255,110,0,0.55)}70%{box-shadow:0 0 0 6px rgba(255,110,0,0)}100%{box-shadow:0 0 0 0 rgba(255,110,0,0)}
@@ -282,8 +267,7 @@
     gap: 16px;
     flex-wrap: wrap;
   }
-  .header-left { display: flex; align-items: center; gap: 16px;
-  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
   .page-title {
     font-family: var(--font-display);
     font-size: 26px;
@@ -294,14 +278,12 @@
     align-items: center;
     gap: 12px;
   }
-  .page-title i { color: var(--orange); font-size: 20px;
-  }
+  .page-title i { color: var(--orange); font-size: 20px; }
 
   /* ============================================================
      CONTENT
      ============================================================ */
-  .content-body { padding: 32px 40px 64px;
-    max-width: 1600px; width: 100%; }
+  .content-body { padding: 32px 40px 64px; max-width: 1600px; width: 100%; }
   section[id] { margin-bottom: 48px; }
   .section-head {
     display: flex;
@@ -311,8 +293,7 @@
     flex-wrap: wrap;
     margin-bottom: 20px;
   }
-  .section-head-left { display: flex; flex-direction: column; gap: 4px;
-  }
+  .section-head-left { display: flex; flex-direction: column; gap: 4px; }
   .section-title {
     font-family: var(--font-display);
     font-weight: 500;
@@ -324,12 +305,9 @@
     gap: 12px;
     color: var(--ink);
   }
-  .section-title i { color: var(--orange); font-size: 19px;
-  }
-  .section-sub { color: var(--muted); font-size: 13px; margin: 0;
-  }
+  .section-title i { color: var(--orange); font-size: 19px; }
+  .section-sub { color: var(--muted); font-size: 13px; margin: 0; }
 
-  /* Date em badge destacado */
   .date-badge {
     display: inline-flex;
     align-items: center;
@@ -345,8 +323,7 @@
     white-space: nowrap;
     box-shadow: 0 2px 10px -4px rgba(255,110,0,0.2);
   }
-  .date-badge i { font-size: 11px;
-  }
+  .date-badge i { font-size: 11px; }
 
   /* ============================================================
      ALERTS
@@ -376,19 +353,14 @@
     flex: 0 0 32px;
     color: white;
   }
-  .alert.warn { border-color: #F4DFA8; background: var(--warn-soft);
-  }
+  .alert.warn { border-color: #F4DFA8; background: var(--warn-soft); }
   .alert.warn .alert-icon { background: var(--warn); }
-  .alert.info { border-color: #F9C69C; background: var(--orange-soft);
-  }
+  .alert.info { border-color: #F9C69C; background: var(--orange-soft); }
   .alert.info .alert-icon { background: var(--orange); }
-  .alert.ok { border-color: #B8E0C6; background: var(--ok-soft);
-  }
+  .alert.ok { border-color: #B8E0C6; background: var(--ok-soft); }
   .alert.ok .alert-icon { background: var(--ok); }
-  .alert strong { color: var(--ink); font-weight: 700;
-  }
-  .alert small { display: block; color: var(--muted); margin-top: 3px; font-size: 11.5px;
-  }
+  .alert strong { color: var(--ink); font-weight: 700; }
+  .alert small { display: block; color: var(--muted); margin-top: 3px; font-size: 11.5px; }
 
   /* ============================================================
      KPIs
@@ -439,9 +411,9 @@
     position: relative;
   }
   .kpi-label i { font-size: 11px; color: var(--subtle); }
-  .kpi.accent .kpi-label { color: rgba(255,255,255,0.7);
-  }
+  .kpi.accent .kpi-label { color: rgba(255,255,255,0.7); }
   .kpi.accent .kpi-label i { color: var(--orange); }
+  
   .kpi-value {
     font-family: var(--font-display);
     font-weight: 500;
@@ -454,14 +426,10 @@
     position: relative;
     color: var(--ink);
   }
-  .kpi-value .prefix {
-    font-size: 13px;
-    color: var(--muted);
-    font-weight: 500;
-  }
+  .kpi-value .prefix { font-size: 13px; color: var(--muted); font-weight: 500; }
   .kpi.accent .kpi-value { color: var(--orange); }
-  .kpi.accent .kpi-value .prefix { color: rgba(255,255,255,0.55);
-  }
+  .kpi.accent .kpi-value .prefix { color: rgba(255,255,255,0.55); }
+  
   .kpi-sub {
     margin: 12px 0 0;
     font-size: 12px;
@@ -521,8 +489,7 @@
     gap: 8px;
   }
   .tab:hover { color: var(--ink); }
-  .tab.active { color: var(--plum); border-bottom-color: var(--orange);
-  }
+  .tab.active { color: var(--plum); border-bottom-color: var(--orange); }
   .tab-count {
     font-family: var(--font-mono);
     font-weight: 500;
@@ -532,8 +499,7 @@
     border-radius: 999px;
     color: var(--muted);
   }
-  .tab.active .tab-count { background: var(--orange-soft); color: var(--orange-deep);
-  }
+  .tab.active .tab-count { background: var(--orange-soft); color: var(--orange-deep); }
 
   /* Toolbar */
   .toolbar {
@@ -591,8 +557,7 @@
     align-items: center;
     gap: 6px;
   }
-  .filter-chip:hover { border-color: var(--plum-light); color: var(--ink); background: var(--surface-soft);
-  }
+  .filter-chip:hover { border-color: var(--plum-light); color: var(--ink); background: var(--surface-soft); }
   .filter-chip.active {
     background: var(--plum);
     color: white;
@@ -604,7 +569,7 @@
     border-color: rgba(255,255,255,0.35) !important;
   }
 
-  /* Toolbar right — contagem + total destacados */
+  /* Toolbar right */
   .toolbar-right {
     margin-left: auto;
     font-family: var(--font-mono);
@@ -619,16 +584,13 @@
     border: 1px solid var(--border);
     border-radius: 9px;
   }
-  .toolbar-right .lbl { color: var(--subtle); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
-    font-weight: 700; }
+  .toolbar-right .lbl { color: var(--subtle); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
   .toolbar-right strong { color: var(--plum); font-weight: 700; font-size: 13.5px; }
-  .toolbar-right .divider { width: 1px;
-    height: 14px; background: var(--border); }
+  .toolbar-right .divider { width: 1px; height: 14px; background: var(--border); }
 
   /* Table */
   .table-wrap { overflow-x: auto; }
-  table.data { width: 100%;
-    border-collapse: collapse; font-size: 13px; }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.data thead th {
     text-align: left;
     padding: 11px 16px;
@@ -644,21 +606,17 @@
     user-select: none;
   }
   table.data thead th.center { text-align: center; }
-  table.data thead th:hover { color: var(--ink); background: var(--border-soft);
-  }
+  table.data thead th:hover { color: var(--ink); background: var(--border-soft); }
   table.data thead th.sorted { color: var(--plum); }
-  table.data thead th.sorted::after { content: attr(data-dir); margin-left: 4px; color: var(--orange);
-  }
+  table.data thead th.sorted::after { content: attr(data-dir); margin-left: 4px; color: var(--orange); }
   table.data tbody tr {
     border-bottom: 1px solid var(--border-soft);
     transition: background 0.1s;
   }
   table.data tbody tr:hover { background: rgba(255,110,0,0.035); }
-  table.data tbody tr.flag-approval { background: var(--warn-soft);
-  }
+  table.data tbody tr.flag-approval { background: var(--warn-soft); }
   table.data tbody tr.flag-approval:hover { background: #FFE8BD; }
-  table.data td { padding: 12px 16px; vertical-align: top; color: var(--ink);
-  }
+  table.data td { padding: 12px 16px; vertical-align: top; color: var(--ink); }
   table.data td.center { text-align: center; }
   table.data td.num {
     font-family: var(--font-mono);
@@ -667,8 +625,7 @@
     font-variant-numeric: tabular-nums;
     color: var(--ink);
   }
-  table.data td.num.strong { font-weight: 600; color: var(--plum);
-  }
+  table.data td.num.strong { font-weight: 600; color: var(--plum); }
   table.data .hist {
     color: var(--muted);
     font-size: 11.5px;
@@ -715,13 +672,10 @@
     letter-spacing: 0.02em;
   }
   .pill.ok   { background: var(--ok-soft); color: var(--ok); border-color: #C2E4CC; }
-  .pill.warn { background: var(--warn-soft); color: var(--warn);
-    border-color: #F2D39A; }
-  .pill.nf   { background: var(--orange-soft); color: var(--orange-deep); border-color: #F9C69C;
-  }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); border-color: #F2D39A; }
+  .pill.nf   { background: var(--orange-soft); color: var(--orange-deep); border-color: #F9C69C; }
   .pill.bol  { background: rgba(139,92,246,0.1); color: #7C3AED; border-color: rgba(139,92,246,0.3); }
-  .pill.rd   { background: var(--ok-soft);
-    color: var(--ok); border-color: #C2E4CC; }
+  .pill.rd   { background: var(--ok-soft); color: var(--ok); border-color: #C2E4CC; }
 
   tfoot.data td {
     padding: 14px 16px;
@@ -754,8 +708,7 @@
     font-size: 12px;
     color: var(--muted);
   }
-  .pagination-info strong { color: var(--plum);
-    font-weight: 700; }
+  .pagination-info strong { color: var(--plum); font-weight: 700; }
   .pagination-controls {
     display: flex;
     align-items: center;
@@ -814,8 +767,7 @@
     cursor: pointer;
     transition: all 0.15s;
   }
-  .cat-item:hover { border-color: var(--plum-light);
-  }
+  .cat-item:hover { border-color: var(--plum-light); }
   .cat-item.active {
     border-color: var(--orange);
     background: var(--orange-soft);
@@ -832,8 +784,7 @@
     align-items: center;
     gap: 6px;
   }
-  .cat-item .cat-label i { color: var(--subtle); font-size: 10.5px;
-  }
+  .cat-item .cat-label i { color: var(--subtle); font-size: 10.5px; }
   .cat-item.active .cat-label i { color: var(--orange); }
   .cat-item .cat-value {
     font-family: var(--font-display);
@@ -865,8 +816,7 @@
     margin: 0 0 10px;
     color: var(--ink);
   }
-  .empty-state p { color: var(--muted);
-    margin: 0 0 20px; max-width: 520px; margin-inline: auto; }
+  .empty-state p { color: var(--muted); margin: 0 0 20px; max-width: 520px; margin-inline: auto; }
   .empty-state code {
     font-family: var(--font-mono);
     background: var(--border-soft);
@@ -891,41 +841,30 @@
     transition: all 0.15s;
     box-shadow: 0 6px 18px -8px rgba(255,110,0,0.5);
   }
-  .btn-retry:hover { background: var(--orange-deep); transform: translateY(-1px);
-    box-shadow: 0 10px 24px -8px rgba(255,110,0,0.65); }
+  .btn-retry:hover { background: var(--orange-deep); transform: translateY(-1px); box-shadow: 0 10px 24px -8px rgba(255,110,0,0.65); }
 
-  .reveal { animation: reveal 0.5s ease-out both;
-  }
+  .reveal { animation: reveal 0.5s ease-out both; }
   .reveal:nth-child(2) { animation-delay: 0.06s; }
-  .reveal:nth-child(3) { animation-delay: 0.12s;
-  }
+  .reveal:nth-child(3) { animation-delay: 0.12s; }
   @keyframes reveal {
-    from { opacity: 0; transform: translateY(10px);
-    }
-    to { opacity: 1; transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   @media (max-width: 1100px) {
-    .sidebar { display: none;
-    }
+    .sidebar { display: none; }
     .main-content { margin-left: 0; }
-    .kpi-grid { grid-template-columns: repeat(2, 1fr);
-    }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .cat-summary { grid-template-columns: 1fr; }
   }
   @media (max-width: 640px) {
-    header { padding: 0 20px;
-    }
+    header { padding: 0 20px; }
     .content-body { padding: 20px; }
-    .kpi-grid { grid-template-columns: 1fr;
-    }
+    .kpi-grid { grid-template-columns: 1fr; }
     .kpi-value { font-size: 24px; }
-    .toolbar-right { width: 100%; margin-left: 0; justify-content: space-between;
-    }
+    .toolbar-right { width: 100%; margin-left: 0; justify-content: space-between; }
     .search { flex: 1 1 100%; }
-    .pagination { justify-content: center;
-    }
+    .pagination { justify-content: center; }
   }
 </style>
 </head>
@@ -1007,6 +946,7 @@ const CONFIG = Object.freeze({
   SEARCH_DEBOUNCE_MS: 150,
   LOCALE: 'pt-BR',
 });
+
 /* ============================================================================
    UTILS
    ============================================================================ */
@@ -1015,310 +955,267 @@ const Utils = {
     return (n || 0).toLocaleString(CONFIG.LOCALE, {
       minimumFractionDigits: 2, maximumFractionDigits: 2,
     });
-},
+  },
   fmtBRInt(n) {
     return (n || 0).toLocaleString(CONFIG.LOCALE, { maximumFractionDigits: 0 });
-},
+  },
   fmtBRShort(n) {
     if (!n) return '0';
-if (Math.abs(n) >= 1e6) return (n/1e6).toLocaleString(CONFIG.LOCALE, {maximumFractionDigits:2}) + ' mi';
+    if (Math.abs(n) >= 1e6) return (n/1e6).toLocaleString(CONFIG.LOCALE, {maximumFractionDigits:2}) + ' mi';
     if (Math.abs(n) >= 1e3) return (n/1e3).toLocaleString(CONFIG.LOCALE, {maximumFractionDigits:1}) + ' mil';
-return n.toLocaleString(CONFIG.LOCALE, {maximumFractionDigits:0});
+    return n.toLocaleString(CONFIG.LOCALE, {maximumFractionDigits:0});
   },
   fmtDate(iso) {
     if (!iso) return '—';
-const d = new Date(iso + (iso.length === 10 ? 'T00:00:00' : ''));
+    const d = new Date(iso + (iso.length === 10 ? 'T00:00:00' : ''));
     if (isNaN(d)) return '—';
-return d.toLocaleDateString(CONFIG.LOCALE, { day: '2-digit', month: 'long', year: 'numeric' });
-},
+    return d.toLocaleDateString(CONFIG.LOCALE, { day: '2-digit', month: 'long', year: 'numeric' });
+  },
   fmtDateTime(iso) {
     if (!iso) return '—';
     const d = new Date(iso);
     if (isNaN(d)) return '—';
-return d.toLocaleDateString(CONFIG.LOCALE, { day:'2-digit', month:'2-digit' }) + ' às ' +
+    return d.toLocaleDateString(CONFIG.LOCALE, { day:'2-digit', month:'2-digit' }) + ' às ' +
            d.toLocaleTimeString(CONFIG.LOCALE, { hour:'2-digit', minute:'2-digit' });
-},
+  },
   truncate(s, n) {
     if (!s) return '';
-    return s.length > n ?
-s.slice(0, n-1) + '…' : s;
+    return s.length > n ? s.slice(0, n-1) + '…' : s;
   },
   pillClass(tipo) {
-    return ({ NF: 'nf', BOL: 'bol', RD: 'rd' })[tipo] ||
-'';
+    return ({ NF: 'nf', BOL: 'bol', RD: 'rd' })[tipo] || '';
   },
   compareRows(a, b, col, dir) {
     const va = a[col], vb = b[col];
-if (typeof va === 'number' || typeof vb === 'number') {
+    if (typeof va === 'number' || typeof vb === 'number') {
       return ((va || 0) - (vb || 0)) * dir;
-}
+    }
     return String(va || '').localeCompare(String(vb || ''), CONFIG.LOCALE) * dir;
-},
+  },
   isApprovalStatus(status) {
     return /aprova[cç][aã]o/i.test(status || '');
-},
+  },
   delay(ms) {
     return new Promise(r => setTimeout(r, ms));
-},
-  /** Debounce com window de `wait` ms — essencial pro search */
+  },
   debounce(fn, wait) {
     let timer = null;
-return function debounced(...args) {
+    return function debounced(...args) {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => fn.apply(this, args), wait);
     };
-},
-  /** Capitaliza uma frase ALL CAPS: "SEGURO DE VEICULOS" → "Seguro de Veículos" (simplificado) */
+  },
   titleCase(s) {
     if (!s) return s;
-const low = ['de', 'da', 'do', 'dos', 'das', 'e', 'em', 'ou', 'a', 'o'];
-return s.toLowerCase().split(/\s+/).map((w, i) =>
+    const low = ['de', 'da', 'do', 'dos', 'das', 'e', 'em', 'ou', 'a', 'o'];
+    return s.toLowerCase().split(/\s+/).map((w, i) =>
       i > 0 && low.includes(w) ? w : w.charAt(0).toUpperCase() + w.slice(1)
     ).join(' ');
-},
+  },
 };
 
 /* ============================================================================
-   DATE UTILS — regra de dias úteis (sáb/dom → próxima segunda)
+   DATE UTILS
    ============================================================================ */
 const DateUtils = {
-  /** true se o dia é sábado (6) ou domingo (0) */
   isWeekend(date) {
     const d = date.getDay();
-return d === 0 || d === 6;
+    return d === 0 || d === 6;
   },
-
-  /** Converte 'YYYY-MM-DD' para Date local (sem timezone) */
   fromISO(iso) {
     if (!iso) return null;
-const parts = iso.slice(0, 10).split('-');
+    const parts = iso.slice(0, 10).split('-');
     if (parts.length !== 3) return null;
     const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-return isNaN(d) ? null : d;
+    return isNaN(d) ? null : d;
   },
-
-  /** Converte Date para 'YYYY-MM-DD' */
   toISO(date) {
     const y = date.getFullYear();
-const m = String(date.getMonth() + 1).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
-},
-
-  /** Próximo dia útil a partir da data fornecida (não inclui o próprio dia).
-* Se for sexta → retorna segunda. Se for sábado → segunda. Se for domingo → segunda.
-*/
+  },
   nextBusinessDay(date) {
     const d = new Date(date);
     d.setDate(d.getDate() + 1);
     while (this.isWeekend(d)) d.setDate(d.getDate() + 1);
-return d;
+    return d;
   },
-
-  /** Se a data cai em fim de semana, retorna o próximo dia útil.
-Senão retorna a própria. */
   ensureBusinessDay(date) {
     if (!this.isWeekend(date)) return new Date(date);
-const d = new Date(date);
+    const d = new Date(date);
     while (this.isWeekend(d)) d.setDate(d.getDate() + 1);
     return d;
-},
-
-  /** Nome do dia da semana em PT-BR */
+  },
   weekdayName(date) {
     return date.toLocaleDateString(CONFIG.LOCALE, { weekday: 'long' });
-},
+  },
 };
 
 /* ============================================================================
-   DOM — XSS-safe builder (createElement + textContent)
+   DOM
    ============================================================================ */
 const DOM = {
   h(tag, props, children) {
     const el = document.createElement(tag);
-if (props && typeof props === 'object') {
+    if (props && typeof props === 'object') {
       for (const [key, val] of Object.entries(props)) {
         if (val == null || val === false) continue;
-if (key === 'class' || key === 'className') el.className = val;
+        if (key === 'class' || key === 'className') el.className = val;
         else if (key === 'text') el.textContent = val;
-else if (key === 'dataset') Object.assign(el.dataset, val);
+        else if (key === 'dataset') Object.assign(el.dataset, val);
         else if (key === 'style' && typeof val === 'object') Object.assign(el.style, val);
-else if (key.startsWith('on') && typeof val === 'function') {
+        else if (key.startsWith('on') && typeof val === 'function') {
           el.addEventListener(key.slice(2).toLowerCase(), val);
-} else {
+        } else {
           el.setAttribute(key, val);
-}
+        }
       }
     }
     this._append(el, children);
     return el;
-},
+  },
   _append(parent, child) {
     if (child == null || child === false) return;
-if (Array.isArray(child)) {
+    if (Array.isArray(child)) {
       for (const c of child) this._append(parent, c);
       return;
-}
+    }
     if (child instanceof Node) { parent.appendChild(child); return; }
     parent.appendChild(document.createTextNode(String(child)));
-},
+  },
   icon(cls) {
     return this.h('i', { class: 'fa-solid ' + cls, 'aria-hidden': 'true' });
-},
+  },
   pill(text, extraCls) {
     const cls = 'pill' + (extraCls ? ' ' + extraCls : '');
-return this.h('span', { class: cls }, text || '—');
+    return this.h('span', { class: cls }, text || '—');
   },
   clear(node) {
     if (!node) return;
-while (node.firstChild) node.removeChild(node.firstChild);
+    while (node.firstChild) node.removeChild(node.firstChild);
   },
   byId(id) { return document.getElementById(id); },
 };
+
 /* ============================================================================
    DATA SERVICE
    ============================================================================ */
 const DataService = {
   async fetchWithRetry(url, { retries = CONFIG.FETCH_RETRIES, backoff = CONFIG.FETCH_BACKOFF_MS, silent404 = false } = {}) {
     let lastError;
-for (let attempt = 0; attempt <= retries; attempt++) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const response = await fetch(url, { cache: 'no-store' });
-if (!response.ok) {
-          // 404: permite falha silenciosa quando silent404 = true
+        if (!response.ok) {
           if (silent404 && response.status === 404) throw new Error('404');
-throw new Error(`HTTP ${response.status} ${response.statusText}`);
+          throw new Error(`HTTP ${response.status} ${response.statusText}`);
         }
         return response;
-} catch (err) {
+      } catch (err) {
         lastError = err;
-// Não tenta de novo em 404 silencioso
         if (silent404 && err.message === '404') throw err;
-if (attempt < retries) {
+        if (attempt < retries) {
           const waitMs = backoff * Math.pow(2, attempt);
-console.warn(`[DataService] ${url} — tentativa ${attempt+1} falhou: ${err.message}. Aguardando ${waitMs}ms…`);
+          console.warn(`[DataService] ${url} — tentativa ${attempt+1} falhou: ${err.message}. Aguardando ${waitMs}ms…`);
           await Utils.delay(waitMs);
-}
+        }
       }
     }
     throw lastError;
-},
-
+  },
   async loadData() {
     const url = CONFIG.DATA_URL + '?v=' + Date.now();
-const response = await this.fetchWithRetry(url);
+    const response = await this.fetchWithRetry(url);
     const json = await response.json();
     this._validateData(json);
     return json;
-},
-
+  },
   async loadNaturezas() {
-    // Falha graciosa: se o arquivo não existir, segue sem o mapa
     try {
       const url = CONFIG.NATUREZAS_URL + '?v=' + Date.now();
-const response = await this.fetchWithRetry(url, { retries: 1, silent404: true });
+      const response = await this.fetchWithRetry(url, { retries: 1, silent404: true });
       const json = await response.json();
-if (!json || typeof json !== 'object') return {};
+      if (!json || typeof json !== 'object') return {};
       return json;
-} catch (err) {
+    } catch (err) {
       console.info('[DataService] naturezas.json não disponível — seguindo sem o mapa.');
       return {};
-}
+    }
   },
-
   _validateData(data) {
     if (!data || typeof data !== 'object') throw new Error('Resposta não é um objeto JSON válido');
-if (!data.meta || !data.pago_hoje || !data.previsto_amanha) {
+    if (!data.meta || !data.pago_hoje || !data.previsto_amanha) {
       throw new Error('Estrutura do data.json está incompleta');
-}
+    }
   },
 };
 
 /* ============================================================================
-   NATUREZA MAP — lookup de código → descrição
+   NATUREZA MAP
    ============================================================================ */
 const NaturezaMap = {
   _map: {},
-
-  set(obj) {
-    this._map = obj && typeof obj === 'object' ?
-obj : {};
-  },
-
+  set(obj) { this._map = obj && typeof obj === 'object' ? obj : {}; },
   get(code) {
     if (!code) return null;
     return this._map[String(code).trim()] || null;
-},
-
+  },
   describe(code) {
     const desc = this.get(code);
     if (!desc) return null;
     return Utils.titleCase(desc);
-},
-
-  size() {
-    return Object.keys(this._map).length;
   },
+  size() { return Object.keys(this._map).length; },
 };
+
 /* ============================================================================
    UI_SIDEBAR
    ============================================================================ */
 const UI_Sidebar = {
   updateStamp(data) {
     const stamp = DOM.byId('stamp');
-const text = DOM.byId('stamp-text');
+    const text = DOM.byId('stamp-text');
     if (!stamp || !text) return;
-
     if (!data || !data.meta || !data.meta.generated_at) {
       stamp.className = 'sidebar-stamp error';
-text.textContent = 'sem dados';
+      text.textContent = 'sem dados';
       return;
     }
-
     const generated = new Date(data.meta.generated_at);
-const hoursAgo = (Date.now() - generated.getTime()) / 36e5;
-
+    const hoursAgo = (Date.now() - generated.getTime()) / 36e5;
     if (hoursAgo > CONFIG.STALE_HOURS) {
       stamp.className = 'sidebar-stamp stale';
-const days = Math.floor(hoursAgo / 24);
+      const days = Math.floor(hoursAgo / 24);
       text.textContent = `dados de ${days}d atrás`;
-} else {
+    } else {
       stamp.className = 'sidebar-stamp';
       text.textContent = `atualizado em ${Utils.fmtDateTime(data.meta.generated_at)}`;
-}
+    }
   },
-
   setError() {
     const stamp = DOM.byId('stamp');
     const text = DOM.byId('stamp-text');
-if (stamp) stamp.className = 'sidebar-stamp error';
+    if (stamp) stamp.className = 'sidebar-stamp error';
     if (text) text.textContent = 'falha ao carregar';
   },
 };
+
 /* ============================================================================
-   PAGINATION WIDGET — reutilizado em UI_Hoje e UI_Previsto
+   PAGINATION WIDGET
    ============================================================================ */
 const Pagination = {
-  /**
-   * Constrói o container de paginação.
-* @param {Object} opts { page, pageSize, total, onPage }
-   * @returns {HTMLElement|null} null se total ≤ pageSize (sem necessidade)
-   */
   render({ page, pageSize, total, onPage }) {
     if (total <= pageSize) return null;
-const totalPages = Math.ceil(total / pageSize);
+    const totalPages = Math.ceil(total / pageSize);
     const start = (page - 1) * pageSize + 1;
-const end = Math.min(page * pageSize, total);
+    const end = Math.min(page * pageSize, total);
 
     const info = DOM.h('div', { class: 'pagination-info' }, [
-      'Mostrando ',
-      DOM.h('strong', {}, String(start)),
-      ' a ',
-      DOM.h('strong', {}, String(end)),
-      ' de ',
-      DOM.h('strong', {}, String(total)),
+      'Mostrando ', DOM.h('strong', {}, String(start)), ' a ', DOM.h('strong', {}, String(end)),
+      ' de ', DOM.h('strong', {}, String(total)),
     ]);
-const controls = DOM.h('div', { class: 'pagination-controls' });
+    const controls = DOM.h('div', { class: 'pagination-controls' });
 
     const mkBtn = (label, targetPage, { disabled = false, active = false, ariaLabel } = {}) => {
       const btn = DOM.h('button', {
@@ -1327,46 +1224,42 @@ const controls = DOM.h('div', { class: 'pagination-controls' });
         disabled: disabled || null,
         'aria-label': ariaLabel || label,
       }, label);
-if (!disabled && !active) {
+      if (!disabled && !active) {
         btn.addEventListener('click', () => onPage(targetPage));
-}
+      }
       return btn;
     };
 
-    // « primeira
     controls.appendChild(mkBtn(DOM.icon('fa-angles-left'), 1, { disabled: page === 1, ariaLabel: 'Primeira página' }));
-// ‹ anterior
     controls.appendChild(mkBtn(DOM.icon('fa-angle-left'), page - 1, { disabled: page === 1, ariaLabel: 'Anterior' }));
-// Números — estratégia: sempre mostrar 1, current±1, last, com elipses
+    
     const pages = this._computePageList(page, totalPages);
-for (const p of pages) {
+    for (const p of pages) {
       if (p === '…') {
         controls.appendChild(DOM.h('span', { class: 'page-ellipsis' }, '…'));
-} else {
+      } else {
         controls.appendChild(mkBtn(String(p), p, { active: p === page, ariaLabel: `Página ${p}` }));
-}
+      }
     }
 
-    // › próxima
     controls.appendChild(mkBtn(DOM.icon('fa-angle-right'), page + 1, { disabled: page === totalPages, ariaLabel: 'Próxima' }));
-// » última
     controls.appendChild(mkBtn(DOM.icon('fa-angles-right'), totalPages, { disabled: page === totalPages, ariaLabel: 'Última página' }));
-return DOM.h('div', { class: 'pagination' }, [info, controls]);
+    return DOM.h('div', { class: 'pagination' }, [info, controls]);
   },
-
   _computePageList(current, total) {
     const pages = [];
-const window = 1;
+    const window = 1;
     for (let i = 1; i <= total; i++) {
       if (i === 1 || i === total || (i >= current - window && i <= current + window)) {
         pages.push(i);
-} else if (pages[pages.length - 1] !== '…') {
+      } else if (pages[pages.length - 1] !== '…') {
         pages.push('…');
-}
+      }
     }
     return pages;
   },
 };
+
 /* ============================================================================
    UI_DASHBOARD
    ============================================================================ */
@@ -1377,8 +1270,7 @@ const UI_Dashboard = {
       this._renderAlerts(data),
       this._renderKPIs(data),
     ]);
-},
-
+  },
   _renderSectionHead(meta) {
     return DOM.h('div', { class: 'section-head' }, [
       DOM.h('div', { class: 'section-head-left' }, [
@@ -1390,72 +1282,69 @@ const UI_Dashboard = {
         Utils.fmtDate(meta.data_hoje),
       ]),
     ]);
-},
-
+  },
   _renderAlerts(data) {
     const alerts = this._buildAlerts(data);
     if (!alerts.length) return null;
-return DOM.h('div', { class: 'alerts' }, alerts);
+    return DOM.h('div', { class: 'alerts' }, alerts);
   },
-
   _buildAlerts(data) {
     const arr = [];
-const { previsto_amanha: prev, pago_hoje: hoje } = data;
-
-    // Alerta de fim de semana: se data_hoje gravada cair em sábado/domingo
+    const { previsto_amanha: prev, pago_hoje: hoje } = data;
     const dataHoje = DateUtils.fromISO(data.meta.data_hoje);
-if (dataHoje && DateUtils.isWeekend(dataHoje)) {
+    if (dataHoje && DateUtils.isWeekend(dataHoje)) {
       const wd = DateUtils.weekdayName(dataHoje);
-arr.push(this._buildAlert('info', 'fa-circle-info', [
+      arr.push(this._buildAlert('info', 'fa-circle-info', [
         DOM.h('strong', {}, `Dados gerados num ${wd}`),
         DOM.h('small', {}, 'Como pagamentos ocorrem apenas em dias úteis, confira se deseja atualizar.'),
       ]));
-}
-
+    }
     if (prev.em_aprovacao > 0) {
       arr.push(this._buildAlert('warn', 'fa-triangle-exclamation', [
         DOM.h('strong', {}, `${prev.em_aprovacao} títulos pendentes de aprovação`),
       ]));
-}
-
+    }
     if (prev.total > hoje.total * 1.5 && hoje.total > 0) {
       const mult = (prev.total / hoje.total).toFixed(1);
-arr.push(this._buildAlert('info', 'fa-arrow-trend-up', [
+      arr.push(this._buildAlert('info', 'fa-arrow-trend-up', [
         DOM.h('strong', {}, `Prévia de amanhã ${mult}× maior que hoje`),
       ]));
-}
-
+    }
     const forns = prev.nf_servico.concat(prev.nf_titulo, prev.reembolso)
       .map(x => (x.fornecedor || '').toUpperCase()).filter(Boolean);
-const hojeSet = new Set(hoje.titulos.map(t => (t.fornecedor || '').toUpperCase()).filter(Boolean));
+    const hojeSet = new Set(hoje.titulos.map(t => (t.fornecedor || '').toUpperCase()).filter(Boolean));
     const recorrentes = [...new Set(forns.filter(f => hojeSet.has(f)))];
-if (recorrentes.length) {
+    if (recorrentes.length) {
       const plural = recorrentes.length > 1;
-const exemplos = recorrentes.slice(0, 2).map(s => Utils.truncate(s, 28)).join(', ');
-      const more = recorrentes.length > 2 ?
-' e mais' : '';
+      const exemplos = recorrentes.slice(0, 2).map(s => Utils.truncate(s, 28)).join(', ');
+      const more = recorrentes.length > 2 ? ' e mais' : '';
       arr.push(this._buildAlert('ok', 'fa-rotate', [
         DOM.h('strong', {}, `${recorrentes.length} fornecedor${plural?'es':''} recorrente${plural?'s':''}`),
         DOM.h('small', {}, `Apareceram hoje e voltam amanhã. Ex.: ${exemplos}${more}.`),
       ]));
-}
-
+    }
     return arr;
   },
-
   _buildAlert(kind, iconCls, contentNodes) {
     return DOM.h('div', { class: 'alert ' + kind, role: 'alert' }, [
       DOM.h('div', { class: 'alert-icon' }, DOM.icon(iconCls)),
       DOM.h('div', {}, contentNodes),
     ]);
-},
-
+  },
   _renderKPIs(data) {
     const { pago_hoje: hoje, previsto_amanha: prev, meta } = data;
-    
-    // Logica Nova: Buscar Descrição da Natureza para o Maior Pagamento
-    const maiorNatCod = hoje.maior ? (hoje.maior.natureza || hoje.maior.natureza_cod) : null;
-    const maiorNatDesc = maiorNatCod ? (NaturezaMap.describe(maiorNatCod) || maiorNatCod) : '—';
+
+    // Lógica para descobrir a Natureza do Maior Pagamento do Dia independentemente da estrutura do data.json
+    let maiorValor = 0;
+    let maiorNatDesc = '—';
+
+    if (hoje.titulos && hoje.titulos.length > 0) {
+      const maiorTitulo = hoje.titulos.reduce((max, t) => ((t.valor_rs || 0) > (max.valor_rs || 0)) ? t : max, hoje.titulos[0]);
+      maiorValor = maiorTitulo.valor_rs || 0;
+      if (maiorTitulo.natureza) {
+         maiorNatDesc = NaturezaMap.describe(maiorTitulo.natureza) || maiorTitulo.natureza;
+      }
+    }
 
     return DOM.h('div', { class: 'kpi-grid' }, [
       this._buildKPI({
@@ -1470,7 +1359,7 @@ const exemplos = recorrentes.slice(0, 2).map(s => Utils.truncate(s, 28)).join(',
       }),
       this._buildKPI({
         icon: 'fa-trophy', label: 'Maior pagamento hoje',
-        value: (hoje.maior && hoje.maior.valor) || 0,
+        value: maiorValor,
         subNode: DOM.h('span', { title: maiorNatDesc }, Utils.truncate(maiorNatDesc, 30)),
       }),
       this._buildKPIPlain({
@@ -1482,8 +1371,7 @@ const exemplos = recorrentes.slice(0, 2).map(s => Utils.truncate(s, 28)).join(',
         ]),
       }),
     ]);
-},
-
+  },
   _buildKPI({ accent, icon, label, value, sub, subNode }) {
     return DOM.h('div', { class: 'kpi' + (accent ? ' accent' : '') }, [
       DOM.h('p', { class: 'kpi-label' }, [DOM.icon(icon), label]),
@@ -1493,45 +1381,36 @@ const exemplos = recorrentes.slice(0, 2).map(s => Utils.truncate(s, 28)).join(',
       ]),
       DOM.h('p', { class: 'kpi-sub' }, subNode || sub),
     ]);
-},
-
+  },
   _buildKPIPlain({ icon, label, value, subNode }) {
     return DOM.h('div', { class: 'kpi' }, [
       DOM.h('p', { class: 'kpi-label' }, [DOM.icon(icon), label]),
       DOM.h('div', { class: 'kpi-value' }, value),
       DOM.h('p', { class: 'kpi-sub' }, subNode),
     ]);
-},
+  },
 };
 
 /* ============================================================================
-   COMMON — builders de células reutilizáveis
+   COMMON
    ============================================================================ */
-
-/**
- * Célula Fornecedor com histórico abaixo (sem natureza — ela tem coluna própria).
-*/
 function buildFornecedorCell(fornecedor, historicoRaw) {
   const children = [fornecedor || '—'];
   const hasHist = historicoRaw && String(historicoRaw).trim();
-if (hasHist) {
+  if (hasHist) {
     children.push(DOM.h('div', { class: 'hist' }, Utils.truncate(String(historicoRaw), 90)));
   }
   return DOM.h('div', {}, children);
 }
 
-/**
- * Célula Desc. Nat. — só a descrição legível. Sem mostrar código.
-* Retorna '—' se a natureza não estiver no mapa.
- */
 function buildDescNatCell(natCode) {
   const desc = NaturezaMap.describe(natCode);
-if (!desc) return DOM.h('span', { class: 'nat-empty' }, '—');
+  if (!desc) return DOM.h('span', { class: 'nat-empty' }, '—');
   return DOM.h('span', { class: 'nat-desc' }, desc);
 }
 
 /* ============================================================================
-   UI_HOJE — Pagamentos Realizados (com paginação + debounce)
+   UI_HOJE
    ============================================================================ */
 const UI_Hoje = {
   _state: null,
@@ -1542,26 +1421,25 @@ const UI_Hoje = {
 
   render(data) {
     this._data = data.pago_hoje;
-this._meta = data.meta;
+    this._meta = data.meta;
     this._state = {
       filter: { q: '', tipo: null },
       sort:   { col: 'valor_rs', dir: -1 },
       page: 1,
       pageSize: CONFIG.PAGE_SIZE,
     };
-const section = DOM.h('section', { id: 'realizados', class: 'reveal' }, [
+    const section = DOM.h('section', { id: 'realizados', class: 'reveal' }, [
       this._renderSectionHead(),
       this._renderCard(),
     ]);
-this._debouncedSearch = Utils.debounce(value => {
+    this._debouncedSearch = Utils.debounce(value => {
       this._state.filter.q = value;
       this._state.page = 1;
       this._refresh();
     }, CONFIG.SEARCH_DEBOUNCE_MS);
-this._refresh();
+    this._refresh();
     return section;
   },
-
   _renderSectionHead() {
     return DOM.h('div', { class: 'section-head' }, [
       DOM.h('div', { class: 'section-head-left' }, [
@@ -1571,60 +1449,45 @@ this._refresh();
       ]),
       DOM.h('span', { class: 'date-badge' }, [
         DOM.icon('fa-calendar-check'),
-     
-   Utils.fmtDate(this._meta.data_hoje),
+        Utils.fmtDate(this._meta.data_hoje),
       ]),
     ]);
-},
-
+  },
   _columns() {
     return [
-      { key: 'tipo',       label: 'Tipo',
-        renderCell: t => DOM.pill(t.tipo || '?', Utils.pillClass(t.tipo)) },
-      { key: 'numero',     label: 'Título',
-        renderCell: t => String(t.numero || '—') },
-      { key: 'fornecedor', label: 'Fornecedor',
-        renderCell: t => buildFornecedorCell(t.fornecedor, t.historico) },
-      { key: 'natureza',  
- label: 'Desc. Nat.',
-        renderCell: t => buildDescNatCell(t.natureza) },
-      { key: 'valor_rs',   label: 'Valor',
-        num: true, strong: true, center: true,
-        renderCell: t => `R$ ${Utils.fmtBR(t.valor_rs)}` },
+      { key: 'tipo',       label: 'Tipo', renderCell: t => DOM.pill(t.tipo || '?', Utils.pillClass(t.tipo)) },
+      { key: 'numero',     label: 'Título', renderCell: t => String(t.numero || '—') },
+      { key: 'fornecedor', label: 'Fornecedor', renderCell: t => buildFornecedorCell(t.fornecedor, t.historico) },
+      { key: 'natureza',   label: 'Desc. Nat.', renderCell: t => buildDescNatCell(t.natureza) },
+      { key: 'valor_rs',   label: 'Valor', num: true, strong: true, center: true, renderCell: t => `R$ ${Utils.fmtBR(t.valor_rs)}` },
     ];
-},
-
+  },
   _renderCard() {
     const cols = this._columns();
     const tipos = [...new Set(this._data.titulos.map(t => t.tipo).filter(Boolean))].sort();
-// Toolbar
+    
     const searchInput = DOM.h('input', {
       id: 'hoje-search',
       placeholder: 'Buscar fornecedor, histórico, título...',
       type: 'text',
       'aria-label': 'Buscar pagamentos realizados',
     });
-searchInput.addEventListener('input', e => this._debouncedSearch(e.target.value));
+    searchInput.addEventListener('input', e => this._debouncedSearch(e.target.value));
 
-    const searchBox = DOM.h('div', { class: 'search' }, [
-      DOM.icon('fa-magnifying-glass'),
-      searchInput,
-    ]);
-const allChip = this._buildFilterChip('', 'Todos', null, true);
+    const searchBox = DOM.h('div', { class: 'search' }, [DOM.icon('fa-magnifying-glass'), searchInput]);
+    const allChip = this._buildFilterChip('', 'Todos', null, true);
     const tipoChips = tipos.map(t => this._buildFilterChip(t, t, Utils.pillClass(t), false));
-const chips = [allChip, ...tipoChips];
+    const chips = [allChip, ...tipoChips];
 
     const countEl = DOM.h('strong', { id: 'hoje-count' }, '0');
-const totalEl = DOM.h('strong', { id: 'hoje-total' }, 'R$ 0,00');
-const toolbarRight = DOM.h('div', { class: 'toolbar-right' }, [
-      DOM.h('span', { class: 'lbl' }, 'Total'),
-      countEl,
+    const totalEl = DOM.h('strong', { id: 'hoje-total' }, 'R$ 0,00');
+    const toolbarRight = DOM.h('div', { class: 'toolbar-right' }, [
+      DOM.h('span', { class: 'lbl' }, 'Total'), countEl,
       DOM.h('span', { class: 'divider' }),
-      DOM.h('span', { class: 'lbl' }, 'Soma'),
-      totalEl,
+      DOM.h('span', { class: 'lbl' }, 'Soma'), totalEl,
     ]);
-const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, ...chips, toolbarRight]);
-// Table
+    const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, ...chips, toolbarRight]);
+
     const thead = DOM.h('thead', {}, DOM.h('tr', {},
       cols.map(c => {
         const th = DOM.h('th', {
@@ -1632,8 +1495,7 @@ const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, ...chips, toolbar
           dataset: { key: c.key },
         }, c.label);
         th.addEventListener('click', () => {
-          if (this._state.sort.col 
-=== c.key) this._state.sort.dir *= -1;
+          if (this._state.sort.col === c.key) this._state.sort.dir *= -1;
           else { this._state.sort.col = c.key; this._state.sort.dir = 1; }
           this._state.page = 1;
           this._refresh();
@@ -1641,23 +1503,22 @@ const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, ...chips, toolbar
         return th;
       })
     ));
-const tbody = DOM.h('tbody', { id: 'hoje-tbody' });
+    const tbody = DOM.h('tbody', { id: 'hoje-tbody' });
     const tfoot = DOM.h('tfoot', { class: 'data', id: 'hoje-tfoot' });
-const table = DOM.h('table', { class: 'data' }, [thead, tbody, tfoot]);
+    const table = DOM.h('table', { class: 'data' }, [thead, tbody, tfoot]);
     const tableWrap = DOM.h('div', { class: 'table-wrap' }, table);
-const paginationMount = DOM.h('div', { id: 'hoje-pagination' });
+    const paginationMount = DOM.h('div', { id: 'hoje-pagination' });
 
     this._els = { tbody, tfoot, countEl, totalEl, thead, chips, cols, paginationMount };
-return DOM.h('div', { class: 'card' }, [toolbar, tableWrap, paginationMount]);
+    return DOM.h('div', { class: 'card' }, [toolbar, tableWrap, paginationMount]);
   },
-
   _buildFilterChip(tipoValue, label, pillCls, isActive) {
     const chip = DOM.h('button', {
       class: 'filter-chip' + (isActive ? ' active' : ''),
       dataset: { tipo: tipoValue },
       type: 'button',
     }, pillCls ? DOM.pill(label, pillCls) : label);
-chip.addEventListener('click', () => {
+    chip.addEventListener('click', () => {
       if (!this._els || !this._els.chips) return;
       this._els.chips.forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
@@ -1665,62 +1526,53 @@ chip.addEventListener('click', () => {
       this._state.page = 1;
       this._refresh();
     });
-return chip;
+    return chip;
   },
-
   _filterAndSort() {
     const { q, tipo } = this._state.filter;
-const { col, dir } = this._state.sort;
-
+    const { col, dir } = this._state.sort;
     const rows = this._data.titulos.filter(t => {
       if (tipo && t.tipo !== tipo) return false;
       if (q) {
         const query = q.toLowerCase();
-        // Busca combinada: fornecedor, histórico, título, CÓDIGO da natureza e DESCRIÇÃO da natureza
         const natDesc = NaturezaMap.get(t.natureza) || '';
-        const blob = [t.fornecedor, t.historico, t.numero, t.natureza, natDesc]
-        
-  .map(v => (v || '').toString().toLowerCase())
-          .join(' ');
+        const blob = [t.fornecedor, t.historico, t.numero, t.natureza, natDesc].map(v => (v || '').toString().toLowerCase()).join(' ');
         if (!blob.includes(query)) return false;
       }
       return true;
     });
-rows.sort((a, b) => Utils.compareRows(a, b, col, dir));
+    rows.sort((a, b) => Utils.compareRows(a, b, col, dir));
     return rows;
   },
-
   _refresh() {
     if (!this._els) return;
-const { tbody, tfoot, countEl, totalEl, thead, cols, paginationMount } = this._els;
+    const { tbody, tfoot, countEl, totalEl, thead, cols, paginationMount } = this._els;
     const { col, dir } = this._state.sort;
-const allFiltered = this._filterAndSort();
+    const allFiltered = this._filterAndSort();
     const total = allFiltered.reduce((s, t) => s + (t.valor_rs || 0), 0);
+    
     countEl.textContent = String(allFiltered.length);
-totalEl.textContent = 'R$ ' + Utils.fmtBR(total);
+    totalEl.textContent = 'R$ ' + Utils.fmtBR(total);
 
-    // Paginar
     const start = (this._state.page - 1) * this._state.pageSize;
-const pageRows = allFiltered.slice(start, start + this._state.pageSize);
+    const pageRows = allFiltered.slice(start, start + this._state.pageSize);
 
-    // TBODY
     DOM.clear(tbody);
-if (pageRows.length === 0) {
+    if (pageRows.length === 0) {
       tbody.appendChild(DOM.h('tr', {},
         DOM.h('td', { class: 'empty-row', colspan: cols.length }, 'Nenhum resultado')
       ));
-} else {
+    } else {
       for (const t of pageRows) tbody.appendChild(this._renderRow(t, cols));
-}
+    }
 
-    // TFOOT
     DOM.clear(tfoot);
     const spanCount = cols.length - 1;
-tfoot.appendChild(DOM.h('tr', {}, [
+    tfoot.appendChild(DOM.h('tr', {}, [
       DOM.h('td', { colspan: spanCount }, `Total exibido (${allFiltered.length} de ${this._data.titulos.length})`),
       DOM.h('td', { class: 'num center' }, 'R$ ' + Utils.fmtBR(total)),
     ]));
-// Paginação
+
     DOM.clear(paginationMount);
     const pag = Pagination.render({
       page: this._state.page,
@@ -1728,38 +1580,35 @@ tfoot.appendChild(DOM.h('tr', {}, [
       total: allFiltered.length,
       onPage: p => { this._state.page = p; this._refresh(); this._scrollToTop(); },
     });
-if (pag) paginationMount.appendChild(pag);
+    if (pag) paginationMount.appendChild(pag);
 
-    // Sort indicators
     thead.querySelectorAll('th').forEach(th => {
       const isSorted = th.dataset.key === col;
       th.classList.toggle('sorted', isSorted);
       th.dataset.dir = isSorted ? (dir > 0 ? ' ↑' : ' ↓') : '';
     });
-},
-
+  },
   _scrollToTop() {
     const sec = document.getElementById('realizados');
     if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-},
-
+  },
   _renderRow(t, cols) {
     const tr = DOM.h('tr', {});
-for (const c of cols) {
+    for (const c of cols) {
       const classes = [];
       if (c.num) classes.push('num');
-if (c.strong) classes.push('strong');
+      if (c.strong) classes.push('strong');
       if (c.center) classes.push('center');
       const td = DOM.h('td', { class: classes.join(' ') || null });
       DOM._append(td, c.renderCell(t));
       tr.appendChild(td);
-}
+    }
     return tr;
   },
 };
 
 /* ============================================================================
-   UI_PREVISTO — Prévia de Pagamentos (com paginação + debounce, "Contas")
+   UI_PREVISTO
    ============================================================================ */
 const UI_Previsto = {
   _state: null,
@@ -1771,35 +1620,29 @@ const UI_Previsto = {
 
   render(data) {
     this._data = data.previsto_amanha;
-this._meta = data.meta;
-
-    // RENOMEADO: "NFs de Título" → "Contas"
+    this._meta = data.meta;
     this._cats = [
       { key: 'nf_servico', label: 'NFs de Serviço', icon: 'fa-truck',        data: this._data.nf_servico },
-      { key: 'nf_titulo',  label: 'Contas',          icon: 'fa-file-invoice', data: this._data.nf_titulo },
+      { key: 'nf_titulo',  label: 'Contas',         icon: 'fa-file-invoice', data: this._data.nf_titulo },
       { key: 'reembolso',  label: 'Reembolsos',     icon: 'fa-receipt',      data: this._data.reembolso },
     ];
-const activeCat = this._cats.reduce((a, b) => a.data.length >= b.data.length ? a : b).key;
-this._state = {
-      activeCat,
-      filter: { q: '' },
-      sort:   { col: 'valor_total', dir: -1 },
-      page: 1,
-      pageSize: CONFIG.PAGE_SIZE,
+    const activeCat = this._cats.reduce((a, b) => a.data.length >= b.data.length ? a : b).key;
+    this._state = {
+      activeCat, filter: { q: '' }, sort: { col: 'valor_total', dir: -1 },
+      page: 1, pageSize: CONFIG.PAGE_SIZE,
     };
-const section = DOM.h('section', { id: 'previsto', class: 'reveal' }, [
+    const section = DOM.h('section', { id: 'previsto', class: 'reveal' }, [
       this._renderSectionHead(),
       this._renderCard(),
     ]);
-this._debouncedSearch = Utils.debounce(value => {
+    this._debouncedSearch = Utils.debounce(value => {
       this._state.filter.q = value;
       this._state.page = 1;
       this._refresh();
     }, CONFIG.SEARCH_DEBOUNCE_MS);
-this._refresh();
+    this._refresh();
     return section;
   },
-
   _renderSectionHead() {
     return DOM.h('div', { class: 'section-head' }, [
       DOM.h('div', { class: 'section-head-left' }, [
@@ -1809,71 +1652,48 @@ this._refresh();
       ]),
       DOM.h('span', { class: 'date-badge' }, [
         DOM.icon('fa-calendar'),
-    
-    Utils.fmtDate(this._meta.data_amanha),
+        Utils.fmtDate(this._meta.data_amanha),
       ]),
     ]);
-},
-
+  },
   _columnsFor(catKey) {
     const common = {
-      aprovador: { key: 'aprovador',   label: 'Aprovador', renderCell: r => r.aprovador ||
-'—' },
+      aprovador: { key: 'aprovador',   label: 'Aprovador', renderCell: r => r.aprovador || '—' },
       status:    { key: 'status',      label: 'Status',    renderCell: r => this._renderStatus(r.status) },
-      valor:     { key: 'valor_total', label: 'Valor',     num: true, strong: true, center: true,
-                   renderCell: r => `R$ ${Utils.fmtBR(r.valor_total)}` },
-      descNat:   { key: 'natureza_cod', label: 'Desc. Nat.',
-                   renderCell: r => buildDescNatCell(r.natureza_cod) },
+      valor:     { key: 'valor_total', label: 'Valor',     num: true, strong: true, center: true, renderCell: r => `R$ ${Utils.fmtBR(r.valor_total)}` },
+      descNat:   { key: 'natureza_cod', label: 'Desc. Nat.', renderCell: r => buildDescNatCell(r.natureza_cod) },
     };
-if (catKey === 'nf_servico') {
+    if (catKey === 'nf_servico') {
       return [
-        { key: 'numero_nf',   label: 'NF',         renderCell: r => r.numero_nf ||
-'—' },
-        { key: 'fornecedor',  label: 'Fornecedor',
-          renderCell: r => buildFornecedorCell(r.fornecedor, r.observacoes) },
-        common.descNat,
-        common.aprovador,
-        common.status,
-        common.valor,
+        { key: 'numero_nf',   label: 'NF', renderCell: r => r.numero_nf || '—' },
+        { key: 'fornecedor',  label: 'Fornecedor', renderCell: r => buildFornecedorCell(r.fornecedor, r.observacoes) },
+        common.descNat, common.aprovador, common.status, common.valor,
       ];
-}
+    }
     if (catKey === 'nf_titulo') {
       return [
-        { key: 'numero_titulo', label: 'Título', renderCell: r => r.numero_titulo ||
-'—' },
-        { key: 'fornecedor',    label: 'Fornecedor',
-          renderCell: r => buildFornecedorCell(r.fornecedor, r.historico) },
-        common.descNat,
-        common.aprovador,
-        common.status,
-        common.valor,
+        { key: 'numero_titulo', label: 'Título', renderCell: r => r.numero_titulo || '—' },
+        { key: 'fornecedor',    label: 'Fornecedor', renderCell: r => buildFornecedorCell(r.fornecedor, r.historico) },
+        common.descNat, common.aprovador, common.status, common.valor,
       ];
-}
-    // reembolso
+    }
     return [
-      { key: 'solicitante',      label: 'Solicitante',  renderCell: r => r.solicitante ||
-'—' },
+      { key: 'solicitante',      label: 'Solicitante',  renderCell: r => r.solicitante || '—' },
       { key: 'tipo_despesa',     label: 'Tipo despesa', renderCell: r => DOM.pill(r.tipo_despesa || '—') },
-      { key: 'fornecedor',       label: 'Beneficiário',
-        renderCell: r => buildFornecedorCell(r.fornecedor, '') },
+      { key: 'fornecedor',       label: 'Beneficiário', renderCell: r => buildFornecedorCell(r.fornecedor, '') },
       common.descNat,
-      { key: 'tipo_solicitacao', label: 'Solicitação',  renderCell: r => r.tipo_solicitacao ||
-'—' },
-      common.aprovador,
-      common.valor,
+      { key: 'tipo_solicitacao', label: 'Solicitação',  renderCell: r => r.tipo_solicitacao || '—' },
+      common.aprovador, common.valor,
     ];
-},
-
+  },
   _renderStatus(s) {
     if (!s) return DOM.pill('—');
     const low = s.toLowerCase();
     if (/aprova[cç][aã]o/.test(low)) return DOM.pill(s, 'warn');
-if (/aguardando|baixa/.test(low)) return DOM.pill(s, 'ok');
+    if (/aguardando|baixa/.test(low)) return DOM.pill(s, 'ok');
     return DOM.pill(s);
   },
-
   _renderCard() {
-    // Cat summary
     const catItems = this._cats.map(c => {
       const isActive = c.key === this._state.activeCat;
       const item = DOM.h('div', {
@@ -1882,8 +1702,7 @@ if (/aguardando|baixa/.test(low)) return DOM.pill(s, 'ok');
         role: 'button',
         tabindex: '0',
       }, [
- 
-       DOM.h('p', { class: 'cat-label' }, [DOM.icon(c.icon), c.label]),
+        DOM.h('p', { class: 'cat-label' }, [DOM.icon(c.icon), c.label]),
         DOM.h('div', { class: 'cat-value' }, 'R$ ' + Utils.fmtBR(this._data.por_categoria[c.key].total)),
         DOM.h('p', { class: 'cat-sub' }, `${this._data.por_categoria[c.key].quantidade} títulos`),
       ]);
@@ -1891,12 +1710,9 @@ if (/aguardando|baixa/.test(low)) return DOM.pill(s, 'ok');
       item.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this._switchCat(c.key); }
       });
-      return 
-item;
+      return item;
     });
-
     const catSummary = DOM.h('div', { class: 'cat-summary' }, catItems);
-// Tabs
     const tabs = this._cats.map(c => {
       const isActive = c.key === this._state.activeCat;
       const tab = DOM.h('button', {
@@ -1904,154 +1720,130 @@ item;
         dataset: { cat: c.key },
         type: 'button',
       }, [
-        DOM.icon(c.icon),
-        c.label,
-        DOM.h('span', 
-{ class: 'tab-count' }, String(c.data.length)),
+        DOM.icon(c.icon), c.label,
+        DOM.h('span', { class: 'tab-count' }, String(c.data.length)),
       ]);
       tab.addEventListener('click', () => this._switchCat(c.key));
       return tab;
     });
-const tabsBar = DOM.h('div', { class: 'tabs', role: 'tablist' }, tabs);
-// Toolbar
+    const tabsBar = DOM.h('div', { class: 'tabs', role: 'tablist' }, tabs);
     const searchInput = DOM.h('input', {
-      id: 'prev-search',
-      placeholder: 'Buscar fornecedor, solicitante, aprovador...',
-      type: 'text',
+      id: 'prev-search', placeholder: 'Buscar fornecedor, solicitante, aprovador...', type: 'text',
       'aria-label': 'Buscar prévia de pagamentos',
     });
-searchInput.addEventListener('input', e => this._debouncedSearch(e.target.value));
-
+    searchInput.addEventListener('input', e => this._debouncedSearch(e.target.value));
     const searchBox = DOM.h('div', { class: 'search' }, [DOM.icon('fa-magnifying-glass'), searchInput]);
-const countEl = DOM.h('strong', { id: 'prev-count' }, '0');
+    const countEl = DOM.h('strong', { id: 'prev-count' }, '0');
     const totalEl = DOM.h('strong', { id: 'prev-total' }, 'R$ 0,00');
-const toolbarRight = DOM.h('div', { class: 'toolbar-right' }, [
-      DOM.h('span', { class: 'lbl' }, 'Total'),
-      countEl,
-      DOM.h('span', { class: 'divider' }),
-      DOM.h('span', { class: 'lbl' }, 'Soma'),
-      totalEl,
+    const toolbarRight = DOM.h('div', { class: 'toolbar-right' }, [
+      DOM.h('span', { class: 'lbl' }, 'Total'), countEl,
+      DOM.h('span', { class: 'divider' }), DOM.h('span', { class: 'lbl' }, 'Soma'), totalEl,
     ]);
-const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, toolbarRight]);
-
+    const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, toolbarRight]);
     const thead = DOM.h('thead');
-const tbody = DOM.h('tbody', { id: 'prev-tbody' });
+    const tbody = DOM.h('tbody', { id: 'prev-tbody' });
     const tfoot = DOM.h('tfoot', { class: 'data', id: 'prev-tfoot' });
-const table = DOM.h('table', { class: 'data' }, [thead, tbody, tfoot]);
+    const table = DOM.h('table', { class: 'data' }, [thead, tbody, tfoot]);
     const tableWrap = DOM.h('div', { class: 'table-wrap' }, table);
-const paginationMount = DOM.h('div', { id: 'prev-pagination' });
+    const paginationMount = DOM.h('div', { id: 'prev-pagination' });
 
     this._els = { catItems, tabs, thead, tbody, tfoot, countEl, totalEl, searchInput, paginationMount };
-return DOM.h('div', { class: 'card' }, [catSummary, tabsBar, toolbar, tableWrap, paginationMount]);
-},
-
+    return DOM.h('div', { class: 'card' }, [catSummary, tabsBar, toolbar, tableWrap, paginationMount]);
+  },
   _switchCat(catKey) {
     if (catKey === this._state.activeCat) return;
     this._state.activeCat = catKey;
-this._state.sort = { col: 'valor_total', dir: -1 };
+    this._state.sort = { col: 'valor_total', dir: -1 };
     this._state.page = 1;
-
     this._els.catItems.forEach(ci => ci.classList.toggle('active', ci.dataset.cat === catKey));
-this._els.tabs.forEach(t => t.classList.toggle('active', t.dataset.cat === catKey));
+    this._els.tabs.forEach(t => t.classList.toggle('active', t.dataset.cat === catKey));
     this._refresh();
   },
-
   _filterAndSort(cols) {
     const { q } = this._state.filter;
-const { col, dir } = this._state.sort;
+    const { col, dir } = this._state.sort;
     const cat = this._cats.find(c => c.key === this._state.activeCat);
-const validCol = cols.find(c => c.key === col) ? col : cols[cols.length - 1].key;
-const rows = cat.data.filter(r => {
+    const validCol = cols.find(c => c.key === col) ? col : cols[cols.length - 1].key;
+    const rows = cat.data.filter(r => {
       if (!q) return true;
       const query = q.toLowerCase();
-      // Busca combinada: campos do registro + descrição de natureza
       const natDesc = NaturezaMap.get(r.natureza_cod) || '';
       const blob = (JSON.stringify(r) + ' ' + natDesc).toLowerCase();
       return blob.includes(query);
     });
-rows.sort((a, b) => Utils.compareRows(a, b, validCol, dir));
+    rows.sort((a, b) => Utils.compareRows(a, b, validCol, dir));
     return { rows, validCol };
-},
-
+  },
   _refresh() {
     if (!this._els) return;
-const { thead, tbody, tfoot, countEl, totalEl, paginationMount } = this._els;
+    const { thead, tbody, tfoot, countEl, totalEl, paginationMount } = this._els;
     const { dir } = this._state.sort;
-const cat = this._cats.find(c => c.key === this._state.activeCat);
+    const cat = this._cats.find(c => c.key === this._state.activeCat);
     const cols = this._columnsFor(this._state.activeCat);
     const { rows: allFiltered, validCol } = this._filterAndSort(cols);
-const total = allFiltered.reduce((s, r) => s + (r.valor_total || 0), 0);
+    const total = allFiltered.reduce((s, r) => s + (r.valor_total || 0), 0);
+    
     countEl.textContent = String(allFiltered.length);
-totalEl.textContent = 'R$ ' + Utils.fmtBR(total);
-
+    totalEl.textContent = 'R$ ' + Utils.fmtBR(total);
     const start = (this._state.page - 1) * this._state.pageSize;
-const pageRows = allFiltered.slice(start, start + this._state.pageSize);
+    const pageRows = allFiltered.slice(start, start + this._state.pageSize);
 
-    // THEAD
     DOM.clear(thead);
     const headerRow = DOM.h('tr', {});
-for (const c of cols) {
+    for (const c of cols) {
       const isSorted = c.key === validCol;
-const th = DOM.h('th', {
+      const th = DOM.h('th', {
         class: [c.num ? 'num' : '', c.center ? 'center' : '', isSorted ? 'sorted' : ''].filter(Boolean).join(' ') || null,
         dataset: { key: c.key, dir: isSorted ? (dir > 0 ? ' ↑' : ' ↓') : '' },
       }, c.label);
-th.addEventListener('click', () => {
+      th.addEventListener('click', () => {
         if (this._state.sort.col === c.key) this._state.sort.dir *= -1;
         else { this._state.sort.col = c.key; this._state.sort.dir = 1; }
         this._state.page = 1;
         this._refresh();
       });
-headerRow.appendChild(th);
+      headerRow.appendChild(th);
     }
     thead.appendChild(headerRow);
 
-    // TBODY
     DOM.clear(tbody);
-if (pageRows.length === 0) {
+    if (pageRows.length === 0) {
       tbody.appendChild(DOM.h('tr', {},
-        DOM.h('td', { class: 'empty-row', colspan: cols.length },
-          `Nenhum título ${cat.label.toLowerCase()} previsto`)
+        DOM.h('td', { class: 'empty-row', colspan: cols.length }, `Nenhum título ${cat.label.toLowerCase()} previsto`)
       ));
-} else {
+    } else {
       for (const r of pageRows) tbody.appendChild(this._renderRow(r, cols));
-}
+    }
 
-    // TFOOT
     DOM.clear(tfoot);
-tfoot.appendChild(DOM.h('tr', {}, [
-      DOM.h('td', { colspan: cols.length - 1 },
-        `Total exibido (${allFiltered.length} de ${cat.data.length})`),
+    tfoot.appendChild(DOM.h('tr', {}, [
+      DOM.h('td', { colspan: cols.length - 1 }, `Total exibido (${allFiltered.length} de ${cat.data.length})`),
       DOM.h('td', { class: 'num center' }, 'R$ ' + Utils.fmtBR(total)),
     ]));
-// Paginação
+
     DOM.clear(paginationMount);
     const pag = Pagination.render({
-      page: this._state.page,
-      pageSize: this._state.pageSize,
-      total: allFiltered.length,
+      page: this._state.page, pageSize: this._state.pageSize, total: allFiltered.length,
       onPage: p => { this._state.page = p; this._refresh(); this._scrollToTop(); },
     });
-if (pag) paginationMount.appendChild(pag);
+    if (pag) paginationMount.appendChild(pag);
   },
-
   _scrollToTop() {
     const sec = document.getElementById('previsto');
-if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   },
-
   _renderRow(r, cols) {
     const isRisk = Utils.isApprovalStatus(r.status);
-const tr = DOM.h('tr', { class: isRisk ? 'flag-approval' : null });
-for (const c of cols) {
+    const tr = DOM.h('tr', { class: isRisk ? 'flag-approval' : null });
+    for (const c of cols) {
       const classes = [];
       if (c.num) classes.push('num');
-if (c.strong) classes.push('strong');
+      if (c.strong) classes.push('strong');
       if (c.center) classes.push('center');
       const td = DOM.h('td', { class: classes.join(' ') || null });
       DOM._append(td, c.renderCell(r));
       tr.appendChild(td);
-}
+    }
     return tr;
   },
 };
@@ -2067,12 +1859,9 @@ const ScrollSpy = {
 
   init() {
     this._links = Array.from(document.querySelectorAll('[data-spy-link]'));
-if (!this._links.length) return;
-
-    this._sections = CONFIG.SECTIONS
-      .map(id => ({ id, el: document.getElementById(id) }))
-      .filter(s => s.el);
-if (!this._sections.length) return;
+    if (!this._links.length) return;
+    this._sections = CONFIG.SECTIONS.map(id => ({ id, el: document.getElementById(id) })).filter(s => s.el);
+    if (!this._sections.length) return;
 
     this._links.forEach(link => {
       link.addEventListener('click', e => {
@@ -2084,109 +1873,94 @@ if (!this._sections.length) return;
         this._setActive(targetId);
       });
     });
-window.addEventListener('scroll', () => this._onScroll(), { passive: true });
+    window.addEventListener('scroll', () => this._onScroll(), { passive: true });
     window.addEventListener('resize', () => this._onScroll(), { passive: true });
     this._onScroll();
-},
-
+  },
   _onScroll() {
     if (this._ticking) return;
     this._ticking = true;
-requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
       this._update();
       this._ticking = false;
     });
-},
-
+  },
   _update() {
     const trigger = window.scrollY + this._offset;
     let activeId = this._sections[0].id;
-for (const { id, el } of this._sections) {
+    for (const { id, el } of this._sections) {
       if (el.offsetTop <= trigger) activeId = id;
-}
+    }
     this._setActive(activeId);
   },
-
   _setActive(id) {
     this._links.forEach(l => {
       const href = l.getAttribute('href') || '';
       l.classList.toggle('active', href === '#' + id);
     });
-},
+  },
 };
 
 /* ============================================================================
-   HUB LINK — mostra botão "Voltar ao Hub" apenas se usuário veio do hub
-   Funciona em produção (github.io) E em localhost.
-Aceita 3 sinais (qualquer um basta):
-   - document.referrer é uma página do mesmo origin, no path do hub, mas NÃO
-     no path do próprio dashboard (evita que reload conte como "vindo do hub")
-   - URL atual tem ?from=qualquer_valor (fallback robusto)
-   - sessionStorage tem flag 'came_from_hub' (persiste durante a aba)
+   HUB LINK
    ============================================================================ */
 const HubLink = {
-  HUB_PATH_PREFIX: '/Controladoria',          // Path do hub no repo
-  SELF_PATH_PREFIX: '/Controladoria/Pagamentos', // Path do próprio dashboard
+  HUB_PATH_PREFIX: '/Controladoria',
+  SELF_PATH_PREFIX: '/Controladoria/Pagamentos',
   STORAGE_KEY: 'came_from_hub',
 
   init() {
-   
- const btnHub = DOM.byId('btn-hub');
+    const btnHub = DOM.byId('btn-hub');
     const btnRefresh = DOM.byId('btn-refresh');
 
     if (this._userCameFromHub()) {
       if (btnHub) btnHub.hidden = false;
       if (btnRefresh) btnRefresh.hidden = false;
-try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { /* privacy mode */ }
+      try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { }
     }
   },
 
   _userCameFromHub() {
-    // 1. Referrer: same-origin, dentro do path do hub, mas fora do path deste dashboard
     try {
       if (document.referrer) {
         const ref = new URL(document.referrer);
-const sameOrigin = ref.origin === location.origin;
+        const sameOrigin = ref.origin === location.origin;
         const isHubPath = ref.pathname.startsWith(this.HUB_PATH_PREFIX);
         const isSelfPath = ref.pathname.startsWith(this.SELF_PATH_PREFIX);
-if (sameOrigin && isHubPath && !isSelfPath) return true;
+        if (sameOrigin && isHubPath && !isSelfPath) return true;
       }
-    } catch (e) { /* URL inválida ou bloqueada */ }
+    } catch (e) { }
 
-    // 2. Query string ?from=... (coloque no link do hub como seguro extra)
     try {
       const params = new URLSearchParams(location.search);
-if (params.has('from')) return true;
-    } catch (e) { /* ignore */ }
+      if (params.has('from')) return true;
+    } catch (e) { }
 
-    // 3. SessionStorage (mantém o botão após F5 dentro da mesma aba)
     try {
       if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
-} catch (e) { /* privacy mode */ }
+    } catch (e) { }
 
     return false;
   },
 };
+
 const App = {
   async init() {
     try {
-      // Fetch paralelo: data obrigatório, naturezas opcional
       const [data, naturezas] = await Promise.all([
         DataService.loadData(),
         DataService.loadNaturezas(),
       ]);
-NaturezaMap.set(naturezas);
+      NaturezaMap.set(naturezas);
       UI_Sidebar.updateStamp(data);
       HubLink.init();
       this._renderAll(data);
       ScrollSpy.init();
-
-      console.info(`[App] Dashboard pronto · ${NaturezaMap.size()} naturezas carregadas`);
-} catch (err) {
+    } catch (err) {
       console.error('[App] Falha ao carregar dashboard:', err);
       UI_Sidebar.setError();
       this._renderError(err);
-}
+    }
   },
 
   _renderAll(data) {
@@ -2195,14 +1969,15 @@ NaturezaMap.set(naturezas);
     container.appendChild(UI_Dashboard.render(data));
     container.appendChild(UI_Hoje.render(data));
     container.appendChild(UI_Previsto.render(data));
-},
+  },
 
   _renderError(err) {
     const container = DOM.byId('main-container');
     DOM.clear(container);
-const retryBtn = DOM.h('button', { class: 'btn-retry', type: 'button' },
-      [DOM.icon('fa-rotate-right'), 'Tentar novamente']);
-retryBtn.addEventListener('click', () => {
+    const retryBtn = DOM.h('button', { class: 'btn-retry', type: 'button' },
+      [DOM.icon('fa-rotate-right'), ' Tentar novamente']);
+    
+    retryBtn.addEventListener('click', () => {
       DOM.clear(container);
       container.appendChild(DOM.h('div', { class: 'empty-state' }, [
         DOM.h('h2', {}, 'Recarregando…'),
@@ -2210,8 +1985,9 @@ retryBtn.addEventListener('click', () => {
       ]));
       App.init();
     });
-const message = err && err.message ? err.message : 'Erro desconhecido';
-container.appendChild(DOM.h('div', { class: 'empty-state' }, [
+
+    const message = err && err.message ? err.message : 'Erro desconhecido';
+    container.appendChild(DOM.h('div', { class: 'empty-state' }, [
       DOM.h('h2', {}, 'Não foi possível carregar o dashboard'),
       DOM.h('p', {}, [
         'Tentamos buscar ', DOM.h('code', {}, 'data.json'),
@@ -2219,8 +1995,7 @@ container.appendChild(DOM.h('div', { class: 'empty-state' }, [
       ]),
       DOM.h('p', { style: { color: 'var(--subtle)', fontSize: '12px', marginBottom: '20px' } },
         `Detalhe técnico: ${message}`),
-     
- retryBtn,
+      retryBtn,
     ]));
   },
 };
