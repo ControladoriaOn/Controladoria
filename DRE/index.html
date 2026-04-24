@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
   /* ============================================================
      DESIGN TOKENS — ONTIME Controladoria
@@ -268,6 +269,15 @@
 
   /* Section wrapper */
   .section-wrap { padding: 32px 36px 64px; }
+  .tab-panel {
+    scroll-margin-top: 140px;
+    padding-top: 8px;
+  }
+  .tab-panel + .tab-panel {
+    margin-top: 60px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border-soft);
+  }
 
   /* Freshness alert */
   .alert-stale {
@@ -520,46 +530,174 @@
   .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* ============================================================
-     TREE (hierarquia)
+     HIERARQUIA — cards top + árvore enriquecida
      ============================================================ */
+
+  /* Cards de destaque das categorias principais */
+  .hier-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 900px) { .hier-cards { grid-template-columns: 1fr; } }
+
+  .hier-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 22px 22px 20px;
+    display: flex; flex-direction: column;
+    gap: 14px; min-height: 200px;
+    position: relative; overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .hier-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  .hier-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--cat-color, var(--plum));
+  }
+  .hier-card-head {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .hier-card-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: grid; place-items: center;
+    background: var(--cat-color-soft, rgba(60,0,60,0.08));
+    color: var(--cat-color, var(--plum));
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .hier-card-title {
+    font-family: var(--font-display);
+    font-size: 15px; font-weight: 500;
+    color: var(--plum);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .hier-card-rank {
+    font-family: var(--font-display); font-style: italic;
+    font-size: 11px; color: var(--subtle);
+    letter-spacing: 0.04em; margin-top: 1px;
+  }
+  .hier-card-value {
+    font-family: var(--font-display);
+    font-size: 26px; font-weight: 500;
+    letter-spacing: -0.02em; line-height: 1;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .hier-card-pct {
+    font-size: 11px; font-weight: 700;
+    color: var(--cat-color, var(--plum));
+    letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .hier-card-bar {
+    position: relative; height: 6px;
+    background: var(--border-soft);
+    border-radius: 999px; overflow: hidden;
+  }
+  .hier-card-bar-fill {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    background: var(--cat-color, var(--plum));
+    border-radius: 999px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .hier-card-subs {
+    font-size: 11px; color: var(--muted);
+    display: flex; flex-direction: column; gap: 4px;
+    margin-top: auto;
+  }
+  .hier-card-subs > div {
+    display: flex; justify-content: space-between; gap: 8px;
+    padding: 2px 0;
+  }
+  .hier-card-subs .sub-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-weight: 500;
+  }
+  .hier-card-subs .sub-val {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    flex-shrink: 0; color: var(--ink);
+  }
+
+  /* Árvore enriquecida */
   .tree {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     overflow: hidden;
   }
+  .tree-header {
+    display: grid;
+    grid-template-columns: 24px 10px 1fr 70px 120px;
+    align-items: center; gap: 14px;
+    padding: 14px 22px;
+    background: var(--plum);
+    color: rgba(255,255,255,0.75);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .tree-header > :nth-child(4) { text-align: right; }
+  .tree-header > :nth-child(5) { text-align: right; }
+
   .tree-node { border-bottom: 1px solid var(--border-soft); }
   .tree-node:last-child { border-bottom: none; }
+
   .tree-row {
-    display: grid; grid-template-columns: 24px 1fr 60px auto;
+    display: grid; grid-template-columns: 24px 10px 1fr 70px 120px;
     align-items: center; gap: 14px;
     padding: 13px 22px;
-    cursor: pointer; transition: background 0.1s;
+    cursor: pointer; transition: background 0.12s;
+    position: relative;
+  }
+  .tree-row::after {
+    /* barra horizontal de preenchimento no rodapé da linha */
+    content: '';
+    position: absolute; left: 22px; right: 22px; bottom: 0;
+    height: 2px; background: var(--cat-color, var(--plum));
+    width: calc(var(--fill, 0) * 1%);
+    max-width: calc(100% - 44px);
+    opacity: 0.35;
+    border-radius: 2px;
   }
   .tree-row:hover { background: var(--surface-soft); }
   .tree-row.level-1 {
-    font-size: 15px; font-weight: 700;
+    font-size: 14px; font-weight: 700;
     background: var(--surface-alt);
     color: var(--plum);
   }
+  .tree-row.level-1::after { opacity: 0.6; height: 3px; }
   .tree-row.level-2 { font-size: 13px; padding-left: 50px; font-weight: 500; }
+  .tree-row.level-2 { grid-template-columns: 24px 10px 1fr 70px 120px; }
   .tree-row.level-3 {
     font-size: 12px; padding-left: 78px;
     cursor: default; color: var(--muted);
     font-weight: 400;
   }
   .tree-row.level-3:hover { background: transparent; }
+  .tree-row.level-3 .tree-arrow { visibility: hidden; }
+
+  .tree-dot {
+    width: 10px; height: 10px; border-radius: 3px;
+    background: var(--cat-color, var(--plum));
+  }
+  .tree-row.level-2 .tree-dot { opacity: 0.7; }
+  .tree-row.level-3 .tree-dot { opacity: 0.4; width: 8px; height: 8px; }
+
   .tree-arrow {
     font-size: 12px; color: var(--subtle);
     transition: transform 0.2s;
     display: inline-block;
   }
   .tree-arrow.expanded { transform: rotate(90deg); }
-  .tree-row.level-3 .tree-arrow { visibility: hidden; }
   .tree-value {
     font-family: var(--font-mono); font-variant-numeric: tabular-nums;
     font-size: 13px; font-weight: 600; text-align: right;
   }
+  .tree-row.level-1 .tree-value { font-size: 14px; }
+  .tree-row.level-3 .tree-value { font-size: 12px; }
   .tree-pct {
     font-size: 11px; color: var(--subtle);
     text-align: right; font-family: var(--font-mono); font-weight: 500;
@@ -686,15 +824,20 @@
   .step-desc { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
 
   .drop-zone {
+    display: block;
     border: 2px dashed var(--border-strong);
     border-radius: var(--radius-sm);
     padding: 24px; text-align: center;
     transition: all 0.15s; cursor: pointer;
     background: var(--surface-alt);
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
   }
   .drop-zone.drag { border-color: var(--orange); background: var(--orange-soft); }
   .drop-zone.has-file { border-color: var(--ok); background: var(--ok-soft); }
   .drop-zone.error { border-color: var(--err); background: var(--err-soft); }
+  .drop-zone > * { pointer-events: none; }
   .drop-zone-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
   .drop-zone-hint { font-size: 12px; color: var(--muted); }
   .drop-zone input[type=file] { display: none; }
@@ -831,6 +974,9 @@
       <div class="lock-actions">
         <button type="submit" class="btn orange">
           <i class="ph-bold ph-lock-key-open"></i> Desbloquear
+        </button>
+        <button type="button" class="btn ghost hidden" id="lock-hub-back">
+          <i class="ph-bold ph-arrow-left"></i> Hub
         </button>
       </div>
     </form>
@@ -1005,7 +1151,7 @@
       </section>
 
       <!-- ===== SECTION: EXPLORAÇÃO ===== -->
-      <section id="section-exploracao" class="tab-panel hidden">
+      <section id="section-exploracao" class="tab-panel">
 
         <div class="section-head reveal d1">
           <h2 class="section-title">Explorar <em>lançamentos</em></h2>
@@ -1053,12 +1199,29 @@
       </section>
 
       <!-- ===== SECTION: HIERARQUIA ===== -->
-      <section id="section-hierarquia" class="tab-panel hidden">
+      <section id="section-hierarquia" class="tab-panel">
         <div class="section-head reveal d1">
           <h2 class="section-title">Hierarquia <em>gerencial</em></h2>
-          <div class="section-note">Clique em cada linha para expandir</div>
+          <div class="section-note">Cards destacam as principais categorias; a árvore permite drill-down completo</div>
         </div>
-        <div class="tree reveal d2" id="tree-hierarquia"></div>
+
+        <!-- Cards de destaque (Top 3 categorias) -->
+        <div class="hier-cards reveal d1" id="hier-cards"></div>
+
+        <div class="section-head reveal d2" style="margin-top: 8px;">
+          <h3 class="section-title" style="font-size: 16px;">Árvore <em>completa</em></h3>
+          <div class="section-note">Clique em cada linha para expandir subcategorias e detalhes</div>
+        </div>
+
+        <div class="tree reveal d2" id="tree-hierarquia">
+          <div class="tree-header">
+            <span></span>
+            <span></span>
+            <span>Categoria</span>
+            <span>% total</span>
+            <span>Valor</span>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -1073,12 +1236,17 @@
 <div id="admin-view" class="hidden" style="min-height: 100vh;">
   <div class="admin-wrap">
     <div class="admin-head reveal d1">
-      <div class="lock-logo">
-        <img src="https://raw.githubusercontent.com/ControladoriaOn/Controladoria/main/favicon.png" alt="">
-        <div class="lock-logo-text">
-          <span class="name">Controladoria</span>
-          <span class="sub">DRE · Admin</span>
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <div class="lock-logo">
+          <img src="https://raw.githubusercontent.com/ControladoriaOn/Controladoria/main/favicon.png" alt="">
+          <div class="lock-logo-text">
+            <span class="name">Controladoria</span>
+            <span class="sub">DRE · Admin</span>
+          </div>
         </div>
+        <button type="button" class="btn ghost small hidden" id="admin-hub-back">
+          <i class="ph-bold ph-arrow-left"></i> Voltar ao Hub
+        </button>
       </div>
       <div class="lock-eyebrow" style="margin-top: 20px;">Modo administrador</div>
       <h1 class="admin-title">Atualizar <em>dados</em></h1>
@@ -1442,15 +1610,31 @@ function aggregate(allRows) {
   const datas = despesas.map(e => e.data).sort((a,b)=>a-b);
   const ini = datas[0], fim = datas[datas.length-1];
   const lastY = fim.getFullYear(), lastM = fim.getMonth();
+  const lastDay = fim.getDate();
   const prevY = lastM === 0 ? lastY - 1 : lastY;
   const prevM = lastM === 0 ? 11 : lastM - 1;
-  let totalMesAtual = 0, totalMesAnterior = 0;
+
+  // KPI "Mês atual" = soma TODO o último mês (para exibição no card)
+  // KPI "Variação mensal" = comparativo corrigido pelo dia do mês:
+  //   se o mês atual está em andamento (até dia 24, por exemplo),
+  //   comparamos com o mesmo trecho do mês anterior (dias 1-24 de março).
+  //   Isso evita a ilusão de "queda" por mês parcial vs. mês completo.
+  let totalMesAtual = 0, totalMesAnteriorFull = 0;
+  let totalMesAtualTrecho = 0, totalMesAnteriorTrecho = 0;
   for (const e of despesas) {
-    const y = e.data.getFullYear(), m = e.data.getMonth();
-    if (y === lastY && m === lastM) totalMesAtual += e.valor;
-    if (y === prevY && m === prevM) totalMesAnterior += e.valor;
+    const y = e.data.getFullYear(), m = e.data.getMonth(), day = e.data.getDate();
+    if (y === lastY && m === lastM) {
+      totalMesAtual += e.valor;
+      if (day <= lastDay) totalMesAtualTrecho += e.valor; // é sempre true, mas mantém paralelo
+    }
+    if (y === prevY && m === prevM) {
+      totalMesAnteriorFull += e.valor;
+      if (day <= lastDay) totalMesAnteriorTrecho += e.valor;
+    }
   }
-  const varPct = totalMesAnterior > 0 ? (totalMesAtual - totalMesAnterior) / totalMesAnterior * 100 : null;
+  const varPct = totalMesAnteriorTrecho > 0
+    ? (totalMesAtualTrecho - totalMesAnteriorTrecho) / totalMesAnteriorTrecho * 100
+    : null;
   const fornecedoresUnicos = new Set(despesas.filter(e=>e.forn).map(e=>e.forn)).size;
   const porDiaMap = new Map(), porMesMap = new Map(), porMesN1Map = new Map();
   for (const e of despesas) {
@@ -1543,7 +1727,10 @@ function aggregate(allRows) {
       total_liquido: round2(total_liquido),
       mes_atual_label: `${String(lastM+1).padStart(2,'0')}/${lastY}`,
       mes_atual_valor: round2(totalMesAtual),
-      mes_anterior_valor: round2(totalMesAnterior),
+      mes_anterior_valor: round2(totalMesAnteriorFull),
+      mes_atual_trecho_valor: round2(totalMesAtualTrecho),
+      mes_anterior_trecho_valor: round2(totalMesAnteriorTrecho),
+      mes_dia_corte: lastDay,
       mes_variacao_pct: varPct === null ? null : round2(varPct),
       qtd_lancamentos: count_desp,
       qtd_fornecedores: fornecedoresUnicos,
@@ -1574,27 +1761,45 @@ function downloadEnc(envelope) {
 
 /* ============================================================
    HUB DETECTION
-   Marca sessionStorage quando detecta que o usuário veio do Hub.
-   Persiste na sessão para sobreviver a recarregamentos. HUB_ORIGINS
-   aceita padrões; se o referrer der match e NÃO for a própria URL,
-   consideramos que veio do Hub.
+   A ideia: só mostrar "Voltar ao Hub" quando temos confiança razoável
+   de que o usuário realmente veio do hub. Regras:
+   1) sessionStorage _from_hub=1 (setado ao detectar pela primeira vez)
+   2) referrer é exatamente a URL do hub (pathname-level match)
+   Se veio por link direto (sem referrer) ou de outro lugar, não mostra.
    ============================================================ */
-const HUB_ORIGINS = ['controladoriaon.github.io', 'hub', 'controladoria'];
 const HUB_URL = 'https://controladoriaon.github.io/Controladoria/';
+
+function isHubPath(pathname) {
+  // Match exato do path do hub ("/Controladoria/" ou "/Controladoria/index.html"),
+  // mas NÃO sub-paths como "/Controladoria/DRE/".
+  const p = pathname.replace(/\/+$/, ''); // remove trailing slash
+  return p === '/Controladoria' || p === '/Controladoria/index.html';
+}
 
 function detectHubOrigin() {
   try {
     if (sessionStorage.getItem('_from_hub') === '1') return true;
     const ref = document.referrer || '';
     if (!ref) return false;
-    let refHost;
-    try { refHost = new URL(ref).hostname + new URL(ref).pathname; } catch (_) { return false; }
-    const selfHost = location.hostname + location.pathname;
-    if (refHost.startsWith(selfHost) || selfHost.startsWith(refHost.split('?')[0])) return false;
-    const hitHub = HUB_ORIGINS.some(p => refHost.toLowerCase().includes(p));
-    if (hitHub) { sessionStorage.setItem('_from_hub', '1'); return true; }
+    let refUrl;
+    try { refUrl = new URL(ref); } catch (_) { return false; }
+    // Referrer precisa ser exatamente o hub
+    if (refUrl.hostname === 'controladoriaon.github.io' && isHubPath(refUrl.pathname)) {
+      sessionStorage.setItem('_from_hub', '1');
+      return true;
+    }
   } catch (_) {}
   return false;
+}
+
+function setupHubBackButton(btnId) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  if (!detectHubOrigin()) return;
+  btn.classList.remove('hidden');
+  btn.addEventListener('click', () => {
+    window.location.href = HUB_URL;
+  });
 }
 
 /* ============================================================
@@ -1677,7 +1882,13 @@ function renderKpis(data) {
   } else {
     varEl.textContent = fmtPct(k.mes_variacao_pct);
     const cls = k.mes_variacao_pct > 0 ? 'up' : 'down';
-    varSub.innerHTML = `<span class="${cls}">vs. ${fmtBRLshort(k.mes_anterior_valor)} no mês anterior</span>`;
+    const diaCorte = k.mes_dia_corte;
+    const subLabel = diaCorte
+      ? `1 a ${diaCorte} · vs. mesmo período`
+      : `vs. mês anterior`;
+    varSub.innerHTML =
+      `<span class="${cls}">${subLabel}</span>` +
+      ` <span style="color:var(--subtle); font-size:11px;">(${fmtBRLshort(k.mes_atual_trecho_valor)} × ${fmtBRLshort(k.mes_anterior_trecho_valor)})</span>`;
   }
 
   document.getElementById('kpi-forn').textContent = k.qtd_fornecedores.toLocaleString('pt-BR');
@@ -1711,7 +1922,8 @@ function getChartBase() {
         titleFont: {family:"'Manrope', sans-serif", weight:'600', size:12},
         bodyFont: {family:"'JetBrains Mono', monospace", size:11},
         padding: 10, cornerRadius: 6, displayColors: true, boxPadding: 4,
-      }
+      },
+      datalabels: { display: false }  // desabilita globalmente; donut sobrescreve
     }
   };
 }
@@ -1791,6 +2003,24 @@ function renderDonut(data) {
   destroyChart('donut');
   const ctx = document.getElementById('chart-donut').getContext('2d');
   const items = data.hierarquia.slice(0, 8);
+  const total = items.reduce((s,i) => s + i.valor, 0);
+
+  // Helper: nome curto das categorias pra caber na fatia
+  const shortLabel = (s) => {
+    if (!s) return '';
+    // Remove prefixo "(-) " e abrevia palavras longas
+    let t = s.replace(/^\(-\)\s*/, '');
+    // "DESPESAS ADMINISTRATIVO" -> "DESP. ADMIN."
+    t = t.replace(/DESPESAS/gi, 'DESP.')
+         .replace(/ADMINISTRATIVO/gi, 'ADMIN.')
+         .replace(/DEPRECIAÇÃO E AMORTIZAÇÃO/gi, 'DEPREC.')
+         .replace(/PROVISÃO PARA IR E CSLL/gi, 'IR/CSLL')
+         .replace(/OUTRAS RECEITAS E DESPESAS/gi, 'OUTRAS')
+         .replace(/CUSTOS VARIAVEL/gi, 'CUSTOS VAR.')
+         .replace(/CUSTOS FIXO/gi, 'CUSTOS FIXOS');
+    return t.length > 18 ? t.slice(0, 16) + '…' : t;
+  };
+
   App.charts.donut = new Chart(ctx, {
     type: 'doughnut',
     data: {
@@ -1801,8 +2031,10 @@ function renderDonut(data) {
         borderColor: '#ffffff', borderWidth: 3,
       }]
     },
+    plugins: [ChartDataLabels],
     options: {
       ...getChartBase(), cutout: '62%',
+      layout: { padding: 12 },
       plugins: {
         ...getChartBase().plugins,
         legend: { position:'right', labels:{boxWidth:11, padding:10, font:{size:11}, color:'#1A0F1A'} },
@@ -1810,11 +2042,24 @@ function renderDonut(data) {
           ...getChartBase().plugins.tooltip,
           callbacks: {
             label: ctx => {
-              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
               const pct = (ctx.parsed/total*100).toFixed(1);
               return `${fmtBRL(ctx.parsed)}  (${pct}%)`;
             }
           }
+        },
+        datalabels: {
+          color: '#fff',
+          textAlign: 'center',
+          font: { family: "'Manrope', sans-serif", weight: '700', size: 10 },
+          textStrokeColor: 'rgba(0,0,0,0.35)',
+          textStrokeWidth: 2,
+          formatter: (value, ctx) => {
+            const pct = value / total * 100;
+            // Oculta rótulos de fatias muito pequenas (< 3%)
+            if (pct < 3) return '';
+            const label = shortLabel(ctx.chart.data.labels[ctx.dataIndex]);
+            return `${label}\n${pct.toFixed(1)}%`;
+          },
         }
       }
     }
@@ -2037,39 +2282,136 @@ function csvEscape(v) {
 }
 
 /* ---- Hierarquia ---- */
+
+/* Mapa de ícones Phosphor por categoria gerencial */
+const CAT_ICONS = {
+  "(-) CUSTOS VARIAVEL":           "ph-truck",
+  "(-) CUSTOS FIXO":               "ph-buildings",
+  "(-) DESPESAS ADMINISTRATIVO":   "ph-briefcase",
+  "(-) DESPESAS COMERCIAL":        "ph-handshake",
+  "(-) DEDUÇÕES":                  "ph-minus-circle",
+  "(-) DEPRECIAÇÃO E AMORTIZAÇÃO": "ph-clock-counter-clockwise",
+  "(-) PROVISÃO PARA IR E CSLL":   "ph-receipt",
+  "OUTRAS RECEITAS E DESPESAS":    "ph-dots-three-outline",
+  "RECEITA BRUTA":                 "ph-trend-up",
+  "RESULTADO FINANCEIRO":          "ph-chart-line",
+};
+function iconForCategoria(nome) { return CAT_ICONS[nome] || "ph-folder"; }
+
+/* Converte cor hex para versão com alpha (ex: "#FF6E00" + 0.12 -> "rgba(...)") */
+function hexToRgba(hex, alpha) {
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16);
+  const g = parseInt(h.substring(2,4),16);
+  const b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 function renderHierarchy(data) {
-  const el = document.getElementById('tree-hierarquia');
-  el.innerHTML = data.hierarquia.map(n1 => `
-    <div class="tree-node" data-level="1">
-      <div class="tree-row level-1" data-toggle="1">
-        <span class="tree-arrow"><i class="ph-bold ph-caret-right"></i></span>
-        <div>${escapeHtml(n1.nivel1)}</div>
-        <div class="tree-pct">${n1.pct_total.toFixed(1)}%</div>
-        <div class="tree-value">${fmtBRLshort(n1.valor)}</div>
-      </div>
-      <div class="tree-children">
-        ${n1.niveis2.map(n2 => `
-          <div class="tree-node" data-level="2">
-            <div class="tree-row level-2" data-toggle="1">
-              <span class="tree-arrow"><i class="ph-bold ph-caret-right"></i></span>
-              <div>${escapeHtml(n2.nivel2)}</div>
-              <div class="tree-pct">${(n2.valor/n1.valor*100).toFixed(1)}%</div>
-              <div class="tree-value">${fmtBRLshort(n2.valor)}</div>
-            </div>
-            <div class="tree-children">
-              ${n2.detalhes.map(d => `
-                <div class="tree-row level-3">
-                  <span class="tree-arrow">·</span>
-                  <div>${escapeHtml(d.detalhe)}</div>
-                  <div class="tree-pct">${(d.valor/n2.valor*100).toFixed(1)}%</div>
-                  <div class="tree-value">${fmtBRLshort(d.valor)}</div>
-                </div>
-              `).join('')}
-            </div>
+  // Mapa categoria -> cor (usa o mesmo índice do donut para amarrar visualmente)
+  const catColor = {};
+  data.hierarquia.forEach((n1, i) => {
+    catColor[n1.nivel1] = CHART_COLORS[i % CHART_COLORS.length];
+  });
+
+  /* ---- Cards top: 3 primeiras categorias ---- */
+  const cardsEl = document.getElementById('hier-cards');
+  const topCats = data.hierarquia.slice(0, 3);
+  const maxValor = topCats.length ? topCats[0].valor : 1;
+
+  cardsEl.innerHTML = topCats.map((n1, i) => {
+    const cor = catColor[n1.nivel1];
+    const corSoft = hexToRgba(cor, 0.12);
+    const icon = iconForCategoria(n1.nivel1);
+    const fillPct = (n1.valor / maxValor * 100).toFixed(1);
+    const topSubs = n1.niveis2.slice(0, 2);
+    return `
+      <div class="hier-card" style="--cat-color:${cor}; --cat-color-soft:${corSoft};">
+        <div class="hier-card-head">
+          <div class="hier-card-icon"><i class="ph-bold ${icon}"></i></div>
+          <div>
+            <div class="hier-card-rank">${(i+1).toString().padStart(2,'0')} · maior categoria</div>
+            <div class="hier-card-title">${escapeHtml(n1.nivel1)}</div>
           </div>
-        `).join('')}
+        </div>
+        <div>
+          <div class="hier-card-value">${fmtBRLshort(n1.valor)}</div>
+          <div class="hier-card-pct">${n1.pct_total.toFixed(1)}% do total</div>
+        </div>
+        <div class="hier-card-bar">
+          <div class="hier-card-bar-fill" style="width:${fillPct}%"></div>
+        </div>
+        ${topSubs.length ? `
+          <div class="hier-card-subs">
+            ${topSubs.map(n2 => `
+              <div>
+                <span class="sub-name">${escapeHtml(n2.nivel2)}</span>
+                <span class="sub-val">${fmtBRLshort(n2.valor)}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
       </div>
-    </div>`).join('');
+    `;
+  }).join('');
+
+  /* ---- Árvore completa enriquecida ---- */
+  const el = document.getElementById('tree-hierarquia');
+  // mantém o header fixo e reconstrói só os nodes
+  const header = el.querySelector('.tree-header');
+  const totalTop = data.hierarquia.reduce((s,n)=>s+n.valor, 0) || 1;
+
+  const nodesHtml = data.hierarquia.map(n1 => {
+    const cor = catColor[n1.nivel1];
+    const corSoft = hexToRgba(cor, 0.12);
+    const n1Fill = (n1.valor / totalTop * 100).toFixed(1);
+    return `
+      <div class="tree-node" data-level="1" style="--cat-color:${cor}; --cat-color-soft:${corSoft};">
+        <div class="tree-row level-1" data-toggle="1" style="--fill:${n1Fill}">
+          <span class="tree-arrow"><i class="ph-bold ph-caret-right"></i></span>
+          <span class="tree-dot"></span>
+          <div>${escapeHtml(n1.nivel1)}</div>
+          <div class="tree-pct">${n1.pct_total.toFixed(1)}%</div>
+          <div class="tree-value">${fmtBRLshort(n1.valor)}</div>
+        </div>
+        <div class="tree-children">
+          ${n1.niveis2.map(n2 => {
+            const n2Fill = (n2.valor / n1.valor * 100).toFixed(1);
+            return `
+              <div class="tree-node" data-level="2" style="--cat-color:${cor};">
+                <div class="tree-row level-2" data-toggle="1" style="--fill:${n2Fill}">
+                  <span class="tree-arrow"><i class="ph-bold ph-caret-right"></i></span>
+                  <span class="tree-dot"></span>
+                  <div>${escapeHtml(n2.nivel2)}</div>
+                  <div class="tree-pct">${n2Fill}%</div>
+                  <div class="tree-value">${fmtBRLshort(n2.valor)}</div>
+                </div>
+                <div class="tree-children">
+                  ${n2.detalhes.map(d => {
+                    const dFill = (d.valor / n2.valor * 100).toFixed(1);
+                    return `
+                      <div class="tree-row level-3" style="--cat-color:${cor}; --fill:${dFill}">
+                        <span class="tree-arrow">·</span>
+                        <span class="tree-dot"></span>
+                        <div>${escapeHtml(d.detalhe)}</div>
+                        <div class="tree-pct">${dFill}%</div>
+                        <div class="tree-value">${fmtBRLshort(d.valor)}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  // reconstruir conteúdo mantendo o header
+  el.innerHTML = '';
+  if (header) el.appendChild(header);
+  el.insertAdjacentHTML('beforeend', nodesHtml);
+
   el.querySelectorAll('[data-toggle]').forEach(row => {
     row.addEventListener('click', () => {
       const children = row.nextElementSibling;
@@ -2098,7 +2440,7 @@ function setupNav() {
   document.querySelectorAll('.nav-item').forEach(btn => {
     btn.addEventListener('click', () => {
       const sec = btn.dataset.section;
-      activateSection(sec);
+      activateSection(sec, true);
       if (window.innerWidth <= 1024) toggleSidebar(false);
     });
   });
@@ -2121,18 +2463,50 @@ function setupNav() {
   });
 }
 
-function activateSection(sec) {
+function activateSection(sec, doScroll) {
+  if (App.currentSection === sec && doScroll !== true) return;
   App.currentSection = sec;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.section === sec));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-  document.getElementById('section-' + sec).classList.remove('hidden');
   const meta = SECTION_META[sec];
   if (meta) {
     document.getElementById('page-title').innerHTML = meta.title;
     document.getElementById('page-subtitle').textContent = meta.subtitle;
     document.getElementById('breadcrumb-current').textContent = meta.breadcrumb;
   }
-  document.getElementById('content').scrollTo({top:0, behavior:'smooth'});
+  if (doScroll) {
+    const target = document.getElementById('section-' + sec);
+    if (target) {
+      App._scrollLock = true;
+      target.scrollIntoView({behavior:'smooth', block:'start'});
+      // libera o observer de novo depois da animação de scroll
+      setTimeout(() => { App._scrollLock = false; }, 800);
+    }
+  }
+}
+
+/* ScrollSpy: observa qual seção está mais visível e atualiza a sidebar + título */
+function setupScrollSpy() {
+  const sections = ['resumo','exploracao','hierarquia']
+    .map(id => document.getElementById('section-' + id))
+    .filter(Boolean);
+  if (!sections.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    if (App._scrollLock) return;
+    // Pega todas entradas visíveis, escolhe a que tem maior proporção visível
+    const visible = entries
+      .filter(e => e.isIntersecting)
+      .sort((a,b) => b.intersectionRatio - a.intersectionRatio);
+    if (visible.length) {
+      const id = visible[0].target.id.replace('section-', '');
+      if (id !== App.currentSection) activateSection(id, false);
+    }
+  }, {
+    root: document.getElementById('content'),
+    rootMargin: '-140px 0px -55% 0px',
+    threshold: [0, 0.1, 0.3, 0.5, 0.8],
+  });
+  sections.forEach(s => observer.observe(s));
 }
 
 function toggleSidebar(force) {
@@ -2158,15 +2532,11 @@ async function initViewer() {
   hide('initial-loading');
   show('viewer-lock');
 
-  // Botão "Voltar ao Hub" — só visível quando detectamos origem externa
-  if (detectHubOrigin()) {
-    const btn = document.getElementById('hub-back');
-    btn.classList.remove('hidden');
-    btn.addEventListener('click', () => {
-      const ref = document.referrer;
-      window.location.href = ref && ref.length ? ref : HUB_URL;
-    });
-  }
+  // Botões "Voltar ao Hub" — só visíveis quando detectamos que o usuário
+  // realmente veio do hub. Ativamos o botão tanto na tela de senha
+  // (lock-hub-back) quanto na sidebar do app (hub-back).
+  setupHubBackButton('lock-hub-back');
+  setupHubBackButton('hub-back');
 
   let envelope = await tryFetchEnc();
   if (!envelope) document.getElementById('viewer-fallback').style.display = 'block';
@@ -2210,6 +2580,7 @@ async function initViewer() {
       hide('viewer-lock');
       setupNav();
       renderAll(data);
+      requestAnimationFrame(() => setupScrollSpy());
       try { sessionStorage.setItem('_pwd', pwd); } catch(_){}
     } catch (e) {
       errEl.textContent = e.message || 'Falha ao descriptografar.';
@@ -2228,6 +2599,7 @@ async function initViewer() {
       hide('viewer-lock');
       setupNav();
       renderAll(data);
+      requestAnimationFrame(() => setupScrollSpy());
     } catch(_) {}
   }
 
@@ -2299,6 +2671,7 @@ function setupDropZone(zoneId, inputId, stateKey, pickedId) {
 async function initAdmin() {
   hide('initial-loading');
   show('admin-view');
+  setupHubBackButton('admin-hub-back');
   setupDropZone('drop-deb', 'file-deb', 'fileDeb', 'picked-deb');
   setupDropZone('drop-cred', 'file-cred', 'fileCred', 'picked-cred');
 
