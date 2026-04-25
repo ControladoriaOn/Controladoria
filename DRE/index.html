@@ -325,29 +325,39 @@
   .section-title em { font-style: italic; font-weight: 400; color: var(--ink); }
   .section-note { font-size: 12px; color: var(--muted); }
 
-  /* Period chips */
-  .period-chips {
-    display: inline-flex;
+  /* Seletor de período (dropdown com meses / trimestres / YTD) */
+  .period-selector {
+    display: inline-flex; align-items: center; gap: 10px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 999px;
-    padding: 4px;
-    gap: 2px;
+    padding: 4px 4px 4px 14px;
   }
-  .period-chip {
-    padding: 7px 14px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    transition: all 0.15s;
+  .period-selector label {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    letter-spacing: 0.02em;
     white-space: nowrap;
   }
-  .period-chip:hover { color: var(--plum); }
-  .period-chip.active {
-    background: var(--plum);
-    color: #fff;
+  .period-selector label i { font-size: 14px; color: var(--plum); }
+  .period-select {
+    border: none; background: var(--plum); color: #fff;
+    padding: 7px 28px 7px 14px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    appearance: none; -webkit-appearance: none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, #fff 50%),
+      linear-gradient(135deg, #fff 50%, transparent 50%);
+    background-position:
+      calc(100% - 15px) calc(50% - 2px),
+      calc(100% - 11px) calc(50% - 2px);
+    background-size: 4px 4px, 4px 4px;
+    background-repeat: no-repeat;
+    font-family: var(--font-body);
   }
+  .period-select:focus { outline: 2px solid var(--orange); outline-offset: 1px; }
+  .period-select option { background: var(--surface); color: var(--ink); font-weight: 500; }
 
   /* Switch Saídas/Entradas/Ambos — muda cor conforme modo ativo */
   .mode-switch {
@@ -445,6 +455,41 @@
     border-bottom: 1px solid var(--border-soft);
     font-size: 13px;
   }
+
+  /* Modo "Ambos" — 3 colunas (Entradas | Saídas | Saldo) */
+  .rank-list.rank-3col { gap: 0; }
+  .rank-3col-header {
+    display: grid;
+    grid-template-columns: 28px minmax(140px, 1fr) 92px 92px 100px;
+    gap: 10px;
+    padding: 8px 0 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .rank-3col-header .col-h, .rank-3col-row .col-val { text-align: right; }
+  .rank-3col-header .col-h.ok { color: var(--ok); }
+  .rank-3col-header .col-h.err { color: var(--err); }
+  .rank-3col-row {
+    display: grid;
+    grid-template-columns: 28px minmax(140px, 1fr) 92px 92px 100px;
+    gap: 10px; padding: 10px 0;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 12px;
+    align-items: center;
+  }
+  .rank-3col-row:last-child { border-bottom: none; }
+  .rank-3col-row .col-val {
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .rank-3col-row .col-val.ok { color: var(--ok); }
+  .rank-3col-row .col-val.err { color: var(--err); }
+  .rank-3col-row .col-val.pos { color: var(--ok); }
+  .rank-3col-row .col-val.neg { color: var(--err); }
   .rank-row:last-child { border-bottom: none; }
   .rank-pos {
     font-family: var(--font-display); font-style: italic;
@@ -595,6 +640,10 @@
     background: var(--plum); color: #fff; border-color: var(--plum);
   }
   .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pagination button i { font-size: 13px; display: block; line-height: 1; }
+  .page-ellipsis {
+    color: var(--subtle); padding: 0 4px; font-size: 13px; user-select: none;
+  }
 
   /* ============================================================
      HIERARQUIA — cards top + árvore enriquecida
@@ -808,6 +857,16 @@
     text-align: right; font-family: var(--font-mono); font-weight: 500;
   }
   .tree-col-mes.zero { color: var(--subtle); opacity: 0.4; }
+
+  /* Modo "Ambos": 3 colunas extras (Entradas verde | Saídas vermelho | Saldo) */
+  .tree-col-mes.col-entrada { color: var(--ok); font-weight: 600; }
+  .tree-col-mes.col-saida   { color: var(--err); font-weight: 600; }
+  .tree-col-mes.col-saldo-pos { color: var(--ok); font-weight: 700; }
+  .tree-col-mes.col-saldo-neg { color: var(--err); font-weight: 700; }
+  .tree-header .tree-col-mes.col-entrada { color: var(--ok); }
+  .tree-header .tree-col-mes.col-saida { color: var(--err); }
+  .tree-value.col-saldo-pos { color: var(--ok); }
+  .tree-value.col-saldo-neg { color: var(--err); }
   .tree-children { display: none; }
   .tree-children.expanded { display: block; }
 
@@ -1036,8 +1095,8 @@
   }
   @media (max-width: 500px) {
     .kpi-grid { grid-template-columns: 1fr; }
-    .period-chips { width: 100%; justify-content: space-between; }
-    .period-chip { padding: 7px 10px; font-size: 11px; }
+    .period-selector { width: 100%; }
+    .period-select { flex: 1; }
     .mode-switch { width: 100%; justify-content: space-between; margin-top: 8px; }
     .mode-chip { flex: 1; justify-content: center; }
   }
@@ -1180,10 +1239,14 @@
 
         <div class="section-head reveal d1">
           <h2 class="section-title">Indicadores <em>principais</em></h2>
-          <div class="period-chips" id="period-chips">
-            <button class="period-chip" data-period="mes">Mês atual</button>
-            <button class="period-chip" data-period="3m">Últimos 3 meses</button>
-            <button class="period-chip active" data-period="ytd">YTD</button>
+          <div class="period-selector">
+            <label for="period-select">
+              <i class="ph-bold ph-calendar-blank"></i>
+              <span>Período:</span>
+            </label>
+            <select id="period-select" class="period-select">
+              <!-- opções populadas dinamicamente via JS quando os dados carregam -->
+            </select>
           </div>
         </div>
 
@@ -1258,14 +1321,17 @@
           <div class="card"><div class="chart-host tall"><canvas id="chart-stacked"></canvas></div></div>
         </div>
 
-        <div class="section-block" id="section-filiais">
-          <div class="section-head"><h2 class="section-title">Por <em>filial</em></h2></div>
-          <div class="card"><div class="rank-list" id="rank-filiais"></div></div>
-        </div>
-
         <div class="section-block">
-          <div class="section-head"><h2 class="section-title">Por <em>centro de custo</em></h2></div>
-          <div class="card"><div class="rank-list" id="rank-centro-custo"></div></div>
+          <div class="two-col">
+            <div>
+              <div class="section-head"><h2 class="section-title">Por <em>centro de custo</em></h2></div>
+              <div class="card"><div class="rank-list" id="rank-centro-custo"></div></div>
+            </div>
+            <div id="section-filiais">
+              <div class="section-head"><h2 class="section-title">Por <em>filial</em></h2></div>
+              <div class="card"><div class="rank-list" id="rank-filiais"></div></div>
+            </div>
+          </div>
         </div>
 
       </section>
@@ -1313,6 +1379,8 @@
             </table>
           </div>
         </div>
+
+        <div class="pagination" id="pagination"></div>
 
       </section>
 
@@ -1533,13 +1601,27 @@ const ACCENT_COLOR = '#FF6E00';
 /* ============================================================
    FORMATAÇÃO
    ============================================================ */
+/* Formatação monetária:
+   - fmtBRL       : com centavos. Usado em tooltips e CSV (precisão total).
+   - fmtBRLint    : inteiro sem centavos. Padrão para KPIs, cards e rankings.
+   - fmtBRLshort  : inteiro, só abrevia quando tem MAIS de 7 dígitos
+                    (ou seja, >= R$ 10 milhões) para evitar números gigantes.
+   - fmtBRLaxis   : sempre abreviado (M / k / —), só em eixos de gráfico. */
 const fmtBRL = n => 'R$ ' + (Number(n)||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtBRLint = n => 'R$ ' + Math.round(Number(n)||0).toLocaleString('pt-BR');
 const fmtBRLshort = n => {
   const v = Number(n) || 0;
   const abs = Math.abs(v);
+  // Abrevia só acima de 10 milhões (8+ dígitos)
+  if (abs >= 1e7) return 'R$ ' + (v/1e6).toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' M';
+  return fmtBRLint(v);
+};
+const fmtBRLaxis = n => {
+  const v = Number(n) || 0;
+  const abs = Math.abs(v);
   if (abs >= 1e6) return 'R$ ' + (v/1e6).toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' M';
-  if (abs >= 1e3) return 'R$ ' + (v/1e3).toLocaleString('pt-BR', {maximumFractionDigits:1}) + ' k';
-  return fmtBRL(v);
+  if (abs >= 1e3) return 'R$ ' + (v/1e3).toLocaleString('pt-BR', {maximumFractionDigits:0}) + ' k';
+  return fmtBRLint(v);
 };
 const fmtDate = s => {
   if (!s) return '—';
@@ -2067,8 +2149,8 @@ const App = {
   filtered: [],
   sortCol: 'valor',
   sortDir: 'desc',
-  batchSize: 100,
-  visibleCount: 0,
+  page: 1,
+  pageSize: 50,
   charts: {},
   currentSection: 'resumo',
   periodFilter: 'ytd',
@@ -2087,6 +2169,156 @@ function getLado(data, modo) {
   // modo 'ambos' → fundir
   return fundirLados(data);
 }
+/* Para o modo "Ambos" no Top Fornecedores: combina saídas e entradas
+   por nome do fornecedor, mantendo os dois valores separados pra renderizar
+   3 colunas (Entradas | Saídas | Saldo). */
+function fundirRankingAmbos(data) {
+  const map = new Map();
+  for (const f of data.saidas.rankings.top_fornecedores) {
+    map.set(f.fornecedor, {
+      fornecedor: f.fornecedor,
+      valor_saida: f.valor,
+      valor_entrada: 0,
+      qtd_saida: f.qtd,
+      qtd_entrada: 0,
+      cat_principal_saida: f.cat_principal,
+      cc_principal_saida: f.cc_principal,
+    });
+  }
+  for (const f of data.entradas.rankings.top_fornecedores) {
+    let cur = map.get(f.fornecedor);
+    if (!cur) {
+      cur = {
+        fornecedor: f.fornecedor,
+        valor_saida: 0,
+        valor_entrada: 0,
+        qtd_saida: 0,
+        qtd_entrada: 0,
+        cat_principal_saida: null,
+        cc_principal_saida: null,
+      };
+      map.set(f.fornecedor, cur);
+    }
+    cur.valor_entrada = f.valor;
+    cur.qtd_entrada = f.qtd;
+    cur.cat_principal_entrada = f.cat_principal;
+    cur.cc_principal_entrada = f.cc_principal;
+  }
+  // Calcula saldo e total movimentado pra ordenação
+  const arr = [...map.values()].map(r => ({
+    ...r,
+    valor_saldo: r.valor_entrada - r.valor_saida,
+    valor_total: r.valor_entrada + r.valor_saida,
+  }));
+  // Ordena pelo total movimentado (mais "ativos" primeiro)
+  arr.sort((a, b) => b.valor_total - a.valor_total);
+  return arr;
+}
+
+/* Para o modo "Ambos" na Hierarquia: combina hierarquia de saídas e entradas
+   por nome (nivel1, nivel2, detalhe), mantendo valores separados.
+   Resultado: árvore onde cada nó tem valor_saida, valor_entrada, valor_saldo
+   além dos respectivos mapas mensais. */
+function fundirHierarquiaAmbos(data) {
+  // Indexa hierarquia por nivel1 → nivel2 → detalhe
+  const idx = new Map(); // nivel1 → { saida, entrada, n2: Map(nivel2 → { saida, entrada, det: Map(detalhe → {saida, entrada}) }) }
+  const ensureN1 = (n1) => {
+    if (!idx.has(n1)) idx.set(n1, { saida: null, entrada: null, n2: new Map() });
+    return idx.get(n1);
+  };
+  const ensureN2 = (rec1, n2) => {
+    if (!rec1.n2.has(n2)) rec1.n2.set(n2, { saida: null, entrada: null, det: new Map() });
+    return rec1.n2.get(n2);
+  };
+  const addSide = (lado, sideKey) => {
+    for (const n1 of lado.hierarquia) {
+      const rec1 = ensureN1(n1.nivel1);
+      rec1[sideKey] = { valor: n1.valor, meses: n1.meses || {} };
+      for (const n2 of n1.niveis2) {
+        const rec2 = ensureN2(rec1, n2.nivel2);
+        rec2[sideKey] = { valor: n2.valor, meses: n2.meses || {} };
+        for (const d of n2.detalhes) {
+          if (!rec2.det.has(d.detalhe)) rec2.det.set(d.detalhe, { saida: null, entrada: null });
+          const rec3 = rec2.det.get(d.detalhe);
+          rec3[sideKey] = { valor: d.valor, meses: d.meses || {} };
+        }
+      }
+    }
+  };
+  addSide(data.saidas, 'saida');
+  addSide(data.entradas, 'entrada');
+
+  // Reconstrói árvore com valores separados
+  const totalMovimento = [...idx.values()].reduce((acc, rec) =>
+    acc + (rec.saida?.valor || 0) + (rec.entrada?.valor || 0), 0) || 1;
+
+  const out = [];
+  for (const [nome1, rec1] of idx) {
+    const valor_saida = rec1.saida?.valor || 0;
+    const valor_entrada = rec1.entrada?.valor || 0;
+    const meses_saida = rec1.saida?.meses || {};
+    const meses_entrada = rec1.entrada?.meses || {};
+    const meses_saldo = {};
+    for (const m of new Set([...Object.keys(meses_saida), ...Object.keys(meses_entrada)])) {
+      meses_saldo[m] = (meses_entrada[m] || 0) - (meses_saida[m] || 0);
+    }
+    const niveis2 = [];
+    for (const [nome2, rec2] of rec1.n2) {
+      const v_s2 = rec2.saida?.valor || 0;
+      const v_e2 = rec2.entrada?.valor || 0;
+      const ms_s2 = rec2.saida?.meses || {};
+      const ms_e2 = rec2.entrada?.meses || {};
+      const ms_saldo2 = {};
+      for (const m of new Set([...Object.keys(ms_s2), ...Object.keys(ms_e2)])) {
+        ms_saldo2[m] = (ms_e2[m] || 0) - (ms_s2[m] || 0);
+      }
+      const detalhes = [];
+      for (const [nome3, rec3] of rec2.det) {
+        const v_s3 = rec3.saida?.valor || 0;
+        const v_e3 = rec3.entrada?.valor || 0;
+        const ms_s3 = rec3.saida?.meses || {};
+        const ms_e3 = rec3.entrada?.meses || {};
+        const ms_saldo3 = {};
+        for (const m of new Set([...Object.keys(ms_s3), ...Object.keys(ms_e3)])) {
+          ms_saldo3[m] = (ms_e3[m] || 0) - (ms_s3[m] || 0);
+        }
+        detalhes.push({
+          detalhe: nome3,
+          valor_saida: v_s3, valor_entrada: v_e3,
+          valor_saldo: v_e3 - v_s3,
+          meses_saida: ms_s3, meses_entrada: ms_e3, meses_saldo: ms_saldo3,
+          // Compatibilidade com render existente: usa o módulo do total como "valor"
+          valor: v_s3 + v_e3,
+          meses: {},
+        });
+      }
+      detalhes.sort((a, b) => (b.valor_saida + b.valor_entrada) - (a.valor_saida + a.valor_entrada));
+      niveis2.push({
+        nivel2: nome2,
+        valor_saida: v_s2, valor_entrada: v_e2,
+        valor_saldo: v_e2 - v_s2,
+        meses_saida: ms_s2, meses_entrada: ms_e2, meses_saldo: ms_saldo2,
+        valor: v_s2 + v_e2,
+        meses: {},
+        detalhes,
+      });
+    }
+    niveis2.sort((a, b) => (b.valor_saida + b.valor_entrada) - (a.valor_saida + a.valor_entrada));
+    out.push({
+      nivel1: nome1,
+      valor_saida, valor_entrada,
+      valor_saldo: valor_entrada - valor_saida,
+      meses_saida, meses_entrada, meses_saldo,
+      valor: valor_saida + valor_entrada,
+      pct_total: (valor_saida + valor_entrada) / totalMovimento * 100,
+      meses: {},
+      niveis2,
+    });
+  }
+  out.sort((a, b) => (b.valor_saida + b.valor_entrada) - (a.valor_saida + a.valor_entrada));
+  return out;
+}
+
 function fundirLados(data) {
   const s = data.saidas, e = data.entradas;
   // Séries temporais: soma por chave
@@ -2197,6 +2429,7 @@ function renderAll(data) {
   }
 
   // Render sections
+  populatePeriodSelect(data);
   renderKpis(data);
   renderMonthlyChart(data);
   renderDonut(data);
@@ -2261,34 +2494,123 @@ function renderKpis(data) {
   }
 }
 
-/* Retorna o saldo do período atual (respeita o chip Mês / 3M / YTD) */
-function getPeriodSaldo(data) {
-  const p = App.periodFilter;
-  const pmE = data.entradas.series_temporais.por_mes;
-  const pmS = data.saidas.series_temporais.por_mes;
-  if (p === 'ytd') return data.kpis.saldo;
-  if (p === 'mes') {
-    const e = pmE.length ? pmE[pmE.length-1].valor : 0;
-    const s = pmS.length ? pmS[pmS.length-1].valor : 0;
-    return e - s;
+/* Popula o dropdown de período dinamicamente:
+   - Mês atual (o último mês com dados)
+   - Últimos 3 meses (se houver mais de 3 meses)
+   - Cada mês individual
+   - Cada trimestre que tenha pelo menos 1 mês com dados
+   - YTD */
+function populatePeriodSelect(data) {
+  const select = document.getElementById('period-select');
+  if (!select) return;
+  const todosMeses = [...new Set([
+    ...data.entradas.series_temporais.por_mes.map(x => x.mes),
+    ...data.saidas.series_temporais.por_mes.map(x => x.mes),
+  ])].sort();
+  if (!todosMeses.length) { select.innerHTML = ''; return; }
+
+  /* Nomes de meses e trimestres */
+  const nomeMes = (iso) => fmtMesAno(iso); // ex: "jan/26"
+  const nomeQ = (ano, q) => `Q${q}/${ano.slice(2)}`;
+
+  const opts = [];
+  // Opções rápidas no topo
+  opts.push({value:'mes-atual', label:'Mês atual', group:'Rápido'});
+  if (todosMeses.length > 1) opts.push({value:'3m', label:'Últimos 3 meses', group:'Rápido'});
+  opts.push({value:'ytd', label:'Ano inteiro (YTD)', group:'Rápido'});
+
+  // Meses individuais
+  for (const m of todosMeses) {
+    opts.push({value:`mes-${m}`, label: nomeMes(m), group:'Mês específico'});
   }
-  if (p === '3m') {
-    const e = pmE.slice(-3).reduce((a,x)=>a+x.valor, 0);
-    const s = pmS.slice(-3).reduce((a,x)=>a+x.valor, 0);
-    return e - s;
+
+  // Trimestres com pelo menos 1 mês de dados
+  const qsComDados = new Set();
+  for (const m of todosMeses) {
+    const ano = m.slice(0, 4);
+    const mm = m.slice(5, 7);
+    const q = Math.ceil(parseInt(mm) / 3);
+    qsComDados.add(`${ano}-Q${q}`);
   }
-  return data.kpis.saldo;
+  const qsOrdenados = [...qsComDados].sort();
+  for (const qKey of qsOrdenados) {
+    const [ano, q] = qKey.split('-Q');
+    opts.push({value:`q-${qKey}`, label: nomeQ(ano, q), group:'Trimestre'});
+  }
+
+  /* Constrói o <select> com optgroups na ordem dos grupos */
+  const grupos = ['Rápido', 'Mês específico', 'Trimestre'];
+  let html = '';
+  for (const g of grupos) {
+    const items = opts.filter(o => o.group === g);
+    if (!items.length) continue;
+    html += `<optgroup label="${escapeHtml(g)}">`;
+    for (const o of items) {
+      html += `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`;
+    }
+    html += '</optgroup>';
+  }
+  select.innerHTML = html;
+  select.value = App.periodFilter || 'ytd';
+  // Se o valor salvo não existe mais (mês removido), cai em 'ytd'
+  if (select.selectedIndex < 0) {
+    select.value = 'ytd';
+    App.periodFilter = 'ytd';
+  }
 }
 
-/* Retorna total de entradas OU saídas no período atual (chip) */
+
+/* Helper central: retorna os meses (YYYY-MM) que o filtro atual cobre.
+   Filtros suportados:
+     'ytd'          → todos os meses com dados
+     'mes-atual'    → só o último mês com dados
+     '3m'           → últimos 3 meses
+     'mes-YYYY-MM'  → um mês específico (ex: 'mes-2026-01')
+     'q-YYYY-QN'    → um trimestre específico (ex: 'q-2026-Q1') */
+function getMesesDoFiltro(data) {
+  const p = App.periodFilter || 'ytd';
+  const todosMeses = [...new Set([
+    ...data.entradas.series_temporais.por_mes.map(x => x.mes),
+    ...data.saidas.series_temporais.por_mes.map(x => x.mes),
+  ])].sort();
+  if (!todosMeses.length) return [];
+  if (p === 'ytd') return todosMeses;
+  if (p === 'mes-atual') return todosMeses.slice(-1);
+  if (p === '3m') return todosMeses.slice(-3);
+  if (p.startsWith('mes-')) {
+    const mes = p.substring(4); // "2026-01"
+    return todosMeses.filter(m => m === mes);
+  }
+  if (p.startsWith('q-')) {
+    const qKey = p.substring(2); // "2026-Q1"
+    const match = qKey.match(/^(\d{4})-Q(\d)$/);
+    if (!match) return todosMeses;
+    const ano = match[1];
+    const q = parseInt(match[2]);
+    const mesesQ = {1:['01','02','03'], 2:['04','05','06'], 3:['07','08','09'], 4:['10','11','12']}[q] || [];
+    return todosMeses.filter(m => m.startsWith(ano) && mesesQ.includes(m.slice(5,7)));
+  }
+  return todosMeses;
+}
+
+function somaMesesDe(lista, mesesSet) {
+  return lista.filter(x => mesesSet.has(x.mes)).reduce((s,x) => s + x.valor, 0);
+}
+
+/* Retorna o saldo do período atual */
+function getPeriodSaldo(data) {
+  const meses = new Set(getMesesDoFiltro(data));
+  if (meses.size === 0) return 0;
+  const e = somaMesesDe(data.entradas.series_temporais.por_mes, meses);
+  const s = somaMesesDe(data.saidas.series_temporais.por_mes, meses);
+  return e - s;
+}
+
+/* Retorna total de entradas OU saídas no período atual */
 function getPeriodValor(data, lado) {
-  const p = App.periodFilter;
-  const pm = data[lado].series_temporais.por_mes;
-  if (!pm.length) return 0;
-  if (p === 'ytd') return lado === 'entradas' ? data.kpis.total_entradas : data.kpis.total_saidas;
-  if (p === 'mes') return pm[pm.length-1].valor;
-  if (p === '3m')  return pm.slice(-3).reduce((a,x)=>a+x.valor, 0);
-  return lado === 'entradas' ? data.kpis.total_entradas : data.kpis.total_saidas;
+  const meses = new Set(getMesesDoFiltro(data));
+  if (meses.size === 0) return 0;
+  return somaMesesDe(data[lado].series_temporais.por_mes, meses);
 }
 
 /* ---- Chart base ---- */
@@ -2313,6 +2635,16 @@ function destroyChart(key) {
   if (App.charts[key]) { App.charts[key].destroy(); delete App.charts[key]; }
 }
 
+/* Esconde/mostra o container de seção mais próximo do elemento.
+   Sobe pela árvore procurando por .section-block; se achar, aplica .hidden.
+   Útil para esconder cards vazios automaticamente. */
+function toggleSection(elementOrId, hide) {
+  const el = typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
+  if (!el) return;
+  const block = el.closest('.section-block') || el.closest('.two-col > div') || el;
+  block.classList.toggle('hidden', !!hide);
+}
+
 /* ---- Monthly chart com média móvel ---- */
 function renderMonthlyChart(data) {
   destroyChart('mensal');
@@ -2320,15 +2652,25 @@ function renderMonthlyChart(data) {
 
   const sE = data.entradas.series_temporais.por_mes;
   const sS = data.saidas.series_temporais.por_mes;
-  // Unir meses dos dois lados pra eixo X consistente
-  const todosMeses = [...new Set([...sE.map(p=>p.mes), ...sS.map(p=>p.mes)])].sort();
   const mapE = Object.fromEntries(sE.map(p => [p.mes, p.valor]));
   const mapS = Object.fromEntries(sS.map(p => [p.mes, p.valor]));
 
-  // Aplicar filtro de período (zoom)
-  let slice = todosMeses;
-  if (App.periodFilter === '3m') slice = todosMeses.slice(-3);
-  else if (App.periodFilter === 'mes') slice = todosMeses.slice(-1);
+  // Aplicar filtro de período (zoom) — usa o mesmo helper dos KPIs.
+  // Quando é "mês específico" ou "trimestre", o gráfico mostra só esses meses.
+  // No "YTD" e "3m" mostra o range correspondente. Na visão de 1 mês só,
+  // aparecem os últimos 3 meses pra dar contexto (senão fica 1 ponto solitário).
+  let slice = getMesesDoFiltro(data);
+  if (slice.length <= 1) {
+    // Para evitar gráfico com 1 ponto só, tentamos mostrar um range mínimo
+    // em torno do mês selecionado (ele + 2 anteriores).
+    const todos = [...new Set([...sE.map(p=>p.mes), ...sS.map(p=>p.mes)])].sort();
+    if (slice.length === 1) {
+      const idx = todos.indexOf(slice[0]);
+      if (idx > 0) slice = todos.slice(Math.max(0, idx-2), idx+1);
+    } else {
+      slice = todos; // fallback: tudo
+    }
+  }
 
   const labels = slice.map(fmtMesAno);
   const entradas = slice.map(m => mapE[m] || 0);
@@ -2382,7 +2724,7 @@ function renderMonthlyChart(data) {
       scales: {
         x: { grid:{display:false}, ticks:{color:'#6B5E6B', font:{size:11}} },
         y: { beginAtZero: true, grid:{color:'#F0EAF0'},
-             ticks:{color:'#6B5E6B', font:{size:11}, callback:v => fmtBRLshort(v)} }
+             ticks:{color:'#6B5E6B', font:{size:11}, callback:v => fmtBRLaxis(v)} }
       }
     }
   });
@@ -2457,8 +2799,54 @@ function shortLabelCat(s) {
 /* ---- Top fornecedores ---- */
 function renderTopFornecedores(data) {
   const el = document.getElementById('rank-fornecedores');
+
+  /* Modo "Ambos" — render alternativo com 3 colunas (Entradas | Saídas | Saldo).
+     A ordenação é por movimento total (entrada + saída) pra mostrar quem é mais "ativo". */
+  if (App.modoRanking === 'ambos') {
+    const arr = fundirRankingAmbos(data).slice(0, 10);
+    if (!arr.length) {
+      el.innerHTML = '';
+      toggleSection(el, true);
+      return;
+    }
+    toggleSection(el, false);
+    el.classList.add('rank-3col');
+    el.innerHTML = `
+      <div class="rank-3col-header">
+        <span></span>
+        <span class="rank-name-h">Fornecedor / Cliente</span>
+        <span class="col-h ok">Entradas</span>
+        <span class="col-h err">Saídas</span>
+        <span class="col-h">Saldo</span>
+      </div>
+      ${arr.map((f, i) => {
+        const saldoCls = f.valor_saldo > 0 ? 'pos' : f.valor_saldo < 0 ? 'neg' : '';
+        return `
+        <div class="rank-3col-row">
+          <div class="rank-pos">${String(i+1).padStart(2,'0')}</div>
+          <div class="rank-name">
+            <span class="primary" title="${escapeHtml(f.fornecedor)}">${escapeHtml(truncate(f.fornecedor, 38))}</span>
+          </div>
+          <div class="col-val ok">${f.valor_entrada > 0 ? fmtBRLshort(f.valor_entrada) : '—'}</div>
+          <div class="col-val err">${f.valor_saida > 0 ? fmtBRLshort(f.valor_saida) : '—'}</div>
+          <div class="col-val ${saldoCls}">${fmtBRLshort(f.valor_saldo)}</div>
+        </div>`;
+      }).join('')}
+    `;
+    return;
+  }
+
+  // Modo simples (Saídas ou Entradas)
+  el.classList.remove('rank-3col');
   const lado = getLado(data, App.modoRanking);
   const top = lado.rankings.top_fornecedores.slice(0, 10);
+  if (!top.length) {
+    el.innerHTML = '';
+    toggleSection(el, true);
+    return;
+  }
+  toggleSection(el, false);
+
   el.innerHTML = top.map((f,i) => {
     // Linha secundária: categoria (chip) + CC predominante + outras
     const subBits = [];
@@ -2490,6 +2878,14 @@ function renderStackedChart(data) {
   const ctx = document.getElementById('chart-stacked').getContext('2d');
   const meses = [...new Set(data.saidas.series_temporais.por_mes_nivel1.map(p=>p.mes))].sort();
   const categorias = [...new Set(data.saidas.series_temporais.por_mes_nivel1.map(p=>p.nivel1))];
+
+  // Esconde se há menos de 2 meses (não faz sentido empilhar 1 só) ou se não há categoria
+  if (meses.length < 2 || categorias.length === 0) {
+    toggleSection(ctx.canvas, true);
+    return;
+  }
+  toggleSection(ctx.canvas, false);
+
   const totalPorCat = {};
   for (const p of data.saidas.series_temporais.por_mes_nivel1) {
     totalPorCat[p.nivel1] = (totalPorCat[p.nivel1]||0) + p.valor;
@@ -2519,7 +2915,7 @@ function renderStackedChart(data) {
       scales: {
         x: { stacked:true, grid:{display:false}, ticks:{color:'#6B5E6B', font:{size:11}} },
         y: { stacked:true, beginAtZero:true, grid:{color:'#F0EAF0'},
-             ticks:{color:'#6B5E6B', font:{size:11}, callback:v => fmtBRLshort(v)} }
+             ticks:{color:'#6B5E6B', font:{size:11}, callback:v => fmtBRLaxis(v)} }
       }
     }
   });
@@ -2528,12 +2924,14 @@ function renderStackedChart(data) {
 /* ---- Por filial ---- */
 function renderFiliais(data) {
   const section = document.getElementById('section-filiais');
-  if (!data.saidas.por_filial || data.saidas.por_filial.length <= 1) { section.classList.add('hidden'); return; }
+  if (!data.saidas.por_filial || data.saidas.por_filial.length === 0) {
+    section.classList.add('hidden');
+    return;
+  }
   section.classList.remove('hidden');
   const el = document.getElementById('rank-filiais');
   const total = data.saidas.por_filial.reduce((s,f)=>s+f.valor,0);
   el.innerHTML = data.saidas.por_filial.map((f,i) => {
-    // normaliza pra 2 dígitos
     const cod = String(f.filial).trim();
     const codDisplay = cod.padStart(2, '0');
     const nome = descFilial(cod) || 'Filial não identificada';
@@ -2554,11 +2952,16 @@ function renderFiliais(data) {
 function renderCentroCusto(data) {
   const el = document.getElementById('rank-centro-custo');
   const top = data.saidas.rankings.top_centros_custo.slice(0, 15);
-  const total = top.reduce((s,c)=>s+c.valor,0);
+
+  // Esconde a coluna inteira se não houver dados
   if (top.length === 0) {
-    el.innerHTML = '<div style="padding:20px; color:var(--muted); font-size:13px;">Sem dados de centro de custo.</div>';
+    el.innerHTML = '';
+    toggleSection(el, true);
     return;
   }
+  toggleSection(el, false);
+
+  const total = top.reduce((s,c)=>s+c.valor,0);
   el.innerHTML = top.map((c,i) => {
     const cod = c.centro_custo;
     // CC no Protheus geralmente não tem descrição no plano de contas,
@@ -2614,6 +3017,7 @@ function applyFilters() {
     return true;
   });
   sortFiltered();
+  App.page = 1;   // ao filtrar, sempre volta pra primeira página
   renderTable();
 }
 function sortFiltered() {
@@ -2629,19 +3033,38 @@ function renderTable() {
   const tbody = document.querySelector('#tbl-transacoes tbody');
   const total = App.filtered.length;
   const totalValor = App.filtered.reduce((s,t)=>s+t.valor, 0);
+  const pageSize = App.pageSize || 50;
 
-  /* Reset virtual pagination state */
-  App.visibleCount = 0;
-  tbody.innerHTML = '';
+  // Corrige página se ficou fora do range após filtro
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (App.page > totalPages) App.page = 1;
+  if (!App.page) App.page = 1;
+
+  const start = (App.page - 1) * pageSize;
+  const end = Math.min(start + pageSize, total);
+  const slice = App.filtered.slice(start, end);
 
   if (total === 0) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px; color: var(--muted);">Nenhum lançamento com esses filtros.</td></tr>`;
   } else {
-    appendRows(); // carrega primeiro batch
+    tbody.innerHTML = slice.map(t => `
+      <tr>
+        <td class="nowrap">${fmtDate(t.data)}</td>
+        <td class="nowrap">${escapeHtml(t.doc||'—')}</td>
+        <td>${escapeHtml(truncate(t.fornecedor||'—', 36))}</td>
+        <td><span class="cat-pill">${escapeHtml(truncate(t.nivel1,22))}</span></td>
+        <td>${escapeHtml(truncate(t.nivel2||'—', 24))}</td>
+        <td class="nowrap">${escapeHtml(t.centro_custo||'—')}</td>
+        <td>${escapeHtml(truncate(t.descricao||'—', 36))}</td>
+        <td class="num">${fmtBRL(t.valor)}</td>
+      </tr>`).join('');
   }
 
   document.getElementById('table-count').textContent =
-    `${total.toLocaleString('pt-BR')} lançamento(s) · total ${fmtBRLshort(totalValor)}`;
+    total === 0
+      ? 'Nenhum lançamento'
+      : `Mostrando ${(start+1).toLocaleString('pt-BR')}–${end.toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')} lançamento(s) · total filtrado ${fmtBRLshort(totalValor)}`;
+
   document.querySelectorAll('#tbl-transacoes th').forEach(th => {
     th.classList.remove('sorted');
     th.removeAttribute('data-sort-arrow');
@@ -2650,63 +3073,52 @@ function renderTable() {
       th.setAttribute('data-sort-arrow', App.sortDir === 'asc' ? '↑' : '↓');
     }
   });
+
+  renderPagination(total, pageSize);
 }
 
-/* Adiciona mais um batch de linhas ao final da tabela e configura sentinel */
-function appendRows() {
-  const tbody = document.querySelector('#tbl-transacoes tbody');
-  const batchSize = App.batchSize || 100;
-  const start = App.visibleCount || 0;
-  const end = Math.min(start + batchSize, App.filtered.length);
-  if (start >= App.filtered.length) return;
+function renderPagination(total, pageSize) {
+  const el = document.getElementById('pagination');
+  if (!el) return;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (totalPages <= 1) { el.innerHTML = ''; return; }
 
-  const slice = App.filtered.slice(start, end);
-  const html = slice.map(t => `
-    <tr>
-      <td class="nowrap">${fmtDate(t.data)}</td>
-      <td class="nowrap">${escapeHtml(t.doc||'—')}</td>
-      <td>${escapeHtml(truncate(t.fornecedor||'—', 36))}</td>
-      <td><span class="cat-pill">${escapeHtml(truncate(t.nivel1,22))}</span></td>
-      <td>${escapeHtml(truncate(t.nivel2||'—', 24))}</td>
-      <td class="nowrap">${escapeHtml(t.centro_custo||'—')}</td>
-      <td>${escapeHtml(truncate(t.descricao||'—', 36))}</td>
-      <td class="num">${fmtBRL(t.valor)}</td>
-    </tr>`).join('');
+  const cur = App.page;
+  const btns = [];
+  btns.push(`<button data-page="${cur-1}" ${cur===1?'disabled':''} aria-label="Anterior"><i class="ph-bold ph-caret-left"></i></button>`);
 
-  /* Remove sentinel anterior (se houver) */
-  const oldSentinel = tbody.querySelector('.scroll-sentinel');
-  if (oldSentinel) oldSentinel.remove();
-
-  tbody.insertAdjacentHTML('beforeend', html);
-  App.visibleCount = end;
-
-  /* Se ainda há linhas, adiciona sentinel para o observer disparar o próximo batch */
-  if (end < App.filtered.length) {
-    const sentinelHtml = `<tr class="scroll-sentinel"><td colspan="8" style="padding:12px; text-align:center; color:var(--subtle); font-size:11px;">Mostrando ${end.toLocaleString('pt-BR')} de ${App.filtered.length.toLocaleString('pt-BR')} — role para carregar mais</td></tr>`;
-    tbody.insertAdjacentHTML('beforeend', sentinelHtml);
-    observeSentinel();
-  } else if (App.filtered.length > batchSize) {
-    // Chegou ao fim — mostrar mensagem final sutil
-    const endMsg = `<tr class="scroll-end"><td colspan="8" style="padding:12px; text-align:center; color:var(--subtle); font-size:11px;">— fim dos ${App.filtered.length.toLocaleString('pt-BR')} lançamentos —</td></tr>`;
-    tbody.insertAdjacentHTML('beforeend', endMsg);
+  // Janela de 5 páginas ao redor da atual; sempre mostra primeira e última
+  const windowSize = 5;
+  let from = Math.max(1, cur - Math.floor(windowSize/2));
+  let to = Math.min(totalPages, from + windowSize - 1);
+  from = Math.max(1, to - windowSize + 1);
+  if (from > 1) {
+    btns.push(`<button data-page="1">1</button>`);
+    if (from > 2) btns.push(`<span class="page-ellipsis">…</span>`);
   }
-}
+  for (let i = from; i <= to; i++) {
+    btns.push(`<button data-page="${i}" class="${i===cur?'active':''}">${i}</button>`);
+  }
+  if (to < totalPages) {
+    if (to < totalPages - 1) btns.push(`<span class="page-ellipsis">…</span>`);
+    btns.push(`<button data-page="${totalPages}">${totalPages}</button>`);
+  }
+  btns.push(`<button data-page="${cur+1}" ${cur===totalPages?'disabled':''} aria-label="Próxima"><i class="ph-bold ph-caret-right"></i></button>`);
 
-/* IntersectionObserver para scroll infinito */
-let _tableObserver = null;
-function observeSentinel() {
-  if (!_tableObserver) {
-    _tableObserver = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          _tableObserver.unobserve(entry.target);
-          appendRows();
-        }
+  el.innerHTML = btns.join('');
+  el.querySelectorAll('button[data-page]').forEach(b => {
+    if (b.disabled) return;
+    b.addEventListener('click', () => {
+      const p = Number(b.dataset.page);
+      if (p && p !== App.page && p >= 1 && p <= totalPages) {
+        App.page = p;
+        renderTable();
+        // rola pro topo da tabela
+        const tableWrap = document.querySelector('.table-wrap');
+        if (tableWrap) tableWrap.scrollIntoView({behavior:'smooth', block:'start'});
       }
-    }, { rootMargin: '300px 0px 300px 0px' });
-  }
-  const sentinel = document.querySelector('.scroll-sentinel');
-  if (sentinel) _tableObserver.observe(sentinel);
+    });
+  });
 }
 
 function exportCSV() {
@@ -2757,7 +3169,14 @@ function hexToRgba(hex, alpha) {
 }
 
 function renderHierarchy(data) {
-  const lado = getLado(data, App.modoHierarquia);
+  const isAmbos = App.modoHierarquia === 'ambos';
+  const hierarquiaList = isAmbos
+    ? fundirHierarquiaAmbos(data)
+    : getLado(data, App.modoHierarquia).hierarquia;
+  const meses = isAmbos
+    ? [...new Set([...(data.saidas.hierarquia_meses||[]), ...(data.entradas.hierarquia_meses||[])])].sort()
+    : (getLado(data, App.modoHierarquia).hierarquia_meses || []);
+  const lado = { hierarquia: hierarquiaList, hierarquia_meses: meses };
 
   // Mapa categoria -> cor (usa o mesmo índice do donut para amarrar visualmente)
   const catColor = {};
@@ -2768,18 +3187,30 @@ function renderHierarchy(data) {
   /* ---- Cards top: 3 primeiras categorias ---- */
   const cardsEl = document.getElementById('hier-cards');
   const topCats = lado.hierarquia.slice(0, 3);
-  const maxValor = topCats.length ? topCats[0].valor : 1;
+  // No modo ambos, "valor" é movimento total (saída + entrada)
+  const valorPara = (n) => isAmbos ? (n.valor_saida + n.valor_entrada) : n.valor;
+  const maxValor = topCats.length ? valorPara(topCats[0]) : 1;
 
   const rankLabel = App.modoHierarquia === 'entradas' ? 'maior origem de entrada'
                  : App.modoHierarquia === 'saidas'    ? 'maior categoria de saída'
-                                                      : 'maior categoria (ambos)';
+                                                      : 'maior movimentação';
 
   cardsEl.innerHTML = topCats.map((n1, i) => {
     const cor = catColor[n1.nivel1];
     const corSoft = hexToRgba(cor, 0.12);
     const icon = iconForCategoria(n1.nivel1);
-    const fillPct = (n1.valor / maxValor * 100).toFixed(1);
+    const valTop = valorPara(n1);
+    const fillPct = (valTop / maxValor * 100).toFixed(1);
     const topSubs = n1.niveis2.slice(0, 2);
+
+    // Valor principal exibido no card:
+    //   modo ambos → mostra saldo (entrada - saída) com cor por sinal
+    //   modos simples → mostra valor da categoria
+    const valorExibido = isAmbos ? n1.valor_saldo : n1.valor;
+    const corValor = isAmbos
+      ? (n1.valor_saldo > 0 ? 'var(--ok)' : n1.valor_saldo < 0 ? 'var(--err)' : 'var(--ink)')
+      : 'var(--ink)';
+
     return `
       <div class="hier-card" style="--cat-color:${cor}; --cat-color-soft:${corSoft};">
         <div class="hier-card-head">
@@ -2790,8 +3221,10 @@ function renderHierarchy(data) {
           </div>
         </div>
         <div>
-          <div class="hier-card-value">${fmtBRLshort(n1.valor)}</div>
-          <div class="hier-card-pct">${n1.pct_total.toFixed(1)}% do total</div>
+          <div class="hier-card-value" style="color:${corValor};">${fmtBRLshort(valorExibido)}</div>
+          ${isAmbos
+            ? `<div class="hier-card-pct"><span style="color:var(--ok);">↑ ${fmtBRLshort(n1.valor_entrada)}</span> · <span style="color:var(--err);">↓ ${fmtBRLshort(n1.valor_saida)}</span></div>`
+            : `<div class="hier-card-pct">${n1.pct_total.toFixed(1)}% do total</div>`}
         </div>
         <div class="hier-card-bar">
           <div class="hier-card-bar-fill" style="width:${fillPct}%"></div>
@@ -2801,7 +3234,7 @@ function renderHierarchy(data) {
             ${topSubs.map(n2 => `
               <div>
                 <span class="sub-name">${escapeHtml(n2.nivel2)}</span>
-                <span class="sub-val">${fmtBRLshort(n2.valor)}</span>
+                <span class="sub-val">${fmtBRLshort(isAmbos ? n2.valor_saldo : n2.valor)}</span>
               </div>
             `).join('')}
           </div>
@@ -2813,10 +3246,11 @@ function renderHierarchy(data) {
   /* ---- Árvore completa enriquecida com colunas mensais ---- */
   const scrollEl = document.getElementById('tree-scroll');
   const el = document.getElementById('tree-hierarquia');
-  const totalTop = lado.hierarquia.reduce((s,n)=>s+n.valor, 0) || 1;
+  const totalTop = lado.hierarquia.reduce((s,n) => {
+    return s + (isAmbos ? (n.valor_saida + n.valor_entrada) : n.valor);
+  }, 0) || 1;
 
-  /* Determinar quais colunas mostrar (só meses com dados + trimestres fechados + YTD) */
-  const meses = lado.hierarquia_meses || [];
+  /* Determinar quais colunas mostrar (só meses com dados + trimestres fechados) */
   const mesesCols = meses.map(m => ({key: m, label: fmtMesAno(m), type: 'mes'}));
 
   /* Agrupar meses por trimestre para montar cabeçalhos de acumulado */
@@ -2829,16 +3263,15 @@ function renderHierarchy(data) {
     trimestresCols.push({key: qNome, mesesAcumulados: mesesDoQ, label: qNome, type: 'q'});
   }
 
-  /* YTD = total do ano */
-  const ytdCol = meses.length ? {key:'YTD', mesesAcumulados: meses, label: 'YTD', type: 'ytd'} : null;
-
-  /* Monta a lista final de colunas na ordem: meses + trimestres + YTD */
+  /* Monta a lista final de colunas: meses + trimestres.
+     YTD foi removido porque duplica a coluna "Valor" do lado direito. */
   const colunas = [...mesesCols, ...trimestresCols];
-  if (ytdCol) colunas.push(ytdCol);
 
   /* Calcula a largura das colunas mensais — mais largas para não quebrar o valor */
   const larguraColMes = 82; // px
-  const colTemplate = colunas.map(c => c.type === 'q' || c.type === 'ytd' ? '88px' : `${larguraColMes}px`).join(' ');
+  let colTemplate = colunas.map(c => c.type === 'q' ? '88px' : `${larguraColMes}px`).join(' ');
+  // Em modo "ambos", adicionamos 3 colunas extras (Entradas | Saídas | Saldo) — 90px cada
+  if (isAmbos) colTemplate += ' 90px 90px 95px';
 
   /* Cache para soma acumulada de trimestres/ano */
   function somaMeses(mapa, mesesList) {
@@ -2847,21 +3280,41 @@ function renderHierarchy(data) {
     return s;
   }
 
-  /* Helper: renderiza as N colunas de valores mensais/acumulados para um nó */
+  /* Helper: renderiza as N colunas de valores mensais/acumulados para um nó.
+     No modo "ambos", o `mapa` representa o saldo (entrada - saída) por mês. */
   function colunasHtml(mapa) {
     return colunas.map(col => {
       let valor = 0;
       if (col.type === 'mes') valor = mapa[col.key] || 0;
       else valor = somaMeses(mapa, col.mesesAcumulados);
-      const cls = 'tree-col-mes' + (col.type === 'q' ? ' is-q' : col.type === 'ytd' ? ' is-ytd' : '') + (valor === 0 ? ' zero' : '');
+      let cls = 'tree-col-mes' + (col.type === 'q' ? ' is-q' : '') + (valor === 0 ? ' zero' : '');
+      // No modo ambos, colore os valores mensais por sinal
+      if (isAmbos && valor !== 0) cls += valor > 0 ? ' col-saldo-pos' : ' col-saldo-neg';
       return `<span class="${cls}">${valor === 0 ? '—' : fmtBRLshort(valor)}</span>`;
     }).join('');
   }
 
+  /* Helper: 3 colunas adicionais (Entradas | Saídas | Saldo) — só usado no modo ambos */
+  function ambosCols(node) {
+    const e = node.valor_entrada || 0;
+    const s = node.valor_saida || 0;
+    const saldo = e - s;
+    const saldoCls = saldo > 0 ? 'col-saldo-pos' : saldo < 0 ? 'col-saldo-neg' : 'zero';
+    return `
+      <span class="tree-col-mes col-entrada${e === 0 ? ' zero' : ''}">${e === 0 ? '—' : fmtBRLshort(e)}</span>
+      <span class="tree-col-mes col-saida${s === 0 ? ' zero' : ''}">${s === 0 ? '—' : fmtBRLshort(s)}</span>
+      <span class="tree-col-mes ${saldoCls}">${fmtBRLshort(saldo)}</span>
+    `;
+  }
+
   const cabecalhoColunas = colunas.map(col => {
-    const cls = 'tree-col-mes' + (col.type === 'q' ? ' is-q' : col.type === 'ytd' ? ' is-ytd' : '');
+    const cls = 'tree-col-mes' + (col.type === 'q' ? ' is-q' : '');
     return `<span class="${cls}">${col.label}</span>`;
-  }).join('');
+  }).join('') + (isAmbos
+    ? `<span class="tree-col-mes col-entrada">Entradas</span>
+       <span class="tree-col-mes col-saida">Saídas</span>
+       <span class="tree-col-mes">Saldo</span>`
+    : '');
 
   /* Define CSS custom properties com o número de colunas mensais */
   scrollEl.style.setProperty('--col-meses', colTemplate);
@@ -2880,41 +3333,68 @@ function renderHierarchy(data) {
   const nodesHtml = lado.hierarquia.map(n1 => {
     const cor = catColor[n1.nivel1];
     const corSoft = hexToRgba(cor, 0.12);
-    const n1Fill = (n1.valor / totalTop * 100).toFixed(1);
+    // No modo ambos, "valor" da linha = movimento total (E + S)
+    const valorN1 = isAmbos ? (n1.valor_saida + n1.valor_entrada) : n1.valor;
+    const n1Fill = (valorN1 / totalTop * 100).toFixed(1);
+    // Mapa para colunas mensais: no ambos usa meses_saldo, senão usa meses normais
+    const mapaMesesN1 = isAmbos ? (n1.meses_saldo || {}) : (n1.meses || {});
+    // Valor exibido na coluna "Valor" final: ambos = saldo (com cor); senão = valor
+    const valorFinalN1 = isAmbos ? n1.valor_saldo : n1.valor;
+    const valorFinalClsN1 = isAmbos
+      ? (n1.valor_saldo > 0 ? 'col-saldo-pos' : n1.valor_saldo < 0 ? 'col-saldo-neg' : '')
+      : '';
+    // No modo ambos, % representa peso no movimento total
+    const pctN1 = isAmbos ? (valorN1 / totalTop * 100).toFixed(1) : n1.pct_total.toFixed(1);
+
     return `
       <div class="tree-node" data-level="1" style="--cat-color:${cor}; --cat-color-soft:${corSoft};">
         <div class="tree-row level-1" data-toggle="1" style="--fill:${n1Fill}">
           <span class="tree-arrow"><i class="ph-bold ph-caret-right"></i></span>
           <span class="tree-dot"></span>
           <span class="tree-name">${escapeHtml(n1.nivel1)}</span>
-          ${colunasHtml(n1.meses || {})}
-          <span class="tree-pct">${n1.pct_total.toFixed(1)}%</span>
-          <span class="tree-value">${fmtBRLshort(n1.valor)}</span>
+          ${colunasHtml(mapaMesesN1)}
+          ${isAmbos ? ambosCols(n1) : ''}
+          <span class="tree-pct">${pctN1}%</span>
+          <span class="tree-value ${valorFinalClsN1}">${fmtBRLshort(valorFinalN1)}</span>
         </div>
         <div class="tree-children">
           ${n1.niveis2.map(n2 => {
-            const n2Fill = (n2.valor / n1.valor * 100).toFixed(1);
+            const valorN2 = isAmbos ? (n2.valor_saida + n2.valor_entrada) : n2.valor;
+            const n2Fill = (valorN2 / valorN1 * 100).toFixed(1);
+            const mapaMesesN2 = isAmbos ? (n2.meses_saldo || {}) : (n2.meses || {});
+            const valorFinalN2 = isAmbos ? n2.valor_saldo : n2.valor;
+            const valorFinalClsN2 = isAmbos
+              ? (n2.valor_saldo > 0 ? 'col-saldo-pos' : n2.valor_saldo < 0 ? 'col-saldo-neg' : '')
+              : '';
             return `
               <div class="tree-node" data-level="2" style="--cat-color:${cor};">
                 <div class="tree-row level-2" data-toggle="1" style="--fill:${n2Fill}">
                   <span class="tree-arrow"><i class="ph-bold ph-caret-right"></i></span>
                   <span class="tree-dot"></span>
                   <span class="tree-name">${escapeHtml(n2.nivel2)}</span>
-                  ${colunasHtml(n2.meses || {})}
+                  ${colunasHtml(mapaMesesN2)}
+                  ${isAmbos ? ambosCols(n2) : ''}
                   <span class="tree-pct">${n2Fill}%</span>
-                  <span class="tree-value">${fmtBRLshort(n2.valor)}</span>
+                  <span class="tree-value ${valorFinalClsN2}">${fmtBRLshort(valorFinalN2)}</span>
                 </div>
                 <div class="tree-children">
                   ${n2.detalhes.map(d => {
-                    const dFill = (d.valor / n2.valor * 100).toFixed(1);
+                    const valorD = isAmbos ? (d.valor_saida + d.valor_entrada) : d.valor;
+                    const dFill = (valorD / valorN2 * 100).toFixed(1);
+                    const mapaMesesD = isAmbos ? (d.meses_saldo || {}) : (d.meses || {});
+                    const valorFinalD = isAmbos ? d.valor_saldo : d.valor;
+                    const valorFinalClsD = isAmbos
+                      ? (d.valor_saldo > 0 ? 'col-saldo-pos' : d.valor_saldo < 0 ? 'col-saldo-neg' : '')
+                      : '';
                     return `
                       <div class="tree-row level-3" style="--cat-color:${cor}; --fill:${dFill}">
                         <span class="tree-arrow">·</span>
                         <span class="tree-dot"></span>
                         <span class="tree-name">${escapeHtml(d.detalhe)}</span>
-                        ${colunasHtml(d.meses || {})}
+                        ${colunasHtml(mapaMesesD)}
+                        ${isAmbos ? ambosCols(d) : ''}
                         <span class="tree-pct">${dFill}%</span>
-                        <span class="tree-value">${fmtBRLshort(d.valor)}</span>
+                        <span class="tree-value ${valorFinalClsD}">${fmtBRLshort(valorFinalD)}</span>
                       </div>
                     `;
                   }).join('')}
@@ -2965,18 +3445,17 @@ function setupNav() {
   document.getElementById('hamburger').addEventListener('click', () => toggleSidebar());
   document.getElementById('sidebar-overlay').addEventListener('click', () => toggleSidebar(false));
 
-  // Period chips
-  document.querySelectorAll('.period-chip').forEach(c => {
-    c.addEventListener('click', () => {
-      document.querySelectorAll('.period-chip').forEach(x => x.classList.remove('active'));
-      c.classList.add('active');
-      App.periodFilter = c.dataset.period;
+  // Period selector (dropdown)
+  const periodSelect = document.getElementById('period-select');
+  if (periodSelect) {
+    periodSelect.addEventListener('change', () => {
+      App.periodFilter = periodSelect.value || 'ytd';
       if (App.data) {
         renderKpis(App.data);
         renderMonthlyChart(App.data);
       }
     });
-  });
+  }
 
   // Mode switches (Saídas/Entradas/Ambos) — existem em 2 lugares: Top Fornecedores + Hierarquia
   document.querySelectorAll('.mode-switch').forEach(sw => {
@@ -3157,6 +3636,7 @@ async function initViewer() {
       if (App.sortCol === col) App.sortDir = App.sortDir === 'asc' ? 'desc' : 'asc';
       else { App.sortCol = col; App.sortDir = (col === 'valor' || col === 'data') ? 'desc' : 'asc'; }
       sortFiltered();
+      App.page = 1;
       renderTable();
     });
   });
