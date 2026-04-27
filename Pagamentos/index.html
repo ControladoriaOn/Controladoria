@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Pagamentos · Dashboard</title>
 
-<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ControladoriaOn/Controladoria/main/favicon.png">
+<!-- Favicon: apontando para raiz do repo (dashboard está em /Pagamentos/).
+     Fallback SVG inline garante que nunca dá 404. -->
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233C003C'/%3E%3Ctext x='50%25' y='50%25' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23FF6E00' text-anchor='middle' dominant-baseline='central'%3E%E2%82%A3%3C/text%3E%3C/svg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,6 +28,7 @@
     --ink:             #1A0F1A;
     --muted:           #6B5E6B;
     --subtle:          #A89CB0;
+
     --plum:            #3C003C;
     --plum-deep:       #2A0028;
     --plum-light:      #5C1A5C;
@@ -34,6 +38,7 @@
     --orange-soft:     #FFF1E4;
     --orange-tint:     rgba(255,110,0,0.12);
     --orange-deep:     #D25500;
+
     --ok:              #1F7A3D;
     --ok-soft:         #EAF7EE;
     --warn:            #C77700;
@@ -44,6 +49,7 @@
     --font-display:    'Fraunces', 'Times New Roman', serif;
     --font-body:       'Manrope', system-ui, sans-serif;
     --font-mono:       'JetBrains Mono', ui-monospace, monospace;
+
     --shadow-sm:       0 1px 2px rgba(26,15,26,0.04);
     --shadow-md:       0 4px 14px -6px rgba(26,15,26,0.08);
     --shadow-lg:       0 14px 32px -14px rgba(26,15,26,0.15);
@@ -64,7 +70,7 @@
   section[id] { scroll-margin-top: 100px; }
 
   /* ============================================================
-     SIDEBAR
+     SIDEBAR — position: fixed garante que nunca saia da tela
      ============================================================ */
   .sidebar {
     width: 240px;
@@ -83,11 +89,11 @@
     overflow-y: auto;
     overflow-x: hidden;
   }
+  /* Scrollbar fina e discreta no fundo plum */
   .sidebar::-webkit-scrollbar { width: 6px; }
   .sidebar::-webkit-scrollbar-track { background: transparent; }
   .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
   .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
-  
   .sidebar .logo {
     font-family: var(--font-display);
     font-weight: 500;
@@ -193,7 +199,6 @@
   }
   .sidebar-stamp.stale .dot { background: var(--orange); animation: pulse-dot-warn 2.5s infinite; }
   .sidebar-stamp.error .dot { background: #ef4444; animation: pulse-dot-err 2.5s infinite; }
-  
   .sidebar-stamp .stamp-label {
     font-family: var(--font-mono);
     font-size: 10px;
@@ -203,7 +208,11 @@
     display: block;
     margin-bottom: 2px;
   }
-  .sidebar-stamp .stamp-text { color: #FFFFFF; font-weight: 500; font-size: 11.5px; }
+  .sidebar-stamp .stamp-text {
+    color: #FFFFFF;
+    font-weight: 500;
+    font-size: 11.5px;
+  }
 
   @keyframes pulse-dot {
     0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0.55); }
@@ -234,7 +243,7 @@
     transition: all 0.15s;
     box-shadow: 0 6px 18px -8px rgba(255,110,0,0.55);
   }
-  .btn-hub[hidden] { display: none !important; }
+  .btn-hub[hidden] { display: none; }
   .btn-hub:hover {
     background: var(--orange-deep);
     border-color: var(--orange-deep);
@@ -308,6 +317,7 @@
   .section-title i { color: var(--orange); font-size: 19px; }
   .section-sub { color: var(--muted); font-size: 13px; margin: 0; }
 
+  /* Date em badge destacado */
   .date-badge {
     display: inline-flex;
     align-items: center;
@@ -413,7 +423,6 @@
   .kpi-label i { font-size: 11px; color: var(--subtle); }
   .kpi.accent .kpi-label { color: rgba(255,255,255,0.7); }
   .kpi.accent .kpi-label i { color: var(--orange); }
-  
   .kpi-value {
     font-family: var(--font-display);
     font-weight: 500;
@@ -426,10 +435,13 @@
     position: relative;
     color: var(--ink);
   }
-  .kpi-value .prefix { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .kpi-value .prefix {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+  }
   .kpi.accent .kpi-value { color: var(--orange); }
   .kpi.accent .kpi-value .prefix { color: rgba(255,255,255,0.55); }
-  
   .kpi-sub {
     margin: 12px 0 0;
     font-size: 12px;
@@ -569,7 +581,7 @@
     border-color: rgba(255,255,255,0.35) !important;
   }
 
-  /* Toolbar right */
+  /* Toolbar right — contagem + total destacados */
   .toolbar-right {
     margin-left: auto;
     font-family: var(--font-mono);
@@ -676,6 +688,10 @@
   .pill.nf   { background: var(--orange-soft); color: var(--orange-deep); border-color: #F9C69C; }
   .pill.bol  { background: rgba(139,92,246,0.1); color: #7C3AED; border-color: rgba(139,92,246,0.3); }
   .pill.rd   { background: var(--ok-soft); color: var(--ok); border-color: #C2E4CC; }
+  .pill.pa   { background: rgba(14,165,233,0.1); color: #0369A1; border-color: rgba(14,165,233,0.3); }
+  .pill.ciot { background: rgba(99,102,241,0.12); color: #4338CA; border-color: rgba(99,102,241,0.3); }
+  .pill.bord-manual { background: var(--warn-soft); color: var(--warn); border-color: #F2D39A; font-family: var(--font-mono); }
+  .pill.bord-auto { background: var(--surface-soft); color: var(--muted); border-color: var(--border); font-family: var(--font-mono); }
 
   tfoot.data td {
     padding: 14px 16px;
@@ -892,7 +908,7 @@
     <a href="#previsto" data-spy-link>
       <i class="fa-solid fa-calendar-day"></i> Prévia de Pagamentos
     </a>
-    <a href="atualizar.html" id="btn-refresh" hidden>
+    <a href="atualizar.html">
       <i class="fa-solid fa-arrow-up-from-bracket"></i> Atualizar
     </a>
   </nav>
@@ -905,6 +921,8 @@
         <span class="stamp-text" id="stamp-text">carregando…</span>
       </div>
     </div>
+    <!-- Botão "Voltar ao Hub": só aparece se o usuário veio do hub.
+         Controlado por JS (módulo HubLink). Href aponta para a raiz do repo. -->
     <a id="btn-hub" class="btn-hub" href="../" rel="noopener" hidden>
       <i class="fa-solid fa-arrow-left-long"></i>
       Voltar ao Hub
@@ -932,6 +950,7 @@
 
 <script>
 'use strict';
+
 /* ============================================================================
    CONFIG
    ============================================================================ */
@@ -983,7 +1002,7 @@ const Utils = {
     return s.length > n ? s.slice(0, n-1) + '…' : s;
   },
   pillClass(tipo) {
-    return ({ NF: 'nf', BOL: 'bol', RD: 'rd' })[tipo] || '';
+    return ({ NF: 'nf', BOL: 'bol', RD: 'rd', PA: 'pa', CIOT: 'ciot' })[tipo] || '';
   },
   compareRows(a, b, col, dir) {
     const va = a[col], vb = b[col];
@@ -998,6 +1017,7 @@ const Utils = {
   delay(ms) {
     return new Promise(r => setTimeout(r, ms));
   },
+  /** Debounce com window de `wait` ms — essencial pro search */
   debounce(fn, wait) {
     let timer = null;
     return function debounced(...args) {
@@ -1005,6 +1025,7 @@ const Utils = {
       timer = setTimeout(() => fn.apply(this, args), wait);
     };
   },
+  /** Capitaliza uma frase ALL CAPS: "SEGURO DE VEICULOS" → "Seguro de Veículos" (simplificado) */
   titleCase(s) {
     if (!s) return s;
     const low = ['de', 'da', 'do', 'dos', 'das', 'e', 'em', 'ou', 'a', 'o'];
@@ -1015,13 +1036,16 @@ const Utils = {
 };
 
 /* ============================================================================
-   DATE UTILS
+   DATE UTILS — regra de dias úteis (sáb/dom → próxima segunda)
    ============================================================================ */
 const DateUtils = {
+  /** true se o dia é sábado (6) ou domingo (0) */
   isWeekend(date) {
     const d = date.getDay();
     return d === 0 || d === 6;
   },
+
+  /** Converte 'YYYY-MM-DD' para Date local (sem timezone) */
   fromISO(iso) {
     if (!iso) return null;
     const parts = iso.slice(0, 10).split('-');
@@ -1029,31 +1053,41 @@ const DateUtils = {
     const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
     return isNaN(d) ? null : d;
   },
+
+  /** Converte Date para 'YYYY-MM-DD' */
   toISO(date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   },
+
+  /** Próximo dia útil a partir da data fornecida (não inclui o próprio dia).
+   *  Se for sexta → retorna segunda. Se for sábado → segunda. Se for domingo → segunda.
+   */
   nextBusinessDay(date) {
     const d = new Date(date);
     d.setDate(d.getDate() + 1);
     while (this.isWeekend(d)) d.setDate(d.getDate() + 1);
     return d;
   },
+
+  /** Se a data cai em fim de semana, retorna o próximo dia útil. Senão retorna a própria. */
   ensureBusinessDay(date) {
     if (!this.isWeekend(date)) return new Date(date);
     const d = new Date(date);
     while (this.isWeekend(d)) d.setDate(d.getDate() + 1);
     return d;
   },
+
+  /** Nome do dia da semana em PT-BR */
   weekdayName(date) {
     return date.toLocaleDateString(CONFIG.LOCALE, { weekday: 'long' });
   },
 };
 
 /* ============================================================================
-   DOM
+   DOM — XSS-safe builder (createElement + textContent)
    ============================================================================ */
 const DOM = {
   h(tag, props, children) {
@@ -1108,12 +1142,14 @@ const DataService = {
       try {
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) {
+          // 404: permite falha silenciosa quando silent404 = true
           if (silent404 && response.status === 404) throw new Error('404');
           throw new Error(`HTTP ${response.status} ${response.statusText}`);
         }
         return response;
       } catch (err) {
         lastError = err;
+        // Não tenta de novo em 404 silencioso
         if (silent404 && err.message === '404') throw err;
         if (attempt < retries) {
           const waitMs = backoff * Math.pow(2, attempt);
@@ -1124,6 +1160,7 @@ const DataService = {
     }
     throw lastError;
   },
+
   async loadData() {
     const url = CONFIG.DATA_URL + '?v=' + Date.now();
     const response = await this.fetchWithRetry(url);
@@ -1131,7 +1168,9 @@ const DataService = {
     this._validateData(json);
     return json;
   },
+
   async loadNaturezas() {
+    // Falha graciosa: se o arquivo não existir, segue sem o mapa
     try {
       const url = CONFIG.NATUREZAS_URL + '?v=' + Date.now();
       const response = await this.fetchWithRetry(url, { retries: 1, silent404: true });
@@ -1143,6 +1182,7 @@ const DataService = {
       return {};
     }
   },
+
   _validateData(data) {
     if (!data || typeof data !== 'object') throw new Error('Resposta não é um objeto JSON válido');
     if (!data.meta || !data.pago_hoje || !data.previsto_amanha) {
@@ -1152,21 +1192,29 @@ const DataService = {
 };
 
 /* ============================================================================
-   NATUREZA MAP
+   NATUREZA MAP — lookup de código → descrição
    ============================================================================ */
 const NaturezaMap = {
   _map: {},
-  set(obj) { this._map = obj && typeof obj === 'object' ? obj : {}; },
+
+  set(obj) {
+    this._map = obj && typeof obj === 'object' ? obj : {};
+  },
+
   get(code) {
     if (!code) return null;
     return this._map[String(code).trim()] || null;
   },
+
   describe(code) {
     const desc = this.get(code);
     if (!desc) return null;
     return Utils.titleCase(desc);
   },
-  size() { return Object.keys(this._map).length; },
+
+  size() {
+    return Object.keys(this._map).length;
+  },
 };
 
 /* ============================================================================
@@ -1177,13 +1225,16 @@ const UI_Sidebar = {
     const stamp = DOM.byId('stamp');
     const text = DOM.byId('stamp-text');
     if (!stamp || !text) return;
+
     if (!data || !data.meta || !data.meta.generated_at) {
       stamp.className = 'sidebar-stamp error';
       text.textContent = 'sem dados';
       return;
     }
+
     const generated = new Date(data.meta.generated_at);
     const hoursAgo = (Date.now() - generated.getTime()) / 36e5;
+
     if (hoursAgo > CONFIG.STALE_HOURS) {
       stamp.className = 'sidebar-stamp stale';
       const days = Math.floor(hoursAgo / 24);
@@ -1193,6 +1244,7 @@ const UI_Sidebar = {
       text.textContent = `atualizado em ${Utils.fmtDateTime(data.meta.generated_at)}`;
     }
   },
+
   setError() {
     const stamp = DOM.byId('stamp');
     const text = DOM.byId('stamp-text');
@@ -1202,19 +1254,30 @@ const UI_Sidebar = {
 };
 
 /* ============================================================================
-   PAGINATION WIDGET
+   PAGINATION WIDGET — reutilizado em UI_Hoje e UI_Previsto
    ============================================================================ */
 const Pagination = {
+  /**
+   * Constrói o container de paginação.
+   * @param {Object} opts { page, pageSize, total, onPage }
+   * @returns {HTMLElement|null} null se total ≤ pageSize (sem necessidade)
+   */
   render({ page, pageSize, total, onPage }) {
     if (total <= pageSize) return null;
+
     const totalPages = Math.ceil(total / pageSize);
     const start = (page - 1) * pageSize + 1;
     const end = Math.min(page * pageSize, total);
 
     const info = DOM.h('div', { class: 'pagination-info' }, [
-      'Mostrando ', DOM.h('strong', {}, String(start)), ' a ', DOM.h('strong', {}, String(end)),
-      ' de ', DOM.h('strong', {}, String(total)),
+      'Mostrando ',
+      DOM.h('strong', {}, String(start)),
+      ' a ',
+      DOM.h('strong', {}, String(end)),
+      ' de ',
+      DOM.h('strong', {}, String(total)),
     ]);
+
     const controls = DOM.h('div', { class: 'pagination-controls' });
 
     const mkBtn = (label, targetPage, { disabled = false, active = false, ariaLabel } = {}) => {
@@ -1230,9 +1293,12 @@ const Pagination = {
       return btn;
     };
 
+    // « primeira
     controls.appendChild(mkBtn(DOM.icon('fa-angles-left'), 1, { disabled: page === 1, ariaLabel: 'Primeira página' }));
+    // ‹ anterior
     controls.appendChild(mkBtn(DOM.icon('fa-angle-left'), page - 1, { disabled: page === 1, ariaLabel: 'Anterior' }));
-    
+
+    // Números — estratégia: sempre mostrar 1, current±1, last, com elipses
     const pages = this._computePageList(page, totalPages);
     for (const p of pages) {
       if (p === '…') {
@@ -1242,10 +1308,14 @@ const Pagination = {
       }
     }
 
+    // › próxima
     controls.appendChild(mkBtn(DOM.icon('fa-angle-right'), page + 1, { disabled: page === totalPages, ariaLabel: 'Próxima' }));
+    // » última
     controls.appendChild(mkBtn(DOM.icon('fa-angles-right'), totalPages, { disabled: page === totalPages, ariaLabel: 'Última página' }));
+
     return DOM.h('div', { class: 'pagination' }, [info, controls]);
   },
+
   _computePageList(current, total) {
     const pages = [];
     const window = 1;
@@ -1271,6 +1341,7 @@ const UI_Dashboard = {
       this._renderKPIs(data),
     ]);
   },
+
   _renderSectionHead(meta) {
     return DOM.h('div', { class: 'section-head' }, [
       DOM.h('div', { class: 'section-head-left' }, [
@@ -1283,14 +1354,18 @@ const UI_Dashboard = {
       ]),
     ]);
   },
+
   _renderAlerts(data) {
     const alerts = this._buildAlerts(data);
     if (!alerts.length) return null;
     return DOM.h('div', { class: 'alerts' }, alerts);
   },
+
   _buildAlerts(data) {
     const arr = [];
     const { previsto_amanha: prev, pago_hoje: hoje } = data;
+
+    // Alerta de fim de semana: se data_hoje gravada cair em sábado/domingo
     const dataHoje = DateUtils.fromISO(data.meta.data_hoje);
     if (dataHoje && DateUtils.isWeekend(dataHoje)) {
       const wd = DateUtils.weekdayName(dataHoje);
@@ -1299,17 +1374,20 @@ const UI_Dashboard = {
         DOM.h('small', {}, 'Como pagamentos ocorrem apenas em dias úteis, confira se deseja atualizar.'),
       ]));
     }
+
     if (prev.em_aprovacao > 0) {
       arr.push(this._buildAlert('warn', 'fa-triangle-exclamation', [
         DOM.h('strong', {}, `${prev.em_aprovacao} títulos pendentes de aprovação`),
       ]));
     }
+
     if (prev.total > hoje.total * 1.5 && hoje.total > 0) {
       const mult = (prev.total / hoje.total).toFixed(1);
       arr.push(this._buildAlert('info', 'fa-arrow-trend-up', [
         DOM.h('strong', {}, `Prévia de amanhã ${mult}× maior que hoje`),
       ]));
     }
+
     const forns = prev.nf_servico.concat(prev.nf_titulo, prev.reembolso)
       .map(x => (x.fornecedor || '').toUpperCase()).filter(Boolean);
     const hojeSet = new Set(hoje.titulos.map(t => (t.fornecedor || '').toUpperCase()).filter(Boolean));
@@ -1323,28 +1401,20 @@ const UI_Dashboard = {
         DOM.h('small', {}, `Apareceram hoje e voltam amanhã. Ex.: ${exemplos}${more}.`),
       ]));
     }
+
     return arr;
   },
+
   _buildAlert(kind, iconCls, contentNodes) {
     return DOM.h('div', { class: 'alert ' + kind, role: 'alert' }, [
       DOM.h('div', { class: 'alert-icon' }, DOM.icon(iconCls)),
       DOM.h('div', {}, contentNodes),
     ]);
   },
+
   _renderKPIs(data) {
     const { pago_hoje: hoje, previsto_amanha: prev, meta } = data;
-
-    // Lógica para descobrir a Natureza do Maior Pagamento do Dia independentemente da estrutura do data.json
-    let maiorValor = 0;
-    let maiorNatDesc = '—';
-
-    if (hoje.titulos && hoje.titulos.length > 0) {
-      const maiorTitulo = hoje.titulos.reduce((max, t) => ((t.valor_rs || 0) > (max.valor_rs || 0)) ? t : max, hoje.titulos[0]);
-      maiorValor = maiorTitulo.valor_rs || 0;
-      if (maiorTitulo.natureza) {
-         maiorNatDesc = NaturezaMap.describe(maiorTitulo.natureza) || maiorTitulo.natureza;
-      }
-    }
+    const maiorForn = (hoje.maior && hoje.maior.fornecedor) ? hoje.maior.fornecedor : '—';
 
     return DOM.h('div', { class: 'kpi-grid' }, [
       this._buildKPI({
@@ -1359,8 +1429,8 @@ const UI_Dashboard = {
       }),
       this._buildKPI({
         icon: 'fa-trophy', label: 'Maior pagamento hoje',
-        value: maiorValor,
-        subNode: DOM.h('span', { title: maiorNatDesc }, Utils.truncate(maiorNatDesc, 30)),
+        value: (hoje.maior && hoje.maior.valor) || 0,
+        subNode: DOM.h('span', { title: maiorForn }, Utils.truncate(maiorForn, 30)),
       }),
       this._buildKPIPlain({
         icon: 'fa-triangle-exclamation', label: 'Pend. de aprovação',
@@ -1372,6 +1442,7 @@ const UI_Dashboard = {
       }),
     ]);
   },
+
   _buildKPI({ accent, icon, label, value, sub, subNode }) {
     return DOM.h('div', { class: 'kpi' + (accent ? ' accent' : '') }, [
       DOM.h('p', { class: 'kpi-label' }, [DOM.icon(icon), label]),
@@ -1382,6 +1453,7 @@ const UI_Dashboard = {
       DOM.h('p', { class: 'kpi-sub' }, subNode || sub),
     ]);
   },
+
   _buildKPIPlain({ icon, label, value, subNode }) {
     return DOM.h('div', { class: 'kpi' }, [
       DOM.h('p', { class: 'kpi-label' }, [DOM.icon(icon), label]),
@@ -1392,8 +1464,12 @@ const UI_Dashboard = {
 };
 
 /* ============================================================================
-   COMMON
+   COMMON — builders de células reutilizáveis
    ============================================================================ */
+
+/**
+ * Célula Fornecedor com histórico abaixo (sem natureza — ela tem coluna própria).
+ */
 function buildFornecedorCell(fornecedor, historicoRaw) {
   const children = [fornecedor || '—'];
   const hasHist = historicoRaw && String(historicoRaw).trim();
@@ -1403,14 +1479,32 @@ function buildFornecedorCell(fornecedor, historicoRaw) {
   return DOM.h('div', {}, children);
 }
 
+/**
+ * Célula Desc. Nat. — só a descrição legível. Sem mostrar código.
+ * Retorna '—' se a natureza não estiver no mapa.
+ */
 function buildDescNatCell(natCode) {
   const desc = NaturezaMap.describe(natCode);
   if (!desc) return DOM.h('span', { class: 'nat-empty' }, '—');
   return DOM.h('span', { class: 'nat-desc' }, desc);
 }
 
+/**
+ * Célula Bordero — pílula visual.
+ * "Manual" recebe destaque laranja (pagamento adicionado fora do Totvs).
+ * Borderos numéricos ficam em cinza discreto (lote automático).
+ */
+function buildBorderoCell(bordero) {
+  const v = (bordero || '').trim();
+  if (!v) return DOM.h('span', { class: 'nat-empty' }, '—');
+  const isManual = v.toLowerCase() === 'manual';
+  return DOM.h('span', {
+    class: 'pill ' + (isManual ? 'bord-manual' : 'bord-auto'),
+  }, v);
+}
+
 /* ============================================================================
-   UI_HOJE
+   UI_HOJE — Pagamentos Realizados (com paginação + debounce)
    ============================================================================ */
 const UI_Hoje = {
   _state: null,
@@ -1428,18 +1522,22 @@ const UI_Hoje = {
       page: 1,
       pageSize: CONFIG.PAGE_SIZE,
     };
+
     const section = DOM.h('section', { id: 'realizados', class: 'reveal' }, [
       this._renderSectionHead(),
       this._renderCard(),
     ]);
+
     this._debouncedSearch = Utils.debounce(value => {
       this._state.filter.q = value;
       this._state.page = 1;
       this._refresh();
     }, CONFIG.SEARCH_DEBOUNCE_MS);
+
     this._refresh();
     return section;
   },
+
   _renderSectionHead() {
     return DOM.h('div', { class: 'section-head' }, [
       DOM.h('div', { class: 'section-head-left' }, [
@@ -1453,19 +1551,30 @@ const UI_Hoje = {
       ]),
     ]);
   },
+
   _columns() {
     return [
-      { key: 'tipo',       label: 'Tipo', renderCell: t => DOM.pill(t.tipo || '?', Utils.pillClass(t.tipo)) },
-      { key: 'numero',     label: 'Título', renderCell: t => String(t.numero || '—') },
-      { key: 'fornecedor', label: 'Fornecedor', renderCell: t => buildFornecedorCell(t.fornecedor, t.historico) },
-      { key: 'natureza',   label: 'Desc. Nat.', renderCell: t => buildDescNatCell(t.natureza) },
-      { key: 'valor_rs',   label: 'Valor', num: true, strong: true, center: true, renderCell: t => `R$ ${Utils.fmtBR(t.valor_rs)}` },
+      { key: 'tipo',       label: 'Tipo',
+        renderCell: t => DOM.pill(t.tipo || '?', Utils.pillClass(t.tipo)) },
+      { key: 'numero',     label: 'Título',
+        renderCell: t => String(t.numero || '—') },
+      { key: 'fornecedor', label: 'Fornecedor',
+        renderCell: t => buildFornecedorCell(t.fornecedor, t.historico) },
+      { key: 'natureza',   label: 'Desc. Nat.',
+        renderCell: t => buildDescNatCell(t.natureza) },
+      { key: 'bordero',    label: 'Bordero', center: true,
+        renderCell: t => buildBorderoCell(t.bordero) },
+      { key: 'valor_rs',   label: 'Valor',
+        num: true, strong: true, center: true,
+        renderCell: t => `R$ ${Utils.fmtBR(t.valor_rs)}` },
     ];
   },
+
   _renderCard() {
     const cols = this._columns();
     const tipos = [...new Set(this._data.titulos.map(t => t.tipo).filter(Boolean))].sort();
-    
+
+    // Toolbar
     const searchInput = DOM.h('input', {
       id: 'hoje-search',
       placeholder: 'Buscar fornecedor, histórico, título...',
@@ -1474,20 +1583,29 @@ const UI_Hoje = {
     });
     searchInput.addEventListener('input', e => this._debouncedSearch(e.target.value));
 
-    const searchBox = DOM.h('div', { class: 'search' }, [DOM.icon('fa-magnifying-glass'), searchInput]);
+    const searchBox = DOM.h('div', { class: 'search' }, [
+      DOM.icon('fa-magnifying-glass'),
+      searchInput,
+    ]);
+
     const allChip = this._buildFilterChip('', 'Todos', null, true);
     const tipoChips = tipos.map(t => this._buildFilterChip(t, t, Utils.pillClass(t), false));
     const chips = [allChip, ...tipoChips];
 
     const countEl = DOM.h('strong', { id: 'hoje-count' }, '0');
     const totalEl = DOM.h('strong', { id: 'hoje-total' }, 'R$ 0,00');
+
     const toolbarRight = DOM.h('div', { class: 'toolbar-right' }, [
-      DOM.h('span', { class: 'lbl' }, 'Total'), countEl,
+      DOM.h('span', { class: 'lbl' }, 'Total'),
+      countEl,
       DOM.h('span', { class: 'divider' }),
-      DOM.h('span', { class: 'lbl' }, 'Soma'), totalEl,
+      DOM.h('span', { class: 'lbl' }, 'Soma'),
+      totalEl,
     ]);
+
     const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, ...chips, toolbarRight]);
 
+    // Table
     const thead = DOM.h('thead', {}, DOM.h('tr', {},
       cols.map(c => {
         const th = DOM.h('th', {
@@ -1503,21 +1621,26 @@ const UI_Hoje = {
         return th;
       })
     ));
+
     const tbody = DOM.h('tbody', { id: 'hoje-tbody' });
     const tfoot = DOM.h('tfoot', { class: 'data', id: 'hoje-tfoot' });
     const table = DOM.h('table', { class: 'data' }, [thead, tbody, tfoot]);
     const tableWrap = DOM.h('div', { class: 'table-wrap' }, table);
+
     const paginationMount = DOM.h('div', { id: 'hoje-pagination' });
 
     this._els = { tbody, tfoot, countEl, totalEl, thead, chips, cols, paginationMount };
+
     return DOM.h('div', { class: 'card' }, [toolbar, tableWrap, paginationMount]);
   },
+
   _buildFilterChip(tipoValue, label, pillCls, isActive) {
     const chip = DOM.h('button', {
       class: 'filter-chip' + (isActive ? ' active' : ''),
       dataset: { tipo: tipoValue },
       type: 'button',
     }, pillCls ? DOM.pill(label, pillCls) : label);
+
     chip.addEventListener('click', () => {
       if (!this._els || !this._els.chips) return;
       this._els.chips.forEach(c => c.classList.remove('active'));
@@ -1528,35 +1651,43 @@ const UI_Hoje = {
     });
     return chip;
   },
+
   _filterAndSort() {
     const { q, tipo } = this._state.filter;
     const { col, dir } = this._state.sort;
+
     const rows = this._data.titulos.filter(t => {
       if (tipo && t.tipo !== tipo) return false;
       if (q) {
         const query = q.toLowerCase();
         const natDesc = NaturezaMap.get(t.natureza) || '';
-        const blob = [t.fornecedor, t.historico, t.numero, t.natureza, natDesc].map(v => (v || '').toString().toLowerCase()).join(' ');
+        const blob = [t.fornecedor, t.historico, t.numero, t.natureza, natDesc, t.bordero, t.banco]
+          .map(v => (v || '').toString().toLowerCase())
+          .join(' ');
         if (!blob.includes(query)) return false;
       }
       return true;
     });
+
     rows.sort((a, b) => Utils.compareRows(a, b, col, dir));
     return rows;
   },
+
   _refresh() {
     if (!this._els) return;
     const { tbody, tfoot, countEl, totalEl, thead, cols, paginationMount } = this._els;
     const { col, dir } = this._state.sort;
+
     const allFiltered = this._filterAndSort();
     const total = allFiltered.reduce((s, t) => s + (t.valor_rs || 0), 0);
-    
     countEl.textContent = String(allFiltered.length);
     totalEl.textContent = 'R$ ' + Utils.fmtBR(total);
 
+    // Paginar
     const start = (this._state.page - 1) * this._state.pageSize;
     const pageRows = allFiltered.slice(start, start + this._state.pageSize);
 
+    // TBODY
     DOM.clear(tbody);
     if (pageRows.length === 0) {
       tbody.appendChild(DOM.h('tr', {},
@@ -1566,6 +1697,7 @@ const UI_Hoje = {
       for (const t of pageRows) tbody.appendChild(this._renderRow(t, cols));
     }
 
+    // TFOOT
     DOM.clear(tfoot);
     const spanCount = cols.length - 1;
     tfoot.appendChild(DOM.h('tr', {}, [
@@ -1573,6 +1705,7 @@ const UI_Hoje = {
       DOM.h('td', { class: 'num center' }, 'R$ ' + Utils.fmtBR(total)),
     ]));
 
+    // Paginação
     DOM.clear(paginationMount);
     const pag = Pagination.render({
       page: this._state.page,
@@ -1582,16 +1715,19 @@ const UI_Hoje = {
     });
     if (pag) paginationMount.appendChild(pag);
 
+    // Sort indicators
     thead.querySelectorAll('th').forEach(th => {
       const isSorted = th.dataset.key === col;
       th.classList.toggle('sorted', isSorted);
       th.dataset.dir = isSorted ? (dir > 0 ? ' ↑' : ' ↓') : '';
     });
   },
+
   _scrollToTop() {
     const sec = document.getElementById('realizados');
     if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   },
+
   _renderRow(t, cols) {
     const tr = DOM.h('tr', {});
     for (const c of cols) {
@@ -1608,7 +1744,7 @@ const UI_Hoje = {
 };
 
 /* ============================================================================
-   UI_PREVISTO
+   UI_PREVISTO — Prévia de Pagamentos (com paginação + debounce, "Contas")
    ============================================================================ */
 const UI_Previsto = {
   _state: null,
@@ -1621,28 +1757,39 @@ const UI_Previsto = {
   render(data) {
     this._data = data.previsto_amanha;
     this._meta = data.meta;
+
+    // RENOMEADO: "NFs de Título" → "Contas"
     this._cats = [
       { key: 'nf_servico', label: 'NFs de Serviço', icon: 'fa-truck',        data: this._data.nf_servico },
-      { key: 'nf_titulo',  label: 'Contas',         icon: 'fa-file-invoice', data: this._data.nf_titulo },
+      { key: 'nf_titulo',  label: 'Contas',          icon: 'fa-file-invoice', data: this._data.nf_titulo },
       { key: 'reembolso',  label: 'Reembolsos',     icon: 'fa-receipt',      data: this._data.reembolso },
     ];
+
     const activeCat = this._cats.reduce((a, b) => a.data.length >= b.data.length ? a : b).key;
+
     this._state = {
-      activeCat, filter: { q: '' }, sort: { col: 'valor_total', dir: -1 },
-      page: 1, pageSize: CONFIG.PAGE_SIZE,
+      activeCat,
+      filter: { q: '' },
+      sort:   { col: 'valor_total', dir: -1 },
+      page: 1,
+      pageSize: CONFIG.PAGE_SIZE,
     };
+
     const section = DOM.h('section', { id: 'previsto', class: 'reveal' }, [
       this._renderSectionHead(),
       this._renderCard(),
     ]);
+
     this._debouncedSearch = Utils.debounce(value => {
       this._state.filter.q = value;
       this._state.page = 1;
       this._refresh();
     }, CONFIG.SEARCH_DEBOUNCE_MS);
+
     this._refresh();
     return section;
   },
+
   _renderSectionHead() {
     return DOM.h('div', { class: 'section-head' }, [
       DOM.h('div', { class: 'section-head-left' }, [
@@ -1656,36 +1803,52 @@ const UI_Previsto = {
       ]),
     ]);
   },
+
   _columnsFor(catKey) {
     const common = {
       aprovador: { key: 'aprovador',   label: 'Aprovador', renderCell: r => r.aprovador || '—' },
       status:    { key: 'status',      label: 'Status',    renderCell: r => this._renderStatus(r.status) },
-      valor:     { key: 'valor_total', label: 'Valor',     num: true, strong: true, center: true, renderCell: r => `R$ ${Utils.fmtBR(r.valor_total)}` },
-      descNat:   { key: 'natureza_cod', label: 'Desc. Nat.', renderCell: r => buildDescNatCell(r.natureza_cod) },
+      valor:     { key: 'valor_total', label: 'Valor',     num: true, strong: true, center: true,
+                   renderCell: r => `R$ ${Utils.fmtBR(r.valor_total)}` },
+      descNat:   { key: 'natureza_cod', label: 'Desc. Nat.',
+                   renderCell: r => buildDescNatCell(r.natureza_cod) },
     };
+
     if (catKey === 'nf_servico') {
       return [
-        { key: 'numero_nf',   label: 'NF', renderCell: r => r.numero_nf || '—' },
-        { key: 'fornecedor',  label: 'Fornecedor', renderCell: r => buildFornecedorCell(r.fornecedor, r.observacoes) },
-        common.descNat, common.aprovador, common.status, common.valor,
+        { key: 'numero_nf',   label: 'NF',         renderCell: r => r.numero_nf || '—' },
+        { key: 'fornecedor',  label: 'Fornecedor',
+          renderCell: r => buildFornecedorCell(r.fornecedor, r.observacoes) },
+        common.descNat,
+        common.aprovador,
+        common.status,
+        common.valor,
       ];
     }
     if (catKey === 'nf_titulo') {
       return [
         { key: 'numero_titulo', label: 'Título', renderCell: r => r.numero_titulo || '—' },
-        { key: 'fornecedor',    label: 'Fornecedor', renderCell: r => buildFornecedorCell(r.fornecedor, r.historico) },
-        common.descNat, common.aprovador, common.status, common.valor,
+        { key: 'fornecedor',    label: 'Fornecedor',
+          renderCell: r => buildFornecedorCell(r.fornecedor, r.historico) },
+        common.descNat,
+        common.aprovador,
+        common.status,
+        common.valor,
       ];
     }
+    // reembolso
     return [
       { key: 'solicitante',      label: 'Solicitante',  renderCell: r => r.solicitante || '—' },
       { key: 'tipo_despesa',     label: 'Tipo despesa', renderCell: r => DOM.pill(r.tipo_despesa || '—') },
-      { key: 'fornecedor',       label: 'Beneficiário', renderCell: r => buildFornecedorCell(r.fornecedor, '') },
+      { key: 'fornecedor',       label: 'Beneficiário',
+        renderCell: r => buildFornecedorCell(r.fornecedor, '') },
       common.descNat,
       { key: 'tipo_solicitacao', label: 'Solicitação',  renderCell: r => r.tipo_solicitacao || '—' },
-      common.aprovador, common.valor,
+      common.aprovador,
+      common.valor,
     ];
   },
+
   _renderStatus(s) {
     if (!s) return DOM.pill('—');
     const low = s.toLowerCase();
@@ -1693,7 +1856,9 @@ const UI_Previsto = {
     if (/aguardando|baixa/.test(low)) return DOM.pill(s, 'ok');
     return DOM.pill(s);
   },
+
   _renderCard() {
+    // Cat summary
     const catItems = this._cats.map(c => {
       const isActive = c.key === this._state.activeCat;
       const item = DOM.h('div', {
@@ -1712,7 +1877,10 @@ const UI_Previsto = {
       });
       return item;
     });
+
     const catSummary = DOM.h('div', { class: 'cat-summary' }, catItems);
+
+    // Tabs
     const tabs = this._cats.map(c => {
       const isActive = c.key === this._state.activeCat;
       const tab = DOM.h('button', {
@@ -1720,74 +1888,99 @@ const UI_Previsto = {
         dataset: { cat: c.key },
         type: 'button',
       }, [
-        DOM.icon(c.icon), c.label,
+        DOM.icon(c.icon),
+        c.label,
         DOM.h('span', { class: 'tab-count' }, String(c.data.length)),
       ]);
       tab.addEventListener('click', () => this._switchCat(c.key));
       return tab;
     });
     const tabsBar = DOM.h('div', { class: 'tabs', role: 'tablist' }, tabs);
+
+    // Toolbar
     const searchInput = DOM.h('input', {
-      id: 'prev-search', placeholder: 'Buscar fornecedor, solicitante, aprovador...', type: 'text',
+      id: 'prev-search',
+      placeholder: 'Buscar fornecedor, solicitante, aprovador...',
+      type: 'text',
       'aria-label': 'Buscar prévia de pagamentos',
     });
     searchInput.addEventListener('input', e => this._debouncedSearch(e.target.value));
+
     const searchBox = DOM.h('div', { class: 'search' }, [DOM.icon('fa-magnifying-glass'), searchInput]);
+
     const countEl = DOM.h('strong', { id: 'prev-count' }, '0');
     const totalEl = DOM.h('strong', { id: 'prev-total' }, 'R$ 0,00');
+
     const toolbarRight = DOM.h('div', { class: 'toolbar-right' }, [
-      DOM.h('span', { class: 'lbl' }, 'Total'), countEl,
-      DOM.h('span', { class: 'divider' }), DOM.h('span', { class: 'lbl' }, 'Soma'), totalEl,
+      DOM.h('span', { class: 'lbl' }, 'Total'),
+      countEl,
+      DOM.h('span', { class: 'divider' }),
+      DOM.h('span', { class: 'lbl' }, 'Soma'),
+      totalEl,
     ]);
+
     const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, toolbarRight]);
+
     const thead = DOM.h('thead');
     const tbody = DOM.h('tbody', { id: 'prev-tbody' });
     const tfoot = DOM.h('tfoot', { class: 'data', id: 'prev-tfoot' });
     const table = DOM.h('table', { class: 'data' }, [thead, tbody, tfoot]);
     const tableWrap = DOM.h('div', { class: 'table-wrap' }, table);
+
     const paginationMount = DOM.h('div', { id: 'prev-pagination' });
 
     this._els = { catItems, tabs, thead, tbody, tfoot, countEl, totalEl, searchInput, paginationMount };
+
     return DOM.h('div', { class: 'card' }, [catSummary, tabsBar, toolbar, tableWrap, paginationMount]);
   },
+
   _switchCat(catKey) {
     if (catKey === this._state.activeCat) return;
     this._state.activeCat = catKey;
     this._state.sort = { col: 'valor_total', dir: -1 };
     this._state.page = 1;
+
     this._els.catItems.forEach(ci => ci.classList.toggle('active', ci.dataset.cat === catKey));
     this._els.tabs.forEach(t => t.classList.toggle('active', t.dataset.cat === catKey));
     this._refresh();
   },
+
   _filterAndSort(cols) {
     const { q } = this._state.filter;
     const { col, dir } = this._state.sort;
     const cat = this._cats.find(c => c.key === this._state.activeCat);
     const validCol = cols.find(c => c.key === col) ? col : cols[cols.length - 1].key;
+
     const rows = cat.data.filter(r => {
       if (!q) return true;
       const query = q.toLowerCase();
+      // Busca combinada: campos do registro + descrição de natureza
       const natDesc = NaturezaMap.get(r.natureza_cod) || '';
       const blob = (JSON.stringify(r) + ' ' + natDesc).toLowerCase();
       return blob.includes(query);
     });
+
     rows.sort((a, b) => Utils.compareRows(a, b, validCol, dir));
     return { rows, validCol };
   },
+
   _refresh() {
     if (!this._els) return;
     const { thead, tbody, tfoot, countEl, totalEl, paginationMount } = this._els;
     const { dir } = this._state.sort;
+
     const cat = this._cats.find(c => c.key === this._state.activeCat);
     const cols = this._columnsFor(this._state.activeCat);
     const { rows: allFiltered, validCol } = this._filterAndSort(cols);
+
     const total = allFiltered.reduce((s, r) => s + (r.valor_total || 0), 0);
-    
     countEl.textContent = String(allFiltered.length);
     totalEl.textContent = 'R$ ' + Utils.fmtBR(total);
+
     const start = (this._state.page - 1) * this._state.pageSize;
     const pageRows = allFiltered.slice(start, start + this._state.pageSize);
 
+    // THEAD
     DOM.clear(thead);
     const headerRow = DOM.h('tr', {});
     for (const c of cols) {
@@ -1806,32 +1999,41 @@ const UI_Previsto = {
     }
     thead.appendChild(headerRow);
 
+    // TBODY
     DOM.clear(tbody);
     if (pageRows.length === 0) {
       tbody.appendChild(DOM.h('tr', {},
-        DOM.h('td', { class: 'empty-row', colspan: cols.length }, `Nenhum título ${cat.label.toLowerCase()} previsto`)
+        DOM.h('td', { class: 'empty-row', colspan: cols.length },
+          `Nenhum título ${cat.label.toLowerCase()} previsto`)
       ));
     } else {
       for (const r of pageRows) tbody.appendChild(this._renderRow(r, cols));
     }
 
+    // TFOOT
     DOM.clear(tfoot);
     tfoot.appendChild(DOM.h('tr', {}, [
-      DOM.h('td', { colspan: cols.length - 1 }, `Total exibido (${allFiltered.length} de ${cat.data.length})`),
+      DOM.h('td', { colspan: cols.length - 1 },
+        `Total exibido (${allFiltered.length} de ${cat.data.length})`),
       DOM.h('td', { class: 'num center' }, 'R$ ' + Utils.fmtBR(total)),
     ]));
 
+    // Paginação
     DOM.clear(paginationMount);
     const pag = Pagination.render({
-      page: this._state.page, pageSize: this._state.pageSize, total: allFiltered.length,
+      page: this._state.page,
+      pageSize: this._state.pageSize,
+      total: allFiltered.length,
       onPage: p => { this._state.page = p; this._refresh(); this._scrollToTop(); },
     });
     if (pag) paginationMount.appendChild(pag);
   },
+
   _scrollToTop() {
     const sec = document.getElementById('previsto');
     if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
   },
+
   _renderRow(r, cols) {
     const isRisk = Utils.isApprovalStatus(r.status);
     const tr = DOM.h('tr', { class: isRisk ? 'flag-approval' : null });
@@ -1860,7 +2062,10 @@ const ScrollSpy = {
   init() {
     this._links = Array.from(document.querySelectorAll('[data-spy-link]'));
     if (!this._links.length) return;
-    this._sections = CONFIG.SECTIONS.map(id => ({ id, el: document.getElementById(id) })).filter(s => s.el);
+
+    this._sections = CONFIG.SECTIONS
+      .map(id => ({ id, el: document.getElementById(id) }))
+      .filter(s => s.el);
     if (!this._sections.length) return;
 
     this._links.forEach(link => {
@@ -1873,10 +2078,12 @@ const ScrollSpy = {
         this._setActive(targetId);
       });
     });
+
     window.addEventListener('scroll', () => this._onScroll(), { passive: true });
     window.addEventListener('resize', () => this._onScroll(), { passive: true });
     this._onScroll();
   },
+
   _onScroll() {
     if (this._ticking) return;
     this._ticking = true;
@@ -1885,6 +2092,7 @@ const ScrollSpy = {
       this._ticking = false;
     });
   },
+
   _update() {
     const trigger = window.scrollY + this._offset;
     let activeId = this._sections[0].id;
@@ -1893,6 +2101,7 @@ const ScrollSpy = {
     }
     this._setActive(activeId);
   },
+
   _setActive(id) {
     this._links.forEach(l => {
       const href = l.getAttribute('href') || '';
@@ -1902,25 +2111,32 @@ const ScrollSpy = {
 };
 
 /* ============================================================================
-   HUB LINK
+   HUB LINK — mostra botão "Voltar ao Hub" apenas se usuário veio do hub
+   Funciona em produção (github.io) E em localhost.
+
+   Aceita 3 sinais (qualquer um basta):
+   - document.referrer é uma página do mesmo origin, no path do hub, mas NÃO
+     no path do próprio dashboard (evita que reload conte como "vindo do hub")
+   - URL atual tem ?from=qualquer_valor (fallback robusto)
+   - sessionStorage tem flag 'came_from_hub' (persiste durante a aba)
    ============================================================================ */
 const HubLink = {
-  HUB_PATH_PREFIX: '/Controladoria',
-  SELF_PATH_PREFIX: '/Controladoria/Pagamentos',
+  HUB_PATH_PREFIX: '/Controladoria',          // Path do hub no repo
+  SELF_PATH_PREFIX: '/Controladoria/Pagamentos', // Path do próprio dashboard
   STORAGE_KEY: 'came_from_hub',
 
   init() {
-    const btnHub = DOM.byId('btn-hub');
-    const btnRefresh = DOM.byId('btn-refresh');
+    const btn = DOM.byId('btn-hub');
+    if (!btn) return;
 
     if (this._userCameFromHub()) {
-      if (btnHub) btnHub.hidden = false;
-      if (btnRefresh) btnRefresh.hidden = false;
-      try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { }
+      btn.hidden = false;
+      try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { /* privacy mode */ }
     }
   },
 
   _userCameFromHub() {
+    // 1. Referrer: same-origin, dentro do path do hub, mas fora do path deste dashboard
     try {
       if (document.referrer) {
         const ref = new URL(document.referrer);
@@ -1929,33 +2145,38 @@ const HubLink = {
         const isSelfPath = ref.pathname.startsWith(this.SELF_PATH_PREFIX);
         if (sameOrigin && isHubPath && !isSelfPath) return true;
       }
-    } catch (e) { }
+    } catch (e) { /* URL inválida ou bloqueada */ }
 
+    // 2. Query string ?from=... (coloque no link do hub como seguro extra)
     try {
       const params = new URLSearchParams(location.search);
       if (params.has('from')) return true;
-    } catch (e) { }
+    } catch (e) { /* ignore */ }
 
+    // 3. SessionStorage (mantém o botão após F5 dentro da mesma aba)
     try {
       if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
-    } catch (e) { }
+    } catch (e) { /* privacy mode */ }
 
     return false;
   },
 };
-
 const App = {
   async init() {
     try {
+      // Fetch paralelo: data obrigatório, naturezas opcional
       const [data, naturezas] = await Promise.all([
         DataService.loadData(),
         DataService.loadNaturezas(),
       ]);
+
       NaturezaMap.set(naturezas);
       UI_Sidebar.updateStamp(data);
       HubLink.init();
       this._renderAll(data);
       ScrollSpy.init();
+
+      console.info(`[App] Dashboard pronto · ${NaturezaMap.size()} naturezas carregadas`);
     } catch (err) {
       console.error('[App] Falha ao carregar dashboard:', err);
       UI_Sidebar.setError();
@@ -1974,9 +2195,10 @@ const App = {
   _renderError(err) {
     const container = DOM.byId('main-container');
     DOM.clear(container);
+
     const retryBtn = DOM.h('button', { class: 'btn-retry', type: 'button' },
-      [DOM.icon('fa-rotate-right'), ' Tentar novamente']);
-    
+      [DOM.icon('fa-rotate-right'), 'Tentar novamente']);
+
     retryBtn.addEventListener('click', () => {
       DOM.clear(container);
       container.appendChild(DOM.h('div', { class: 'empty-state' }, [
@@ -1987,6 +2209,7 @@ const App = {
     });
 
     const message = err && err.message ? err.message : 'Erro desconhecido';
+
     container.appendChild(DOM.h('div', { class: 'empty-state' }, [
       DOM.h('h2', {}, 'Não foi possível carregar o dashboard'),
       DOM.h('p', {}, [
