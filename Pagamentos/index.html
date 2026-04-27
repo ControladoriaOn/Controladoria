@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Pagamentos · Dashboard</title>
 
-<!-- Favicon: apontando para raiz do repo (dashboard está em /Pagamentos/).
-     Fallback SVG inline garante que nunca dá 404. -->
-<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ControladoriaOn/Controladoria/main/favicon.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%233C003C'/%3E%3Ctext x='50%25' y='50%25' font-family='Georgia,serif' font-size='38' font-weight='700' fill='%23FF6E00' text-anchor='middle' dominant-baseline='central'%3E%E2%82%A3%3C/text%3E%3C/svg%3E">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -922,8 +920,6 @@
         <span class="stamp-text" id="stamp-text">carregando…</span>
       </div>
     </div>
-    <!-- Botão "Voltar ao Hub": só aparece se o usuário veio do hub.
-         Controlado por JS (módulo HubLink). Href aponta para a raiz do repo. -->
     <a id="btn-hub" class="btn-hub" href="../" rel="noopener" hidden>
       <i class="fa-solid fa-arrow-left-long"></i>
       Voltar ao Hub
@@ -1064,7 +1060,7 @@ const DateUtils = {
   },
 
   /** Próximo dia útil a partir da data fornecida (não inclui o próprio dia).
-   *  Se for sexta → retorna segunda. Se for sábado → segunda. Se for domingo → segunda.
+   * Se for sexta → retorna segunda. Se for sábado → segunda. Se for domingo → segunda.
    */
   nextBusinessDay(date) {
     const d = new Date(date);
@@ -1389,20 +1385,6 @@ const UI_Dashboard = {
       ]));
     }
 
-    const forns = prev.nf_servico.concat(prev.nf_titulo, prev.reembolso)
-      .map(x => (x.fornecedor || '').toUpperCase()).filter(Boolean);
-    const hojeSet = new Set(hoje.titulos.map(t => (t.fornecedor || '').toUpperCase()).filter(Boolean));
-    const recorrentes = [...new Set(forns.filter(f => hojeSet.has(f)))];
-    if (recorrentes.length) {
-      const plural = recorrentes.length > 1;
-      const exemplos = recorrentes.slice(0, 2).map(s => Utils.truncate(s, 28)).join(', ');
-      const more = recorrentes.length > 2 ? ' e mais' : '';
-      arr.push(this._buildAlert('ok', 'fa-rotate', [
-        DOM.h('strong', {}, `${recorrentes.length} fornecedor${plural?'es':''} recorrente${plural?'s':''}`),
-        DOM.h('small', {}, `Apareceram hoje e voltam amanhã. Ex.: ${exemplos}${more}.`),
-      ]));
-    }
-
     return arr;
   },
 
@@ -1415,7 +1397,8 @@ const UI_Dashboard = {
 
   _renderKPIs(data) {
     const { pago_hoje: hoje, previsto_amanha: prev, meta } = data;
-    const maiorForn = (hoje.maior && hoje.maior.fornecedor) ? hoje.maior.fornecedor : '—';
+    const maiorNatCode = (hoje.maior && hoje.maior.natureza) ? hoje.maior.natureza : null;
+    const maiorNatDesc = NaturezaMap.describe(maiorNatCode) || '—';
 
     return DOM.h('div', { class: 'kpi-grid' }, [
       this._buildKPI({
@@ -1431,7 +1414,7 @@ const UI_Dashboard = {
       this._buildKPI({
         icon: 'fa-trophy', label: 'Maior pagamento hoje',
         value: (hoje.maior && hoje.maior.valor) || 0,
-        subNode: DOM.h('span', { title: maiorForn }, Utils.truncate(maiorForn, 30)),
+        subNode: DOM.h('span', { title: maiorNatDesc }, Utils.truncate(maiorNatDesc, 30)),
       }),
       this._buildKPIPlain({
         icon: 'fa-triangle-exclamation', label: 'Pend. de aprovação',
