@@ -169,6 +169,7 @@
     transition: color 0.15s;
   }
   .sidebar nav a:hover i, .sidebar nav a.active i { color: var(--orange); }
+  .sidebar nav a[hidden] { display: none; }
 
   .sidebar-footer {
     margin-top: auto;
@@ -908,7 +909,7 @@
     <a href="#previsto" data-spy-link>
       <i class="fa-solid fa-calendar-day"></i> Prévia de Pagamentos
     </a>
-    <a href="atualizar.html">
+    <a id="link-atualizar" href="atualizar.html" hidden>
       <i class="fa-solid fa-arrow-up-from-bracket"></i> Atualizar
     </a>
   </nav>
@@ -2127,10 +2128,11 @@ const HubLink = {
 
   init() {
     const btn = DOM.byId('btn-hub');
-    if (!btn) return;
+    const linkAtualizar = DOM.byId('link-atualizar');
 
     if (this._userCameFromHub()) {
-      btn.hidden = false;
+      if (btn) btn.hidden = false;
+      if (linkAtualizar) linkAtualizar.hidden = false;
       try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { /* privacy mode */ }
     }
   },
