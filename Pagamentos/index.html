@@ -1397,8 +1397,18 @@ const UI_Dashboard = {
 
   _renderKPIs(data) {
     const { pago_hoje: hoje, previsto_amanha: prev, meta } = data;
-    const maiorNatCode = (hoje.maior && hoje.maior.natureza) ? hoje.maior.natureza : null;
-    const maiorNatDesc = NaturezaMap.describe(maiorNatCode) || '—';
+
+    // Busca o título com maior valor directamente da lista (fallback infalível)
+    let tituloMaior = null;
+    if (hoje.titulos && hoje.titulos.length > 0) {
+      tituloMaior = hoje.titulos.reduce((max, t) => (t.valor_rs > max.valor_rs ? t : max), hoje.titulos[0]);
+    }
+
+    let maiorNatCode = (hoje.maior && hoje.maior.natureza) || (tituloMaior && tituloMaior.natureza) || '';
+    let maiorValor = (hoje.maior && hoje.maior.valor) || (tituloMaior && tituloMaior.valor_rs) || 0;
+    
+    // Tenta descrever no mapa. Se falhar, usa o código cru. Se estiver vazio, usa o traço.
+    let maiorNatDesc = NaturezaMap.describe(maiorNatCode) || maiorNatCode || '—';
 
     return DOM.h('div', { class: 'kpi-grid' }, [
       this._buildKPI({
@@ -1413,7 +1423,7 @@ const UI_Dashboard = {
       }),
       this._buildKPI({
         icon: 'fa-trophy', label: 'Maior pagamento hoje',
-        value: (hoje.maior && hoje.maior.valor) || 0,
+        value: maiorValor,
         subNode: DOM.h('span', { title: maiorNatDesc }, Utils.truncate(maiorNatDesc, 30)),
       }),
       this._buildKPIPlain({
@@ -1469,7 +1479,9 @@ function buildFornecedorCell(fornecedor, historicoRaw) {
  */
 function buildDescNatCell(natCode) {
   const desc = NaturezaMap.describe(natCode);
-  if (!desc) return DOM.h('span', { class: 'nat-empty' }, '—');
+  if (!desc) {
+      return natCode ? DOM.h('span', { class: 'nat-desc' }, natCode) : DOM.h('span', { class: 'nat-empty' }, '—');
+  }
   return DOM.h('span', { class: 'nat-desc' }, desc);
 }
 
@@ -2146,6 +2158,7 @@ const HubLink = {
     return false;
   },
 };
+
 const App = {
   async init() {
     try {
