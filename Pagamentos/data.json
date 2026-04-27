@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at": "2026-04-27T14:43:29.562-03:00",
+    "generated_at": "2026-04-27T15:33:23.346-03:00",
     "data_hoje": "2026-04-27",
     "data_amanha": "2026-04-28"
   },
@@ -622,26 +622,26 @@
     ]
   },
   "previsto_amanha": {
-    "total": 9802.06,
-    "quantidade": 9,
+    "total": 19483.81,
+    "quantidade": 12,
     "por_categoria": {
       "nf_servico": {
-        "total": 3240,
-        "quantidade": 1
+        "total": 11971.75,
+        "quantidade": 3
       },
       "nf_titulo": {
-        "total": 936.7,
-        "quantidade": 1
+        "total": 1886.7,
+        "quantidade": 2
       },
       "reembolso": {
         "total": 5625.36,
         "quantidade": 7
       }
     },
-    "em_aprovacao": 7,
+    "em_aprovacao": 0,
     "maior": {
-      "fornecedor": "50.686.150 WILTON CAMPOS DA SILVA",
-      "valor": 3240
+      "fornecedor": "53.055.469 ANA CAROLINA DE JESUS DE SOUS",
+      "valor": 5771.05
     },
     "nf_servico": [
       {
@@ -662,7 +662,47 @@
         "cnpj": "50686150000179",
         "empresa": "T6",
         "observacoes": "WILTON (LAVAGEM JUNDIAI), NF 74, R$ 3.240,00",
-        "status": "Aprovação"
+        "status": "Aguardando baixa titulos Pagto"
+      },
+      {
+        "id": 54303,
+        "solicitante": "Cecilia Santos",
+        "numero_nf": "20",
+        "natureza_cod": "33030905",
+        "natureza": "MALHA PRIVADA PJ",
+        "fornecedor": "60.986.236 VANESSA SILVA MOURA LIBERATOR",
+        "contato": "ISABEL/ISABEL",
+        "valor_servico": 2960.7,
+        "valor_produto": 0,
+        "valor_total": 2960.7,
+        "vencimento": "2026-04-28",
+        "dt_solicitacao": "2026-04-27",
+        "dt_emissao": "2026-04-24",
+        "aprovador": "Larissa Santos",
+        "cnpj": "60986236000170",
+        "empresa": "T6",
+        "observacoes": "MOTORISTA/LEANDRO SOARES LIBERATORI/SERVICECENTER/SJM/PERIODO/02032026",
+        "status": "Aguardando baixa titulos Pagto"
+      },
+      {
+        "id": 54315,
+        "solicitante": "Cecilia Santos",
+        "numero_nf": "69",
+        "natureza_cod": "33030905",
+        "natureza": "MALHA PRIVADA PJ",
+        "fornecedor": "53.055.469 ANA CAROLINA DE JESUS DE SOUS",
+        "contato": "CECILIA/ISABEL/LEONARDO",
+        "valor_servico": 5771.05,
+        "valor_produto": 0,
+        "valor_total": 5771.05,
+        "vencimento": "2026-04-28",
+        "dt_solicitacao": "2026-04-27",
+        "dt_emissao": "2026-04-22",
+        "aprovador": "Larissa Santos",
+        "cnpj": "53055469000194",
+        "empresa": "T6",
+        "observacoes": "MOTORISTA/MARCOS SOARES DO NASCIMENTO JUNIOR/SERVICECENTER/FM-RJ-MELIONE/PERIODO/0104202",
+        "status": "Aguardando baixa titulos Pagto"
       }
     ],
     "nf_titulo": [
@@ -682,6 +722,23 @@
         "empresa": "T6",
         "historico": "MOVIDA (ISAQUE), FT 8205504, R$ 936,70",
         "status": "Aguardando baixa titulos Pagto"
+      },
+      {
+        "id": 54393,
+        "solicitante": "Cecilia Santos",
+        "numero_titulo": "107646",
+        "natureza_cod": "35010125",
+        "natureza": "COMBUSTIVEIS",
+        "fornecedor": "AUTO POSTO FENIX LTDA",
+        "valor_total": 950,
+        "vencimento": "2026-04-28",
+        "dt_solicitacao": "2026-04-27",
+        "dt_emissao": "2026-04-27",
+        "aprovador": "Larissa Santos",
+        "cnpj": "39320692000190",
+        "empresa": "T6",
+        "historico": "REFERENTE AO PERIODO09042026 DESCARGA",
+        "status": "Solicitação cancelada"
       }
     ],
     "reembolso": [
@@ -713,7 +770,7 @@
         "aprovador": "Edwin Santos",
         "cnpj": "33996760850",
         "empresa": "ONTIME",
-        "status": "Aprovação Reembolso"
+        "status": "Disponivel para Pagamento"
       },
       {
         "id": 54241,
@@ -728,7 +785,7 @@
         "aprovador": "Edwin Santos",
         "cnpj": "33996760850",
         "empresa": "ONTIME",
-        "status": "Aprovação Reembolso"
+        "status": "Disponivel para Pagamento"
       },
       {
         "id": 54245,
@@ -743,7 +800,7 @@
         "aprovador": "Edwin Santos",
         "cnpj": "33996760850",
         "empresa": "ONTIME",
-        "status": "Aprovação Reembolso"
+        "status": "Disponivel para Pagamento"
       },
       {
         "id": 54264,
@@ -758,7 +815,7 @@
         "aprovador": "Edwin Santos",
         "cnpj": "13780326833",
         "empresa": "ONTIME",
-        "status": "Aprovação Reembolso"
+        "status": "Revisa Lançamento"
       },
       {
         "id": 54278,
@@ -773,7 +830,7 @@
         "aprovador": "Edwin Santos",
         "cnpj": "15766949766",
         "empresa": "ONTIME",
-        "status": "Aprovação Reembolso"
+        "status": "Disponivel para Pagamento"
       },
       {
         "id": 54279,
@@ -788,7 +845,7 @@
         "aprovador": "Edwin Santos",
         "cnpj": "15766949766",
         "empresa": "ONTIME",
-        "status": "Aprovação Reembolso"
+        "status": "Disponivel para Pagamento"
       }
     ]
   }
