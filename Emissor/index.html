@@ -672,22 +672,7 @@
 
         $(document).ready(function() {
             app.init();
-
-            // --- CONTROLE DO BOTÃO VOLTAR ---
-            const btnVoltar = document.querySelector('.btn-voltar');
-            const referrer = document.referrer;
-            const currentHost = window.location.hostname;
             
-            if (btnVoltar && (!referrer || !referrer.includes(currentHost))) {
-                btnVoltar.style.display = 'none';
-            }
-            // --------------------------------
-
- // INICIALIZAÇÃO
-    document.addEventListener("DOMContentLoaded", () => {
-        HubLink.init();
-        carregarDados();
-
         // --------------------------------      
         });
 
