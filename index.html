@@ -58,6 +58,44 @@
             flex-direction: column;
         }
 
+        /* LOADER */
+        body.loading #loader {
+            display: flex;
+        }
+        body.loading #hub-lock,
+        body.loading #hub-header,
+        body.loading #hub-hero,
+        body.loading #hub-main,
+        body.loading #hub-footer,
+        body.loading #hub-admin {
+            display: none !important;
+        }
+        #loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .loader-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--orange);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text {
+            font-family: var(--font-display);
+            font-size: 14px;
+            color: var(--muted);
+        }
+
         .hidden { display: none !important; }
 
         /* LOCK SCREEN */
@@ -129,7 +167,9 @@
             background-color: var(--purple);
             padding: 0 48px;
             border-bottom: 3px solid var(--orange);
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             height: 72px; position: sticky; top: 0; z-index: 100;
             box-shadow: 0 4px 20px rgba(60,0,60,0.25);
         }
@@ -192,7 +232,13 @@
         }
     </style>
 </head>
-<body>
+<body class="loading">
+
+<!-- LOADER (só aparece enquanto o JS decide o que exibir) -->
+<div id="loader">
+    <div class="loader-spinner"></div>
+    <span class="loader-text">Carregando Hub...</span>
+</div>
 
 <!-- LOCK SCREEN -->
 <div id="hub-lock" class="lock-screen">
@@ -516,6 +562,24 @@ function showHub() {
   show('hub-footer');
 }
 
+function showLock() {
+  hide('hub-admin');
+  hide('hub-header');
+  hide('hub-hero');
+  hide('hub-main');
+  hide('hub-footer');
+  show('hub-lock');
+}
+
+function showAdmin() {
+  hide('hub-lock');
+  hide('hub-header');
+  hide('hub-hero');
+  hide('hub-main');
+  hide('hub-footer');
+  show('hub-admin');
+}
+
 async function tryFetchEnc() {
   try {
     const res = await fetch('dados.enc', { cache: 'no-store' });
@@ -524,15 +588,18 @@ async function tryFetchEnc() {
   } catch (e) { return null; }
 }
 
-async function initLock() {
-  let envelope = await tryFetchEnc();
+function initLock(envelope) {
   const fallbackEl = document.getElementById('hub-fallback');
   const fileInput = document.getElementById('hub-manual-file');
   const form = document.getElementById('hub-form');
   const errEl = document.getElementById('hub-lock-error');
   const infoEl = document.getElementById('hub-lock-info');
 
-  if (!envelope) fallbackEl.style.display = 'block';
+  if (!envelope) {
+    fallbackEl.style.display = 'block';
+    errEl.textContent = 'Arquivo dados.enc não encontrado. Use o fallback abaixo.';
+    errEl.classList.add('visible');
+  }
 
   fileInput.addEventListener('change', async () => {
     if (!fileInput.files[0]) return;
@@ -565,7 +632,7 @@ async function initLock() {
     btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Verificando…';
     try {
       await decryptHubPayload(envelope, pwd);
-      try { sessionStorage.setItem('_hub_pwd', pwd); } catch (_) {}
+      sessionStorage.setItem('_hub_pwd', pwd);
       showHub();
     } catch (e) {
       errEl.textContent = e.message || 'Falha ao desbloquear.';
@@ -575,18 +642,6 @@ async function initLock() {
       btn.innerHTML = orig;
     }
   });
-
-  // Auto-unlock: se a aba já tem senha em cache (F5, voltar de ferramenta, etc),
-  // desbloqueia direto sem perguntar. Quando fechar a aba, esquece e pede de novo.
-  const cached = (() => { try { return sessionStorage.getItem('_hub_pwd'); } catch (_) { return null; } })();
-  if (cached && envelope) {
-    try {
-      await decryptHubPayload(envelope, cached);
-      showHub();
-    } catch (_) {
-      try { sessionStorage.removeItem('_hub_pwd'); } catch (_) {}
-    }
-  }
 }
 
 function initAdmin() {
@@ -626,20 +681,43 @@ function initAdmin() {
 
 function routeByHash() {
   if (location.hash === '#admin') {
-    hide('hub-lock');
-    show('hub-admin');
+    showAdmin();
+  } else if (!document.getElementById('hub-lock').classList.contains('hidden')) {
+    // lock screen já está visível, nada a fazer
   } else {
-    hide('hub-admin');
+    // hub está visível, mas se não estiver também, mostra lock
     if (document.getElementById('hub-header').classList.contains('hidden')) {
-      show('hub-lock');
+      showLock();
     }
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('last-update').textContent = new Date().getFullYear();
-  initLock();
+
+  const cached = (() => { try { return sessionStorage.getItem('_hub_pwd'); } catch (_) { return null; } })();
+  let envelope = await tryFetchEnc();
+
+  // Tenta auto‑desbloqueio
+  if (cached && envelope) {
+    try {
+      await decryptHubPayload(envelope, cached);
+      showHub();
+    } catch (_) {
+      // senha inválida ou expirada – remove cache e mostra tela de senha
+      sessionStorage.removeItem('_hub_pwd');
+      showLock();
+    }
+  } else {
+    showLock();
+  }
+
+  // Prepara os listeners da tela de senha e do admin
+  initLock(envelope);
   initAdmin();
+
+  // Remove o loader e aplica a rota correta (hash)
+  document.body.classList.remove('loading');
   routeByHash();
   window.addEventListener('hashchange', routeByHash);
 });
