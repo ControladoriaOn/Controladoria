@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
@@ -28,10 +28,19 @@
             --border: #e5e7eb;
             --border-strong: #d1d5db;
 
+            --ink: #1a1a2e;
+            --plum: #3C003C;
+            --muted: #6b7280;
+            --err: #b91c1c;
+            --err-soft: #fef2f2;
+            --ok: #15803d;
+            --ok-soft: #f0fdf4;
+
             --font-display: 'Syne', sans-serif;
             --font-body: 'DM Sans', sans-serif;
 
             --radius: 14px;
+            --radius-lg: 18px;
             --radius-sm: 8px;
             --shadow-sm: 0 1px 4px rgba(60,0,60,0.06), 0 4px 12px rgba(60,0,60,0.04);
             --shadow-md: 0 8px 24px rgba(60,0,60,0.10), 0 2px 6px rgba(60,0,60,0.06);
@@ -49,20 +58,86 @@
             flex-direction: column;
         }
 
+        .hidden { display: none !important; }
+
+        /* ============================================================
+           LOCK SCREEN (mesmo visual do DRE, pra padronização)
+           ============================================================ */
+        .lock-screen {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 40px 20px; flex: 1;
+            background:
+              radial-gradient(1000px 600px at 10% -10%, rgba(60,0,60,0.08), transparent 60%),
+              radial-gradient(800px 500px at 100% 100%, rgba(255,110,0,0.08), transparent 60%),
+              var(--bg);
+        }
+        .lock-card {
+            max-width: 440px; width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 40px 38px;
+            box-shadow: var(--shadow-lg);
+        }
+        .lock-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+        .lock-logo img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+        .lock-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+        .lock-logo-text .name { font-family: var(--font-display); font-size: 17px; font-weight: 500; color: var(--plum); }
+        .lock-logo-text .sub { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-top: 2px; }
+        .lock-eyebrow { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); font-weight: 700; margin-bottom: 10px; }
+        .lock-title { font-family: var(--font-display); font-size: 30px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; color: var(--plum); margin-bottom: 8px; }
+        .lock-title em { font-style: italic; color: var(--ink); }
+        .lock-desc { color: var(--muted); margin-bottom: 26px; font-size: 13px; line-height: 1.5; }
+        .lock-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+        .lock-row label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+        .lock-row input { padding: 11px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 14px; font-family: var(--font-body); transition: border-color 0.15s; }
+        .lock-row input:focus { border-color: var(--orange); outline: none; }
+        .lock-error { display: none; color: var(--err); font-size: 12px; padding: 10px 12px; background: var(--err-soft); border-left: 3px solid var(--err); border-radius: var(--radius-sm); margin-bottom: 12px; white-space: pre-wrap; line-height: 1.5; }
+        .lock-error.visible { display: block; }
+        .lock-info { display: none; color: var(--ok); font-size: 12px; padding: 10px 12px; background: var(--ok-soft); border-left: 3px solid var(--ok); border-radius: var(--radius-sm); margin-bottom: 12px; }
+        .lock-info.visible { display: block; }
+        .lock-actions { display: flex; gap: 10px; margin-top: 6px; }
+        .lock-actions .btn { flex: 1; padding: 12px 18px; border: none; border-radius: var(--radius-sm); font-family: var(--font-body); font-weight: 700; font-size: 13px; letter-spacing: 0.02em; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: transform 0.15s, box-shadow 0.15s, background 0.15s; }
+        .btn.orange { background: var(--orange); color: #fff; }
+        .btn.orange:hover { background: var(--orange-mid); }
+        .btn.orange:disabled { background: var(--text-3); cursor: not-allowed; }
+        .btn.ghost { background: transparent; color: var(--plum); border: 1px solid var(--border); }
+        .btn.ghost:hover { background: var(--bg); border-color: var(--border-strong); }
+        .lock-fallback { margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--border); font-size: 12px; color: var(--muted); }
+        .lock-fallback input[type=file] { margin-top: 8px; font-size: 12px; }
+
+        /* ============================================================
+           ADMIN (gerador de dados.enc — acesso por #admin na URL)
+           ============================================================ */
+        .admin-wrap { max-width: 640px; margin: 0 auto; padding: 56px 24px 60px; }
+        .admin-head { margin-bottom: 28px; }
+        .admin-eyebrow { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); font-weight: 700; margin-bottom: 10px; }
+        .admin-title { font-family: var(--font-display); font-size: 30px; font-weight: 500; letter-spacing: -0.02em; color: var(--plum); margin-bottom: 6px; }
+        .admin-sub { color: var(--muted); font-size: 13px; line-height: 1.55; }
+        .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-md); }
+        .admin-card + .admin-card { margin-top: 18px; }
+        .admin-step-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 12px; font-weight: 700; margin-right: 8px; }
+        .admin-step-title { font-family: var(--font-display); font-size: 17px; color: var(--plum); font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; }
+        .admin-step-desc { color: var(--muted); font-size: 13px; line-height: 1.55; margin-bottom: 18px; }
+        .admin-status { display: none; margin-top: 14px; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 12px; line-height: 1.5; }
+        .admin-status.visible { display: block; }
+        .admin-status.success { color: var(--ok); background: var(--ok-soft); border-left: 3px solid var(--ok); }
+        .admin-status.error { color: var(--err); background: var(--err-soft); border-left: 3px solid var(--err); }
+        .admin-back { margin-top: 24px; text-align: center; }
+        .admin-back a { color: var(--muted); font-size: 12px; text-decoration: none; }
+        .admin-back a:hover { color: var(--orange); }
+
+        /* ============================================================
+           HUB (conteúdo principal — só visível depois do unlock)
+           ============================================================ */
         header {
             background-color: var(--purple);
             padding: 0 48px;
             border-bottom: 3px solid var(--orange);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 72px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 72px; position: sticky; top: 0; z-index: 100;
             box-shadow: 0 4px 20px rgba(60,0,60,0.25);
         }
-
         .header-brand { display: flex; align-items: center; gap: 14px; }
         .brand-img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(255,110,0,0.25); }
         .brand-name { font-family: var(--font-display); font-size: 18px; font-weight: 800; color: #fff; letter-spacing: 1px; }
@@ -83,12 +158,6 @@
         .stat-label { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 500; margin-top: 2px; }
 
         main { flex: 1; padding: 40px 48px 60px; max-width: 1200px; margin: 0 auto; width: 100%; }
-        .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; flex-wrap: wrap; }
-        .search-wrap { position: relative; flex: 1; min-width: 200px; }
-        .search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 17px; pointer-events: none; }
-        .search-input { width: 100%; padding: 11px 16px 11px 42px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 14px; color: var(--text-1); background: var(--surface); transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
-        .search-input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,110,0,0.12); }
-
         .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-3); margin-bottom: 16px; }
         .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
         .tool-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 28px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 14px; position: relative; overflow: hidden; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; box-shadow: var(--shadow-sm); animation: cardIn 0.4s ease both; }
@@ -110,7 +179,6 @@
         @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(34,197,94,0.2); } 50% { box-shadow: 0 0 0 5px rgba(34,197,94,0.08); } }
         .btn-access { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--orange); transition: gap 0.2s; }
         .tool-card:hover .btn-access { gap: 8px; }
-        .empty-state { grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: var(--text-3); }
 
         footer { background: var(--surface); border-top: 1px solid var(--border); padding: 18px 48px; display: flex; align-items: center; justify-content: space-between; }
         .footer-copy { font-size: 12px; color: var(--text-3); font-weight: 500; }
@@ -121,14 +189,99 @@
             header { padding: 0 20px; }
             .hero  { padding: 36px 20px 32px; }
             main   { padding: 28px 20px 60px; }
+            footer { padding: 16px 20px; flex-direction: column; gap: 8px; }
             .tools-grid { grid-template-columns: 1fr; }
             .stats-row { gap: 12px; }
+            .lock-card { padding: 32px 24px; }
+            .lock-title { font-size: 26px; }
         }
     </style>
 </head>
 <body>
 
-<header>
+<!-- ==============================================================
+     LOCK SCREEN — tela de senha do hub
+     ============================================================== -->
+<div id="hub-lock" class="lock-screen">
+  <div class="lock-card">
+    <div class="lock-logo">
+      <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="">
+      <div class="lock-logo-text">
+        <span class="name">Controladoria</span>
+        <span class="sub">Hub</span>
+      </div>
+    </div>
+    <div class="lock-eyebrow">Acesso restrito</div>
+    <h1 class="lock-title">Hub de <em>Ferramentas</em></h1>
+    <p class="lock-desc">Este ambiente concentra as ferramentas internas da Controladoria. Digite a senha para continuar.</p>
+    <div id="hub-lock-info" class="lock-info"></div>
+    <div id="hub-lock-error" class="lock-error"></div>
+    <form id="hub-form">
+      <div class="lock-row">
+        <label for="hub-password">Senha</label>
+        <input id="hub-password" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="lock-actions">
+        <button type="submit" class="btn orange">
+          <i class="ph-bold ph-lock-key-open"></i> Desbloquear
+        </button>
+      </div>
+    </form>
+    <div class="lock-fallback" id="hub-fallback" style="display:none;">
+      Não foi possível carregar o arquivo de dados do servidor.
+      Carregue manualmente o arquivo <code>dados.enc</code>:
+      <input type="file" id="hub-manual-file" accept=".enc,.json">
+    </div>
+  </div>
+</div>
+
+<!-- ==============================================================
+     ADMIN — gerador de dados.enc (mostra com #admin na URL)
+     ============================================================== -->
+<div id="hub-admin" class="hidden">
+  <div class="admin-wrap">
+    <div class="admin-head">
+      <div class="admin-eyebrow">Modo administrador</div>
+      <h1 class="admin-title">Gerar nova senha do <em>Hub</em></h1>
+      <p class="admin-sub">Defina a senha que vai proteger o acesso ao hub. Os dados são processados localmente no seu navegador (nada é enviado a servidor). No final, baixe o arquivo <code>dados.enc</code> e suba na raiz do repositório, substituindo o atual.</p>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-step-title"><span class="admin-step-num">1</span> Defina a senha</div>
+      <div class="admin-step-desc">Use uma senha forte (mínimo 8 caracteres). Guarde em local seguro — não há recuperação.</div>
+      <div class="lock-row">
+        <label for="admin-pwd">Nova senha</label>
+        <input id="admin-pwd" type="password" autocomplete="new-password" minlength="8">
+      </div>
+      <div class="lock-row">
+        <label for="admin-pwd-confirm">Confirmar senha</label>
+        <input id="admin-pwd-confirm" type="password" autocomplete="new-password">
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-step-title"><span class="admin-step-num">2</span> Gerar arquivo</div>
+      <div class="admin-step-desc">Clica no botão e o navegador vai baixar o <code>dados.enc</code>. Depois é só subir na raiz do repositório (mesma pasta deste <code>index.html</code>), substituindo o atual.</div>
+      <div class="lock-actions">
+        <button type="button" id="admin-generate" class="btn orange">
+          <i class="ph-bold ph-download-simple"></i> Gerar e baixar dados.enc
+        </button>
+      </div>
+      <div id="admin-status" class="admin-status"></div>
+    </div>
+
+    <div class="admin-back">
+      <a href="#"><i class="ph ph-arrow-left"></i> Voltar à tela de senha</a>
+    </div>
+  </div>
+</div>
+
+<!-- ==============================================================
+     HUB — conteúdo principal (escondido até desbloquear)
+     ============================================================== -->
+<div id="hub-app" class="hidden" style="display: contents;">
+
+<header class="hidden" id="hub-header">
     <div class="header-brand">
         <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="brand-img">
         <span class="brand-name">ON<span>TIME</span></span>
@@ -138,16 +291,16 @@
     </div>
 </header>
 
-<div class="hero">
+<div class="hero hidden" id="hub-hero">
     <div class="hero-content">
-        <div class="hero-label"><i class="ph-fill ph-lightning"></i> Central de Ferramentas</div>
-        <h1>Hub de <em>Controladoria</em></h1>
-        <p>Acesse todas as ferramentas analíticas da equipa num único lugar. Dados precisos, decisões mais rápidas.</p>
+        <span class="hero-label"><i class="ph-fill ph-sparkle"></i> Plataforma Interna</span>
+        <h1>Hub de <em>Ferramentas</em><br>Controladoria</h1>
+        <p>Acesso centralizado às ferramentas internas para análise, gestão e operação financeira da empresa.</p>
         <div class="stats-row">
             <div class="stat-chip">
-                <i class="ph-fill ph-stack"></i>
+                <i class="ph-fill ph-toolbox"></i>
                 <div class="stat-chip-info">
-                    <span class="stat-num" id="total-count">7</span>
+                    <span class="stat-num" id="tool-count">7</span>
                     <span class="stat-label">Ferramentas</span>
                 </div>
             </div>
@@ -169,7 +322,7 @@
     </div>
 </div>
 
-<main>
+<main class="hidden" id="hub-main">
     <div class="section-label">Ferramentas disponíveis</div>
 
     <div class="tools-grid" id="grid">
@@ -258,30 +411,252 @@
             </div>
         </a>
 
-<a href="./WhatsappLayout/" class="tool-card" data-title="Whatsapp Padrão">
-    <div class="card-accent"></div>
-    <div class="card-header">
-        <div class="card-icon"><i class="ph-fill ph-receipt"></i></div>
-        <span class="card-category">Operacional</span>
-    </div>
-    <h3 class="card-title">Whatsapp Padrão</h3>
-    <p class="card-desc">Layout padrão do sistema WhatsApp.</p>
-    <div class="card-footer">
-        <span class="status-dot"><span class="dot"></span> Online</span>
-        <span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span>
-    </div>
-</a>
-        
+        <a href="./WhatsappLayout/" class="tool-card" data-title="Whatsapp Padrão">
+            <div class="card-accent"></div>
+            <div class="card-header">
+                <div class="card-icon"><i class="ph-fill ph-receipt"></i></div>
+                <span class="card-category">Operacional</span>
+            </div>
+            <h3 class="card-title">Whatsapp Padrão</h3>
+            <p class="card-desc">Layout padrão do sistema WhatsApp.</p>
+            <div class="card-footer">
+                <span class="status-dot"><span class="dot"></span> Online</span>
+                <span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span>
+            </div>
+        </a>
+
     </div>
 </main>
 
-<footer>
+<footer class="hidden" id="hub-footer">
     <span class="footer-copy">&copy; 2026 Ontime Controladoria. Todos os direitos reservados.</span>
     <span class="footer-badge"><i class="ph-fill ph-shield-check"></i> Ambiente interno seguro</span>
 </footer>
 
+</div>
+
 <script>
-    document.getElementById('last-update').textContent = new Date().getFullYear();
+/* ============================================================
+   CRIPTOGRAFIA — mesmo esquema do DRE (PBKDF2 + AES-GCM + gzip)
+   ============================================================ */
+function b64encode(buf) {
+  const bytes = new Uint8Array(buf);
+  let s = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    s += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(s);
+}
+function b64decode(str) {
+  const s = atob(str);
+  const bytes = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+  return bytes;
+}
+async function deriveKey(password, salt, iterations) {
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(password),
+    { name: 'PBKDF2' }, false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+    keyMaterial, { name: 'AES-GCM', length: 256 },
+    false, ['encrypt', 'decrypt']
+  );
+}
+async function gzipString(str) {
+  const cs = new CompressionStream('gzip');
+  const writer = cs.writable.getWriter();
+  writer.write(new TextEncoder().encode(str)); writer.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function gunzipToString(bytes) {
+  const ds = new DecompressionStream('gzip');
+  const writer = ds.writable.getWriter();
+  writer.write(bytes); writer.close();
+  return await new Response(ds.readable).text();
+}
+async function encryptOne(plainObj, password) {
+  const json = JSON.stringify(plainObj);
+  const compressed = await gzipString(json);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const iterations = 600000;
+  const key = await deriveKey(password, salt, iterations);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, compressed);
+  return { iter: iterations, salt: b64encode(salt), iv: b64encode(iv), ct: b64encode(ct) };
+}
+async function decryptOne(pkg, password) {
+  const salt = b64decode(pkg.salt);
+  const iv = b64decode(pkg.iv);
+  const ct = b64decode(pkg.ct);
+  const key = await deriveKey(password, salt, pkg.iter);
+  let compressed;
+  try {
+    compressed = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+  } catch (e) { throw new Error('Senha incorreta'); }
+  const json = await gunzipToString(new Uint8Array(compressed));
+  return JSON.parse(json);
+}
+async function encryptHubPayload(password) {
+  // O payload é só um sentinela — se descriptografar, a senha tá certa.
+  const sentinel = { ok: true, app: 'hub', generatedAt: new Date().toISOString() };
+  const pkg = await encryptOne(sentinel, password);
+  return { v: 1, kdf: 'PBKDF2-SHA256', iter: pkg.iter, salt: pkg.salt, iv: pkg.iv, ct: pkg.ct };
+}
+async function decryptHubPayload(envelope, password) {
+  if (envelope.v !== 1) throw new Error('Formato não suportado.');
+  return await decryptOne(envelope, password);
+}
+
+/* ============================================================
+   HUB — bootstrap (lock screen + admin + auto-unlock)
+   ============================================================ */
+const SESSION_KEY = '_hub_pwd';
+
+function show(id) { document.getElementById(id)?.classList.remove('hidden'); }
+function hide(id) { document.getElementById(id)?.classList.add('hidden'); }
+
+function showHub() {
+  hide('hub-lock');
+  hide('hub-admin');
+  show('hub-header');
+  show('hub-hero');
+  show('hub-main');
+  show('hub-footer');
+}
+
+async function tryFetchEnc() {
+  try {
+    const res = await fetch('dados.enc', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } catch (e) { return null; }
+}
+
+async function initLock() {
+  let envelope = await tryFetchEnc();
+  const fallbackEl = document.getElementById('hub-fallback');
+  const fileInput = document.getElementById('hub-manual-file');
+  const form = document.getElementById('hub-form');
+  const errEl = document.getElementById('hub-lock-error');
+  const infoEl = document.getElementById('hub-lock-info');
+
+  if (!envelope) fallbackEl.style.display = 'block';
+
+  fileInput.addEventListener('change', async () => {
+    if (!fileInput.files[0]) return;
+    try {
+      const text = await fileInput.files[0].text();
+      envelope = JSON.parse(text);
+      errEl.classList.remove('visible');
+      fallbackEl.style.display = 'none';
+      infoEl.textContent = 'Arquivo carregado. Digite a senha e desbloqueie.';
+      infoEl.classList.add('visible');
+    } catch (e) {
+      errEl.textContent = 'Arquivo inválido: ' + e.message;
+      errEl.classList.add('visible');
+    }
+  });
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    errEl.classList.remove('visible');
+    infoEl.classList.remove('visible');
+    if (!envelope) {
+      errEl.textContent = 'Nenhum arquivo de dados disponível.';
+      errEl.classList.add('visible');
+      return;
+    }
+    const pwd = document.getElementById('hub-password').value;
+    const btn = form.querySelector('button[type=submit]');
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Verificando…';
+    try {
+      await decryptHubPayload(envelope, pwd);
+      try { sessionStorage.setItem(SESSION_KEY, pwd); } catch (_) {}
+      showHub();
+    } catch (e) {
+      errEl.textContent = e.message || 'Falha ao desbloquear.';
+      errEl.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = orig;
+    }
+  });
+
+  // Auto-unlock: se a aba ainda tem a senha em cache, desbloqueia direto.
+  // (Quando a aba fecha, o sessionStorage é apagado e pede senha de novo.)
+  const cached = (() => { try { return sessionStorage.getItem(SESSION_KEY); } catch (_) { return null; } })();
+  if (cached && envelope) {
+    try {
+      await decryptHubPayload(envelope, cached);
+      showHub();
+    } catch (_) {
+      try { sessionStorage.removeItem(SESSION_KEY); } catch (_) {}
+    }
+  }
+}
+
+function initAdmin() {
+  const btn = document.getElementById('admin-generate');
+  const statusEl = document.getElementById('admin-status');
+
+  function setStatus(msg, kind) {
+    statusEl.className = 'admin-status visible ' + (kind || '');
+    statusEl.textContent = msg;
+  }
+
+  btn.addEventListener('click', async () => {
+    const pwd = document.getElementById('admin-pwd').value;
+    const pwdC = document.getElementById('admin-pwd-confirm').value;
+    if (pwd.length < 8) { setStatus('A senha precisa ter pelo menos 8 caracteres.', 'error'); return; }
+    if (pwd !== pwdC) { setStatus('As senhas não conferem.', 'error'); return; }
+
+    const orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Gerando…';
+    try {
+      const envelope = await encryptHubPayload(pwd);
+      const blob = new Blob([JSON.stringify(envelope)], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'dados.enc'; a.click();
+      URL.revokeObjectURL(url);
+      setStatus('✓ dados.enc gerado! Suba na raiz do repositório (mesma pasta deste index.html) e a senha já estará valendo.', 'success');
+      // Atualiza o cache da sessão pra essa nova senha — assim você não precisa redigitar.
+      try { sessionStorage.setItem(SESSION_KEY, pwd); } catch (_) {}
+    } catch (e) {
+      setStatus('Erro ao gerar: ' + (e.message || e), 'error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = orig;
+    }
+  });
+}
+
+function routeByHash() {
+  if (location.hash === '#admin') {
+    hide('hub-lock');
+    show('hub-admin');
+  } else {
+    hide('hub-admin');
+    // Se já tava desbloqueado, não volta pra lock
+    if (document.getElementById('hub-header').classList.contains('hidden')) {
+      show('hub-lock');
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('last-update').textContent = new Date().getFullYear();
+  initLock();
+  initAdmin();
+  routeByHash();
+  window.addEventListener('hashchange', routeByHash);
+});
 </script>
 
 </body>
