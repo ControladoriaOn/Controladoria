@@ -210,6 +210,8 @@
     <div id="hub-lock-info" class="lock-info"></div>
     <div id="hub-lock-error" class="lock-error"></div>
     <form id="hub-form">
+      <!-- Campo username oculto: ajuda o navegador a oferecer salvar a senha -->
+      <input type="text" name="username" value="ControladoriaHub" autocomplete="username" readonly tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;pointer-events:none;height:0;width:0;">
       <div class="lock-row">
         <label for="hub-password">Senha</label>
         <input id="hub-password" type="password" autocomplete="current-password" required>
@@ -563,6 +565,7 @@ async function initLock() {
     btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Verificando…';
     try {
       await decryptHubPayload(envelope, pwd);
+      try { sessionStorage.setItem('_hub_pwd', pwd); } catch (_) {}
       showHub();
     } catch (e) {
       errEl.textContent = e.message || 'Falha ao desbloquear.';
@@ -572,6 +575,18 @@ async function initLock() {
       btn.innerHTML = orig;
     }
   });
+
+  // Auto-unlock: se a aba já tem senha em cache (F5, voltar de ferramenta, etc),
+  // desbloqueia direto sem perguntar. Quando fechar a aba, esquece e pede de novo.
+  const cached = (() => { try { return sessionStorage.getItem('_hub_pwd'); } catch (_) { return null; } })();
+  if (cached && envelope) {
+    try {
+      await decryptHubPayload(envelope, cached);
+      showHub();
+    } catch (_) {
+      try { sessionStorage.removeItem('_hub_pwd'); } catch (_) {}
+    }
+  }
 }
 
 function initAdmin() {
