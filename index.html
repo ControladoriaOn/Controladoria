@@ -60,9 +60,7 @@
 
         .hidden { display: none !important; }
 
-        /* ============================================================
-           LOCK SCREEN (mesmo visual do DRE, pra padronização)
-           ============================================================ */
+        /* LOCK SCREEN */
         .lock-screen {
             min-height: 100vh; display: flex; align-items: center; justify-content: center;
             padding: 40px 20px; flex: 1;
@@ -106,13 +104,12 @@
         .lock-fallback { margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--border); font-size: 12px; color: var(--muted); }
         .lock-fallback input[type=file] { margin-top: 8px; font-size: 12px; }
 
-        /* ============================================================
-           ADMIN (gerador de dados.enc — acesso por #admin na URL)
-           ============================================================ */
+        /* ADMIN */
         .admin-wrap { max-width: 640px; margin: 0 auto; padding: 56px 24px 60px; }
         .admin-head { margin-bottom: 28px; }
         .admin-eyebrow { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); font-weight: 700; margin-bottom: 10px; }
         .admin-title { font-family: var(--font-display); font-size: 30px; font-weight: 500; letter-spacing: -0.02em; color: var(--plum); margin-bottom: 6px; }
+        .admin-title em { font-style: italic; color: var(--ink); }
         .admin-sub { color: var(--muted); font-size: 13px; line-height: 1.55; }
         .admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; box-shadow: var(--shadow-md); }
         .admin-card + .admin-card { margin-top: 18px; }
@@ -127,9 +124,7 @@
         .admin-back a { color: var(--muted); font-size: 12px; text-decoration: none; }
         .admin-back a:hover { color: var(--orange); }
 
-        /* ============================================================
-           HUB (conteúdo principal — só visível depois do unlock)
-           ============================================================ */
+        /* HUB */
         header {
             background-color: var(--purple);
             padding: 0 48px;
@@ -199,9 +194,7 @@
 </head>
 <body>
 
-<!-- ==============================================================
-     LOCK SCREEN — tela de senha do hub
-     ============================================================== -->
+<!-- LOCK SCREEN -->
 <div id="hub-lock" class="lock-screen">
   <div class="lock-card">
     <div class="lock-logo">
@@ -235,9 +228,7 @@
   </div>
 </div>
 
-<!-- ==============================================================
-     ADMIN — gerador de dados.enc (mostra com #admin na URL)
-     ============================================================== -->
+<!-- ADMIN -->
 <div id="hub-admin" class="hidden">
   <div class="admin-wrap">
     <div class="admin-head">
@@ -276,9 +267,7 @@
   </div>
 </div>
 
-<!-- ==============================================================
-     HUB — conteúdo principal (escondido até desbloquear)
-     ============================================================== -->
+<!-- HUB (conteúdo) -->
 <div id="hub-app" style="display: contents;">
 
 <header class="hidden" id="hub-header">
@@ -500,7 +489,6 @@ async function decryptOne(pkg, password) {
   return JSON.parse(json);
 }
 async function encryptHubPayload(password) {
-  // O payload é só um sentinela — se descriptografar, a senha tá certa.
   const sentinel = { ok: true, app: 'hub', generatedAt: new Date().toISOString() };
   const pkg = await encryptOne(sentinel, password);
   return { v: 1, kdf: 'PBKDF2-SHA256', iter: pkg.iter, salt: pkg.salt, iv: pkg.iv, ct: pkg.ct };
@@ -511,10 +499,9 @@ async function decryptHubPayload(envelope, password) {
 }
 
 /* ============================================================
-   HUB — bootstrap (lock screen + admin + auto-unlock)
+   HUB — bootstrap
+   SEM cache de senha: toda vez que a página carrega, pede senha de novo.
    ============================================================ */
-const SESSION_KEY = '_hub_pwd';
-
 function show(id) { document.getElementById(id)?.classList.remove('hidden'); }
 function hide(id) { document.getElementById(id)?.classList.add('hidden'); }
 
@@ -576,7 +563,6 @@ async function initLock() {
     btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Verificando…';
     try {
       await decryptHubPayload(envelope, pwd);
-      try { sessionStorage.setItem(SESSION_KEY, pwd); } catch (_) {}
       showHub();
     } catch (e) {
       errEl.textContent = e.message || 'Falha ao desbloquear.';
@@ -586,18 +572,6 @@ async function initLock() {
       btn.innerHTML = orig;
     }
   });
-
-  // Auto-unlock: se a aba ainda tem a senha em cache, desbloqueia direto.
-  // (Quando a aba fecha, o sessionStorage é apagado e pede senha de novo.)
-  const cached = (() => { try { return sessionStorage.getItem(SESSION_KEY); } catch (_) { return null; } })();
-  if (cached && envelope) {
-    try {
-      await decryptHubPayload(envelope, cached);
-      showHub();
-    } catch (_) {
-      try { sessionStorage.removeItem(SESSION_KEY); } catch (_) {}
-    }
-  }
 }
 
 function initAdmin() {
@@ -626,8 +600,6 @@ function initAdmin() {
       a.href = url; a.download = 'dados.enc'; a.click();
       URL.revokeObjectURL(url);
       setStatus('✓ dados.enc gerado! Suba na raiz do repositório (mesma pasta deste index.html) e a senha já estará valendo.', 'success');
-      // Atualiza o cache da sessão pra essa nova senha — assim você não precisa redigitar.
-      try { sessionStorage.setItem(SESSION_KEY, pwd); } catch (_) {}
     } catch (e) {
       setStatus('Erro ao gerar: ' + (e.message || e), 'error');
     } finally {
@@ -643,7 +615,6 @@ function routeByHash() {
     show('hub-admin');
   } else {
     hide('hub-admin');
-    // Se já tava desbloqueado, não volta pra lock
     if (document.getElementById('hub-header').classList.contains('hidden')) {
       show('hub-lock');
     }
