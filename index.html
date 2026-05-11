@@ -76,14 +76,7 @@ body {
   50% { transform: translate(-30px, 50px) scale(0.9); }
   75% { transform: translate(20px, 20px) scale(1.05); }
 }
-.grid-pattern {
-  position: fixed; inset: 0; z-index: 1; pointer-events: none;
-  background-image: linear-gradient(rgba(60,0,60,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(60,0,60,0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
-}
-#particles-canvas { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+#particles-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
 
 /* ============================================================
    LOADER
@@ -351,42 +344,6 @@ header {
 .mascot-ring:nth-child(2) { inset: -30px; animation-delay: 1s; border-color: rgba(255,110,0,0.15); }
 @keyframes ringExpand { 0% { transform: scale(0.92); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
 
-/* Balão */
-.mascot-speech {
-  position: absolute; top: -10px; left: 50%;
-  transform: translateX(-50%) scale(0);
-  background: #fff; border: 2px solid var(--orange);
-  border-radius: 16px; padding: 10px 16px;
-  font-size: 12px; font-weight: 600; color: var(--purple);
-  white-space: nowrap;
-  box-shadow: 0 4px 20px rgba(255,110,0,0.2);
-  opacity: 0;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  z-index: 10; pointer-events: none;
-}
-.mascot-speech::after {
-  content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-  width: 0; height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-top: 10px solid var(--orange);
-}
-.hero-mascot-wrap:hover .mascot-speech {
-  transform: translateX(-50%) scale(1); opacity: 1; top: -50px;
-}
-
-/* Partículas */
-.mascot-particles { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
-.m-particle {
-  position: absolute; width: 8px; height: 8px;
-  border-radius: 50%; opacity: 0; pointer-events: none;
-}
-.m-particle.active { animation: particleBurst 0.8s ease-out forwards; }
-@keyframes particleBurst {
-  0% { opacity: 1; transform: translate(0, 0) scale(1); }
-  100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
-}
-
 /* Stats */
 .stats-row { display: flex; gap: 16px; flex-wrap: wrap; }
 .stat-chip {
@@ -538,9 +495,6 @@ footer {
   <div class="orb orb-3"></div>
   <div class="orb orb-4"></div>
 </div>
-<div class="grid-pattern"></div>
-<canvas id="particles-canvas"></canvas>
-
 <!-- ============================================================
    LOCK SCREEN (com senha)
    ============================================================ -->
@@ -635,6 +589,7 @@ footer {
 </header>
 
 <div class="hero hidden" id="hub-hero">
+  <canvas id="particles-canvas"></canvas>
   <div class="hero-content">
     <div class="hero-left">
       <span class="hero-label"><i class="ph-fill ph-sparkle"></i> Plataforma Interna</span>
@@ -649,9 +604,7 @@ footer {
     <div class="hero-mascot-wrap" id="mascote-wrap">
       <div class="mascot-ring"></div>
       <div class="mascot-ring"></div>
-      <div class="mascot-speech" id="mascote-speech">👋 Olá! Sou o mascote da Ontime!</div>
       <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="hero-mascot" id="hero-mascot">
-      <div class="mascot-particles" id="mascote-particles"></div>
     </div>
   </div>
 </div>
@@ -791,7 +744,10 @@ const canvas = document.getElementById('particles-canvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
 
-function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+function resizeCanvas() {
+  const hero = document.querySelector('.hero');
+  if (hero) { canvas.width = hero.offsetWidth; canvas.height = hero.offsetHeight; }
+}
 
 class Particle {
   constructor() { this.reset(); }
@@ -815,7 +771,7 @@ class Particle {
 
 function initParticles() {
   resizeCanvas(); particles = [];
-  const count = Math.min(80, Math.floor((canvas.width * canvas.height) / 15000));
+  const count = Math.min(60, Math.floor((canvas.width * canvas.height) / 20000));
   for (let i = 0; i < count; i++) particles.push(new Particle());
 }
 
@@ -951,40 +907,17 @@ function routeByHash() {
    ============================================================ */
 const mascoteWrap = document.getElementById('mascote-wrap');
 const speechBubble = document.getElementById('mascote-speech');
-const particlesContainer = document.getElementById('mascote-particles');
 
-const speechMessages = [
-  "👋 Olá! Sou o mascote da Ontime!",
-  "💡 Dica: passe o mouse nos cards!",
-  "📊 Pronto para analisar os dados?",
-  "🚀 Vamos trabalhar!",
-  "🎯 Foco no resultado!",
-  "💰 Controlando os pagamentos!",
-  "✨ Tudo sob controle!"
-];
-
-let messageIndex = 0;
-mascoteWrap?.addEventListener('mouseenter', () => {
-  speechBubble.textContent = speechMessages[messageIndex];
-  messageIndex = (messageIndex + 1) % speechMessages.length;
-});
-
-mascoteWrap?.addEventListener('click', (e) => {
-  const colors = ['#FF6E00', '#3C003C', '#ff8c33', '#5a005a', '#ffd700', '#FF6B6B'];
-  for (let i = 0; i < 15; i++) {
-    const p = document.createElement('div');
-    p.className = 'm-particle';
-    p.style.background = colors[Math.floor(Math.random() * colors.length)];
-    const rect = mascoteWrap.getBoundingClientRect();
-    p.style.left = (e.clientX - rect.left) + 'px';
-    p.style.top = (e.clientY - rect.top) + 'px';
-    const angle = (Math.PI * 2 * i) / 15;
-    const dist = 50 + Math.random() * 50;
-    p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
-    p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
-    particlesContainer.appendChild(p);
-    requestAnimationFrame(() => p.classList.add('active'));
-    setTimeout(() => p.remove(), 800);
+mascoteWrap?.addEventListener('click', () => {
+  // Pulo do mascote ao clicar — sem partículas
+  const mascotImg = document.getElementById('hero-mascot');
+  if (mascotImg) {
+    mascotImg.style.animation = 'none';
+    mascotImg.offsetHeight; // trigger reflow
+    mascotImg.style.animation = 'mascotJump 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    setTimeout(() => {
+      mascotImg.style.animation = 'mascotFloat 5s ease-in-out infinite';
+    }, 500);
   }
 });
 
