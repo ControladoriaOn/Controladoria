@@ -882,6 +882,7 @@
     .pagination { justify-content: center; }
   }
 </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -1412,6 +1413,8 @@ const UI_Dashboard = {
   _renderKPIs(data) {
     const { pago_hoje: hoje, previsto_amanha: prev, meta } = data;
     const maiorForn = (hoje.maior && hoje.maior.fornecedor) ? hoje.maior.fornecedor : '—';
+    const maiorNatCode = (hoje.maior && hoje.maior.natureza) ? hoje.maior.natureza : null;
+    const maiorNatDesc = NaturezaMap.describe(maiorNatCode) || maiorForn;
 
     return DOM.h('div', { class: 'kpi-grid' }, [
       this._buildKPI({
@@ -1427,7 +1430,7 @@ const UI_Dashboard = {
       this._buildKPI({
         icon: 'fa-trophy', label: 'Maior pagamento hoje',
         value: (hoje.maior && hoje.maior.valor) || 0,
-        subNode: DOM.h('span', { title: maiorForn }, Utils.truncate(maiorForn, 30)),
+        subNode: DOM.h('span', { title: maiorNatDesc }, Utils.truncate(maiorNatDesc, 30)),
       }),
       this._buildKPIPlain({
         icon: 'fa-triangle-exclamation', label: 'Pend. de aprovação',
