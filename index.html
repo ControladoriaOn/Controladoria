@@ -477,57 +477,22 @@ footer {
 }
 
 
-
-/* ============================================================
-   SOUND ENGINE — Web Audio API
-   ============================================================ */
-const SoundFX = (() => {
-  let ctx = null;
-
-  function getCtx() {
-    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-    return ctx;
-  }
-
-  function beep(freq = 800, duration = 0.1, type = 'square') {
-    try {
-      const c = getCtx();
-      const osc = c.createOscillator();
-      const gain = c.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, c.currentTime);
-      gain.gain.setValueAtTime(0.1, c.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(c.destination);
-      osc.start(c.currentTime);
-      osc.stop(c.currentTime + duration);
-    } catch (e) {}
-  }
-
-  function click() { beep(1200, 0.05, 'sine'); }
-  function activate() { 
-    beep(600, 0.1, 'square');
-    setTimeout(() => beep(800, 0.1, 'square'), 100);
-    setTimeout(() => beep(1000, 0.2, 'square'), 200);
-  }
-  function timeTravel() {
-    beep(400, 0.15, 'sawtooth');
-    setTimeout(() => beep(300, 0.15, 'sawtooth'), 150);
-    setTimeout(() => beep(500, 0.3, 'sawtooth'), 300);
-  }
-  function matrixBoot() {
-    for (let i = 0; i < 5; i++) {
-      setTimeout(() => beep(200 + i * 100, 0.08, 'square'), i * 60);
-    }
-  }
-
-  return { click, activate, timeTravel, matrixBoot };
-})();
-
 /* ============================================================
    TIME MACHINE — Easter Egg (Shift + Scroll)
    ============================================================ */
+#time-machine-badge {
+  position: fixed; top: 80px; right: 20px; z-index: 9997;
+  background: var(--purple); color: #fff;
+  padding: 8px 16px; border-radius: 8px;
+  font-family: var(--font-display); font-size: 13px;
+  font-weight: 700; letter-spacing: 1px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  opacity: 0; transform: translateY(-20px);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+#time-machine-badge.show { opacity: 1; transform: translateY(0); }
+
 body.era-transition, body.era-transition * {
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
@@ -839,43 +804,43 @@ body.era-1995 .loader-mascote-box {
   <div class="section-label">Ferramentas disponíveis</div>
   <div class="tools-grid">
     <a href="./Comparativo/" class="tool-card">
-      <div class="card-header"><div class="card-icon"><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt=""></div><span class="card-category">Análise</span></div>
+      <div class="card-header"><div class="card-icon"><i class="ph-fill ph-scales"></i></div><span class="card-category">Análise</span></div>
       <h3 class="card-title">Comparativo RB / Custo</h3>
       <p class="card-desc">Análise comparativa entre Receita Bruta e Custos operacionais, com visão de margem e desvios.</p>
       <div class="card-footer"><span class="status-dot"><span class="dot"></span> Online</span><span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span></div>
     </a>
     <a href="./DRE/" class="tool-card">
-      <div class="card-header"><div class="card-icon"><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt=""></div><span class="card-category">Contábil</span></div>
+      <div class="card-header"><div class="card-icon"><i class="ph-fill ph-chart-bar"></i></div><span class="card-category">Contábil</span></div>
       <h3 class="card-title">DRE</h3>
       <p class="card-desc">Análise da Demonstração do Resultado do Exercício para avaliação do desempenho financeiro.</p>
       <div class="card-footer"><span class="status-dot"><span class="dot"></span> Online</span><span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span></div>
     </a>
     <a href="./Parcelamentos/" class="tool-card">
-      <div class="card-header"><div class="card-icon"><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt=""></div><span class="card-category">Gestão</span></div>
+      <div class="card-header"><div class="card-icon"><i class="ph-fill ph-wallet"></i></div><span class="card-category">Gestão</span></div>
       <h3 class="card-title">Gestão de Parcelamentos</h3>
       <p class="card-desc">Controle de passivos financeiros, acordos, tributos e fluxo de caixa.</p>
       <div class="card-footer"><span class="status-dot"><span class="dot"></span> Online</span><span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span></div>
     </a>
     <a href="./Pagamentos/" class="tool-card">
-      <div class="card-header"><div class="card-icon"><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt=""></div><span class="card-category">Financeiro</span></div>
+      <div class="card-header"><div class="card-icon"><i class="ph-fill ph-currency-circle-dollar"></i></div><span class="card-category">Financeiro</span></div>
       <h3 class="card-title">Pagamentos Diários</h3>
       <p class="card-desc">Acompanhamento e controle ágil de saídas, reembolsos e pagamentos diários.</p>
       <div class="card-footer"><span class="status-dot"><span class="dot"></span> Online</span><span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span></div>
     </a>
     <a href="./Tabulador/" class="tool-card">
-      <div class="card-header"><div class="card-icon"><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt=""></div><span class="card-category">Tabulação</span></div>
+      <div class="card-header"><div class="card-icon"><i class="ph-fill ph-table"></i></div><span class="card-category">Tabulação</span></div>
       <h3 class="card-title">Tabulador | RVBALANCE</h3>
       <p class="card-desc">Tabulação e conciliação de saldos e movimentações contábeis com exportação integrada.</p>
       <div class="card-footer"><span class="status-dot"><span class="dot"></span> Online</span><span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span></div>
     </a>
     <a href="./Emissor/" class="tool-card">
-      <div class="card-header"><div class="card-icon"><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt=""></div><span class="card-category">Operacional</span></div>
+      <div class="card-header"><div class="card-icon"><i class="ph-fill ph-receipt"></i></div><span class="card-category">Operacional</span></div>
       <h3 class="card-title">Emissor de ND</h3>
       <p class="card-desc">Geração rápida, padronizada e controle eficiente de Notas de Débito (ND).</p>
       <div class="card-footer"><span class="status-dot"><span class="dot"></span> Online</span><span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span></div>
     </a>
     <a href="./WhatsappLayout/" class="tool-card">
-      <div class="card-header"><div class="card-icon"><img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt=""></div><span class="card-category">Operacional</span></div>
+      <div class="card-header"><div class="card-icon"><i class="ph-fill ph-chat-circle-text"></i></div><span class="card-category">Operacional</span></div>
       <h3 class="card-title">Whatsapp Padrão</h3>
       <p class="card-desc">Layout padrão do sistema WhatsApp para comunicação padronizada.</p>
       <div class="card-footer"><span class="status-dot"><span class="dot"></span> Online</span><span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span></div>
@@ -1225,7 +1190,15 @@ const TimeMachine = (() => {
   function init() {
     document.addEventListener('wheel', handleWheel, { passive: false });
     document.addEventListener('keydown', handleKey);
+    createBadge();
     restoreEra();
+  }
+
+  function createBadge() {
+    if (document.getElementById('time-machine-badge')) return;
+    const badge = document.createElement('div');
+    badge.id = 'time-machine-badge';
+    document.body.appendChild(badge);
   }
 
   function handleWheel(e) {
@@ -1249,7 +1222,6 @@ const TimeMachine = (() => {
     const newIndex = Math.max(0, Math.min(ERAS.length - 1, currentEraIndex + direction));
     if (newIndex === currentEraIndex) { isTransitioning = false; return; }
     currentEraIndex = newIndex;
-    SoundFX.timeTravel();
     applyEra();
     setTimeout(() => { isTransitioning = false; }, 300);
   }
@@ -1260,8 +1232,18 @@ const TimeMachine = (() => {
     body.classList.add('era-transition');
     ERAS.forEach(e => body.classList.remove(e.class));
     if (era.year !== 2026) body.classList.add(era.class);
+    showBadge(era);
     try { localStorage.setItem('time_machine_era', String(currentEraIndex)); } catch (e) {}
     setTimeout(() => body.classList.remove('era-transition'), 600);
+  }
+
+  function showBadge(era) {
+    const badge = document.getElementById('time-machine-badge');
+    if (!badge) return;
+    badge.innerHTML = `<span style="font-size:11px;opacity:0.7">MÁQUINA DO TEMPO</span><br><span style="font-size:18px">${era.year}</span><br><span style="font-size:11px;opacity:0.7">${era.name}</span>`;
+    badge.classList.add('show');
+    if (badgeTimeout) clearTimeout(badgeTimeout);
+    badgeTimeout = setTimeout(() => badge.classList.remove('show'), 2000);
   }
 
   function restoreEra() {
@@ -1305,13 +1287,10 @@ const MatrixFinanceiro = (() => {
         clickCount++;
         lastClickTime = now;
 
-        SoundFX.click();
-
         if (clickCount === 5) {
           clickCount = 0;
-          SoundFX.activate();
           showMatrixToast();
-          setTimeout(() => { SoundFX.matrixBoot(); start(); }, 600);
+          setTimeout(() => start(), 600);
         }
       });
     }
@@ -1382,6 +1361,9 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 
+
+<!-- TIME MACHINE BADGE -->
+<div id="time-machine-badge"></div>
 
 <!-- MATRIX OVERLAY -->
 <div id="matrix-overlay">
