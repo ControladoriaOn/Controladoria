@@ -476,7 +476,6 @@ footer {
   .hero h1 { font-size: 32px; }
 }
 </style>
-<base target="_blank">
 </head>
 
 <body class="loading">
@@ -957,10 +956,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cached = (() => { try { return sessionStorage.getItem('_hub_pwd'); } catch (_) { return null; } })();
   let envelope = await tryFetchEnc();
 
+  // Log para debug (visível no console do navegador)
+  console.info('[Hub] Senha em cache:', cached ? 'SIM' : 'NÃO');
+
   if (cached && envelope) {
-    try { await decryptHubPayload(envelope, cached); showHub(); }
-    catch (_) { sessionStorage.removeItem('_hub_pwd'); showLock(); }
-  } else { showLock(); }
+    try {
+      await decryptHubPayload(envelope, cached);
+      console.info('[Hub] Auto-desbloqueio via sessionStorage');
+      showHub();
+    } catch (e) {
+      console.warn('[Hub] Senha em cache inválida, removendo...');
+      sessionStorage.removeItem('_hub_pwd');
+      showLock();
+    }
+  } else {
+    console.info('[Hub] Sem senha em cache — mostrando tela de senha');
+    showLock();
+  }
 
   initLock(envelope);
   initAdmin();
