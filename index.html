@@ -5,7 +5,103 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ONTIME · Hub de Ferramentas</title>
 <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png?v=3">
-<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://unpkg.com/@phosphor-icons/web">
+
+/* ============================================================
+   MATRIX FINANCEIRO — Easter Egg (Shift + M)
+   ============================================================ */
+
+const MatrixFinanceiro = (() => {
+  const CHARS = 'R$%0,00PARCELADIVIDASALDOTRIBUTOSRECEITALUCROMARGEMCAIXABOLETOCONTRATO01';
+  const COLORS = ['#FF6E00', '#3C003C', '#ff8c33', '#5a005a', '#ffd700', '#ff3333'];
+
+  let canvas, ctx, w, h, columns, drops, animationId, isActive = false;
+  let fontSize = 16;
+
+  function init() {
+    canvas = document.getElementById('matrix-canvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Atalho: Shift + M
+    document.addEventListener('keydown', (e) => {
+      if (e.shiftKey && e.key === 'M') {
+        e.preventDefault();
+        toggle();
+      }
+      if (isActive && !e.shiftKey) {
+        stop();
+      }
+    });
+  }
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    columns = Math.floor(w / fontSize);
+    drops = Array(columns).fill(1);
+  }
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.font = fontSize + 'px "JetBrains Mono", monospace';
+
+    for (let i = 0; i < drops.length; i++) {
+      const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+
+      ctx.fillStyle = color;
+      ctx.globalAlpha = Math.random() * 0.5 + 0.5;
+      ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+      ctx.globalAlpha = 1;
+
+      if (drops[i] * fontSize > h && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+
+    animationId = requestAnimationFrame(draw);
+  }
+
+  function start() {
+    if (isActive) return;
+    isActive = true;
+    document.getElementById('matrix-overlay').classList.add('active');
+    resize();
+    draw();
+
+    // Para automaticamente após 8 segundos
+    setTimeout(() => {
+      if (isActive) stop();
+    }, 8000);
+  }
+
+  function stop() {
+    isActive = false;
+    document.getElementById('matrix-overlay').classList.remove('active');
+    if (animationId) cancelAnimationFrame(animationId);
+  }
+
+  function toggle() {
+    if (isActive) stop();
+    else start();
+  }
+
+  return { init };
+})();
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', () => {
+  MatrixFinanceiro.init();
+});
+
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -114,119 +210,6 @@ body.loading #hub-app { display: none !important; }
 }
 
 .hidden { display: none !important; }
-
-/* ============================================================
-   LOCK SCREEN — Glassmorphism + Animated
-   ============================================================ */
-.lock-screen {
-  min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  padding: 40px 20px; position: relative; z-index: 10;
-  background:
-    radial-gradient(1000px 600px at 10% -10%, rgba(60,0,60,0.08), transparent 60%),
-    radial-gradient(800px 500px at 100% 100%, rgba(255,110,0,0.08), transparent 60%),
-    var(--bg);
-}
-.lock-card {
-  max-width: 440px; width: 100%;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(30px) saturate(1.3);
-  -webkit-backdrop-filter: blur(30px) saturate(1.3);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-lg);
-  padding: 44px 40px;
-  box-shadow: var(--shadow-lg), 0 0 60px rgba(255,110,0,0.08);
-  animation: cardIn 0.6s ease both;
-}
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(30px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.lock-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
-.lock-logo img { width: 48px; height: 48px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.lock-logo-text { display: flex; flex-direction: column; line-height: 1.1; }
-.lock-logo-text .name { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--purple); }
-.lock-logo-text .sub { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-2); font-weight: 700; margin-top: 2px; }
-.lock-eyebrow { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); font-weight: 700; margin-bottom: 10px; }
-.lock-title { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--purple); margin-bottom: 10px; }
-.lock-title em { font-style: italic; color: var(--text-1); }
-.lock-desc { color: var(--text-2); margin-bottom: 28px; font-size: 14px; line-height: 1.6; }
-.lock-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-.lock-row label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-2); font-weight: 700; }
-.lock-row input {
-  padding: 12px 16px; background: rgba(255,255,255,0.6);
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  font-size: 15px; font-family: var(--font-body); transition: all 0.2s;
-}
-.lock-row input:focus { border-color: var(--orange); outline: none; box-shadow: 0 0 0 3px rgba(255,110,0,0.12); }
-.lock-error {
-  display: none; color: var(--err); font-size: 13px;
-  padding: 12px 14px; background: var(--err-soft);
-  border-left: 3px solid var(--err); border-radius: var(--radius-sm);
-  margin-bottom: 14px; white-space: pre-wrap; line-height: 1.5;
-}
-.lock-error.visible { display: block; }
-.lock-info {
-  display: none; color: var(--ok); font-size: 13px;
-  padding: 12px 14px; background: var(--ok-soft);
-  border-left: 3px solid var(--ok); border-radius: var(--radius-sm);
-  margin-bottom: 14px;
-}
-.lock-info.visible { display: block; }
-.lock-actions { display: flex; gap: 10px; margin-top: 6px; }
-.lock-actions .btn {
-  flex: 1; padding: 13px 18px; border: none; border-radius: var(--radius-sm);
-  font-family: var(--font-body); font-weight: 700; font-size: 14px;
-  letter-spacing: 0.02em; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  gap: 8px; transition: all 0.2s;
-}
-.btn.orange {
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-mid) 100%);
-  color: #fff; box-shadow: 0 4px 16px rgba(255,110,0,0.35);
-}
-.btn.orange:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(255,110,0,0.45); }
-.btn.orange:disabled { background: var(--text-3); cursor: not-allowed; box-shadow: none; transform: none; }
-.btn.ghost { background: transparent; color: var(--purple); border: 1px solid var(--border); }
-.btn.ghost:hover { background: var(--bg); border-color: var(--border-strong); }
-.lock-fallback { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border); font-size: 12px; color: var(--text-2); }
-.lock-fallback input[type=file] { margin-top: 8px; font-size: 12px; }
-
-/* ============================================================
-   ADMIN — Glassmorphism
-   ============================================================ */
-.admin-wrap { max-width: 640px; margin: 0 auto; padding: 60px 24px 60px; position: relative; z-index: 10; }
-.admin-head { margin-bottom: 32px; }
-.admin-eyebrow { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--orange); font-weight: 700; margin-bottom: 10px; }
-.admin-title { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -0.02em; color: var(--purple); margin-bottom: 8px; }
-.admin-title em { font-style: italic; color: var(--text-1); }
-.admin-sub { color: var(--text-2); font-size: 14px; line-height: 1.6; }
-.admin-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px) saturate(1.2);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-lg); padding: 36px;
-  box-shadow: var(--shadow-md);
-  margin-bottom: 20px;
-}
-.admin-step-num {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-mid) 100%);
-  color: #fff; font-size: 13px; font-weight: 700; margin-right: 10px;
-  box-shadow: 0 2px 8px rgba(255,110,0,0.3);
-}
-.admin-step-title { font-family: var(--font-display); font-size: 18px; color: var(--purple); font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; }
-.admin-step-desc { color: var(--text-2); font-size: 14px; line-height: 1.6; margin-bottom: 22px; }
-.admin-status {
-  display: none; margin-top: 16px; padding: 12px 14px;
-  border-radius: var(--radius-sm); font-size: 13px; line-height: 1.5;
-}
-.admin-status.visible { display: block; }
-.admin-status.success { color: var(--ok); background: var(--ok-soft); border-left: 3px solid var(--ok); }
-.admin-status.error { color: var(--err); background: var(--err-soft); border-left: 3px solid var(--err); }
-.admin-back { margin-top: 28px; text-align: center; }
-.admin-back a { color: var(--text-2); font-size: 13px; text-decoration: none; transition: color 0.2s; }
-.admin-back a:hover { color: var(--orange); }
 
 /* ============================================================
    HUB APP — Header, Hero, Cards (visual espetacular)
@@ -475,359 +458,6 @@ footer {
   footer { padding: 16px 20px; flex-direction: column; gap: 8px; }
   .hero h1 { font-size: 32px; }
 }
-
-/* ============================================================
-   CLICKER TYCOON — Easter Egg
-   ============================================================ */
-#clicker-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 9998;
-  background: rgba(26, 15, 26, 0.85);
-  backdrop-filter: blur(12px);
-  align-items: center;
-  justify-content: center;
-  animation: clickerFadeIn 0.4s ease;
-}
-#clicker-overlay.active { display: flex; }
-
-@keyframes clickerFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-#clicker-modal {
-  width: 520px;
-  max-width: 95vw;
-  max-height: 92vh;
-  background: linear-gradient(180deg, #1a0f1a 0%, #2a0028 100%);
-  border: 2px solid var(--orange);
-  border-radius: 24px;
-  box-shadow: 0 0 60px rgba(255,110,0,0.25), 0 20px 60px rgba(0,0,0,0.5);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: clickerSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes clickerSlideUp {
-  from { opacity: 0; transform: translateY(40px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.clicker-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(255,110,0,0.2);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(255,110,0,0.05);
-}
-
-.clicker-title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 800;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.clicker-title span { color: var(--orange); }
-
-.clicker-close {
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.5);
-  font-size: 24px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-.clicker-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
-
-.clicker-body {
-  padding: 24px;
-  overflow-y: auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.clicker-stats {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.clicker-stat {
-  flex: 1;
-  min-width: 140px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
-  padding: 16px;
-  text-align: center;
-}
-
-.clicker-stat-label {
-  font-size: 11px;
-  color: rgba(255,255,255,0.5);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
-}
-
-.clicker-stat-value {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--orange);
-  line-height: 1;
-}
-
-.clicker-stat-sub {
-  font-size: 12px;
-  color: rgba(255,255,255,0.4);
-  margin-top: 4px;
-}
-
-/* Área de clique */
-.clicker-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 20px 0;
-}
-
-.clicker-btn {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--orange) 0%, #ff8c33 50%, var(--orange) 100%);
-  background-size: 200% 200%;
-  border: 4px solid rgba(255,255,255,0.15);
-  box-shadow: 0 8px 32px rgba(255,110,0,0.35), inset 0 4px 12px rgba(255,255,255,0.2);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 64px;
-  transition: all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
-  user-select: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.clicker-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 12px 40px rgba(255,110,0,0.45);
-}
-
-.clicker-btn:active {
-  transform: scale(0.92);
-  box-shadow: 0 4px 16px rgba(255,110,0,0.3);
-}
-
-.clicker-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-.clicker-hint {
-  font-size: 12px;
-  color: rgba(255,255,255,0.4);
-  text-align: center;
-}
-
-/* Upgrades */
-.clicker-upgrades {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.clicker-section-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.6);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-bottom: 4px;
-}
-
-.clicker-upgrade {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.clicker-upgrade.available {
-  opacity: 1;
-  pointer-events: auto;
-  border-color: rgba(255,110,0,0.2);
-}
-
-.clicker-upgrade.available:hover {
-  background: rgba(255,110,0,0.08);
-  border-color: rgba(255,110,0,0.4);
-  transform: translateX(4px);
-}
-
-.clicker-upgrade-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.clicker-upgrade-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.clicker-upgrade-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 2px;
-}
-
-.clicker-upgrade-desc {
-  font-size: 11px;
-  color: rgba(255,255,255,0.4);
-}
-
-.clicker-upgrade-count {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--orange);
-  min-width: 30px;
-  text-align: right;
-}
-
-.clicker-upgrade-cost {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.08);
-  padding: 4px 10px;
-  border-radius: 8px;
-  white-space: nowrap;
-}
-
-.clicker-upgrade.available .clicker-upgrade-cost {
-  background: var(--orange);
-  color: #fff;
-}
-
-/* Prestígio */
-.clicker-prestige {
-  padding: 16px;
-  background: linear-gradient(135deg, rgba(255,110,0,0.1) 0%, rgba(60,0,60,0.2) 100%);
-  border: 1px solid rgba(255,110,0,0.25);
-  border-radius: 14px;
-  text-align: center;
-  display: none;
-}
-
-.clicker-prestige.visible { display: block; }
-
-.clicker-prestige-title {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--orange);
-  margin-bottom: 6px;
-}
-
-.clicker-prestige-desc {
-  font-size: 12px;
-  color: rgba(255,255,255,0.6);
-  margin-bottom: 12px;
-}
-
-.clicker-prestige-btn {
-  padding: 10px 24px;
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-mid) 100%);
-  border: none;
-  border-radius: 10px;
-  color: #fff;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(255,110,0,0.3);
-}
-
-.clicker-prestige-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(255,110,0,0.4);
-}
-
-/* Partículas de clique */
-.clicker-particle {
-  position: absolute;
-  pointer-events: none;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--orange);
-  animation: clickerFloatUp 0.8s ease-out forwards;
-  z-index: 100;
-}
-
-@keyframes clickerFloatUp {
-  0% { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
-}
-
-/* Toast de easter egg descoberto */
-#easter-toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-mid) 100%);
-  color: #fff;
-  padding: 14px 28px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 8px 32px rgba(255,110,0,0.4);
-  z-index: 10000;
-  opacity: 0;
-  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: none;
-}
-
-#easter-toast.show {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-}
-
-
 
 /* ============================================================
    MÁQUINA DO TEMPO — Easter Egg (Shift + Scroll)
@@ -1124,6 +754,52 @@ body.era-transition * {
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
+
+
+/* ============================================================
+   MATRIX FINANCEIRO — Easter Egg (Shift + M)
+   ============================================================ */
+#matrix-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: #000;
+  overflow: hidden;
+}
+
+#matrix-overlay.active {
+  display: block;
+}
+
+#matrix-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.matrix-hint {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 110, 0, 0.6);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: matrixPulse 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes matrixPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
 </style>
 <base target="_blank">
 </head>
@@ -1144,84 +820,6 @@ body.era-transition * {
   <div class="orb orb-3"></div>
   <div class="orb orb-4"></div>
 </div>
-<!-- ============================================================
-   LOCK SCREEN (com senha)
-   ============================================================ -->
-<div id="hub-lock" class="lock-screen">
-  <div class="lock-card">
-    <div class="lock-logo">
-      <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="">
-      <div class="lock-logo-text">
-        <span class="name">Controladoria</span>
-        <span class="sub">Hub</span>
-      </div>
-    </div>
-    <div class="lock-eyebrow">Acesso restrito</div>
-    <h1 class="lock-title">Hub de <em>Ferramentas</em></h1>
-    <p class="lock-desc">Este ambiente concentra as ferramentas internas da Controladoria. Digite a senha para continuar.</p>
-    <div id="hub-lock-info" class="lock-info"></div>
-    <div id="hub-lock-error" class="lock-error"></div>
-    <form id="hub-form">
-      <input type="text" name="username" value="ControladoriaHub" autocomplete="username" readonly tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;pointer-events:none;height:0;width:0;">
-      <div class="lock-row">
-        <label for="hub-password">Senha</label>
-        <input id="hub-password" type="password" autocomplete="current-password" required placeholder="Digite a senha de acesso">
-      </div>
-      <div class="lock-actions">
-        <button type="submit" class="btn orange">
-          <i class="ph-bold ph-lock-key-open"></i> Desbloquear
-        </button>
-      </div>
-    </form>
-    <div class="lock-fallback" id="hub-fallback" style="display:none;">
-      Não foi possível carregar o arquivo de dados do servidor.
-      Carregue manualmente o arquivo <code>dados.enc</code>:
-      <input type="file" id="hub-manual-file" accept=".enc,.json">
-    </div>
-  </div>
-</div>
-
-<!-- ============================================================
-   ADMIN
-   ============================================================ -->
-<div id="hub-admin" class="hidden">
-  <div class="admin-wrap">
-    <div class="admin-head">
-      <div class="admin-eyebrow">Modo administrador</div>
-      <h1 class="admin-title">Gerar nova senha do <em>Hub</em></h1>
-      <p class="admin-sub">Defina a senha que vai proteger o acesso ao hub. Os dados são processados localmente no seu navegador (nada é enviado a servidor). No final, baixe o arquivo <code>dados.enc</code> e suba na raiz do repositório, substituindo o atual.</p>
-    </div>
-
-    <div class="admin-card">
-      <div class="admin-step-title"><span class="admin-step-num">1</span> Defina a senha</div>
-      <div class="admin-step-desc">Use uma senha forte (mínimo 8 caracteres). Guarde em local seguro — não há recuperação.</div>
-      <div class="lock-row">
-        <label for="admin-pwd">Nova senha</label>
-        <input id="admin-pwd" type="password" autocomplete="new-password" minlength="8" placeholder="Mínimo 8 caracteres">
-      </div>
-      <div class="lock-row">
-        <label for="admin-pwd-confirm">Confirmar senha</label>
-        <input id="admin-pwd-confirm" type="password" autocomplete="new-password" placeholder="Repita a senha">
-      </div>
-    </div>
-
-    <div class="admin-card">
-      <div class="admin-step-title"><span class="admin-step-num">2</span> Gerar arquivo</div>
-      <div class="admin-step-desc">Clica no botão e o navegador vai baixar o <code>dados.enc</code>. Depois é só subir na raiz do repositório (mesma pasta deste <code>index.html</code>), substituindo o atual.</div>
-      <div class="lock-actions">
-        <button type="button" id="admin-generate" class="btn orange">
-          <i class="ph-bold ph-download-simple"></i> Gerar e baixar dados.enc
-        </button>
-      </div>
-      <div id="admin-status" class="admin-status"></div>
-    </div>
-
-    <div class="admin-back">
-      <a href="#"><i class="ph ph-arrow-left"></i> Voltar à tela de senha</a>
-    </div>
-  </div>
-</div>
-
 <!-- ============================================================
    HUB APP (conteúdo)
    ============================================================ -->
@@ -1315,600 +913,7 @@ body.era-transition * {
 
 <script>
 
-/* ============================================================
-   CLICKER TYCOON — Easter Egg
-   ============================================================ */
 
-const ClickerTycoon = (() => {
-  // Upgrades temáticos da controladoria
-  const UPGRADES = [
-    { id: 'estagiario', name: 'Estagiário', icon: '🧑‍💼', desc: '+R$ 1/s', baseCost: 50, baseCps: 1 },
-    { id: 'calculadora', name: 'Calculadora', icon: '🧮', desc: '+R$ 5/s', baseCost: 250, baseCps: 5 },
-    { id: 'planilha', name: 'Planilha Excel', icon: '📊', desc: '+R$ 25/s', baseCost: 1200, baseCps: 25 },
-    { id: 'computador', name: 'Computador', icon: '💻', desc: '+R$ 100/s', baseCost: 6000, baseCps: 100 },
-    { id: 'impressora', name: 'Impressora Fiscal', icon: '🖨️', desc: '+R$ 400/s', baseCost: 30000, baseCps: 400 },
-    { id: 'erp', name: 'Sistema ERP', icon: '🖥️', desc: '+R$ 1.500/s', baseCost: 150000, baseCps: 1500 },
-    { id: 'analista', name: 'Analista Sênior', icon: '👔', desc: '+R$ 6.000/s', baseCost: 750000, baseCps: 6000 },
-    { id: 'escritorio', name: 'Escritório', icon: '🏢', desc: '+R$ 20.000/s', baseCost: 3000000, baseCps: 20000 },
-    { id: 'filial', name: 'Filial Nova', icon: '🏭', desc: '+R$ 80.000/s', baseCost: 15000000, baseCps: 80000 },
-    { id: 'fusao', name: 'Fusão & Aquisição', icon: '🤝', desc: '+R$ 300.000/s', baseCost: 75000000, baseCps: 300000 },
-    { id: 'ipo', name: 'IPO na Bolsa', icon: '📈', desc: '+R$ 1.000.000/s', baseCost: 375000000, baseCps: 1000000 },
-    { id: 'conglomerado', name: 'Conglomerado', icon: '🌐', desc: '+R$ 3.000.000/s', baseCost: 1500000000, baseCps: 3000000 },
-  ];
-
-  const PRESTIGE_THRESHOLD = 1e12; // R$ 1 Trilhão
-  const PRESTIGE_BONUS = 0.5; // +50% por prestígio
-
-  let state = {
-    money: 0,
-    totalEarned: 0,
-    cps: 0,
-    clickValue: 1,
-    prestigeCount: 0,
-    multiplier: 1,
-    upgrades: {},
-    lastTick: Date.now(),
-  };
-
-  let gameInterval = null;
-  let isOpen = false;
-
-  // Easter egg detection
-  let shiftClicks = 0;
-  let lastClickTime = 0;
-
-  function initEasterEgg() {
-    const mascot = document.getElementById('mascote-wrap');
-    if (!mascot) return;
-
-    mascot.addEventListener('click', (e) => {
-      if (!e.shiftKey) { shiftClicks = 0; return; }
-
-      const now = Date.now();
-      if (now - lastClickTime > 800) shiftClicks = 0;
-      shiftClicks++;
-      lastClickTime = now;
-
-      if (shiftClicks === 3) {
-        shiftClicks = 0;
-        showToast('🎉 Easter Egg descoberto! Clicker Tycoon ativado!');
-        setTimeout(openGame, 600);
-      }
-    });
-
-    // Keyboard shortcut: Shift + C
-    document.addEventListener('keydown', (e) => {
-      if (e.shiftKey && e.key === 'C') {
-        e.preventDefault();
-        openGame();
-      }
-    });
-  }
-
-  function showToast(msg) {
-    const toast = document.getElementById('easter-toast');
-    if (!toast) return;
-    toast.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-  }
-
-  function loadState() {
-    try {
-      const saved = localStorage.getItem('clicker_tycoon_state');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        state = { ...state, ...parsed };
-        state.multiplier = 1 + (state.prestigeCount * PRESTIGE_BONUS);
-      }
-    } catch (e) { console.warn('[Clicker] Erro ao carregar save:', e); }
-  }
-
-  function saveState() {
-    try {
-      localStorage.setItem('clicker_tycoon_state', JSON.stringify({
-        money: state.money,
-        totalEarned: state.totalEarned,
-        prestigeCount: state.prestigeCount,
-        upgrades: state.upgrades,
-      }));
-    } catch (e) { console.warn('[Clicker] Erro ao salvar:', e); }
-  }
-
-  function formatMoney(v) {
-    if (v >= 1e12) return `R$ ${(v / 1e12).toFixed(2)} T`;
-    if (v >= 1e9) return `R$ ${(v / 1e9).toFixed(2)} Bi`;
-    if (v >= 1e6) return `R$ ${(v / 1e6).toFixed(2)} Mi`;
-    if (v >= 1e3) return `R$ ${(v / 1e3).toFixed(1)} mil`;
-    return `R$ ${Math.floor(v).toLocaleString('pt-BR')}`;
-  }
-
-  function calcUpgradeCost(upgrade) {
-    const count = state.upgrades[upgrade.id] || 0;
-    return Math.floor(upgrade.baseCost * Math.pow(1.15, count));
-  }
-
-  function calcTotalCps() {
-    let total = 0;
-    UPGRADES.forEach(u => {
-      const count = state.upgrades[u.id] || 0;
-      total += count * u.baseCps;
-    });
-    return total * state.multiplier;
-  }
-
-  function updateUI() {
-    const moneyEl = document.getElementById('clicker-money');
-    const cpsEl = document.getElementById('clicker-cps');
-    const totalEl = document.getElementById('clicker-total');
-    const multiEl = document.getElementById('clicker-multi');
-    const prestigeEl = document.getElementById('clicker-prestige');
-
-    if (moneyEl) moneyEl.textContent = formatMoney(state.money);
-    if (cpsEl) cpsEl.textContent = formatMoney(state.cps) + '/s';
-    if (totalEl) totalEl.textContent = formatMoney(state.totalEarned);
-    if (multiEl) multiEl.textContent = `Bônus: ${state.multiplier.toFixed(1)}x`;
-    if (prestigeEl) {
-      prestigeEl.classList.toggle('visible', state.money >= PRESTIGE_THRESHOLD);
-    }
-
-    // Update upgrades
-    const container = document.getElementById('clicker-upgrades');
-    if (!container) return;
-
-    // Clear existing upgrades (keep title)
-    const title = container.querySelector('.clicker-section-title');
-    container.innerHTML = '';
-    if (title) container.appendChild(title);
-
-    UPGRADES.forEach(u => {
-      const count = state.upgrades[u.id] || 0;
-      const cost = calcUpgradeCost(u);
-      const canBuy = state.money >= cost;
-
-      const div = document.createElement('div');
-      div.className = 'clicker-upgrade' + (canBuy ? ' available' : '');
-      div.innerHTML = `
-        <div class="clicker-upgrade-icon">${u.icon}</div>
-        <div class="clicker-upgrade-info">
-          <div class="clicker-upgrade-name">${u.name}</div>
-          <div class="clicker-upgrade-desc">${u.desc} · Possui: ${count}</div>
-        </div>
-        <div class="clicker-upgrade-cost">${formatMoney(cost)}</div>
-      `;
-      div.addEventListener('click', () => buyUpgrade(u));
-      container.appendChild(div);
-    });
-  }
-
-  function buyUpgrade(upgrade) {
-    const cost = calcUpgradeCost(upgrade);
-    if (state.money < cost) return;
-
-    state.money -= cost;
-    state.upgrades[upgrade.id] = (state.upgrades[upgrade.id] || 0) + 1;
-    state.cps = calcTotalCps();
-    saveState();
-    updateUI();
-
-    // Efeito sonoro visual (partícula de compra)
-    showToast(`✅ ${upgrade.name} comprado!`);
-  }
-
-  function doClick(e) {
-    if (!isOpen) return;
-    const earned = state.clickValue * state.multiplier;
-    state.money += earned;
-    state.totalEarned += earned;
-    saveState();
-    updateUI();
-
-    // Partícula
-    if (e) createParticle(e.clientX, e.clientY, `+${formatMoney(earned)}`);
-  }
-
-  function createParticle(x, y, text) {
-    const p = document.createElement('div');
-    p.className = 'clicker-particle';
-    p.textContent = text;
-    p.style.left = x + 'px';
-    p.style.top = y + 'px';
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 800);
-  }
-
-  function doPrestige() {
-    if (state.money < PRESTIGE_THRESHOLD) return;
-
-    state.prestigeCount++;
-    state.multiplier = 1 + (state.prestigeCount * PRESTIGE_BONUS);
-    state.money = 0;
-    state.cps = 0;
-    state.upgrades = {};
-    state.clickValue = 1;
-    saveState();
-    updateUI();
-    showToast(`🏆 Prestígio ${state.prestigeCount}! Bônus: ${state.multiplier.toFixed(1)}x`);
-  }
-
-  function gameTick() {
-    if (!isOpen) return;
-    const now = Date.now();
-    const dt = (now - state.lastTick) / 1000;
-    state.lastTick = now;
-
-    if (state.cps > 0) {
-      const earned = state.cps * dt;
-      state.money += earned;
-      state.totalEarned += earned;
-    }
-    updateUI();
-  }
-
-  function openGame() {
-    loadState();
-    state.cps = calcTotalCps();
-    state.lastTick = Date.now();
-    isOpen = true;
-
-    const overlay = document.getElementById('clicker-overlay');
-    if (overlay) overlay.classList.add('active');
-
-    updateUI();
-
-    if (!gameInterval) {
-      gameInterval = setInterval(gameTick, 100);
-    }
-  }
-
-  function closeGame() {
-    isOpen = false;
-    const overlay = document.getElementById('clicker-overlay');
-    if (overlay) overlay.classList.remove('active');
-    saveState();
-  }
-
-  function init() {
-    initEasterEgg();
-
-    document.getElementById('clicker-close')?.addEventListener('click', closeGame);
-    document.getElementById('clicker-overlay')?.addEventListener('click', (e) => {
-      if (e.target.id === 'clicker-overlay') closeGame();
-    });
-    document.getElementById('clicker-main-btn')?.addEventListener('click', doClick);
-    document.getElementById('clicker-prestige-btn')?.addEventListener('click', doPrestige);
-
-    // Salvar ao fechar a aba
-    window.addEventListener('beforeunload', saveState);
-  }
-
-  return { init };
-})();
-
-// Inicializar quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', () => {
-  ClickerTycoon.init();
-});
-
-</script>
-<script>
-/* ============================================================
-   CRIPTOGRAFIA — PBKDF2 + AES-GCM + gzip (mesmo do original)
-   ============================================================ */
-function b64encode(buf) {
-  const bytes = new Uint8Array(buf);
-  let s = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    s += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-  }
-  return btoa(s);
-}
-function b64decode(str) {
-  const s = atob(str);
-  const bytes = new Uint8Array(s.length);
-  for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
-  return bytes;
-}
-async function deriveKey(password, salt, iterations) {
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw', new TextEncoder().encode(password),
-    { name: 'PBKDF2' }, false, ['deriveKey']
-  );
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
-    keyMaterial, { name: 'AES-GCM', length: 256 },
-    false, ['encrypt', 'decrypt']
-  );
-}
-async function gzipString(str) {
-  const cs = new CompressionStream('gzip');
-  const writer = cs.writable.getWriter();
-  writer.write(new TextEncoder().encode(str)); writer.close();
-  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
-}
-async function gunzipToString(bytes) {
-  const ds = new DecompressionStream('gzip');
-  const writer = ds.writable.getWriter();
-  writer.write(bytes); writer.close();
-  return await new Response(ds.readable).text();
-}
-async function encryptOne(plainObj, password) {
-  const json = JSON.stringify(plainObj);
-  const compressed = await gzipString(json);
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const iterations = 600000;
-  const key = await deriveKey(password, salt, iterations);
-  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, compressed);
-  return { iter: iterations, salt: b64encode(salt), iv: b64encode(iv), ct: b64encode(ct) };
-}
-async function decryptOne(pkg, password) {
-  const salt = b64decode(pkg.salt);
-  const iv = b64decode(pkg.iv);
-  const ct = b64decode(pkg.ct);
-  const key = await deriveKey(password, salt, pkg.iter);
-  let compressed;
-  try { compressed = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct); }
-  catch (e) { throw new Error('Senha incorreta'); }
-  const json = await gunzipToString(new Uint8Array(compressed));
-  return JSON.parse(json);
-}
-async function encryptHubPayload(password) {
-  const sentinel = { ok: true, app: 'hub', generatedAt: new Date().toISOString() };
-  const pkg = await encryptOne(sentinel, password);
-  return { v: 1, kdf: 'PBKDF2-SHA256', iter: pkg.iter, salt: pkg.salt, iv: pkg.iv, ct: pkg.ct };
-}
-async function decryptHubPayload(envelope, password) {
-  if (envelope.v !== 1) throw new Error('Formato não suportado.');
-  return await decryptOne(envelope, password);
-}
-
-/* ============================================================
-   PARTICLES SYSTEM
-   ============================================================ */
-const canvas = document.getElementById('particles-canvas');
-const ctx = canvas.getContext('2d');
-let particles = [];
-
-function resizeCanvas() {
-  const hero = document.querySelector('.hero');
-  if (hero) { canvas.width = hero.offsetWidth; canvas.height = hero.offsetHeight; }
-}
-
-class Particle {
-  constructor() { this.reset(); }
-  reset() {
-    this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
-    this.size = Math.random() * 2 + 0.5;
-    this.speedX = (Math.random() - 0.5) * 0.5; this.speedY = (Math.random() - 0.5) * 0.5;
-    this.opacity = Math.random() * 0.5 + 0.1;
-    this.color = Math.random() > 0.5 ? '255, 110, 0' : '60, 0, 60';
-  }
-  update() {
-    this.x += this.speedX; this.y += this.speedY;
-    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
-    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
-  }
-  draw() {
-    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`; ctx.fill();
-  }
-}
-
-function initParticles() {
-  resizeCanvas(); particles = [];
-  const count = Math.min(60, Math.floor((canvas.width * canvas.height) / 20000));
-  for (let i = 0; i < count; i++) particles.push(new Particle());
-}
-
-function animateParticles() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  particles.forEach(p => { p.update(); p.draw(); });
-  particles.forEach((p1, i) => {
-    particles.slice(i + 1).forEach(p2 => {
-      const dx = p1.x - p2.x, dy = p1.y - p2.y, dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 100) {
-        ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
-        ctx.strokeStyle = `rgba(255, 110, 0, ${0.1 * (1 - dist / 100)})`; ctx.lineWidth = 0.5; ctx.stroke();
-      }
-    });
-  });
-  requestAnimationFrame(animateParticles);
-}
-
-window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
-
-/* ============================================================
-   HUB — Bootstrap com senha
-   ============================================================ */
-function show(id) { document.getElementById(id)?.classList.remove('hidden'); }
-function hide(id) { document.getElementById(id)?.classList.add('hidden'); }
-
-function showHub() {
-  hide('hub-lock'); hide('hub-admin');
-  show('hub-header'); show('hub-hero'); show('hub-main'); show('hub-footer');
-}
-function showLock() {
-  hide('hub-admin'); hide('hub-header'); hide('hub-hero'); hide('hub-main'); hide('hub-footer');
-  show('hub-lock');
-}
-function showAdmin() {
-  hide('hub-lock'); hide('hub-header'); hide('hub-hero'); hide('hub-main'); hide('hub-footer');
-  show('hub-admin');
-}
-
-async function tryFetchEnc() {
-  try { const res = await fetch('dados.enc', { cache: 'no-store' }); if (!res.ok) throw new Error('HTTP ' + res.status); return await res.json(); }
-  catch (e) { return null; }
-}
-
-function initLock(envelope) {
-  const fallbackEl = document.getElementById('hub-fallback');
-  const fileInput = document.getElementById('hub-manual-file');
-  const form = document.getElementById('hub-form');
-  const errEl = document.getElementById('hub-lock-error');
-  const infoEl = document.getElementById('hub-lock-info');
-
-  if (!envelope) {
-    fallbackEl.style.display = 'block';
-    errEl.textContent = 'Arquivo dados.enc não encontrado. Use o fallback abaixo.';
-    errEl.classList.add('visible');
-  }
-
-  fileInput.addEventListener('change', async () => {
-    if (!fileInput.files[0]) return;
-    try {
-      const text = await fileInput.files[0].text();
-      envelope = JSON.parse(text);
-      errEl.classList.remove('visible');
-      fallbackEl.style.display = 'none';
-      infoEl.textContent = 'Arquivo carregado. Digite a senha e desbloqueie.';
-      infoEl.classList.add('visible');
-    } catch (e) {
-      errEl.textContent = 'Arquivo inválido: ' + e.message;
-      errEl.classList.add('visible');
-    }
-  });
-
-  form.addEventListener('submit', async (ev) => {
-    ev.preventDefault();
-    errEl.classList.remove('visible');
-    infoEl.classList.remove('visible');
-    if (!envelope) { errEl.textContent = 'Nenhum arquivo de dados disponível.'; errEl.classList.add('visible'); return; }
-    const pwd = document.getElementById('hub-password').value;
-    const btn = form.querySelector('button[type=submit]');
-    const orig = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Verificando…';
-    try {
-      await decryptHubPayload(envelope, pwd);
-      sessionStorage.setItem('_hub_pwd', pwd);
-      showHub();
-    } catch (e) {
-      errEl.textContent = e.message || 'Falha ao desbloquear.';
-      errEl.classList.add('visible');
-    } finally {
-      btn.disabled = false; btn.innerHTML = orig;
-    }
-  });
-}
-
-function initAdmin() {
-  const btn = document.getElementById('admin-generate');
-  const statusEl = document.getElementById('admin-status');
-  function setStatus(msg, kind) { statusEl.className = 'admin-status visible ' + (kind || ''); statusEl.textContent = msg; }
-
-  btn.addEventListener('click', async () => {
-    const pwd = document.getElementById('admin-pwd').value;
-    const pwdC = document.getElementById('admin-pwd-confirm').value;
-    if (pwd.length < 8) { setStatus('A senha precisa ter pelo menos 8 caracteres.', 'error'); return; }
-    if (pwd !== pwdC) { setStatus('As senhas não conferem.', 'error'); return; }
-
-    const orig = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Gerando…';
-    try {
-      const envelope = await encryptHubPayload(pwd);
-      const blob = new Blob([JSON.stringify(envelope)], { type: 'application/octet-stream' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'dados.enc'; a.click();
-      URL.revokeObjectURL(url);
-      setStatus('✓ dados.enc gerado! Suba na raiz do repositório (mesma pasta deste index.html) e a senha já estará valendo.', 'success');
-    } catch (e) {
-      setStatus('Erro ao gerar: ' + (e.message || e), 'error');
-    } finally {
-      btn.disabled = false; btn.innerHTML = orig;
-    }
-  });
-}
-
-function routeByHash() {
-  if (location.hash === '#admin') { showAdmin(); }
-  else if (!document.getElementById('hub-lock').classList.contains('hidden')) { /* lock visível */ }
-  else { if (document.getElementById('hub-header').classList.contains('hidden')) showLock(); }
-}
-
-/* ============================================================
-   MASCOTE INTERATIVO
-   ============================================================ */
-const mascoteWrap = document.getElementById('mascote-wrap');
-const speechBubble = document.getElementById('mascote-speech');
-
-mascoteWrap?.addEventListener('click', () => {
-  // Pulo do mascote ao clicar — sem partículas
-  const mascotImg = document.getElementById('hero-mascot');
-  if (mascotImg) {
-    mascotImg.style.animation = 'none';
-    mascotImg.offsetHeight; // trigger reflow
-    mascotImg.style.animation = 'mascotJump 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
-    setTimeout(() => {
-      mascotImg.style.animation = 'mascotFloat 5s ease-in-out infinite';
-    }, 500);
-  }
-});
-
-/* ============================================================
-   MOUSE PARALLAX
-   ============================================================ */
-document.addEventListener('mousemove', (e) => {
-  const x = (e.clientX / window.innerWidth - 0.5) * 20;
-  const y = (e.clientY / window.innerHeight - 0.5) * 20;
-  document.querySelectorAll('.orb').forEach((orb, i) => {
-    const factor = (i + 1) * 0.5;
-    orb.style.transform = `translate(${x * factor}px, ${y * factor}px)`;
-  });
-});
-
-/* ============================================================
-   3D TILT CARDS
-   ============================================================ */
-document.querySelectorAll('.tool-card').forEach(card => {
-  card.addEventListener('mousemove', (e) => {
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left, y = e.clientY - rect.top;
-    const centerX = rect.width / 2, centerY = rect.height / 2;
-    const rotateX = (y - centerY) / 20, rotateY = (centerX - x) / 20;
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
-  });
-  card.addEventListener('mouseleave', () => { card.style.transform = ''; });
-});
-
-/* ============================================================
-   INIT
-   ============================================================ */
-document.addEventListener('DOMContentLoaded', async () => {
-  initParticles();
-  animateParticles();
-
-  const cached = (() => { try { return sessionStorage.getItem('_hub_pwd'); } catch (_) { return null; } })();
-  let envelope = await tryFetchEnc();
-
-  // Log para debug (visível no console do navegador)
-  console.info('[Hub] Senha em cache:', cached ? 'SIM' : 'NÃO');
-
-  if (cached && envelope) {
-    try {
-      await decryptHubPayload(envelope, cached);
-      console.info('[Hub] Auto-desbloqueio via sessionStorage');
-      showHub();
-    } catch (e) {
-      console.warn('[Hub] Senha em cache inválida, removendo...');
-      sessionStorage.removeItem('_hub_pwd');
-      showLock();
-    }
-  } else {
-    console.info('[Hub] Sem senha em cache — mostrando tela de senha');
-    showLock();
-  }
-
-  initLock(envelope);
-  initAdmin();
-
-  document.body.classList.remove('loading');
-  routeByHash();
-  window.addEventListener('hashchange', routeByHash);
-});
 
 
 /* ============================================================
@@ -2041,59 +1046,20 @@ const TimeMachine = (() => {
 })();
 
 // Inicializar
-document.addEventListener('DOMContentLoaded', () => {
-  TimeMachine.init();
+document.addEventListener('DOMContentLoaded', async () => {
+  initParticles();
+  animateParticles();
+  showHub();
+  document.body.classList.remove('loading');
+  console.info('[Hub] Carregado sem senha — Modo demonstração');
 });
 
-</script>
 
 
-
-<!-- CLICKER TYCOON — Easter Egg Modal -->
-<div id="clicker-overlay">
-  <div id="clicker-modal">
-    <div class="clicker-header">
-      <div class="clicker-title">💰 Clicker <span>Tycoon</span></div>
-      <button class="clicker-close" id="clicker-close" aria-label="Fechar jogo">✕</button>
-    </div>
-    <div class="clicker-body">
-      <div class="clicker-stats">
-        <div class="clicker-stat">
-          <div class="clicker-stat-label">Dinheiro</div>
-          <div class="clicker-stat-value" id="clicker-money">R$ 0</div>
-        </div>
-        <div class="clicker-stat">
-          <div class="clicker-stat-label">Por Segundo</div>
-          <div class="clicker-stat-value" id="clicker-cps">R$ 0/s</div>
-          <div class="clicker-stat-sub" id="clicker-multi">Bônus: 1x</div>
-        </div>
-        <div class="clicker-stat">
-          <div class="clicker-stat-label">Total Acumulado</div>
-          <div class="clicker-stat-value" id="clicker-total" style="font-size:18px">R$ 0</div>
-        </div>
-      </div>
-
-      <div class="clicker-zone">
-        <button class="clicker-btn" id="clicker-main-btn" aria-label="Clique para ganhar dinheiro">💵</button>
-        <div class="clicker-hint">Clique rápido! Quanto mais cliques, mais dinheiro.</div>
-      </div>
-
-      <div class="clicker-prestige" id="clicker-prestige">
-        <div class="clicker-prestige-title">🏆 Prestígio Disponível!</div>
-        <div class="clicker-prestige-desc">Você atingiu R$ 1 Trilhão! Reinicie com um bônus permanente de +50% em todos os ganhos.</div>
-        <button class="clicker-prestige-btn" id="clicker-prestige-btn">Reiniciar com Bônus</button>
-      </div>
-
-      <div class="clicker-upgrades" id="clicker-upgrades">
-        <div class="clicker-section-title">🚀 Upgrades</div>
-        <!-- Upgrades gerados via JS -->
-      </div>
-    </div>
-  </div>
+<!-- MATRIX FINANCEIRO — Easter Egg -->
+<div id="matrix-overlay">
+  <canvas id="matrix-canvas"></canvas>
+  <div class="matrix-hint">Pressione qualquer tecla para sair</div>
 </div>
 
-<!-- Toast de descoberta do easter egg -->
-<div id="easter-toast">🎉 Easter Egg descoberto! Clicker Tycoon ativado!</div>
-
-</body>
-</html>
+>
