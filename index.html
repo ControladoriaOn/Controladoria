@@ -476,653 +476,101 @@ footer {
   .hero h1 { font-size: 32px; }
 }
 
-/* ============================================================
-   CLICKER TYCOON — Easter Egg
-   ============================================================ */
-#clicker-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 9998;
-  background: rgba(26, 15, 26, 0.85);
-  backdrop-filter: blur(12px);
-  align-items: center;
-  justify-content: center;
-  animation: clickerFadeIn 0.4s ease;
-}
-#clicker-overlay.active { display: flex; }
-
-@keyframes clickerFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-#clicker-modal {
-  width: 520px;
-  max-width: 95vw;
-  max-height: 92vh;
-  background: linear-gradient(180deg, #1a0f1a 0%, #2a0028 100%);
-  border: 2px solid var(--orange);
-  border-radius: 24px;
-  box-shadow: 0 0 60px rgba(255,110,0,0.25), 0 20px 60px rgba(0,0,0,0.5);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: clickerSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes clickerSlideUp {
-  from { opacity: 0; transform: translateY(40px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.clicker-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(255,110,0,0.2);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(255,110,0,0.05);
-}
-
-.clicker-title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 800;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.clicker-title span { color: var(--orange); }
-
-.clicker-close {
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.5);
-  font-size: 24px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-.clicker-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
-
-.clicker-body {
-  padding: 24px;
-  overflow-y: auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.clicker-stats {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.clicker-stat {
-  flex: 1;
-  min-width: 140px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
-  padding: 16px;
-  text-align: center;
-}
-
-.clicker-stat-label {
-  font-size: 11px;
-  color: rgba(255,255,255,0.5);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 6px;
-}
-
-.clicker-stat-value {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--orange);
-  line-height: 1;
-}
-
-.clicker-stat-sub {
-  font-size: 12px;
-  color: rgba(255,255,255,0.4);
-  margin-top: 4px;
-}
-
-/* Área de clique */
-.clicker-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 20px 0;
-}
-
-.clicker-btn {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--orange) 0%, #ff8c33 50%, var(--orange) 100%);
-  background-size: 200% 200%;
-  border: 4px solid rgba(255,255,255,0.15);
-  box-shadow: 0 8px 32px rgba(255,110,0,0.35), inset 0 4px 12px rgba(255,255,255,0.2);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 64px;
-  transition: all 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
-  user-select: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.clicker-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 12px 40px rgba(255,110,0,0.45);
-}
-
-.clicker-btn:active {
-  transform: scale(0.92);
-  box-shadow: 0 4px 16px rgba(255,110,0,0.3);
-}
-
-.clicker-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-.clicker-hint {
-  font-size: 12px;
-  color: rgba(255,255,255,0.4);
-  text-align: center;
-}
-
-/* Upgrades */
-.clicker-upgrades {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.clicker-section-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.6);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-bottom: 4px;
-}
-
-.clicker-upgrade {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-  opacity: 0.5;
-  pointer-events: none;
-}
-
-.clicker-upgrade.available {
-  opacity: 1;
-  pointer-events: auto;
-  border-color: rgba(255,110,0,0.2);
-}
-
-.clicker-upgrade.available:hover {
-  background: rgba(255,110,0,0.08);
-  border-color: rgba(255,110,0,0.4);
-  transform: translateX(4px);
-}
-
-.clicker-upgrade-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: rgba(255,255,255,0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.clicker-upgrade-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.clicker-upgrade-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 2px;
-}
-
-.clicker-upgrade-desc {
-  font-size: 11px;
-  color: rgba(255,255,255,0.4);
-}
-
-.clicker-upgrade-count {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--orange);
-  min-width: 30px;
-  text-align: right;
-}
-
-.clicker-upgrade-cost {
-  font-size: 11px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.5);
-  background: rgba(255,255,255,0.08);
-  padding: 4px 10px;
-  border-radius: 8px;
-  white-space: nowrap;
-}
-
-.clicker-upgrade.available .clicker-upgrade-cost {
-  background: var(--orange);
-  color: #fff;
-}
-
-/* Prestígio */
-.clicker-prestige {
-  padding: 16px;
-  background: linear-gradient(135deg, rgba(255,110,0,0.1) 0%, rgba(60,0,60,0.2) 100%);
-  border: 1px solid rgba(255,110,0,0.25);
-  border-radius: 14px;
-  text-align: center;
-  display: none;
-}
-
-.clicker-prestige.visible { display: block; }
-
-.clicker-prestige-title {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--orange);
-  margin-bottom: 6px;
-}
-
-.clicker-prestige-desc {
-  font-size: 12px;
-  color: rgba(255,255,255,0.6);
-  margin-bottom: 12px;
-}
-
-.clicker-prestige-btn {
-  padding: 10px 24px;
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-mid) 100%);
-  border: none;
-  border-radius: 10px;
-  color: #fff;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 16px rgba(255,110,0,0.3);
-}
-
-.clicker-prestige-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(255,110,0,0.4);
-}
-
-/* Partículas de clique */
-.clicker-particle {
-  position: absolute;
-  pointer-events: none;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--orange);
-  animation: clickerFloatUp 0.8s ease-out forwards;
-  z-index: 100;
-}
-
-@keyframes clickerFloatUp {
-  0% { opacity: 1; transform: translateY(0) scale(1); }
-  100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
-}
-
-/* Toast de easter egg descoberto */
-#easter-toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-mid) 100%);
-  color: #fff;
-  padding: 14px 28px;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 8px 32px rgba(255,110,0,0.4);
-  z-index: 10000;
-  opacity: 0;
-  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: none;
-}
-
-#easter-toast.show {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-}
-
-
 
 /* ============================================================
-   MÁQUINA DO TEMPO — Easter Egg (Shift + Scroll)
+   TIME MACHINE — Easter Egg (Shift + Scroll)
    ============================================================ */
-
-/* Indicador de era */
 #time-machine-badge {
-  position: fixed;
-  top: 80px;
-  right: 20px;
-  z-index: 9997;
-  background: var(--purple);
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  position: fixed; top: 80px; right: 20px; z-index: 9997;
+  background: var(--purple); color: #fff;
+  padding: 8px 16px; border-radius: 8px;
+  font-family: var(--font-display); font-size: 13px;
+  font-weight: 700; letter-spacing: 1px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-  opacity: 0;
-  transform: translateY(-20px);
+  opacity: 0; transform: translateY(-20px);
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
 }
+#time-machine-badge.show { opacity: 1; transform: translateY(0); }
 
-#time-machine-badge.show {
-  opacity: 1;
-  transform: translateY(0);
+body.era-transition, body.era-transition * {
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* ============================================================
-   ERA 1995 — Windows 95 Style
-   ============================================================ */
-body.era-1995 {
-  --bg: #c0c0c0 !important;
-  --surface: #c0c0c0 !important;
-  --text-1: #000 !important;
-  --text-2: #404040 !important;
-  --text-3: #808080 !important;
-  --border: #808080 !important;
-  --plum: #000080 !important;
-  --orange: #000080 !important;
-  --shadow-sm: 2px 2px 0 #000 !important;
-  --shadow-md: 2px 2px 0 #000 !important;
-  --shadow-lg: 2px 2px 0 #000 !important;
-  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect x="0" y="0" width="16" height="16" fill="black"/><rect x="4" y="4" width="8" height="8" fill="white"/></svg>') 8 8, auto !important;
-}
-
-body.era-1995,
-body.era-1995 * {
+/* ERA 1995 — Windows 95 Style */
+body.era-1995, body.era-1995 * {
   font-family: 'MS Sans Serif', 'Tahoma', sans-serif !important;
-  border-radius: 0 !important;
-  letter-spacing: 0 !important;
+  border-radius: 0 !important; letter-spacing: 0 !important;
 }
-
-body.era-1995 header,
-body.era-1995 .hero,
-body.era-1995 .tool-card,
-body.era-1995 .stat-chip,
-body.era-1995 .lock-card,
-body.era-1995 .admin-card {
+body.era-1995 {
+  --bg: #c0c0c0 !important; --surface: #c0c0c0 !important;
+  --text-1: #000 !important; --text-2: #404040 !important;
+  --plum: #000080 !important; --orange: #000080 !important;
+}
+body.era-1995 header {
+  background: #000080 !important;
+  border: 2px outset #fff !important;
+}
+body.era-1995 header .brand-name,
+body.era-1995 header .header-pill { color: #fff !important; }
+body.era-1995 .hero {
+  background: #000080 !important;
+}
+body.era-1995 .hero h1,
+body.era-1995 .hero p,
+body.era-1995 .stat-num,
+body.era-1995 .stat-label { color: #fff !important; }
+body.era-1995 .tool-card {
   border: 2px outset #fff !important;
   box-shadow: 1px 1px 0 #000 !important;
   background: #c0c0c0 !important;
 }
-
-body.era-1995 .hero {
-  background: #000080 !important;
-}
-
-body.era-1995 .hero h1,
-body.era-1995 .hero p,
-body.era-1995 .stat-num,
-body.era-1995 .stat-label {
-  color: #fff !important;
-  font-family: 'MS Sans Serif', sans-serif !important;
-}
-
-body.era-1995 .brand-name,
-body.era-1995 .page-title,
-body.era-1995 .card-title,
-body.era-1995 .section-title,
-body.era-1995 .lock-title,
-body.era-1995 .admin-title {
-  font-family: 'MS Sans Serif', sans-serif !important;
-  font-weight: 700 !important;
-  letter-spacing: 0 !important;
-}
-
-body.era-1995 .tool-card:hover {
-  transform: none !important;
-  border-style: inset !important;
-}
-
-body.era-1995 .card-icon,
-body.era-1995 .kpi-icon {
-  border: 1px solid #000 !important;
-  background: #c0c0c0 !important;
+body.era-1995 .tool-card:hover { transform: none !important; border-style: inset !important; }
+body.era-1995 .card-icon {
+  border: 1px solid #000 !important; background: #c0c0c0 !important;
   border-radius: 0 !important;
 }
-
-body.era-1995 .btn-access,
-body.era-1995 .btn-export,
-body.era-1995 .btn-hub,
 body.era-1995 .btn.orange {
-  border: 2px outset #fff !important;
-  background: #c0c0c0 !important;
-  color: #000 !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
+  border: 2px outset #fff !important; background: #c0c0c0 !important;
+  color: #000 !important; box-shadow: none !important; border-radius: 0 !important;
 }
-
-body.era-1995 .btn.orange:hover {
-  border-style: inset !important;
-  transform: none !important;
-}
-
+body.era-1995 .btn.orange:hover { border-style: inset !important; transform: none !important; }
 body.era-1995 .orb,
 body.era-1995 #particles-canvas,
-body.era-1995 .grid-pattern,
 body.era-1995 .mascot-ring,
 body.era-1995 .card-accent,
 body.era-1995 .card-icon::before,
 body.era-1995 .tool-card::before,
-body.era-1995 .tool-card::after {
-  display: none !important;
-}
-
+body.era-1995 .tool-card::after { display: none !important; }
 body.era-1995 .hero-mascot {
   border: 2px solid #fff !important;
   box-shadow: 2px 2px 0 #000 !important;
   filter: grayscale(0.3) contrast(1.2) !important;
 }
-
 body.era-1995 .status-dot .dot,
 body.era-1995 .header-pill .dot {
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  animation: none !important;
+  border-radius: 0 !important; box-shadow: none !important; animation: none !important;
 }
+body.era-1995 .brand-name span { color: #fff !important; }
 
 /* ============================================================
-   ERA 2005 — Web 2.0 Style
+   MATRIX FINANCEIRO — Easter Egg (Shift + M)
    ============================================================ */
-body.era-2005 {
-  --bg: #e8ecf1 !important;
-  --surface: #fff !important;
-  --text-1: #1a1a2e !important;
-  --text-2: #4a5568 !important;
-  --plum: #2563eb !important;
-  --orange: #2563eb !important;
-  --shadow-sm: 0 2px 8px rgba(37,99,235,0.15) !important;
-  --shadow-md: 0 4px 16px rgba(37,99,235,0.2) !important;
-  --shadow-lg: 0 8px 32px rgba(37,99,235,0.25) !important;
+#matrix-overlay {
+  display: none; position: fixed; inset: 0; z-index: 9998;
+  background: #000; overflow: hidden;
 }
-
-body.era-2005,
-body.era-2005 * {
-  font-family: 'Trebuchet MS', 'Arial', sans-serif !important;
+#matrix-overlay.active { display: block; }
+#matrix-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.matrix-hint {
+  position: absolute; bottom: 30px; left: 50%;
+  transform: translateX(-50%); color: rgba(255, 110, 0, 0.6);
+  font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: 2px; text-transform: uppercase;
+  animation: matrixPulse 2s ease-in-out infinite;
+  pointer-events: none; z-index: 9999;
 }
-
-body.era-2005 header {
-  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
-  border-bottom: 3px solid #1e40af !important;
-}
-
-body.era-2005 .hero {
-  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%) !important;
-}
-
-body.era-2005 .brand-name span,
-body.era-2005 .hero h1 em,
-body.era-2005 .card-title,
-body.era-2005 .btn-access,
-body.era-2005 .stat-chip i {
-  color: #fbbf24 !important;
-}
-
-body.era-2005 .tool-card {
-  background: linear-gradient(180deg, #fff 0%, #f1f5f9 100%) !important;
-  border: 1px solid #cbd5e1 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 12px rgba(37,99,235,0.15), inset 0 1px 0 rgba(255,255,255,0.8) !important;
-}
-
-body.era-2005 .tool-card:hover {
-  transform: translateY(-4px) scale(1.02) !important;
-  box-shadow: 0 8px 24px rgba(37,99,235,0.25), inset 0 1px 0 rgba(255,255,255,0.8) !important;
-}
-
-body.era-2005 .card-icon {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-  border-radius: 50% !important;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.3) !important;
-}
-
-body.era-2005 .card-icon i {
-  color: #fff !important;
-}
-
-body.era-2005 .btn-export.orange,
-body.era-2005 .btn.orange {
-  background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%) !important;
-  border: 1px solid #1e40af !important;
-  box-shadow: 0 2px 4px rgba(37,99,235,0.3) !important;
-}
-
-body.era-2005 .hero-mascot {
-  border: 3px solid #fbbf24 !important;
-  box-shadow: 0 0 20px rgba(251,191,36,0.4) !important;
-}
-
-body.era-2005 .orb {
-  background: radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%) !important;
-}
-
-/* ============================================================
-   ERA 2015 — Material Design Style
-   ============================================================ */
-body.era-2015 {
-  --bg: #fafafa !important;
-  --surface: #fff !important;
-  --text-1: #212121 !important;
-  --text-2: #757575 !important;
-  --plum: #673ab7 !important;
-  --orange: #ff5722 !important;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.12) !important;
-  --shadow-md: 0 3px 6px rgba(0,0,0,0.16) !important;
-  --shadow-lg: 0 10px 20px rgba(0,0,0,0.19) !important;
-}
-
-body.era-2015,
-body.era-2015 * {
-  font-family: 'Roboto', 'Segoe UI', sans-serif !important;
-}
-
-body.era-2015 header {
-  background: #673ab7 !important;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.26) !important;
-}
-
-body.era-2015 .hero {
-  background: #512da8 !important;
-}
-
-body.era-2015 .brand-name span,
-body.era-2015 .hero h1 em {
-  color: #ff5722 !important;
-}
-
-body.era-2015 .tool-card {
-  background: #fff !important;
-  border-radius: 2px !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24) !important;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-}
-
-body.era-2015 .tool-card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22) !important;
-}
-
-body.era-2015 .card-icon {
-  background: #ff5722 !important;
-  border-radius: 50% !important;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.26) !important;
-}
-
-body.era-2015 .btn.orange {
-  background: #ff5722 !important;
-  border-radius: 2px !important;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.26) !important;
-  text-transform: uppercase !important;
-  font-weight: 500 !important;
-  letter-spacing: 0.5px !important;
-}
-
-body.era-2015 .hero-mascot {
-  border: none !important;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
-}
-
-body.era-2015 .orb {
-  background: radial-gradient(circle, rgba(103,58,183,0.15) 0%, transparent 70%) !important;
-}
-
-/* Transição suave entre eras */
-body.era-transition {
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-body.era-transition * {
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
+@keyframes matrixPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
 
 </style>
 <base target="_blank">
@@ -1313,284 +761,6 @@ body.era-transition * {
 
 </div>
 
-<script>
-
-/* ============================================================
-   CLICKER TYCOON — Easter Egg
-   ============================================================ */
-
-const ClickerTycoon = (() => {
-  // Upgrades temáticos da controladoria
-  const UPGRADES = [
-    { id: 'estagiario', name: 'Estagiário', icon: '🧑‍💼', desc: '+R$ 1/s', baseCost: 50, baseCps: 1 },
-    { id: 'calculadora', name: 'Calculadora', icon: '🧮', desc: '+R$ 5/s', baseCost: 250, baseCps: 5 },
-    { id: 'planilha', name: 'Planilha Excel', icon: '📊', desc: '+R$ 25/s', baseCost: 1200, baseCps: 25 },
-    { id: 'computador', name: 'Computador', icon: '💻', desc: '+R$ 100/s', baseCost: 6000, baseCps: 100 },
-    { id: 'impressora', name: 'Impressora Fiscal', icon: '🖨️', desc: '+R$ 400/s', baseCost: 30000, baseCps: 400 },
-    { id: 'erp', name: 'Sistema ERP', icon: '🖥️', desc: '+R$ 1.500/s', baseCost: 150000, baseCps: 1500 },
-    { id: 'analista', name: 'Analista Sênior', icon: '👔', desc: '+R$ 6.000/s', baseCost: 750000, baseCps: 6000 },
-    { id: 'escritorio', name: 'Escritório', icon: '🏢', desc: '+R$ 20.000/s', baseCost: 3000000, baseCps: 20000 },
-    { id: 'filial', name: 'Filial Nova', icon: '🏭', desc: '+R$ 80.000/s', baseCost: 15000000, baseCps: 80000 },
-    { id: 'fusao', name: 'Fusão & Aquisição', icon: '🤝', desc: '+R$ 300.000/s', baseCost: 75000000, baseCps: 300000 },
-    { id: 'ipo', name: 'IPO na Bolsa', icon: '📈', desc: '+R$ 1.000.000/s', baseCost: 375000000, baseCps: 1000000 },
-    { id: 'conglomerado', name: 'Conglomerado', icon: '🌐', desc: '+R$ 3.000.000/s', baseCost: 1500000000, baseCps: 3000000 },
-  ];
-
-  const PRESTIGE_THRESHOLD = 1e12; // R$ 1 Trilhão
-  const PRESTIGE_BONUS = 0.5; // +50% por prestígio
-
-  let state = {
-    money: 0,
-    totalEarned: 0,
-    cps: 0,
-    clickValue: 1,
-    prestigeCount: 0,
-    multiplier: 1,
-    upgrades: {},
-    lastTick: Date.now(),
-  };
-
-  let gameInterval = null;
-  let isOpen = false;
-
-  // Easter egg detection
-  let shiftClicks = 0;
-  let lastClickTime = 0;
-
-  function initEasterEgg() {
-    const mascot = document.getElementById('mascote-wrap');
-    if (!mascot) return;
-
-    mascot.addEventListener('click', (e) => {
-      if (!e.shiftKey) { shiftClicks = 0; return; }
-
-      const now = Date.now();
-      if (now - lastClickTime > 800) shiftClicks = 0;
-      shiftClicks++;
-      lastClickTime = now;
-
-      if (shiftClicks === 3) {
-        shiftClicks = 0;
-        showToast('🎉 Easter Egg descoberto! Clicker Tycoon ativado!');
-        setTimeout(openGame, 600);
-      }
-    });
-
-    // Keyboard shortcut: Shift + C
-    document.addEventListener('keydown', (e) => {
-      if (e.shiftKey && e.key === 'C') {
-        e.preventDefault();
-        openGame();
-      }
-    });
-  }
-
-  function showToast(msg) {
-    const toast = document.getElementById('easter-toast');
-    if (!toast) return;
-    toast.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-  }
-
-  function loadState() {
-    try {
-      const saved = localStorage.getItem('clicker_tycoon_state');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        state = { ...state, ...parsed };
-        state.multiplier = 1 + (state.prestigeCount * PRESTIGE_BONUS);
-      }
-    } catch (e) { console.warn('[Clicker] Erro ao carregar save:', e); }
-  }
-
-  function saveState() {
-    try {
-      localStorage.setItem('clicker_tycoon_state', JSON.stringify({
-        money: state.money,
-        totalEarned: state.totalEarned,
-        prestigeCount: state.prestigeCount,
-        upgrades: state.upgrades,
-      }));
-    } catch (e) { console.warn('[Clicker] Erro ao salvar:', e); }
-  }
-
-  function formatMoney(v) {
-    if (v >= 1e12) return `R$ ${(v / 1e12).toFixed(2)} T`;
-    if (v >= 1e9) return `R$ ${(v / 1e9).toFixed(2)} Bi`;
-    if (v >= 1e6) return `R$ ${(v / 1e6).toFixed(2)} Mi`;
-    if (v >= 1e3) return `R$ ${(v / 1e3).toFixed(1)} mil`;
-    return `R$ ${Math.floor(v).toLocaleString('pt-BR')}`;
-  }
-
-  function calcUpgradeCost(upgrade) {
-    const count = state.upgrades[upgrade.id] || 0;
-    return Math.floor(upgrade.baseCost * Math.pow(1.15, count));
-  }
-
-  function calcTotalCps() {
-    let total = 0;
-    UPGRADES.forEach(u => {
-      const count = state.upgrades[u.id] || 0;
-      total += count * u.baseCps;
-    });
-    return total * state.multiplier;
-  }
-
-  function updateUI() {
-    const moneyEl = document.getElementById('clicker-money');
-    const cpsEl = document.getElementById('clicker-cps');
-    const totalEl = document.getElementById('clicker-total');
-    const multiEl = document.getElementById('clicker-multi');
-    const prestigeEl = document.getElementById('clicker-prestige');
-
-    if (moneyEl) moneyEl.textContent = formatMoney(state.money);
-    if (cpsEl) cpsEl.textContent = formatMoney(state.cps) + '/s';
-    if (totalEl) totalEl.textContent = formatMoney(state.totalEarned);
-    if (multiEl) multiEl.textContent = `Bônus: ${state.multiplier.toFixed(1)}x`;
-    if (prestigeEl) {
-      prestigeEl.classList.toggle('visible', state.money >= PRESTIGE_THRESHOLD);
-    }
-
-    // Update upgrades
-    const container = document.getElementById('clicker-upgrades');
-    if (!container) return;
-
-    // Clear existing upgrades (keep title)
-    const title = container.querySelector('.clicker-section-title');
-    container.innerHTML = '';
-    if (title) container.appendChild(title);
-
-    UPGRADES.forEach(u => {
-      const count = state.upgrades[u.id] || 0;
-      const cost = calcUpgradeCost(u);
-      const canBuy = state.money >= cost;
-
-      const div = document.createElement('div');
-      div.className = 'clicker-upgrade' + (canBuy ? ' available' : '');
-      div.innerHTML = `
-        <div class="clicker-upgrade-icon">${u.icon}</div>
-        <div class="clicker-upgrade-info">
-          <div class="clicker-upgrade-name">${u.name}</div>
-          <div class="clicker-upgrade-desc">${u.desc} · Possui: ${count}</div>
-        </div>
-        <div class="clicker-upgrade-cost">${formatMoney(cost)}</div>
-      `;
-      div.addEventListener('click', () => buyUpgrade(u));
-      container.appendChild(div);
-    });
-  }
-
-  function buyUpgrade(upgrade) {
-    const cost = calcUpgradeCost(upgrade);
-    if (state.money < cost) return;
-
-    state.money -= cost;
-    state.upgrades[upgrade.id] = (state.upgrades[upgrade.id] || 0) + 1;
-    state.cps = calcTotalCps();
-    saveState();
-    updateUI();
-
-    // Efeito sonoro visual (partícula de compra)
-    showToast(`✅ ${upgrade.name} comprado!`);
-  }
-
-  function doClick(e) {
-    if (!isOpen) return;
-    const earned = state.clickValue * state.multiplier;
-    state.money += earned;
-    state.totalEarned += earned;
-    saveState();
-    updateUI();
-
-    // Partícula
-    if (e) createParticle(e.clientX, e.clientY, `+${formatMoney(earned)}`);
-  }
-
-  function createParticle(x, y, text) {
-    const p = document.createElement('div');
-    p.className = 'clicker-particle';
-    p.textContent = text;
-    p.style.left = x + 'px';
-    p.style.top = y + 'px';
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 800);
-  }
-
-  function doPrestige() {
-    if (state.money < PRESTIGE_THRESHOLD) return;
-
-    state.prestigeCount++;
-    state.multiplier = 1 + (state.prestigeCount * PRESTIGE_BONUS);
-    state.money = 0;
-    state.cps = 0;
-    state.upgrades = {};
-    state.clickValue = 1;
-    saveState();
-    updateUI();
-    showToast(`🏆 Prestígio ${state.prestigeCount}! Bônus: ${state.multiplier.toFixed(1)}x`);
-  }
-
-  function gameTick() {
-    if (!isOpen) return;
-    const now = Date.now();
-    const dt = (now - state.lastTick) / 1000;
-    state.lastTick = now;
-
-    if (state.cps > 0) {
-      const earned = state.cps * dt;
-      state.money += earned;
-      state.totalEarned += earned;
-    }
-    updateUI();
-  }
-
-  function openGame() {
-    loadState();
-    state.cps = calcTotalCps();
-    state.lastTick = Date.now();
-    isOpen = true;
-
-    const overlay = document.getElementById('clicker-overlay');
-    if (overlay) overlay.classList.add('active');
-
-    updateUI();
-
-    if (!gameInterval) {
-      gameInterval = setInterval(gameTick, 100);
-    }
-  }
-
-  function closeGame() {
-    isOpen = false;
-    const overlay = document.getElementById('clicker-overlay');
-    if (overlay) overlay.classList.remove('active');
-    saveState();
-  }
-
-  function init() {
-    initEasterEgg();
-
-    document.getElementById('clicker-close')?.addEventListener('click', closeGame);
-    document.getElementById('clicker-overlay')?.addEventListener('click', (e) => {
-      if (e.target.id === 'clicker-overlay') closeGame();
-    });
-    document.getElementById('clicker-main-btn')?.addEventListener('click', doClick);
-    document.getElementById('clicker-prestige-btn')?.addEventListener('click', doPrestige);
-
-    // Salvar ao fechar a aba
-    window.addEventListener('beforeunload', saveState);
-  }
-
-  return { init };
-})();
-
-// Inicializar quando o DOM estiver pronto
-document.addEventListener('DOMContentLoaded', () => {
-  ClickerTycoon.init();
-});
-
-</script>
 <script>
 /* ============================================================
    CRIPTOGRAFIA — PBKDF2 + AES-GCM + gzip (mesmo do original)
@@ -1912,32 +1082,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 /* ============================================================
-   MÁQUINA DO TEMPO — Easter Egg (Shift + Scroll)
+   TIME MACHINE — Easter Egg (Shift + Scroll)
    ============================================================ */
-
 const TimeMachine = (() => {
   const ERAS = [
     { year: 2026, name: 'Glassmorphism', class: 'era-2026' },
-    { year: 2015, name: 'Material Design', class: 'era-2015' },
-    { year: 2005, name: 'Web 2.0', class: 'era-2005' },
     { year: 1995, name: 'Windows 95', class: 'era-1995' },
   ];
-
   let currentEraIndex = 0;
   let badgeTimeout = null;
   let isTransitioning = false;
 
   function init() {
-    // Detecta Shift + scroll da rodinha
     document.addEventListener('wheel', handleWheel, { passive: false });
-
-    // Detecta Shift + setas (alternativa para quem não tem rodinha)
     document.addEventListener('keydown', handleKey);
-
-    // Cria o badge se não existir
     createBadge();
-
-    // Restaura era salva
     restoreEra();
   }
 
@@ -1951,74 +1110,44 @@ const TimeMachine = (() => {
   function handleWheel(e) {
     if (!e.shiftKey) return;
     e.preventDefault();
-
-    const direction = e.deltaY > 0 ? 1 : -1;
-    changeEra(direction);
+    changeEra(e.deltaY > 0 ? 1 : -1);
   }
 
   function handleKey(e) {
     if (!e.shiftKey) return;
     if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
-      e.preventDefault();
-      changeEra(-1);
+      e.preventDefault(); changeEra(-1);
     } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
-      e.preventDefault();
-      changeEra(1);
+      e.preventDefault(); changeEra(1);
     }
   }
 
   function changeEra(direction) {
     if (isTransitioning) return;
     isTransitioning = true;
-
     const newIndex = Math.max(0, Math.min(ERAS.length - 1, currentEraIndex + direction));
-    if (newIndex === currentEraIndex) {
-      isTransitioning = false;
-      return;
-    }
-
+    if (newIndex === currentEraIndex) { isTransitioning = false; return; }
     currentEraIndex = newIndex;
     applyEra();
-
     setTimeout(() => { isTransitioning = false; }, 300);
   }
 
   function applyEra() {
     const body = document.body;
     const era = ERAS[currentEraIndex];
-
-    // Adiciona classe de transição
     body.classList.add('era-transition');
-
-    // Remove todas as classes de era
     ERAS.forEach(e => body.classList.remove(e.class));
-
-    // Adiciona a nova era (se não for 2026, que é o padrão)
-    if (era.year !== 2026) {
-      body.classList.add(era.class);
-    }
-
-    // Mostra o badge
+    if (era.year !== 2026) body.classList.add(era.class);
     showBadge(era);
-
-    // Salva no localStorage
     try { localStorage.setItem('time_machine_era', String(currentEraIndex)); } catch (e) {}
-
-    // Remove classe de transição depois
     setTimeout(() => body.classList.remove('era-transition'), 600);
   }
 
   function showBadge(era) {
     const badge = document.getElementById('time-machine-badge');
     if (!badge) return;
-
-    badge.innerHTML = `
-      <span style="font-size:11px;opacity:0.7">MÁQUINA DO TEMPO</span><br>
-      <span style="font-size:18px">${era.year}</span><br>
-      <span style="font-size:11px;opacity:0.7">${era.name}</span>
-    `;
+    badge.innerHTML = `<span style="font-size:11px;opacity:0.7">MÁQUINA DO TEMPO</span><br><span style="font-size:18px">${era.year}</span><br><span style="font-size:11px;opacity:0.7">${era.name}</span>`;
     badge.classList.add('show');
-
     if (badgeTimeout) clearTimeout(badgeTimeout);
     badgeTimeout = setTimeout(() => badge.classList.remove('show'), 2000);
   }
@@ -2028,11 +1157,8 @@ const TimeMachine = (() => {
       const saved = localStorage.getItem('time_machine_era');
       if (saved) {
         currentEraIndex = parseInt(saved, 10);
-        if (currentEraIndex >= 0 && currentEraIndex < ERAS.length) {
-          applyEra();
-        } else {
-          currentEraIndex = 0;
-        }
+        if (currentEraIndex >= 0 && currentEraIndex < ERAS.length) applyEra();
+        else currentEraIndex = 0;
       }
     } catch (e) {}
   }
@@ -2040,60 +1166,88 @@ const TimeMachine = (() => {
   return { init };
 })();
 
-// Inicializar
+/* ============================================================
+   MATRIX FINANCEIRO — Easter Egg (Shift + M)
+   ============================================================ */
+const MatrixFinanceiro = (() => {
+  const CHARS = 'R$%0,00PARCELADIVIDASALDOTRIBUTOSRECEITALUCROMARGEMCAIXABOLETOCONTRATO01';
+  const COLORS = ['#FF6E00', '#3C003C', '#ff8c33', '#5a005a', '#ffd700', '#ff3333'];
+  let canvas, ctx, w, h, columns, drops, animationId, isActive = false;
+  let fontSize = 16;
+
+  function init() {
+    canvas = document.getElementById('matrix-canvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+    resize();
+    window.addEventListener('resize', resize);
+    document.addEventListener('keydown', (e) => {
+      if (e.shiftKey && e.key === 'M') { e.preventDefault(); toggle(); }
+      if (isActive && !e.shiftKey) stop();
+    });
+  }
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+    columns = Math.floor(w / fontSize);
+    drops = Array(columns).fill(1);
+  }
+
+  function draw() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.font = fontSize + 'px "JetBrains Mono", monospace';
+    for (let i = 0; i < drops.length; i++) {
+      const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      ctx.fillStyle = color;
+      ctx.globalAlpha = Math.random() * 0.5 + 0.5;
+      ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+      ctx.globalAlpha = 1;
+      if (drops[i] * fontSize > h && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    }
+    animationId = requestAnimationFrame(draw);
+  }
+
+  function start() {
+    if (isActive) return;
+    isActive = true;
+    document.getElementById('matrix-overlay').classList.add('active');
+    resize(); draw();
+    setTimeout(() => { if (isActive) stop(); }, 8000);
+  }
+
+  function stop() {
+    isActive = false;
+    document.getElementById('matrix-overlay').classList.remove('active');
+    if (animationId) cancelAnimationFrame(animationId);
+  }
+
+  function toggle() { if (isActive) stop(); else start(); }
+
+  return { init };
+})();
+
+// Inicializar easter eggs
 document.addEventListener('DOMContentLoaded', () => {
   TimeMachine.init();
+  MatrixFinanceiro.init();
 });
 
 </script>
 
 
 
-<!-- CLICKER TYCOON — Easter Egg Modal -->
-<div id="clicker-overlay">
-  <div id="clicker-modal">
-    <div class="clicker-header">
-      <div class="clicker-title">💰 Clicker <span>Tycoon</span></div>
-      <button class="clicker-close" id="clicker-close" aria-label="Fechar jogo">✕</button>
-    </div>
-    <div class="clicker-body">
-      <div class="clicker-stats">
-        <div class="clicker-stat">
-          <div class="clicker-stat-label">Dinheiro</div>
-          <div class="clicker-stat-value" id="clicker-money">R$ 0</div>
-        </div>
-        <div class="clicker-stat">
-          <div class="clicker-stat-label">Por Segundo</div>
-          <div class="clicker-stat-value" id="clicker-cps">R$ 0/s</div>
-          <div class="clicker-stat-sub" id="clicker-multi">Bônus: 1x</div>
-        </div>
-        <div class="clicker-stat">
-          <div class="clicker-stat-label">Total Acumulado</div>
-          <div class="clicker-stat-value" id="clicker-total" style="font-size:18px">R$ 0</div>
-        </div>
-      </div>
+<!-- TIME MACHINE BADGE -->
+<div id="time-machine-badge"></div>
 
-      <div class="clicker-zone">
-        <button class="clicker-btn" id="clicker-main-btn" aria-label="Clique para ganhar dinheiro">💵</button>
-        <div class="clicker-hint">Clique rápido! Quanto mais cliques, mais dinheiro.</div>
-      </div>
-
-      <div class="clicker-prestige" id="clicker-prestige">
-        <div class="clicker-prestige-title">🏆 Prestígio Disponível!</div>
-        <div class="clicker-prestige-desc">Você atingiu R$ 1 Trilhão! Reinicie com um bônus permanente de +50% em todos os ganhos.</div>
-        <button class="clicker-prestige-btn" id="clicker-prestige-btn">Reiniciar com Bônus</button>
-      </div>
-
-      <div class="clicker-upgrades" id="clicker-upgrades">
-        <div class="clicker-section-title">🚀 Upgrades</div>
-        <!-- Upgrades gerados via JS -->
-      </div>
-    </div>
-  </div>
+<!-- MATRIX OVERLAY -->
+<div id="matrix-overlay">
+  <canvas id="matrix-canvas"></canvas>
+  <div class="matrix-hint">Pressione qualquer tecla para sair</div>
 </div>
-
-<!-- Toast de descoberta do easter egg -->
-<div id="easter-toast">🎉 Easter Egg descoberto! Clicker Tycoon ativado!</div>
 
 </body>
 </html>
