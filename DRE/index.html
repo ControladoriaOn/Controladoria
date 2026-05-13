@@ -1,14 +1,12 @@
 <!DOCTYPE html>
-<html lang="pt-BR"><head>
-    
-    
-  
+<html lang="pt-BR">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ON TIME LOGÍSTICA – BI Portal Integrado</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&amp;family=DM+Sans:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=Manrope:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -265,7 +263,6 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 .mc-tile-full{grid-column:1/-1}
 .mc-stripe{height:4px;background:linear-gradient(90deg,#FF6E00 0%,#ff9544 55%,rgba(255,110,0,0) 100%)}
 @media (max-width:360px){.mc-grid-2,.mc-grid-3{grid-template-columns:1fr}}
-@media print{body{background:#fff !important}.app-view{display:none !important}#view-card{display:flex !important;background:transparent !important;padding:0 !important;justify-content:flex-start}.mc-actions{display:none !important}.mobile-card{box-shadow:none !important;border:1px solid #eee}}
 .modal-overlay{position:fixed;inset:0;background:rgba(26,10,46,0.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1000;animation:fadeIn 0.2s ease-out;padding:20px}
 .modal-overlay.active{display:flex}
 .modal-box{background:#fff;border-radius:16px;width:100%;max-width:480px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,0.2);max-height:90vh;overflow-y:auto}
@@ -328,9 +325,53 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 .cx-editable-th{cursor:pointer;transition:all .15s}
 .cx-editable-th:hover{background:rgba(255,110,0,0.1)!important;color:var(--orange)!important}
 .cx-editable-th::after{content:' ✎';font-size:8px;opacity:0.4}
+
+/* ═══════════════ PRINT / PDF — somente a view + guia ativa ═══════════════ */
+@media print {
+  /* Página */
+  @page { size: A4 landscape; margin: 10mm; }
+  /* Preservar cores e fundos (essencial para o visual da marca) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  body { background: #fff !important; }
+  /* Ocultar chrome global, modais, toasts e cabeçalhos navegáveis */
+  .home-bg, .home-hdr, .home-hero, .home-main, .home-ftr,
+  .dash-header, .dash-nav, .dash-footer,
+  .modal-overlay, .toast,
+  .mc-actions, .mc-edit-hint,
+  .editable::after, .cx-editable-th::after { display: none !important; }
+  /* Ocultar views não-ativas */
+  .app-view:not(.active) { display: none !important; }
+  /* Mostrar a view ativa (dashboard usa block; view-card mantém flex) */
+  .app-view.active { display: block !important; }
+  #view-card.active { display: flex !important; background: transparent !important; padding: 0 !important; justify-content: flex-start; }
+  /* Mobile card: visual mais limpo na impressão */
+  .mobile-card { box-shadow: none !important; border: 1px solid #eee !important; }
+  /* Dentro do dashboard: mostrar SOMENTE a guia ativa */
+  .dash-section:not(.active) { display: none !important; }
+  .dash-section.active { display: block !important; }
+  .dash-content { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+  /* Cabeçalho da seção (título da guia) em destaque no topo do PDF */
+  .sec-header { margin: 0 0 12px 0 !important; padding-bottom: 8px !important; border-bottom: 1.5px solid #999 !important; }
+  .sec-header h2 { font-size: 15pt !important; }
+  /* Cards / gráficos: evitar quebras feias, sem sombra */
+  .kpi-card, .chart-card, .table-card, .q-card, .debt-card { page-break-inside: avoid; break-inside: avoid; box-shadow: none !important; }
+  .charts-2col, .charts-2eq, .kpi-grid, .q-grid, .debt-grid { page-break-inside: avoid; break-inside: avoid; }
+  /* Gráficos: altura controlada para caber bem na página A4 paisagem */
+  .chart-card > div[style*="height"] { height: 180px !important; }
+  /* Tabelas: cabeçalho repetido em quebras de página */
+  thead { display: table-header-group; }
+  tr { page-break-inside: avoid; }
+  table { font-size: 9pt !important; }
+  /* Tirar cursor de edição na impressão */
+  .editable, .cx-editable-th { cursor: default !important; }
+}
 </style>
 </head>
-<body id="artifacts-component-root-html">
+<body>
 <div id="view-home" class="app-view active">
 
 <!-- Orbs animados -->
@@ -344,7 +385,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <header class="home-hdr">
   <div class="home-hdr-brand">
     <svg width="44" height="44" viewBox="0 0 44 44" xmlns="http://www.w3.org/2000/svg">
-      <rect width="44" height="44" rx="12" fill="#3C003C"></rect>
+      <rect width="44" height="44" rx="12" fill="#3C003C"/>
       <text x="4" y="30" font-family="'Manrope',sans-serif" font-weight="900" font-size="20" fill="#FF6E00" letter-spacing="-1">on</text>
       <text x="22" y="30" font-family="'Manrope',sans-serif" font-weight="900" font-size="20" fill="#fff" letter-spacing="-1">T</text>
     </svg>
@@ -386,7 +427,10 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
     <div class="home-mascot-wrap">
       <div class="home-mascot-ring"></div>
       <div class="home-mascot-ring"></div>
-      <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote ON TIME" class="home-mascot" onerror="this.style.display='none'" style="display: none;">
+      <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg"
+           alt="Mascote ON TIME"
+           class="home-mascot"
+           onerror="this.style.display='none'">
     </div>
   </div>
 </div>
@@ -439,7 +483,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <button onclick="switchView('home')" class="btn-action">⬅ Voltar</button>
 <div class="dh-divider"></div>
 <svg width="210" height="46" viewBox="0 0 210 46" xmlns="http://www.w3.org/2000/svg">
-<rect width="210" height="46" rx="6" fill="#3C003C"></rect>
+<rect width="210" height="46" rx="6" fill="#3C003C"/>
 <text x="8" y="33" font-family="'Manrope',Arial Black,sans-serif" font-weight="900" font-size="28" fill="#FF6E00" letter-spacing="-1">on</text>
 <text x="54" y="33" font-family="'Manrope',Arial Black,sans-serif" font-weight="900" font-size="28" fill="#FFFFFF" letter-spacing="-1">time</text>
 <text x="157" y="36" font-family="'Manrope',Arial,sans-serif" font-weight="700" font-size="11" fill="#FF6E00" letter-spacing="1">LOG</text>
@@ -449,6 +493,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="dh-info"><h1>Dashboard de Desempenho Econômico</h1><p>Visão Gerencial · ON TIME LOGÍSTICA</p></div>
 </div>
 <div class="dh-right">
+<button class="btn-action" onclick="printActiveSection()" title="Gerar PDF da guia atual (visualização pode ser salva ou enviada)">📄 PDF</button>
 <button class="btn-action" onclick="downloadTemplate()">📥 Template</button>
 <button class="btn-action btn-primary" onclick="document.getElementById('dash-file-input').click()">📤 Upload XLSX</button>
 <button class="btn-action" onclick="exportDashboardHTML()" title="Baixar HTML atualizado para commit no git">💾 Exportar HTML</button>
@@ -470,10 +515,10 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div id="section-dre" class="dash-section active">
 <div class="sec-header"><div class="sec-header-icon">📊</div><h2>DRE – Realizado 12M 2025</h2><div class="sec-tag">Dados ao vivo</div></div>
 <div class="kpi-grid">
-<div class="kpi-card k-orange"><div class="kpi-card-icon">📦</div><div class="kpi-label">Receita Bruta</div><div class="kpi-value" data-bind="kpi.rec_2025">R$ 115,6M</div><div class="kpi-sub" data-bind="kpi.rec_2025_sub">12 meses · 2025 Realizado</div><div class="kpi-var up" data-bind="kpi.rec_var">▲ +62,6% vs 2024</div></div>
-<div class="kpi-card k-purple"><div class="kpi-card-icon">💼</div><div class="kpi-label">Receita Líquida</div><div class="kpi-value" data-bind="kpi.liq_2025" style="color:var(--purple-dark)">R$ 101,3M</div><div class="kpi-sub" data-bind="kpi.liq_2025_sub">Após impostos e deduções (12,3%)</div><div class="kpi-var up" data-bind="kpi.liq_var">▲ +59,5% vs 2024</div></div>
-<div class="kpi-card k-teal"><div class="kpi-card-icon">📈</div><div class="kpi-label">EBITDA</div><div class="kpi-value" data-bind="kpi.ebt_2025" style="color:#0891b2">R$ 6,1M</div><div class="kpi-sub" data-bind="kpi.ebt_2025_sub">Margem: 6,0% s/ Receita Líquida</div><div class="kpi-var up" data-bind="kpi.ebt_var">▲ +89,4% vs 2024</div></div>
-<div class="kpi-card k-green"><div class="kpi-card-icon">✅</div><div class="kpi-label">LAIR</div><div class="kpi-value" data-bind="kpi.ll_2025" style="color:var(--green)">R$ 1,7M</div><div class="kpi-sub" data-bind="kpi.ll_2025_sub">Margem: 1,7% s/ Receita Líquida</div><div class="kpi-var up">▲ Positivo</div></div>
+<div class="kpi-card k-orange"><div class="kpi-card-icon">📦</div><div class="kpi-label">Receita Bruta</div><div class="kpi-value" data-bind="kpi.rec_2025">R$ 115,6M</div><div class="kpi-sub" data-bind="kpi.rec_2025_sub">12 meses</div><div class="kpi-var up" data-bind="kpi.rec_var">▲ +62,6% vs 2024</div></div>
+<div class="kpi-card k-purple"><div class="kpi-card-icon">💼</div><div class="kpi-label">Receita Líquida</div><div class="kpi-value" data-bind="kpi.liq_2025" style="color:var(--purple-dark)">R$ 101,3M</div><div class="kpi-sub" data-bind="kpi.liq_2025_sub">Após impostos</div><div class="kpi-var up" data-bind="kpi.liq_var">▲ +59,5% vs 2024</div></div>
+<div class="kpi-card k-teal"><div class="kpi-card-icon">📈</div><div class="kpi-label">EBITDA</div><div class="kpi-value" data-bind="kpi.ebt_2025" style="color:#0891b2">R$ 6,1M</div><div class="kpi-sub" data-bind="kpi.ebt_2025_sub">Margem: 6,0%</div><div class="kpi-var up" data-bind="kpi.ebt_var">▲ +89,4% vs 2024</div></div>
+<div class="kpi-card k-green"><div class="kpi-card-icon">✅</div><div class="kpi-label">LAIR</div><div class="kpi-value" data-bind="kpi.ll_2025" style="color:var(--green)">R$ 1,8M</div><div class="kpi-sub" data-bind="kpi.ll_2025_sub">Margem: 1,77%</div><div class="kpi-var up">▲ Positivo</div></div>
 </div>
 <div class="charts-2col">
 <div class="chart-card"><div class="chart-title">Evolução Mensal da Receita Bruta — 2025</div><div class="chart-sub">R$ mil · Barras + linha de tendência</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartRecMensal"></canvas></div></div>
@@ -513,7 +558,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="kpi-card k-purple"><div class="kpi-label">2023</div><div class="kpi-value" data-bind="hist.rec_2023">R$ 60,5M</div><div class="kpi-sub">Receita Bruta · EBITDA negativo</div></div>
 <div class="kpi-card k-purple"><div class="kpi-label">2024</div><div class="kpi-value" data-bind="hist.rec_2024">R$ 71,1M</div><div class="kpi-sub">Receita Bruta · Virada de ciclo</div></div>
 <div class="kpi-card k-orange"><div class="kpi-label">2025 · Realizado</div><div class="kpi-value" data-bind="hist.rec_2025">R$ 115,6M</div><div class="kpi-sub">Forte crescimento</div></div>
-<div class="kpi-card k-green"><div class="kpi-label">2026 · Projeção</div><div class="kpi-value" data-bind="hist.rec_2026" style="color:var(--green)">R$ 187,7M</div><div class="kpi-sub">Orçado</div></div>
+<div class="kpi-card k-green"><div class="kpi-label">2026 · Projeção</div><div class="kpi-value" data-bind="hist.rec_2026" style="color:var(--green)">R$ 186,2M</div><div class="kpi-sub">Orçado</div></div>
 </div>
 <div class="charts-2eq">
 <div class="chart-card"><div class="chart-title">Receita Bruta — Histórico e Projeção</div><div class="chart-sub">R$ mil · 2023–2026</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartHistRec"></canvas></div></div>
@@ -533,7 +578,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div>
 <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">GAP de Redução de Endividamento (2022→2025)</div>
 <div style="font-size:32px;font-weight:800;color:var(--orange)" data-bind="debt.gap">▼ R$ 9.762K</div>
-<div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:4px" data-bind="debt.gap_pct">Redução de 52,3% do saldo total em 3 anos</div>
+<div style="font-size:12px;color:rgba(255,255,255,0.55);margin-top:4px" data-bind="debt.gap_pct">Redução de 52,3%</div>
 </div>
 <div style="text-align:right">
 <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px">Saldo remanescente</div>
@@ -568,10 +613,10 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div id="section-projecao" class="dash-section">
 <div class="sec-header"><div class="sec-header-icon">🎯</div><h2>Projeção 2026 — DRE Orçado</h2><div class="sec-tag">FY 2026 · Orçado</div></div>
 <div class="kpi-grid">
-<div class="kpi-card k-orange"><div class="kpi-label">Receita Bruta Proj.</div><div class="kpi-value" data-bind="proj.rec">R$ 187,7M</div><div class="kpi-sub" data-bind="proj.rec_sub">vs 2025 Realizado: R$ 115,6M</div></div>
-<div class="kpi-card k-purple"><div class="kpi-label">Receita Líquida Proj.</div><div class="kpi-value" data-bind="proj.liq">R$ 163,1M</div><div class="kpi-sub" data-bind="proj.liq_sub">vs 2025: R$ 101,3M</div></div>
-<div class="kpi-card k-teal"><div class="kpi-label">EBITDA Proj.</div><div class="kpi-value" data-bind="proj.ebt" style="color:#0891b2">R$ 11,2M</div><div class="kpi-sub" data-bind="proj.ebt_sub">Margem: 6,9% s/ Rec. Líquida</div></div>
-<div class="kpi-card k-green"><div class="kpi-label">LAIR Proj.</div><div class="kpi-value" data-bind="proj.ll" style="color:var(--green)">R$ 7,0M</div><div class="kpi-sub" data-bind="proj.ll_sub">Margem: 4,3% s/ Rec. Líquida</div></div>
+<div class="kpi-card k-orange"><div class="kpi-label">Receita Bruta Proj.</div><div class="kpi-value" data-bind="proj.rec">R$ 186,2M</div><div class="kpi-sub" data-bind="proj.rec_sub">vs 2025: R$ 115,6M</div></div>
+<div class="kpi-card k-purple"><div class="kpi-label">Receita Líquida Proj.</div><div class="kpi-value" data-bind="proj.liq">R$ 161,6M</div><div class="kpi-sub" data-bind="proj.liq_sub">vs 2025</div></div>
+<div class="kpi-card k-teal"><div class="kpi-label">EBITDA Proj.</div><div class="kpi-value" data-bind="proj.ebt" style="color:#0891b2">R$ 11,4M</div><div class="kpi-sub" data-bind="proj.ebt_sub">Margem: 7,0%</div></div>
+<div class="kpi-card k-green"><div class="kpi-label">LAIR Proj.</div><div class="kpi-value" data-bind="proj.ll" style="color:var(--green)">R$ 6,7M</div><div class="kpi-sub" data-bind="proj.ll_sub">Margem: 4,2%</div></div>
 </div>
 <div class="charts-2eq">
 <div class="chart-card"><div class="chart-title">Receita Bruta Mensal — 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartProjRec"></canvas></div></div>
@@ -585,7 +630,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="table-title">DRE Projetado — Mensal 2026</div>
 <div class="table-sub">Valores em R$ mil · FY 2026 Orçado</div>
 <table>
-<thead><tr><th style="min-width:190px">Indicador</th><th><span class="mes-orcado-badge realizado" onclick="toggleMesBadge(this)">Realizado</span>Jan</th><th><span class="mes-orcado-badge realizado" onclick="toggleMesBadge(this)">Realizado</span>Fev</th><th><span class="mes-orcado-badge realizado" onclick="toggleMesBadge(this)">Realizado</span>Mar</th><th><span class="mes-orcado-badge realizado" onclick="toggleMesBadge(this)">Realizado</span>Abr</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Mai</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Jun</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Jul</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Ago</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Set</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Out</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Nov</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Dez</th><th style="color:var(--orange)">TOTAL</th></tr></thead>
+<thead><tr><th style="min-width:190px">Indicador</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Jan</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Fev</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Mar</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Abr</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Mai</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Jun</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Jul</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Ago</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Set</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Out</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Nov</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Dez</th><th style="color:var(--orange)">TOTAL</th></tr></thead>
 <tbody id="proj-2026-body"></tbody>
 </table>
 </div>
@@ -616,8 +661,8 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div><div class="mc-label">Resultados</div><div class="mc-periodo"><em>1T</em>26</div></div>
 <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;padding-top:2px;">
 <svg width="108" height="30" viewBox="0 0 108 30" xmlns="http://www.w3.org/2000/svg">
-<rect width="108" height="30" rx="6" fill="rgba(255,255,255,0.07)"></rect>
-<rect x="0.5" y="0.5" width="107" height="29" rx="5.5" fill="none" stroke="rgba(255,110,0,0.2)" stroke-width="1"></rect>
+<rect width="108" height="30" rx="6" fill="rgba(255,255,255,0.07)"/>
+<rect x="0.5" y="0.5" width="107" height="29" rx="5.5" fill="none" stroke="rgba(255,110,0,0.2)" stroke-width="1"/>
 <text x="7" y="21" font-family="'Manrope',Arial Black,sans-serif" font-weight="900" font-size="18" fill="#FF6E00" letter-spacing="-0.5">on</text>
 <text x="36" y="21" font-family="'Manrope',Arial Black,sans-serif" font-weight="900" font-size="18" fill="#FFFFFF" letter-spacing="-0.5">time</text>
 <text x="88" y="23" font-family="'Manrope',Arial,sans-serif" font-weight="700" font-size="8" fill="#FF6E00" letter-spacing="0.5">LOG</text>
@@ -630,18 +675,18 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 <div class="mc-body">
 <div class="mc-grid-2">
-<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'rec','R$ milhões')"><div class="mct-label">Receita Bruta</div><div class="mct-period">1T26</div><div class="mct-val" data-bind="mc.rec">45,6</div><div class="mct-unit">R$ milhões</div><div class="mc-edit-hint">✎ editar</div></div>
-<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'liq','R$ milhões')"><div class="mct-label">Receita Líquida</div><div class="mct-period">1T26</div><div class="mct-val v-purple" data-bind="mc.liq">39,6</div><div class="mct-unit">R$ milhões</div><div class="mc-edit-hint">✎ editar</div></div>
+<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'rec','R$ milhões')"><div class="mct-label">Receita Bruta</div><div class="mct-period">1T26</div><div class="mct-val" data-bind="mc.rec">44,9</div><div class="mct-unit">R$ milhões</div><div class="mc-edit-hint">✎ editar</div></div>
+<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'liq','R$ milhões')"><div class="mct-label">Receita Líquida</div><div class="mct-period">1T26</div><div class="mct-val v-purple" data-bind="mc.liq">38,9</div><div class="mct-unit">R$ milhões</div><div class="mc-edit-hint">✎ editar</div></div>
 </div>
 <div class="mc-grid-2">
-<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'mb','%')"><div class="mct-label">Margem Bruta</div><div class="mct-period">1T26</div><div class="mct-val" style="color:#0891b2" data-bind="mc.mb">0,4%</div><div class="mct-unit">% da Rec. Líquida</div><div class="mc-edit-hint">✎ editar</div></div>
-<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'mebitda','%')"><div class="mct-label">Margem EBITDA</div><div class="mct-period">1T26</div><div class="mct-val" style="color:var(--orange)" data-bind="mc.mebitda">5,2%</div><div class="mct-unit">% da Rec. Líquida</div><div class="mc-edit-hint">✎ editar</div></div>
+<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'mb','%')"><div class="mct-label">Margem Bruta</div><div class="mct-period">1T26</div><div class="mct-val" style="color:#0891b2" data-bind="mc.mb">—</div><div class="mct-unit">% da Rec. Líquida</div><div class="mc-edit-hint">✎ editar</div></div>
+<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'mebitda','%')"><div class="mct-label">Margem EBITDA</div><div class="mct-period">1T26</div><div class="mct-val" style="color:var(--orange)" data-bind="mc.mebitda">—</div><div class="mct-unit">% da Rec. Líquida</div><div class="mc-edit-hint">✎ editar</div></div>
 </div>
 <div class="mc-grid-2">
-<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'lair','R$ milhões')"><div class="mct-label">LAIR</div><div class="mct-period">1T26</div><div class="mct-val v-green" data-bind="mc.ll">1,3</div><div class="mct-unit" data-bind="mc.ll_sub">R$ milhões</div><div class="mc-edit-hint">✎ editar</div></div>
-<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'endiv','R$ mil')"><div class="mct-label">Endividamento</div><div class="mct-period">Dez/2025</div><div class="mct-val v-purple" data-bind="mc.endiv">8.909</div><div class="mct-unit">R$ mil · Total</div><div class="mc-edit-hint">✎ editar</div></div>
+<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'lair','R$ milhões')"><div class="mct-label">LAIR</div><div class="mct-period">1T26</div><div class="mct-val v-green" data-bind="mc.ll">1,1</div><div class="mct-unit" data-bind="mc.ll_sub">R$ milhões</div><div class="mc-edit-hint">✎ editar</div></div>
+<div class="mc-tile mc-editable-tile" onclick="openMCEditor(this,'endiv','R$ mil')"><div class="mct-label">Endividamento</div><div class="mct-period">Dez/2025</div><div class="mct-val v-purple" data-bind="mc.endiv">—</div><div class="mct-unit">R$ mil · Total</div><div class="mc-edit-hint">✎ editar</div></div>
 </div>
-<div class="mc-tile mc-editable-tile mc-tile-full" onclick="openMCEditor(this,'cxrec','R$ mil')"><div class="mct-label">Contas a Receber + Caixa</div><div class="mct-period">Dez/2025</div><div class="mct-val v-purple" data-bind="mc.cxrec">20.799</div><div class="mct-unit">R$ mil · Total</div><div class="mc-edit-hint">✎ editar</div></div>
+<div class="mc-tile mc-editable-tile mc-tile-full" onclick="openMCEditor(this,'cxrec','R$ mil')"><div class="mct-label">Contas a Receber + Caixa</div><div class="mct-period">Dez/2025</div><div class="mct-val v-purple" data-bind="mc.cxrec">—</div><div class="mct-unit">R$ mil · Total</div><div class="mc-edit-hint">✎ editar</div></div>
 </div>
 <div class="mc-footer">
 <div class="mcf-note"><strong>ON TIME LOGÍSTICA</strong> · Desempenho Econômico<br>¹ Valores em R$ milhões.</div>
@@ -668,7 +713,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 </div>
 
-<div class="toast" id="toast">✓ Dados restaurados do navegador</div>
+<div class="toast" id="toast"></div>
 
 <script>
 Chart.register(ChartDataLabels);
@@ -685,7 +730,37 @@ const dlBar={align:'end',anchor:'end',color:OT.purple,font:{weight:'bold',size:1
 const dlBarK={align:'end',anchor:'end',color:OT.purple,font:{weight:'bold',size:10},formatter:v=>Math.round(v).toLocaleString('pt-BR')};
 const dl25=(color)=>({align:'bottom',anchor:'start',color:color||OT.muted,font:{weight:'600',size:9,style:'italic'},formatter:v=>Math.round(v).toLocaleString('pt-BR')});
 const dlLineHide={display:false};
-const state={"rec_2025":[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14505,14753],"imp_2025":[839,832,785,824,884,906,1123,1194,1342,1746,1876,1920],"cvar_2025":[4038,3829,3823,3577,3934,4179,5394,5479,6243,7024,7329,7672],"cfix_2025":[1297,1342,1471,1556,1562,1630,1865,2244,2519,3088,3919,3722],"ebt_2025":[269,460,183,130,226,349,528,621,827,732,749,1002],"ll_2025":[-151,-48,-85,-129,1,111,219,277,421,298,291,487],"gae_2025":6675,"resfin_2025":1963,"ircs_2025":559,"outros_2025":274,"rec_2026":[15184,14489,15945,16251,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026":[2029,1921,2035,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026":[743,521,808,947,983,993,959,971,1043,1041,1055,1125],"ll_2026":[451,310,565,705,587,597,571,580,636,634,645,698],"gae_2026":7290,"resfin_2026":2502,"ircs_2026":3400,"outros_2026":100,"rec_2023":60548,"rec_2024":71088,"liq_2023":53606,"liq_2024":63528,"ebitda_2023":-1912,"ebitda_2024":3208,"ll_2023":-4435,"ll_2024":0,"tri_rec_2024":[15487,17160,17580,20861],"tri_ebitda_2024":[504,774,921,1023],"div_trib":[14394,10327,8018,6935],"div_trab":[1783,2619,1400,480],"div_forn":[2344,2134,1885,1494],"div_bndes":[150,93,0,0],"pis_cofins":[0,0,0,0,0],"compensacoes":[192,1688,2180,3078,2913],"c_receber":[9622,16956,22472],"caixa":[1989,3843,1025],"caixa_month_labels":["Jan/2025","Dez/2025","Dez/2026 (Proj.)"],"proj_mes_status":[true,true,true,true,false,false,false,false,false,false,false,false]};
+const state={
+rec_2025:[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14505,14753],
+imp_2025:[839,832,785,824,884,906,1123,1194,1342,1746,1876,1920],
+cvar_2025:[4038,3829,3823,3577,3934,4179,5394,5479,6243,7024,7329,7672],
+cfix_2025:[1297,1342,1471,1556,1562,1630,1865,2244,2519,3088,3919,3722],
+ebt_2025:[269,460,183,130,226,349,528,621,827,732,749,1002],
+ll_2025:[-151,-48,-85,-129,1,111,219,277,421,298,291,487],
+gae_2025:6675,resfin_2025:1963,ircs_2025:559,outros_2025:274,
+rec_2026:[15164,14437,15326,15466,15466,15512,15512,15562,15847,15847,15905,16188],
+imp_2026:[2029,1921,2035,2048,2048,2055,2055,2062,2088,2088,2093,2119],
+cvar_2026:[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],
+cfix_2026:[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],
+ebt_2026:[642,552,957,1032,983,993,959,971,1043,1041,1055,1125],
+ll_2026:[323,257,566,625,587,597,571,580,636,634,645,698],
+gae_2026:7290,resfin_2026:2502,ircs_2026:3400,outros_2026:100,
+rec_2023:60548,rec_2024:71088,
+liq_2023:53606,liq_2024:63528,
+ebitda_2023:-1912,ebitda_2024:3208,
+ll_2023:-4435,ll_2024:0,
+tri_rec_2024:[15487,17160,17580,20861],
+tri_ebitda_2024:[504,774,921,1023],
+div_trib:[14394,10327,8018,6935],
+div_trab:[1783,2619,1400,480],
+div_forn:[2344,2134,1885,1494],
+div_bndes:[150,93,0,0],
+pis_cofins:[8181,7182,5517,2698,1852],
+compensacoes:[192,1688,2180,3078,2913],
+c_receber:[9622,16956,22472],
+caixa:[1989,3843,1025],
+caixa_month_labels:['Jan/2025','Dez/2025','Dez/2026 (Proj.)'],
+};
 let pendingState=null;
 let pendingChanges=[];
 
@@ -805,6 +880,32 @@ function exportDashboardHTML(){
   }catch(e){
     console.error(e);
     showToast('❌ Erro ao exportar: '+e.message,'error');
+  }
+}
+
+function printActiveSection(){
+  try{
+    // Identifica seção ativa para nomear o PDF
+    const activeSec=document.querySelector('#view-dashboard .dash-section.active');
+    const titulo=activeSec?.querySelector('.sec-header h2')?.textContent?.trim()||'Dashboard';
+    // Limpa para nome de arquivo
+    const nomeLimpo=titulo.replace(/[\\/:*?"<>|—–]/g,'').replace(/\s+/g,'_').slice(0,80);
+    const dt=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const originalTitle=document.title;
+    // Define o título — os navegadores usam isso como sugestão de nome do PDF
+    document.title=`OT_${nomeLimpo}_${dt}`;
+    // Força os gráficos a recalcularem dimensões antes do print
+    window.dispatchEvent(new Event('resize'));
+    // Pequeno delay para os gráficos redesenharem antes do diálogo de print
+    setTimeout(()=>{
+      window.print();
+      // Restaura título depois que o diálogo é fechado
+      setTimeout(()=>{document.title=originalTitle;},200);
+    },180);
+    showToast('📄 Abrindo diálogo de impressão · escolha "Salvar como PDF"');
+  }catch(e){
+    console.error(e);
+    showToast('❌ Erro ao gerar PDF: '+e.message,'error');
   }
 }
 
@@ -1837,6 +1938,5 @@ function openMCEditor(tile,key,unit){
   ed.onclick=e=>e.stopPropagation();
 }
 </script>
-
-
-</body><chatgpt-sidebar data-rendered="true" data-gpts-theme="light"></chatgpt-sidebar></html>
+</body>
+</html>
