@@ -320,6 +320,12 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 .ie-save:hover{background:#d96710}
 .ie-cancel{background:var(--purple-tint);color:var(--muted)}
 .ie-cancel:hover{background:var(--border)}
+.mes-orcado-badge{font-size:9px;font-weight:800;padding:1px 7px;border-radius:8px;cursor:pointer;display:block;margin-bottom:2px;text-align:center;transition:all .2s;letter-spacing:.3px;user-select:none;line-height:1.4}
+.mes-orcado-badge.orcado{background:var(--purple-pale);color:var(--purple-soft)}
+.mes-orcado-badge.realizado{background:var(--orange-light);color:var(--orange)}
+.cx-editable-th{cursor:pointer;transition:all .15s}
+.cx-editable-th:hover{background:rgba(255,110,0,0.1)!important;color:var(--orange)!important}
+.cx-editable-th::after{content:' ✎';font-size:8px;opacity:0.4}
 </style>
 </head>
 <body>
@@ -486,16 +492,16 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 
 <div id="section-trimestral" class="dash-section">
-<div class="sec-header"><div class="sec-header-icon">📅</div><h2>Resultado Trimestral — 2025 vs 2024</h2><div class="sec-tag">Comparativo por Trimestre</div></div>
+<div class="sec-header"><div class="sec-header-icon">📅</div><h2>Resultado Trimestral — 2025 vs Projeção 2026</h2><div class="sec-tag">Comparativo por Trimestre</div></div>
 <div class="q-grid" id="q-cards-grid"></div>
 <div class="charts-2eq">
-<div class="chart-card"><div class="chart-title">Receita Bruta por Trimestre — 2025 vs 2024</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriRec"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">EBITDA por Trimestre — 2025 vs 2024</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriEbitda"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Receita Bruta por Trimestre — 2025 vs Projeção 2026</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriRec"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">EBITDA por Trimestre — 2025 vs Projeção 2026</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriEbitda"></canvas></div></div>
 </div>
 <div class="table-card">
-<div class="table-title">Acumulado 12M 2025 vs 2024 — Destaques</div>
+<div class="table-title">Acumulado 12M 2025 vs Projeção 2026 — Destaques</div>
 <div class="table-sub">R$ mil</div>
-<table><thead><tr><th>Indicador</th><th>12M 2025</th><th>12M 2024</th><th>Var. R$</th><th>Var. %</th></tr></thead><tbody id="tri-resumo-body"></tbody></table>
+<table><thead><tr><th>Indicador</th><th>12M 2025</th><th>Proj. 2026</th><th>Var. R$</th><th>Var. %</th></tr></thead><tbody id="tri-resumo-body"></tbody></table>
 </div>
 </div>
 
@@ -553,7 +559,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="table-card">
 <div class="table-title">Posição de Caixa e Contas a Receber</div>
 <div class="table-sub">R$ mil</div>
-<table><thead><tr><th>Componente</th><th>Jan/2025</th><th>Dez/2025</th><th>Var. 2025</th><th>Dez/2026 (Proj.)</th><th>Var. 2026</th></tr></thead><tbody id="caixa-body"></tbody></table>
+<table><thead><tr><th>Componente</th><th id="cx-th-0" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(0,this)">Jan/2025</th><th id="cx-th-1" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(1,this)">Dez/2025</th><th>Var. 2025</th><th id="cx-th-2" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(2,this)">Dez/2026 (Proj.)</th><th>Var. 2026</th></tr></thead><tbody id="caixa-body"></tbody></table>
 </div>
 </div>
 
@@ -577,7 +583,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="table-title">DRE Projetado — Mensal 2026</div>
 <div class="table-sub">Valores em R$ mil · FY 2026 Orçado</div>
 <table>
-<thead><tr><th style="min-width:190px">Indicador</th><th>Jan</th><th>Fev</th><th>Mar</th><th>Abr</th><th>Mai</th><th>Jun</th><th>Jul</th><th>Ago</th><th>Set</th><th>Out</th><th>Nov</th><th>Dez</th><th style="color:var(--orange)">TOTAL</th></tr></thead>
+<thead><tr><th style="min-width:190px">Indicador</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Jan</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Fev</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Mar</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Abr</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Mai</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Jun</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Jul</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Ago</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Set</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Out</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Nov</th><th><span class="mes-orcado-badge orcado" onclick="toggleMesBadge(this)">Orçado</span>Dez</th><th style="color:var(--orange)">TOTAL</th></tr></thead>
 <tbody id="proj-2026-body"></tbody>
 </table>
 </div>
@@ -674,6 +680,7 @@ const sc={x:{grid:{color:OT.grid},ticks:{color:OT.muted}},y:{grid:{color:OT.grid
 const tip={backgroundColor:'#3C003C',titleColor:'#fff',bodyColor:'rgba(255,255,255,0.7)',borderColor:OT.orange,borderWidth:1,padding:10,cornerRadius:8};
 const leg=(pos='top')=>({position:pos,labels:{color:OT.muted,boxWidth:12,padding:14,usePointStyle:true}});
 const dlBar={align:'end',anchor:'end',color:OT.purple,font:{weight:'bold',size:10},formatter:v=>v>1000?(v/1000).toFixed(1).replace('.',','):v.toLocaleString('pt-BR')};
+const dlBarK={align:'end',anchor:'end',color:OT.purple,font:{weight:'bold',size:10},formatter:v=>Math.round(v).toLocaleString('pt-BR')};
 const dlLineHide={display:false};
 const state={
 rec_2025:[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14505,14753],
@@ -704,6 +711,7 @@ pis_cofins:[8181,7182,5517,2698,1852],
 compensacoes:[192,1688,2180,3078,2913],
 c_receber:[9622,16956,22472],
 caixa:[1989,3843,1025],
+caixa_month_labels:['Jan/2025','Dez/2025','Dez/2026 (Proj.)'],
 };
 let pendingState=null;
 let pendingChanges=[];
@@ -876,33 +884,33 @@ function renderTables(){
   const triColors=['#3b82f6','#8b5cf6','#FF6E00','#1F7A3D'];
   const triLabels=['1º','2º','3º','4º'];
   for(let i=0;i<4;i++){
-    const recVar=varPct(d.tri_rec_2025[i],state.tri_rec_2024[i]);
-    const ebtVar=varPct(d.tri_ebitda_2025[i],state.tri_ebitda_2024[i]);
+    const recVar=varPct(d.tri_rec_2025[i],d.tri_rec_2026[i]);
+    const ebtVar=varPct(d.tri_ebitda_2025[i],d.tri_ebitda_2026[i]);
     const ebtCss=ebtVar>=0?'up':'down';
     const recCss=recVar>=0?'up':'down';
     const ebtArrow=ebtVar>=0?'▲':'▼';
     const recArrow=recVar>=0?'▲':'▼';
-    qGrid.innerHTML+=`<div class="q-card" style="border-top:3px solid ${triColors[i]}"><div class="q-card-head" style="color:${triColors[i]}">${triLabels[i]} Trimestre 2025</div><div class="q-row"><span class="q-label">Rec. Bruta</span><span class="q-val">R$ ${fmtK(d.tri_rec_2025[i])}K</span></div><div class="q-row"><span class="q-label">vs ${triLabels[i]}T24 (R$ ${fmtK(state.tri_rec_2024[i])}K)</span><span class="q-var ${recCss}">${recArrow} ${fmtPctSign(recVar)}</span></div><div style="height:1px;background:var(--border);margin:10px 0"></div><div class="q-row"><span class="q-label">EBITDA</span><span class="q-val" style="color:var(--orange)">R$ ${fmtK(d.tri_ebitda_2025[i])}K</span></div><div class="q-row"><span class="q-label">vs ${triLabels[i]}T24 (R$ ${fmtK(state.tri_ebitda_2024[i])}K)</span><span class="q-var ${ebtCss}">${ebtArrow} ${fmtPctSign(ebtVar)}</span></div></div>`;
+    qGrid.innerHTML+=`<div class="q-card" style="border-top:3px solid ${triColors[i]}"><div class="q-card-head" style="color:${triColors[i]}">${triLabels[i]} Trimestre 2025</div><div class="q-row"><span class="q-label">Rec. Bruta</span><span class="q-val">R$ ${fmtK(d.tri_rec_2025[i])}K</span></div><div class="q-row"><span class="q-label">vs Proj. ${triLabels[i]}T26 (R$ ${fmtK(d.tri_rec_2026[i])}K)</span><span class="q-var ${recCss}">${recArrow} ${fmtPctSign(recVar)}</span></div><div style="height:1px;background:var(--border);margin:10px 0"></div><div class="q-row"><span class="q-label">EBITDA</span><span class="q-val" style="color:var(--orange)">R$ ${fmtK(d.tri_ebitda_2025[i])}K</span></div><div class="q-row"><span class="q-label">vs Proj. ${triLabels[i]}T26 (R$ ${fmtK(d.tri_ebitda_2026[i])}K)</span><span class="q-var ${ebtCss}">${ebtArrow} ${fmtPctSign(ebtVar)}</span></div></div>`;
   }
 
   const resumoBody=document.getElementById('tri-resumo-body');
   resumoBody.innerHTML='';
   const margem25=pct(d.ebt_total_2025,d.liq_total_2025);
-  const margem24=pct(state.ebitda_2024,state.liq_2024);
+  const margem26=pct(d.ebt_total_2026,d.liq_total_2026);
   const cls=v=>v>=0?'c-pos':'c-neg';
   const arr=v=>v>=0?'▲':'▼';
-  const resumoRows=[['Receita Bruta',d.rec_total_2025,state.rec_2024],['Receita Líquida',d.liq_total_2025,state.liq_2024],['EBITDA',d.ebt_total_2025,state.ebitda_2024,'t-ebitda']];
-  resumoRows.forEach(([l,v25,v24,rowCls])=>{
-    const dif=v25-v24,vp=varPct(v25,v24);
+  const resumoRows=[['Receita Bruta',d.rec_total_2025,d.rec_total_2026],['Receita Líquida',d.liq_total_2025,d.liq_total_2026],['EBITDA',d.ebt_total_2025,d.ebt_total_2026,'t-ebitda']];
+  resumoRows.forEach(([l,v25,v26,rowCls])=>{
+    const dif=v25-v26,vp=varPct(v25,v26);
     const tr=document.createElement('tr');
     if(rowCls)tr.className=rowCls;
-    tr.innerHTML=`<td>${l}</td><td>${fmtK(v25)}</td><td>${fmtK(v24)}</td><td class="${cls(dif)}">${dif>=0?'+':''}${fmtK(dif)}</td><td class="${cls(vp)}">${arr(vp)} ${fmtPctSign(vp)}</td>`;
+    tr.innerHTML=`<td>${l}</td><td>${fmtK(v25)}</td><td>${fmtK(v26)}</td><td class="${cls(dif)}">${dif>=0?'+':''}${fmtK(dif)}</td><td class="${cls(vp)}">${arr(vp)} ${fmtPctSign(vp)}</td>`;
     resumoBody.appendChild(tr);
   });
   const trMargem=document.createElement('tr');
   trMargem.className='t-margin';
-  const ppDif=margem25-margem24;
-  trMargem.innerHTML=`<td>Margem EBITDA</td><td>${fmtPct(margem25)}</td><td>${fmtPct(margem24)}</td><td class="${cls(ppDif)}">${ppDif>=0?'+':''}${ppDif.toFixed(1).replace('.',',')} p.p.</td><td>–</td>`;
+  const ppDif=margem25-margem26;
+  trMargem.innerHTML=`<td>Margem EBITDA</td><td>${fmtPct(margem25)}</td><td>${fmtPct(margem26)}</td><td class="${cls(ppDif)}">${ppDif>=0?'+':''}${ppDif.toFixed(1).replace('.',',')} p.p.</td><td>–</td>`;
   resumoBody.appendChild(trMargem);
 
   const histBody=document.getElementById('historico-body');
@@ -1027,12 +1035,12 @@ function initCharts(){
 
   charts.triRec=new Chart('chartTriRec',{type:'bar',data:{labels:['1T','2T','3T','4T'],datasets:[
     {label:'2025',data:d.tri_rec_2025,backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar},
-    {label:'2024',data:state.tri_rec_2024,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
+    {label:'Proj. 2026',data:d.tri_rec_2026,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.triEbitda=new Chart('chartTriEbitda',{type:'bar',data:{labels:['1T','2T','3T','4T'],datasets:[
     {label:'2025',data:d.tri_ebitda_2025,backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar},
-    {label:'2024',data:state.tri_ebitda_2024,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
+    {label:'Proj. 2026',data:d.tri_ebitda_2026,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.histRec=new Chart('chartHistRec',{type:'bar',data:{labels:['2023','2024','2025','2026 Proj.'],datasets:[
@@ -1079,7 +1087,7 @@ function initCharts(){
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:{display:false},tooltip:tip},scales:sc}});
 
   charts.projRec=new Chart('chartProjRec',{type:'bar',data:{labels:MONTHS,datasets:[
-    {label:'2026 Projetado',data:[...state.rec_2026],backgroundColor:state.rec_2026.map((_,i)=>`rgba(255,110,0,${0.42+i*0.046})`),borderRadius:4,datalabels:dlBar},
+    {label:'2026 Projetado',data:[...state.rec_2026],backgroundColor:state.rec_2026.map((_,i)=>`rgba(255,110,0,${0.42+i*0.046})`),borderRadius:4,datalabels:dlBarK},
     {label:'2025 Realizado',data:[...state.rec_2025],type:'line',borderColor:OT.orange,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dlLineHide}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
@@ -1089,7 +1097,7 @@ function initCharts(){
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.projLiq=new Chart('chartProjLiq',{type:'bar',data:{labels:MONTHS,datasets:[
-    {label:'2026 Projetado',data:d.liq_2026,backgroundColor:d.liq_2026.map((_,i)=>`rgba(255,110,0,${0.42+i*0.046})`),borderRadius:4,datalabels:dlBar},
+    {label:'2026 Projetado',data:d.liq_2026,backgroundColor:d.liq_2026.map((_,i)=>`rgba(255,110,0,${0.42+i*0.046})`),borderRadius:4,datalabels:dlBarK},
     {label:'2025 Realizado',data:d.liq_2025,type:'line',borderColor:OT.orange,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dlLineHide}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
@@ -1098,7 +1106,7 @@ function initCharts(){
      datalabels:{align:'top',color:'#6B7280',font:{weight:'bold',size:9},formatter:v=>v.toLocaleString('pt-BR')}},
     {label:'LAIR 2025 (R$ mil)',data:state.ll_2025.map(v=>Math.round(v)),borderColor:'#9CA3AF',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dlLineHide}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:{...tip,callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},
-    scales:{x:sc.x,y:{...sc.y,ticks:{callback:v=>v.toFixed(3).replace('.',','),color:OT.muted}}}}});
+    scales:{x:sc.x,y:{...sc.y,ticks:{callback:v=>Math.round(v).toLocaleString('pt-BR'),color:OT.muted}}}}});
 }
 
 function updateCharts(){
@@ -1123,11 +1131,11 @@ function updateCharts(){
   charts.margem.update();
 
   charts.triRec.data.datasets[0].data=d.tri_rec_2025;
-  charts.triRec.data.datasets[1].data=[...state.tri_rec_2024];
+  charts.triRec.data.datasets[1].data=[...d.tri_rec_2026];
   charts.triRec.update();
 
   charts.triEbitda.data.datasets[0].data=d.tri_ebitda_2025;
-  charts.triEbitda.data.datasets[1].data=[...state.tri_ebitda_2024];
+  charts.triEbitda.data.datasets[1].data=[...d.tri_ebitda_2026];
   charts.triEbitda.update();
 
   charts.histRec.data.datasets[0].data=[state.rec_2023,state.rec_2024,d.rec_total_2025,d.rec_total_2026];
@@ -1179,8 +1187,8 @@ function updateCharts(){
     charts.projLiq.update();
   }
   if(charts.projLair){
-    charts.projLair.data.datasets[0].data=state.ll_2026.map(v=>+(v/1000).toFixed(3));
-    charts.projLair.data.datasets[1].data=state.ll_2025.map(v=>+(v/1000).toFixed(3));
+    charts.projLair.data.datasets[0].data=state.ll_2026.map(v=>Math.round(v));
+    charts.projLair.data.datasets[1].data=state.ll_2025.map(v=>Math.round(v));
     charts.projLair.update();
   }
 }
@@ -1568,8 +1576,8 @@ function attachChartEditors(){
   setup(charts.ebitdaMensal,el=>el.datasetIndex===0?{path:'ebt_2025',index:el.index}:null);
   setup(charts.projRec,el=>el.datasetIndex===0?{path:'rec_2026',index:el.index}:null);
   setup(charts.projEbitda,el=>el.datasetIndex===0?{path:'ebt_2026',index:el.index}:null);
-  setup(charts.triRec,el=>el.datasetIndex===1?{path:'tri_rec_2024',index:el.index}:null);
-  setup(charts.triEbitda,el=>el.datasetIndex===1?{path:'tri_ebitda_2024',index:el.index}:null);
+  setup(charts.triRec,el=>null);
+  setup(charts.triEbitda,el=>null);
   setup(charts.histRec,el=>{if(el.index===0)return{path:'rec_2023'};if(el.index===1)return{path:'rec_2024'};return null;});
   setup(charts.histEbitda,el=>{if(el.index===0)return{path:'ebitda_2023'};if(el.index===1)return{path:'ebitda_2024'};return null;});
   setup(charts.dividaComp,el=>{const k=['div_trib','div_trab','div_forn','div_bndes'];return{path:k[el.datasetIndex],index:el.index};});
@@ -1617,7 +1625,51 @@ function attachEditors(){
   attachKPIEditors();
 }
 
-// ════════════════ MC CARD EDITOR ════════════════
+// ════════════════ ORÇADO / REALIZADO TOGGLE (DRE Projetado) ════════════════
+function toggleMesBadge(el){
+  if(el.classList.contains('orcado')){
+    el.classList.remove('orcado');
+    el.classList.add('realizado');
+    el.textContent='Realizado';
+  } else {
+    el.classList.remove('realizado');
+    el.classList.add('orcado');
+    el.textContent='Orçado';
+  }
+}
+
+// ════════════════ CAIXA HEADER LABEL EDITOR ════════════════
+function openCaixaLabelEditor(idx, th){
+  closeInlineEditor();
+  if(!state.caixa_month_labels)state.caixa_month_labels=['Jan/2025','Dez/2025','Dez/2026 (Proj.)'];
+  const current=state.caixa_month_labels[idx]||th.textContent.replace('✎','').trim();
+  const rect=th.getBoundingClientRect();
+  const ed=document.createElement('div');
+  ed.className='inline-editor';
+  ed.innerHTML=`<div class="ie-head"><span class="ie-label">Identificação do Período</span><span class="ie-period">Col. ${idx+1}</span></div><input type="text" value="${current}" placeholder="Ex: Jan/2025"/><div class="ie-hint">Enter para salvar · Esc para cancelar</div><div class="ie-actions"><button class="ie-cancel">Cancelar</button><button class="ie-save">✓ Salvar</button></div>`;
+  document.body.appendChild(ed);
+  activeEditor=ed;
+  let left=rect.left,top=rect.bottom+6;
+  left=Math.max(8,Math.min(left,window.innerWidth-240));
+  top=Math.max(8,Math.min(top,window.innerHeight-160));
+  ed.style.left=left+'px';ed.style.top=top+'px';
+  const input=ed.querySelector('input');
+  input.focus();input.select();
+  const save=()=>{
+    const nv=input.value.trim();
+    if(nv){
+      state.caixa_month_labels[idx]=nv;
+      th.textContent=nv;
+      showToast('✓ Período atualizado');
+    }
+    closeInlineEditor();
+  };
+  ed.querySelector('.ie-save').onclick=save;
+  ed.querySelector('.ie-cancel').onclick=closeInlineEditor;
+  input.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();save();}if(e.key==='Escape')closeInlineEditor();};
+  ed.onclick=e=>e.stopPropagation();
+}
+
 var mcOverrides={};
 const MC_LABELS={rec:'Receita Bruta',liq:'Receita Líquida',mb:'Margem Bruta',mebitda:'Margem EBITDA',lair:'LAIR',endiv:'Endividamento',cxrec:'C. Receber + Caixa'};
 const MC_BIND_MAP={rec:'mc.rec',liq:'mc.liq',mb:'mc.mb',mebitda:'mc.mebitda',lair:'mc.ll',endiv:'mc.endiv',cxrec:'mc.cxrec'};
