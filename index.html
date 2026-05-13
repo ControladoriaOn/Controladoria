@@ -480,18 +480,7 @@ footer {
 /* ============================================================
    TIME MACHINE — Easter Egg (Shift + Scroll)
    ============================================================ */
-#time-machine-badge {
-  position: fixed; top: 80px; right: 20px; z-index: 9997;
-  background: var(--purple); color: #fff;
-  padding: 8px 16px; border-radius: 8px;
-  font-family: var(--font-display); font-size: 13px;
-  font-weight: 700; letter-spacing: 1px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-  opacity: 0; transform: translateY(-20px);
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: none;
-}
-#time-machine-badge.show { opacity: 1; transform: translateY(0); }
+/* Badge removido conforme solicitado */
 
 body.era-transition, body.era-transition * {
   transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -667,7 +656,7 @@ body.era-1995 .loader-mascote-box {
 @keyframes matrixPulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }
 
 </style>
-<base target="_blank">
+<!-- Removido <base target="_blank"> para que os cards abram na mesma página -->
 </head>
 
 <body class="loading">
@@ -812,13 +801,13 @@ body.era-1995 .loader-mascote-box {
     <a href="./DRE/" class="tool-card">
       <div class="card-header"><div class="card-icon"><i class="ph-fill ph-chart-bar"></i></div><span class="card-category">Contábil</span></div>
       <h3 class="card-title">Desempenho Econômico</h3>
-      <p class="card-desc">Visão Gerencial</p>
+      <p class="card-desc">Demonstração do Resultado Econômico com indicadores de performance e margens.</p>
       <div class="card-footer"><span class="status-dot"><span class="dot"></span> Online</span><span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span></div>
     </a>
       <a href="./Controle Financeiro/" class="tool-card">
-      <div class="card-header"><div class="card-icon"><i class="ph-fill ph-chat-circle-text"></i></div><span class="card-category">Contábil</span></div>
+      <div class="card-header"><div class="card-icon"><i class="ph-fill ph-chart-line-up"></i></div><span class="card-category">Contábil</span></div>
       <h3 class="card-title">Controle Financeiro</h3>
-      <p class="card-desc">Relatórios de Financeiro, Divida Liquida e Fluxo de Caixa.</p>
+      <p class="card-desc">Painel de controle financeiro com análise de endividamento, liquidez e projeção de fluxo de caixa.</p>
       <div class="card-footer"><span class="status-dot"><span class="dot"></span> Online</span><span class="btn-access">Acessar <i class="ph-bold ph-arrow-right"></i></span></div>
     </a>
     <a href="./Parcelamentos/" class="tool-card">
@@ -1103,10 +1092,8 @@ function routeByHash() {
    MASCOTE INTERATIVO
    ============================================================ */
 const mascoteWrap = document.getElementById('mascote-wrap');
-const speechBubble = document.getElementById('mascote-speech');
 
 mascoteWrap?.addEventListener('click', () => {
-  // Pulo do mascote ao clicar — sem partículas
   const mascotImg = document.getElementById('hero-mascot');
   if (mascotImg) {
     mascotImg.style.animation = 'none';
@@ -1154,7 +1141,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cached = (() => { try { return sessionStorage.getItem('_hub_pwd'); } catch (_) { return null; } })();
   let envelope = await tryFetchEnc();
 
-  // Log para debug (visível no console do navegador)
   console.info('[Hub] Senha em cache:', cached ? 'SIM' : 'NÃO');
 
   if (cached && envelope) {
@@ -1190,21 +1176,12 @@ const TimeMachine = (() => {
     { year: 1995, name: 'Windows 95', class: 'era-1995' },
   ];
   let currentEraIndex = 0;
-  let badgeTimeout = null;
   let isTransitioning = false;
 
   function init() {
     document.addEventListener('wheel', handleWheel, { passive: false });
     document.addEventListener('keydown', handleKey);
-    createBadge();
     restoreEra();
-  }
-
-  function createBadge() {
-    if (document.getElementById('time-machine-badge')) return;
-    const badge = document.createElement('div');
-    badge.id = 'time-machine-badge';
-    document.body.appendChild(badge);
   }
 
   function handleWheel(e) {
@@ -1238,18 +1215,8 @@ const TimeMachine = (() => {
     body.classList.add('era-transition');
     ERAS.forEach(e => body.classList.remove(e.class));
     if (era.year !== 2026) body.classList.add(era.class);
-    showBadge(era);
     try { localStorage.setItem('time_machine_era', String(currentEraIndex)); } catch (e) {}
     setTimeout(() => body.classList.remove('era-transition'), 600);
-  }
-
-  function showBadge(era) {
-    const badge = document.getElementById('time-machine-badge');
-    if (!badge) return;
-    badge.innerHTML = `<span style="font-size:11px;opacity:0.7">MÁQUINA DO TEMPO</span><br><span style="font-size:18px">${era.year}</span><br><span style="font-size:11px;opacity:0.7">${era.name}</span>`;
-    badge.classList.add('show');
-    if (badgeTimeout) clearTimeout(badgeTimeout);
-    badgeTimeout = setTimeout(() => badge.classList.remove('show'), 2000);
   }
 
   function restoreEra() {
@@ -1366,11 +1333,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </script>
 
-
-
-<!-- TIME MACHINE BADGE -->
-<div id="time-machine-badge"></div>
-
+<!-- TIME MACHINE BADGE removido -->
 <!-- MATRIX OVERLAY -->
 <div id="matrix-overlay">
   <canvas id="matrix-canvas"></canvas>
