@@ -353,6 +353,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
     <div class="home-hdr-actions">
       <button class="home-hdr-btn" onclick="downloadTemplate()">📥 <span>Template XLSX</span></button>
       <button class="home-hdr-btn primary" onclick="document.getElementById('home-file-input').click()">📤 <span>Upload XLSX</span></button>
+      <button class="home-hdr-btn" onclick="exportDashboardHTML()" title="Baixar HTML atualizado">💾 <span>Exportar HTML</span></button>
       <input type="file" id="home-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
     </div>
   </div>
@@ -451,6 +452,8 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="dh-right">
 <button class="btn-action" onclick="downloadTemplate()">📥 Template</button>
 <button class="btn-action btn-primary" onclick="document.getElementById('dash-file-input').click()">📤 Upload XLSX</button>
+<button class="btn-action" onclick="exportDashboardHTML()" title="Baixar HTML atualizado para commit no git">💾 Exportar HTML</button>
+<button class="btn-action" onclick="resetDashboard()" title="Limpar dados salvos no navegador e voltar aos valores originais">🔄 Resetar</button>
 <input type="file" id="dash-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
 </div>
 </div>
@@ -716,6 +719,127 @@ caixa_month_labels:['Jan/2025','Dez/2025','Dez/2026 (Proj.)'],
 };
 let pendingState=null;
 let pendingChanges=[];
+
+// ════════════════ PERSISTÊNCIA (localStorage + Exportar HTML) ════════════════
+const STORAGE_KEY='ot_dashboard_state_v1';
+
+function saveStateToStorage(){
+  try{
+    const payload={state,mcOverrides,ts:new Date().toISOString()};
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(payload));
+  }catch(e){console.warn('localStorage save error:',e);}
+}
+
+function loadStateFromStorage(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return null;
+    return JSON.parse(raw);
+  }catch(e){console.warn('localStorage read error:',e);return null;}
+}
+
+function clearStateStorage(){
+  try{localStorage.removeItem(STORAGE_KEY);}catch(e){}
+}
+
+function restoreFromStorage(){
+  const stored=loadStateFromStorage();
+  if(!stored||!stored.state)return false;
+  Object.assign(state,stored.state);
+  if(stored.mcOverrides&&typeof mcOverrides!=='undefined')Object.assign(mcOverrides,stored.mcOverrides);
+  return true;
+}
+
+function restoreMesBadges(){
+  if(!state.proj_mes_status||!Array.isArray(state.proj_mes_status))return;
+  const projSection=document.getElementById('section-projecao');
+  if(!projSection)return;
+  const badges=projSection.querySelectorAll('.mes-orcado-badge');
+  badges.forEach((badge,i)=>{
+    if(i>=12)return;
+    if(state.proj_mes_status[i]){
+      badge.classList.remove('orcado');badge.classList.add('realizado');badge.textContent='Realizado';
+    }else{
+      badge.classList.remove('realizado');badge.classList.add('orcado');badge.textContent='Orçado';
+    }
+  });
+}
+
+function restoreCaixaLabels(){
+  if(!state.caixa_month_labels)return;
+  ['cx-th-0','cx-th-1','cx-th-2'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(el&&state.caixa_month_labels[i])el.textContent=state.caixa_month_labels[i];
+  });
+}
+
+function exportDashboardHTML(){
+  try{
+    saveStateToStorage();
+
+    // 1. Clonar o documento para que possamos filtrar sem mexer no DOM ativo
+    const clone=document.documentElement.cloneNode(true);
+
+    // 2. Remover scripts injetados pelo ambiente de preview (Claude.ai, sandbox, etc.)
+    //    Esses scripts sobrescrevem window.fetch, URL.createObjectURL, console, etc.
+    //    e quebram a página quando aberta fora do iframe.
+    let removidos=0;
+    clone.querySelectorAll('script').forEach(script=>{
+      const src=script.getAttribute('src')||'';
+      const content=script.textContent||'';
+      const isInjected=
+        src.includes('html-to-image')||
+        content.includes('window.parent.postMessage')||
+        content.includes('claudeComplete')||
+        content.includes('artifacts-component-root-html')||
+        content.includes('proxyFetch')||
+        content.includes('pendingBlobs');
+      if(isInjected){script.remove();removidos++;}
+    });
+
+    // 3. Também remover elementos de UI do preview (ex: barra de erro do Claude)
+    clone.querySelectorAll('[id^="claude-"],[class^="claude-"]').forEach(el=>el.remove());
+
+    let html=clone.outerHTML;
+
+    // 4. Substitui o literal do state pelo state atual serializado
+    //    Tenta primeiro o formato multi-linha (HTML original); se falhar, single-line (já exportado antes)
+    let stateRegex=/const state=\{[\s\S]*?\n\};/;
+    if(!stateRegex.test(html))stateRegex=/const state=\{[^{}]*\};/;
+    if(!stateRegex.test(html)){
+      showToast('❌ Bloco state não encontrado no HTML','error');
+      return;
+    }
+    html=html.replace(stateRegex,`const state=${JSON.stringify(state)};`);
+
+    // 5. Substitui mcOverrides
+    html=html.replace(/var mcOverrides=\{[^{}]*\};/,`var mcOverrides=${JSON.stringify(mcOverrides||{})};`);
+
+    // 6. Adiciona DOCTYPE (outerHTML não inclui)
+    html='<!DOCTYPE html>\n'+html;
+
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const dt=new Date().toISOString().slice(0,10).replace(/-/g,'');
+    a.href=url;a.download=`OT_Dashboard_${dt}.html`;
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},150);
+    const msg=removidos>0?`💾 HTML exportado (${removidos} scripts de preview removidos)`:'💾 HTML exportado — commit no git para compartilhar';
+    showToast(msg);
+  }catch(e){
+    console.error(e);
+    showToast('❌ Erro ao exportar: '+e.message,'error');
+  }
+}
+
+function resetDashboard(){
+  if(!confirm('Restaurar dados originais? Todas as edições salvas no navegador serão perdidas (a página será recarregada).'))return;
+  clearStateStorage();
+  location.reload();
+}
+// ════════════════ FIM PERSISTÊNCIA ════════════════
+
 
 const sum=arr=>arr.reduce((a,b)=>a+b,0);
 const fmtM=v=>'R$ '+(v/1000).toFixed(1).replace('.',',')+'M';
@@ -1476,6 +1600,7 @@ function closePreview(){document.getElementById('previewModal').classList.remove
 function applyPendingChanges(){
   if(!pendingState)return;
   Object.assign(state,pendingState);
+  saveStateToStorage();
   const activeView=document.querySelector('.app-view.active').id;
   if(activeView==='view-home'){switchView('dashboard');}
   else if(activeView==='view-dashboard'){initCharts();renderAll();attachEditors();}
@@ -1485,6 +1610,9 @@ function applyPendingChanges(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  // Restaura dados salvos no navegador (sobrevive a refresh)
+  const restored=restoreFromStorage();
+
   document.body.addEventListener('dragover',e=>e.preventDefault());
   document.body.addEventListener('drop',e=>{
     e.preventDefault();
@@ -1495,6 +1623,12 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
   renderKPIs();
+  // Aplica restaurações visuais (badges Orçado/Realizado, rótulos da tabela de Caixa)
+  restoreMesBadges();
+  restoreCaixaLabels();
+  if(restored){
+    setTimeout(()=>showToast('✓ Dados restaurados do navegador'),300);
+  }
 });
 
 // ════════════════ INLINE EDITOR (CLIQUE-E-EDITA) ════════════════
@@ -1550,6 +1684,7 @@ function openInlineEditor(opts){
         state[path]=nv;
       }
       renderAll();attachEditors();
+      saveStateToStorage();
       showToast('✓ Valor atualizado');
     }
     closeInlineEditor();
@@ -1650,6 +1785,14 @@ function toggleMesBadge(el){
     el.classList.add('orcado');
     el.textContent='Orçado';
   }
+  // Persiste no state para sobreviver a refresh / export
+  const allBadges=document.querySelectorAll('#section-projecao .mes-orcado-badge');
+  const idx=Array.from(allBadges).indexOf(el);
+  if(idx>=0){
+    if(!state.proj_mes_status)state.proj_mes_status=new Array(12).fill(false);
+    state.proj_mes_status[idx]=el.classList.contains('realizado');
+    saveStateToStorage();
+  }
 }
 
 // ════════════════ CAIXA HEADER LABEL EDITOR ════════════════
@@ -1674,6 +1817,7 @@ function openCaixaLabelEditor(idx, th){
     if(nv){
       state.caixa_month_labels[idx]=nv;
       th.textContent=nv;
+      saveStateToStorage();
       showToast('✓ Período atualizado');
     }
     closeInlineEditor();
@@ -1709,6 +1853,7 @@ function openMCEditor(tile,key,unit){
     mcOverrides[key]=input.value.trim();
     if(el)el.textContent=mcOverrides[key];
     closeInlineEditor();
+    saveStateToStorage();
     showToast('✓ Valor do card atualizado');
   };
   ed.querySelector('.ie-save').onclick=save;
