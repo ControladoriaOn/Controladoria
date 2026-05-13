@@ -492,16 +492,16 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 
 <div id="section-trimestral" class="dash-section">
-<div class="sec-header"><div class="sec-header-icon">📅</div><h2>Resultado Trimestral — 2025 vs Projeção 2026</h2><div class="sec-tag">Comparativo por Trimestre</div></div>
+<div class="sec-header"><div class="sec-header-icon">📅</div><h2>Resultado Trimestral — Projeção 2026 vs 2025</h2><div class="sec-tag">Comparativo por Trimestre</div></div>
 <div class="q-grid" id="q-cards-grid"></div>
 <div class="charts-2eq">
-<div class="chart-card"><div class="chart-title">Receita Bruta por Trimestre — 2025 vs Projeção 2026</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriRec"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">EBITDA por Trimestre — 2025 vs Projeção 2026</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriEbitda"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Receita Bruta por Trimestre — Projeção 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriRec"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">EBITDA por Trimestre — Projeção 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriEbitda"></canvas></div></div>
 </div>
 <div class="table-card">
-<div class="table-title">Acumulado 12M 2025 vs Projeção 2026 — Destaques</div>
+<div class="table-title">Acumulado 12M Projeção 2026 vs 2025 — Destaques</div>
 <div class="table-sub">R$ mil</div>
-<table><thead><tr><th>Indicador</th><th>12M 2025</th><th>Proj. 2026</th><th>Var. R$</th><th>Var. %</th></tr></thead><tbody id="tri-resumo-body"></tbody></table>
+<table><thead><tr><th>Indicador</th><th>Proj. 2026</th><th>12M 2025</th><th>Var. R$</th><th>Var. %</th></tr></thead><tbody id="tri-resumo-body"></tbody></table>
 </div>
 </div>
 
@@ -681,6 +681,7 @@ const tip={backgroundColor:'#3C003C',titleColor:'#fff',bodyColor:'rgba(255,255,2
 const leg=(pos='top')=>({position:pos,labels:{color:OT.muted,boxWidth:12,padding:14,usePointStyle:true}});
 const dlBar={align:'end',anchor:'end',color:OT.purple,font:{weight:'bold',size:10},formatter:v=>v>1000?(v/1000).toFixed(1).replace('.',','):v.toLocaleString('pt-BR')};
 const dlBarK={align:'end',anchor:'end',color:OT.purple,font:{weight:'bold',size:10},formatter:v=>Math.round(v).toLocaleString('pt-BR')};
+const dl25=(color)=>({align:'bottom',anchor:'start',color:color||OT.muted,font:{weight:'600',size:9,style:'italic'},formatter:v=>Math.round(v).toLocaleString('pt-BR')});
 const dlLineHide={display:false};
 const state={
 rec_2025:[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14505,14753],
@@ -861,7 +862,7 @@ function renderTables(){
   body26.innerHTML='';
   const rows26=[
     {label:'Receita Bruta',vals:state.rec_2026,editKey:'rec_2026',total:d.rec_total_2026,totalClass:'c-ora'},
-    {label:'Receita Líquida',vals:d.liq_2026,total:d.liq_total_2026,rowClass:'t-total',totalClass:'c-ora'},
+    {label:'Receita Líquida',vals:d.liq_2026,editKey:'liq_2026',total:d.liq_total_2026,rowClass:'t-total',totalClass:'c-ora'},
     {label:'EBITDA',vals:state.ebt_2026,editKey:'ebt_2026',total:d.ebt_total_2026,rowClass:'t-ebitda'},
     {label:'LAIR',vals:state.ll_2026,editKey:'ll_2026',total:d.ll_total_2026,rowClass:'t-ll',totalClass:'c-pos'},
   ];
@@ -884,13 +885,13 @@ function renderTables(){
   const triColors=['#3b82f6','#8b5cf6','#FF6E00','#1F7A3D'];
   const triLabels=['1º','2º','3º','4º'];
   for(let i=0;i<4;i++){
-    const recVar=varPct(d.tri_rec_2025[i],d.tri_rec_2026[i]);
-    const ebtVar=varPct(d.tri_ebitda_2025[i],d.tri_ebitda_2026[i]);
+    const recVar=varPct(d.tri_rec_2026[i],d.tri_rec_2025[i]);
+    const ebtVar=varPct(d.tri_ebitda_2026[i],d.tri_ebitda_2025[i]);
     const ebtCss=ebtVar>=0?'up':'down';
     const recCss=recVar>=0?'up':'down';
     const ebtArrow=ebtVar>=0?'▲':'▼';
     const recArrow=recVar>=0?'▲':'▼';
-    qGrid.innerHTML+=`<div class="q-card" style="border-top:3px solid ${triColors[i]}"><div class="q-card-head" style="color:${triColors[i]}">${triLabels[i]} Trimestre 2025</div><div class="q-row"><span class="q-label">Rec. Bruta</span><span class="q-val">R$ ${fmtK(d.tri_rec_2025[i])}K</span></div><div class="q-row"><span class="q-label">vs Proj. ${triLabels[i]}T26 (R$ ${fmtK(d.tri_rec_2026[i])}K)</span><span class="q-var ${recCss}">${recArrow} ${fmtPctSign(recVar)}</span></div><div style="height:1px;background:var(--border);margin:10px 0"></div><div class="q-row"><span class="q-label">EBITDA</span><span class="q-val" style="color:var(--orange)">R$ ${fmtK(d.tri_ebitda_2025[i])}K</span></div><div class="q-row"><span class="q-label">vs Proj. ${triLabels[i]}T26 (R$ ${fmtK(d.tri_ebitda_2026[i])}K)</span><span class="q-var ${ebtCss}">${ebtArrow} ${fmtPctSign(ebtVar)}</span></div></div>`;
+    qGrid.innerHTML+=`<div class="q-card" style="border-top:3px solid ${triColors[i]}"><div class="q-card-head" style="color:${triColors[i]}">${triLabels[i]} Trimestre 2026 Proj.</div><div class="q-row"><span class="q-label">Rec. Bruta</span><span class="q-val">R$ ${fmtK(d.tri_rec_2026[i])}K</span></div><div class="q-row"><span class="q-label">vs ${triLabels[i]}T25 (R$ ${fmtK(d.tri_rec_2025[i])}K)</span><span class="q-var ${recCss}">${recArrow} ${fmtPctSign(recVar)}</span></div><div style="height:1px;background:var(--border);margin:10px 0"></div><div class="q-row"><span class="q-label">EBITDA</span><span class="q-val" style="color:var(--orange)">R$ ${fmtK(d.tri_ebitda_2026[i])}K</span></div><div class="q-row"><span class="q-label">vs ${triLabels[i]}T25 (R$ ${fmtK(d.tri_ebitda_2025[i])}K)</span><span class="q-var ${ebtCss}">${ebtArrow} ${fmtPctSign(ebtVar)}</span></div></div>`;
   }
 
   const resumoBody=document.getElementById('tri-resumo-body');
@@ -899,18 +900,18 @@ function renderTables(){
   const margem26=pct(d.ebt_total_2026,d.liq_total_2026);
   const cls=v=>v>=0?'c-pos':'c-neg';
   const arr=v=>v>=0?'▲':'▼';
-  const resumoRows=[['Receita Bruta',d.rec_total_2025,d.rec_total_2026],['Receita Líquida',d.liq_total_2025,d.liq_total_2026],['EBITDA',d.ebt_total_2025,d.ebt_total_2026,'t-ebitda']];
-  resumoRows.forEach(([l,v25,v26,rowCls])=>{
-    const dif=v25-v26,vp=varPct(v25,v26);
+  const resumoRows=[['Receita Bruta',d.rec_total_2026,d.rec_total_2025],['Receita Líquida',d.liq_total_2026,d.liq_total_2025],['EBITDA',d.ebt_total_2026,d.ebt_total_2025,'t-ebitda']];
+  resumoRows.forEach(([l,v26,v25,rowCls])=>{
+    const dif=v26-v25,vp=varPct(v26,v25);
     const tr=document.createElement('tr');
     if(rowCls)tr.className=rowCls;
-    tr.innerHTML=`<td>${l}</td><td>${fmtK(v25)}</td><td>${fmtK(v26)}</td><td class="${cls(dif)}">${dif>=0?'+':''}${fmtK(dif)}</td><td class="${cls(vp)}">${arr(vp)} ${fmtPctSign(vp)}</td>`;
+    tr.innerHTML=`<td>${l}</td><td>${fmtK(v26)}</td><td>${fmtK(v25)}</td><td class="${cls(dif)}">${dif>=0?'+':''}${fmtK(dif)}</td><td class="${cls(vp)}">${arr(vp)} ${fmtPctSign(vp)}</td>`;
     resumoBody.appendChild(tr);
   });
   const trMargem=document.createElement('tr');
   trMargem.className='t-margin';
-  const ppDif=margem25-margem26;
-  trMargem.innerHTML=`<td>Margem EBITDA</td><td>${fmtPct(margem25)}</td><td>${fmtPct(margem26)}</td><td class="${cls(ppDif)}">${ppDif>=0?'+':''}${ppDif.toFixed(1).replace('.',',')} p.p.</td><td>–</td>`;
+  const ppDif=margem26-margem25;
+  trMargem.innerHTML=`<td>Margem EBITDA</td><td>${fmtPct(margem26)}</td><td>${fmtPct(margem25)}</td><td class="${cls(ppDif)}">${ppDif>=0?'+':''}${ppDif.toFixed(1).replace('.',',')} p.p.</td><td>–</td>`;
   resumoBody.appendChild(trMargem);
 
   const histBody=document.getElementById('historico-body');
@@ -1034,13 +1035,13 @@ function initCharts(){
   });
 
   charts.triRec=new Chart('chartTriRec',{type:'bar',data:{labels:['1T','2T','3T','4T'],datasets:[
-    {label:'2025',data:d.tri_rec_2025,backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar},
-    {label:'Proj. 2026',data:d.tri_rec_2026,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
+    {label:'Proj. 2026',data:d.tri_rec_2026,backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar},
+    {label:'2025',data:d.tri_rec_2025,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.triEbitda=new Chart('chartTriEbitda',{type:'bar',data:{labels:['1T','2T','3T','4T'],datasets:[
-    {label:'2025',data:d.tri_ebitda_2025,backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar},
-    {label:'Proj. 2026',data:d.tri_ebitda_2026,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
+    {label:'Proj. 2026',data:d.tri_ebitda_2026,backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar},
+    {label:'2025',data:d.tri_ebitda_2025,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.histRec=new Chart('chartHistRec',{type:'bar',data:{labels:['2023','2024','2025','2026 Proj.'],datasets:[
@@ -1088,23 +1089,23 @@ function initCharts(){
 
   charts.projRec=new Chart('chartProjRec',{type:'bar',data:{labels:MONTHS,datasets:[
     {label:'2026 Projetado',data:[...state.rec_2026],backgroundColor:state.rec_2026.map((_,i)=>`rgba(255,110,0,${0.42+i*0.046})`),borderRadius:4,datalabels:dlBarK},
-    {label:'2025 Realizado',data:[...state.rec_2025],type:'line',borderColor:OT.orange,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dlLineHide}
+    {label:'2025 Realizado',data:[...state.rec_2025],type:'line',borderColor:OT.orange,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dl25('#fff')}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.projEbitda=new Chart('chartProjEbitda',{type:'line',data:{labels:MONTHS,datasets:[
     {label:'2026 Projetado',data:[...state.ebt_2026],borderColor:OT.purple,backgroundColor:OT.purpleL,borderWidth:2.5,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:OT.purple,datalabels:{align:'top',color:OT.purple,font:{weight:'bold'}}},
-    {label:'2025 Realizado',data:[...state.ebt_2025],borderColor:OT.purpleM,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dlLineHide}
+    {label:'2025 Realizado',data:[...state.ebt_2025],borderColor:OT.purpleM,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dl25(OT.purpleM)}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.projLiq=new Chart('chartProjLiq',{type:'bar',data:{labels:MONTHS,datasets:[
     {label:'2026 Projetado',data:d.liq_2026,backgroundColor:d.liq_2026.map((_,i)=>`rgba(255,110,0,${0.42+i*0.046})`),borderRadius:4,datalabels:dlBarK},
-    {label:'2025 Realizado',data:d.liq_2025,type:'line',borderColor:OT.orange,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dlLineHide}
+    {label:'2025 Realizado',data:d.liq_2025,type:'line',borderColor:OT.orange,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dl25('#fff')}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.projLair=new Chart('chartProjLair',{type:'line',data:{labels:MONTHS,datasets:[
     {label:'LAIR 2026 (R$ mil)',data:state.ll_2026.map(v=>Math.round(v)),borderColor:'#6B7280',backgroundColor:'rgba(107,114,128,0.10)',borderWidth:2.5,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#6B7280',
      datalabels:{align:'top',color:'#6B7280',font:{weight:'bold',size:9},formatter:v=>v.toLocaleString('pt-BR')}},
-    {label:'LAIR 2025 (R$ mil)',data:state.ll_2025.map(v=>Math.round(v)),borderColor:'#9CA3AF',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dlLineHide}
+    {label:'LAIR 2025 (R$ mil)',data:state.ll_2025.map(v=>Math.round(v)),borderColor:'#9CA3AF',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dl25('#9CA3AF')}
   ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:{...tip,callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},
     scales:{x:sc.x,y:{...sc.y,ticks:{callback:v=>Math.round(v).toLocaleString('pt-BR'),color:OT.muted}}}}});
 }
@@ -1130,12 +1131,12 @@ function updateCharts(){
   charts.margem.data.datasets[0].data=state.ebt_2025.map(v=>Math.round(v));
   charts.margem.update();
 
-  charts.triRec.data.datasets[0].data=d.tri_rec_2025;
-  charts.triRec.data.datasets[1].data=[...d.tri_rec_2026];
+  charts.triRec.data.datasets[0].data=[...d.tri_rec_2026];
+  charts.triRec.data.datasets[1].data=d.tri_rec_2025;
   charts.triRec.update();
 
-  charts.triEbitda.data.datasets[0].data=d.tri_ebitda_2025;
-  charts.triEbitda.data.datasets[1].data=[...d.tri_ebitda_2026];
+  charts.triEbitda.data.datasets[0].data=[...d.tri_ebitda_2026];
+  charts.triEbitda.data.datasets[1].data=d.tri_ebitda_2025;
   charts.triEbitda.update();
 
   charts.histRec.data.datasets[0].data=[state.rec_2023,state.rec_2024,d.rec_total_2025,d.rec_total_2026];
@@ -1497,8 +1498,8 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 // ════════════════ INLINE EDITOR (CLIQUE-E-EDITA) ════════════════
-const FIELD_LABELS={rec_2025:'Receita Bruta 2025',imp_2025:'Impostos 2025',cvar_2025:'Custos Variáveis 2025',cfix_2025:'Custos Fixos 2025',ebt_2025:'EBITDA 2025',ll_2025:'LAIR 2025',gae_2025:'Despesas G&A 2025',resfin_2025:'Res. Financeiro 2025',ircs_2025:'IR/CSLL 2025',outros_2025:'Outros 2025',rec_2026:'Receita Bruta 2026',imp_2026:'Impostos 2026',cvar_2026:'Custos Variáveis 2026',cfix_2026:'Custos Fixos 2026',ebt_2026:'EBITDA 2026',ll_2026:'LAIR 2026',rec_2023:'Receita Bruta 2023',rec_2024:'Receita Bruta 2024',liq_2023:'Receita Líquida 2023',liq_2024:'Receita Líquida 2024',ebitda_2023:'EBITDA 2023',ebitda_2024:'EBITDA 2024',ll_2023:'LAIR 2023',ll_2024:'LAIR 2024',tri_rec_2024:'Receita Trim. 2024',tri_ebitda_2024:'EBITDA Trim. 2024',div_trib:'Dívida Tributária',div_trab:'Dívida Trabalhista',div_forn:'Dívida Fornecedores',div_bndes:'Dívida BNDES',pis_cofins:'PIS/Cofins',compensacoes:'Compensações',c_receber:'Contas a Receber',caixa:'Caixa Disponível'};
-const FIELD_PERIODS={rec_2025:MONTHS,imp_2025:MONTHS,cvar_2025:MONTHS,cfix_2025:MONTHS,ebt_2025:MONTHS,ll_2025:MONTHS,rec_2026:MONTHS,imp_2026:MONTHS,cvar_2026:MONTHS,cfix_2026:MONTHS,ebt_2026:MONTHS,ll_2026:MONTHS,tri_rec_2024:['1T','2T','3T','4T'],tri_ebitda_2024:['1T','2T','3T','4T'],div_trib:['Dez/22','Dez/23','Dez/24','Dez/25'],div_trab:['Dez/22','Dez/23','Dez/24','Dez/25'],div_forn:['Dez/22','Dez/23','Dez/24','Dez/25'],div_bndes:['Dez/22','Dez/23','Dez/24','Dez/25'],pis_cofins:['Dez/21','Dez/22','Dez/23','Dez/24','Dez/25'],compensacoes:['Dez/21','Dez/22','Dez/23','Dez/24','Dez/25'],c_receber:['Jan/25','Dez/25','Dez/26 Proj.'],caixa:['Jan/25','Dez/25','Dez/26 Proj.']};
+const FIELD_LABELS={rec_2025:'Receita Bruta 2025',imp_2025:'Impostos 2025',cvar_2025:'Custos Variáveis 2025',cfix_2025:'Custos Fixos 2025',ebt_2025:'EBITDA 2025',ll_2025:'LAIR 2025',gae_2025:'Despesas G&A 2025',resfin_2025:'Res. Financeiro 2025',ircs_2025:'IR/CSLL 2025',outros_2025:'Outros 2025',rec_2026:'Receita Bruta 2026',imp_2026:'Impostos 2026',cvar_2026:'Custos Variáveis 2026',cfix_2026:'Custos Fixos 2026',ebt_2026:'EBITDA 2026',ll_2026:'LAIR 2026',liq_2026:'Receita Líquida 2026',rec_2023:'Receita Bruta 2023',rec_2024:'Receita Bruta 2024',liq_2023:'Receita Líquida 2023',liq_2024:'Receita Líquida 2024',ebitda_2023:'EBITDA 2023',ebitda_2024:'EBITDA 2024',ll_2023:'LAIR 2023',ll_2024:'LAIR 2024',tri_rec_2024:'Receita Trim. 2024',tri_ebitda_2024:'EBITDA Trim. 2024',div_trib:'Dívida Tributária',div_trab:'Dívida Trabalhista',div_forn:'Dívida Fornecedores',div_bndes:'Dívida BNDES',pis_cofins:'PIS/Cofins',compensacoes:'Compensações',c_receber:'Contas a Receber',caixa:'Caixa Disponível'};
+const FIELD_PERIODS={rec_2025:MONTHS,imp_2025:MONTHS,cvar_2025:MONTHS,cfix_2025:MONTHS,ebt_2025:MONTHS,ll_2025:MONTHS,rec_2026:MONTHS,imp_2026:MONTHS,cvar_2026:MONTHS,cfix_2026:MONTHS,ebt_2026:MONTHS,ll_2026:MONTHS,liq_2026:MONTHS,tri_rec_2024:['1T','2T','3T','4T'],tri_ebitda_2024:['1T','2T','3T','4T'],div_trib:['Dez/22','Dez/23','Dez/24','Dez/25'],div_trab:['Dez/22','Dez/23','Dez/24','Dez/25'],div_forn:['Dez/22','Dez/23','Dez/24','Dez/25'],div_bndes:['Dez/22','Dez/23','Dez/24','Dez/25'],pis_cofins:['Dez/21','Dez/22','Dez/23','Dez/24','Dez/25'],compensacoes:['Dez/21','Dez/22','Dez/23','Dez/24','Dez/25'],c_receber:['Jan/25','Dez/25','Dez/26 Proj.'],caixa:['Jan/25','Dez/25','Dez/26 Proj.']};
 
 let activeEditor=null;
 function closeInlineEditor(){if(activeEditor){activeEditor.remove();activeEditor=null;}}
@@ -1506,14 +1507,21 @@ function closeInlineEditor(){if(activeEditor){activeEditor.remove();activeEditor
 function openInlineEditor(opts){
   closeInlineEditor();
   const{path,index,x,y,rect}=opts;
-  const v=state[path];
-  const current=Array.isArray(v)?v[index]:v;
+  // Caso especial: Receita Líquida 2026 é derivada (rec - imp). Lemos/escrevemos via imp_2026.
+  let current;
+  if(path==='liq_2026'){
+    current=state.rec_2026[index]-state.imp_2026[index];
+  } else {
+    const v=state[path];
+    current=Array.isArray(v)?v[index]:v;
+  }
   const label=FIELD_LABELS[path]||path;
   const period=(index!==undefined&&FIELD_PERIODS[path])?FIELD_PERIODS[path][index]:'';
 
   const ed=document.createElement('div');
   ed.className='inline-editor';
-  ed.innerHTML=`<div class="ie-head"><span class="ie-label">${label}</span>${period?`<span class="ie-period">${period}</span>`:''}</div><input type="number" step="any" value="${current}" /><div class="ie-hint">Enter para salvar · Esc para cancelar</div><div class="ie-actions"><button class="ie-cancel">Cancelar</button><button class="ie-save">✓ Salvar</button></div>`;
+  const hint=path==='liq_2026'?'Ajusta impostos automaticamente · Enter para salvar':'Enter para salvar · Esc para cancelar';
+  ed.innerHTML=`<div class="ie-head"><span class="ie-label">${label}</span>${period?`<span class="ie-period">${period}</span>`:''}</div><input type="number" step="any" value="${current}" /><div class="ie-hint">${hint}</div><div class="ie-actions"><button class="ie-cancel">Cancelar</button><button class="ie-save">✓ Salvar</button></div>`;
   document.body.appendChild(ed);
   activeEditor=ed;
 
@@ -1533,8 +1541,14 @@ function openInlineEditor(opts){
   const save=()=>{
     const nv=parseFloat(input.value);
     if(!isNaN(nv)){
-      if(Array.isArray(state[path]))state[path][index]=nv;
-      else state[path]=nv;
+      if(path==='liq_2026'){
+        // RL = Receita Bruta − Impostos → Impostos = RB − RL (back-cálculo)
+        state.imp_2026[index]=state.rec_2026[index]-nv;
+      } else if(Array.isArray(state[path])){
+        state[path][index]=nv;
+      } else {
+        state[path]=nv;
+      }
       renderAll();attachEditors();
       showToast('✓ Valor atualizado');
     }
