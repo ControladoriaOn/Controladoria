@@ -74,6 +74,18 @@ body{font-family:'Manrope','Inter',system-ui,sans-serif;margin:0;overflow-x:hidd
 .home-mascot-ring:nth-child(2){inset:-30px;animation-delay:1s;border-color:rgba(255,110,0,.15)}
 @keyframes homeRing{0%{transform:scale(.92);opacity:1}100%{transform:scale(1.3);opacity:0}}
 
+/* ═══════════ INITIAL LOADER (overlay durante o fetch da nuvem) ═══════════ */
+.initial-loader{position:fixed;inset:0;background:linear-gradient(135deg,#1A0F1A 0%,#3C003C 60%,#5C1A5C 100%);z-index:99999;display:flex;align-items:center;justify-content:center;transition:opacity .4s ease,visibility .4s ease}
+.initial-loader.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.loader-content{text-align:center}
+.loader-mascot{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,110,0,.5);box-shadow:0 0 40px rgba(255,110,0,.4);animation:loaderPulse 1.5s ease-in-out infinite}
+.loader-text{color:#fff;margin-top:24px;font-family:'Manrope',sans-serif;font-weight:700;font-size:13px;letter-spacing:1.5px;text-transform:uppercase}
+.loader-subtext{color:rgba(255,255,255,.55);margin-top:6px;font-family:'Manrope',sans-serif;font-size:11px;letter-spacing:.5px}
+.loader-spinner{width:28px;height:28px;border:3px solid rgba(255,110,0,.2);border-top-color:#FF6E00;border-radius:50%;margin:18px auto 0;animation:loaderSpin .8s linear infinite}
+@keyframes loaderPulse{0%,100%{transform:scale(1);box-shadow:0 0 40px rgba(255,110,0,.4)}50%{transform:scale(1.08);box-shadow:0 0 60px rgba(255,110,0,.6)}}
+@keyframes loaderSpin{to{transform:rotate(360deg)}}
+@media print{.initial-loader{display:none !important}}
+
 /* ─── HOME: Main / Cards ─── */
 .home-main{flex:1;padding:60px 48px 80px;max-width:1200px;margin:0 auto;width:100%;position:relative;z-index:1}
 .home-section-lbl{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:24px;display:flex;align-items:center;gap:10px}
@@ -530,10 +542,28 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 
   /* Sem cursor de edição na impressão */
   .editable, .cx-editable-th { cursor: default !important; }
+
+  /* ⚠️ CHARTS: garante que o canvas NUNCA estoure largura do container.
+     Sem isso, o canvas mantém width=710px (do tamanho de tela) e os últimos
+     meses (Nov/Dez) saem cortados pela direita no PDF. */
+  .chart-card { overflow: hidden !important; }
+  .chart-card > div { width: 100% !important; max-width: 100% !important; }
+  canvas { max-width: 100% !important; width: 100% !important; height: auto !important; box-sizing: border-box !important; }
 }
 </style>
 </head>
 <body style="background-color: var(--bg-light);">
+
+<!-- Loading overlay (escondido após o fetch inicial do Google Sheets) -->
+<div id="initial-loader" class="initial-loader">
+  <div class="loader-content">
+    <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" class="loader-mascot" alt="ON TIME" onerror="this.style.display='none'">
+    <div class="loader-text">Carregando dados</div>
+    <div class="loader-subtext">Sincronizando com Google Sheets…</div>
+    <div class="loader-spinner"></div>
+  </div>
+</div>
+
 <div id="view-home" class="app-view">
 
 <!-- Orbs animados -->
@@ -556,7 +586,10 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
   <div style="display:flex;align-items:center;gap:16px">
     <span class="home-hdr-pill">BI Portal</span>
     <div class="home-hdr-actions">
+      <button class="home-hdr-btn" onclick="downloadTemplate()">📥 <span>Template XLSX</span></button>
+      <button class="home-hdr-btn primary" onclick="document.getElementById('home-file-input').click()">📤 <span>Upload XLSX</span></button>
       <button class="home-hdr-btn" onclick="exportDashboardHTML()" title="Baixar HTML atualizado">💾 <span>Exportar HTML</span></button>
+      <input type="file" id="home-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
     </div>
   </div>
 </header>
@@ -651,7 +684,10 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 <div class="dh-right">
 <button class="btn-action" onclick="printActiveSection()" title="Gerar PDF da guia atual (visualização pode ser salva ou enviada)">📄 PDF</button>
+<button class="btn-action" onclick="downloadTemplate()">📥 Template</button>
+<button class="btn-action btn-primary" onclick="document.getElementById('dash-file-input').click()">📤 Upload XLSX</button>
 <button class="btn-action" onclick="exportDashboardHTML()" title="Baixar HTML atualizado para commit no git">💾 Exportar HTML</button>
+<input type="file" id="dash-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
 </div>
 </div>
 
@@ -802,7 +838,9 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="mc-actions">
 <button onclick="switchView('home')" class="btn-action">⬅ Voltar</button>
 <div style="display:flex;gap:8px;">
+<button class="btn-action btn-primary" onclick="document.getElementById('card-file-input').click()">📤 Upload XLSX</button>
 <button class="btn-action" onclick="window.print()">⬇ Salvar PDF</button>
+<input type="file" id="card-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
 </div>
 </div>
 <div class="mobile-card">
@@ -887,9 +925,9 @@ let pendingChanges=[];
 
 // ════════════════ CONFIGURAÇÃO GOOGLE SHEETS ════════════════
 // COLE AQUI a URL do seu Apps Script (termina em /exec)
-const SHEETS_API_URL='https://script.google.com/macros/s/AKfycbyVkz4nuG51VjiN8272HDEJwnvyKzLJ6AoICox08Xph3h6PlLhoSAOKe21HQieHWduO/exec';
+const SHEETS_API_URL='COLE_AQUI_A_URL_DO_APPS_SCRIPT';
 // COLE AQUI a MESMA senha que você colocou no Apps Script
-const SHEETS_SECRET='Teste1234';
+const SHEETS_SECRET='COLE_AQUI_UMA_SENHA_QUALQUER';
 
 async function loadStateFromSheets(){
   if(!SHEETS_API_URL||SHEETS_API_URL.startsWith('COLE_AQUI')){
@@ -1694,8 +1732,8 @@ function downloadTemplate(){
     ['   Mensal_2026 -> alimenta projeção 2026'],
     ['   Historico_Anual -> APENAS 2023 e 2024 (2025/2026 vêm das abas mensais)'],
     ['   Trimestral_Comp -> APENAS 2024 trimestral'],
-    ['   Endividamento -> 4 categorias x 4 anos + créditos'],
-    ['   Caixa -> 3 momentos'],
+    ['   Endividamento -> 4 categorias x 5 períodos (Dez/22, Dez/23, Dez/24, Dez/25, 1T/26) + créditos'],
+    ['   Caixa -> 4 momentos (Jan/25, Dez/25, 1T/26, Dez/26 Proj.)'],
     [],
     ['4. Salve e use "Upload XLSX" no dashboard.'],
     ['5. Você verá um PREVIEW antes de aplicar.'],
@@ -1767,28 +1805,28 @@ function downloadTemplate(){
   XLSX.utils.book_append_sheet(wb,wsT,'Trimestral_Comp');
 
   const debt=[
-    ['Categoria','Dez/2022','Dez/2023','Dez/2024','Dez/2025'],
-    ['Tributário',...state.div_trib],
-    ['Trabalhista e Cível',...state.div_trab],
-    ['Fornecedores (ECT)',...state.div_forn],
-    ['BNDES',...state.div_bndes],
+    ['Categoria','Dez/2022','Dez/2023','Dez/2024','Dez/2025','1T/2026'],
+    ['Tributário',...state.div_trib,state.div_trib_1t||0],
+    ['Trabalhista e Cível',...state.div_trab,state.div_trab_1t||0],
+    ['Fornecedores (ECT)',...state.div_forn,state.div_forn_1t||0],
+    ['BNDES',...state.div_bndes,state.div_bndes_1t||0],
     [],
     ['Créditos Fiscais — PIS/Cofins'],
-    ['Indicador','Dez/2021','Dez/2022','Dez/2023','Dez/2024','Dez/2025'],
-    ['Saldo PIS/Cofins',...state.pis_cofins],
-    ['Compensações Realizadas',...state.compensacoes],
+    ['Indicador','Dez/2021','Dez/2022','Dez/2023','Dez/2024','Dez/2025','1T/2026'],
+    ['Saldo PIS/Cofins',...state.pis_cofins,state.pis_cofins_1t||0],
+    ['Compensações Realizadas',...state.compensacoes,state.compensacoes_1t||0],
   ];
   const wsD=XLSX.utils.aoa_to_sheet(debt);
-  wsD['!cols']=[{wch:30},...Array(5).fill({wch:14})];
+  wsD['!cols']=[{wch:30},...Array(6).fill({wch:14})];
   XLSX.utils.book_append_sheet(wb,wsD,'Endividamento');
 
   const cx=[
-    ['Componente','Jan/2025','Dez/2025','Dez/2026 (Proj.)'],
-    ['Contas a Receber',...state.c_receber],
-    ['Caixa Disponível',...state.caixa],
+    ['Componente','Jan/2025','Dez/2025','1T/2026','Dez/2026 (Proj.)'],
+    ['Contas a Receber',state.c_receber[0],state.c_receber[1],state.c_receber_1t||0,state.c_receber[2]],
+    ['Caixa Disponível',state.caixa[0],state.caixa[1],state.caixa_1t||0,state.caixa[2]],
   ];
   const wsC=XLSX.utils.aoa_to_sheet(cx);
-  wsC['!cols']=[{wch:25},...Array(3).fill({wch:18})];
+  wsC['!cols']=[{wch:25},...Array(4).fill({wch:18})];
   XLSX.utils.book_append_sheet(wb,wsC,'Caixa');
 
   XLSX.writeFile(wb,'Template_OT_Dashboard.xlsx');
@@ -1852,6 +1890,17 @@ async function handleFileUpload(event){
       if(rRec>0)newState.tri_rec_2024=['B','C','D','E'].map(c=>cell('Trimestral_Comp',c+rRec));
       if(rEbt>0)newState.tri_ebitda_2024=['B','C','D','E'].map(c=>cell('Trimestral_Comp',c+rEbt));
     }
+    // Helper: encontra coluna por padrão no cabeçalho (linha "headerRow0" — 0-indexada)
+    function findColByHeader(sheetName,headerRow0,pattern){
+      const sh=wb.Sheets[sheetName];
+      if(!sh)return null;
+      const range=XLSX.utils.decode_range(sh['!ref']||'A1');
+      for(let c=range.s.c+1;c<=range.e.c;c++){
+        const ref=XLSX.utils.encode_cell({r:headerRow0,c});
+        if(sh[ref]&&pattern.test(String(sh[ref].v)))return XLSX.utils.encode_col(c);
+      }
+      return null;
+    }
     if(wb.Sheets['Endividamento']){
       const rT=findRow('Endividamento','Tributário'),rTr=findRow('Endividamento','Trabalhista'),rF=findRow('Endividamento','Fornecedores'),rB=findRow('Endividamento','BNDES'),rP=findRow('Endividamento','PIS'),rC=findRow('Endividamento','Compensa');
       if(rT>0)newState.div_trib=['B','C','D','E'].map(c=>cell('Endividamento',c+rT));
@@ -1860,11 +1909,41 @@ async function handleFileUpload(event){
       if(rB>0)newState.div_bndes=['B','C','D','E'].map(c=>cell('Endividamento',c+rB));
       if(rP>0)newState.pis_cofins=['B','C','D','E','F'].map(c=>cell('Endividamento',c+rP));
       if(rC>0)newState.compensacoes=['B','C','D','E','F'].map(c=>cell('Endividamento',c+rC));
+      // NOVO: detecta coluna 1T/2026 nas duas seções (dívida e créditos)
+      const p1T=/1\s*T|1\s*[\/\-]\s*2?6/i;
+      if(rT>0){
+        const col1T=findColByHeader('Endividamento',rT-2,p1T);
+        if(col1T){
+          newState.div_trib_1t=cell('Endividamento',col1T+rT);
+          if(rTr>0)newState.div_trab_1t=cell('Endividamento',col1T+rTr);
+          if(rF>0)newState.div_forn_1t=cell('Endividamento',col1T+rF);
+          if(rB>0)newState.div_bndes_1t=cell('Endividamento',col1T+rB);
+        }
+      }
+      if(rP>0){
+        const col1T=findColByHeader('Endividamento',rP-2,p1T);
+        if(col1T){
+          newState.pis_cofins_1t=cell('Endividamento',col1T+rP);
+          if(rC>0)newState.compensacoes_1t=cell('Endividamento',col1T+rC);
+        }
+      }
     }
     if(wb.Sheets['Caixa']){
       const rCR=findRow('Caixa','Contas a Receber'),rCx=findRow('Caixa','Caixa');
-      if(rCR>0)newState.c_receber=['B','C','D'].map(c=>cell('Caixa',c+rCR));
-      if(rCx>0)newState.caixa=['B','C','D'].map(c=>cell('Caixa',c+rCx));
+      // Detecta layout (com ou sem 1T) procurando 1T no cabeçalho (linha acima dos dados)
+      const dataRow=rCR>0?rCR:(rCx>0?rCx:2);
+      const p1T=/1\s*T|1\s*[\/\-]\s*2?6/i, pDez26=/Dez\s*[\/\-]?\s*2?6|2026/i;
+      const col1T=findColByHeader('Caixa',dataRow-2,p1T);
+      const colDez26=findColByHeader('Caixa',dataRow-2,pDez26);
+      if(col1T&&colDez26){
+        // Novo layout: B=Jan, C=Dez25, depois 1T e Dez26 em alguma ordem
+        if(rCR>0){newState.c_receber=['B','C',colDez26].map(c=>cell('Caixa',c+rCR));newState.c_receber_1t=cell('Caixa',col1T+rCR);}
+        if(rCx>0){newState.caixa=['B','C',colDez26].map(c=>cell('Caixa',c+rCx));newState.caixa_1t=cell('Caixa',col1T+rCx);}
+      }else{
+        // Layout antigo: B=Jan, C=Dez25, D=Dez26 (sem 1T)
+        if(rCR>0)newState.c_receber=['B','C','D'].map(c=>cell('Caixa',c+rCR));
+        if(rCx>0)newState.caixa=['B','C','D'].map(c=>cell('Caixa',c+rCx));
+      }
     }
 
     pendingState=newState;
@@ -1968,8 +2047,27 @@ async function applyPendingChanges(){
 }
 
 document.addEventListener('DOMContentLoaded',async()=>{
+  // Helper para esconder o overlay de loading
+  const hideLoader=()=>{
+    const el=document.getElementById('initial-loader');
+    if(el)el.classList.add('hidden');
+  };
+  // Safety: garante que o loader some no máximo em 5s, mesmo se algo der errado
+  const loaderTimeout=setTimeout(hideLoader,5000);
+
   // 1) Cache local (mostra algo instantaneamente, mesmo offline)
   const restored=restoreFromStorage();
+
+  // Drag-and-drop de XLSX em qualquer lugar da página
+  document.body.addEventListener('dragover',e=>e.preventDefault());
+  document.body.addEventListener('drop',e=>{
+    e.preventDefault();
+    const file=e.dataTransfer.files[0];
+    if(file&&/\.xlsx?$/i.test(file.name)){
+      const fakeEvent={target:{files:[file],value:''}};
+      handleFileUpload(fakeEvent);
+    }
+  });
 
   renderKPIs();
   restoreMesBadges();
@@ -1979,17 +2077,58 @@ document.addEventListener('DOMContentLoaded',async()=>{
   const cloudState=await loadStateFromSheets();
   if(cloudState){
     Object.assign(state,cloudState);
-    saveStateToStorage(); // atualiza cache local
-    renderKPIs();          // re-renderiza home com dados frescos
+    saveStateToStorage();
+    renderKPIs();
     restoreMesBadges();
     restoreCaixaLabels();
-    // Se a aba dashboard já foi inicializada, atualiza também
-    if(typeof charts!=='undefined'&&charts.recMensal){renderAll();}
-    showToast('☁️ Dados sincronizados do Google Sheets');
-  }else if(restored){
-    setTimeout(()=>showToast('✓ Dados restaurados do cache local'),300);
   }
+
+  // 3) Re-render da view ativa. Se for a dashboard (que é o padrão ao abrir o site),
+  //    precisa chamar initCharts() — sem isso os gráficos ficam vazios até navegar pra
+  //    home e voltar. Esse era o bug do "dados aparecem vazios na entrada".
+  const activeView=document.querySelector('.app-view.active')?.id;
+  if(activeView==='view-dashboard'){
+    initCharts();
+    renderAll();
+    attachEditors();
+  }
+
+  // Mostra feedback de onde os dados vieram
+  if(cloudState)showToast('☁️ Dados sincronizados do Google Sheets');
+  else if(restored)setTimeout(()=>showToast('✓ Dados do cache local'),300);
+
+  // Esconde o loader (e cancela o safety timeout)
+  clearTimeout(loaderTimeout);
+  hideLoader();
 });
+
+// ═══════════ PDF/PRINT: força gráficos a se redimensionarem antes da impressão ═══════════
+// Registrado globalmente (não dentro do printActiveSection), pra captar window.print()
+// vindo de qualquer lugar (atalho Ctrl+P, botão "Salvar PDF" da visão Card, etc.)
+function _resizeAllChartsForPrint(){
+  if(typeof charts!=='object'||!charts)return;
+  Object.values(charts).forEach(c=>{
+    if(!c||!c.canvas)return;
+    try{
+      // Limpa qualquer dimensão fixa que Chart.js tenha aplicado (style="width:710px") 
+      c.canvas.style.width='';
+      c.canvas.style.height='';
+      c.resize();
+      c.update('none');
+    }catch(e){console.warn('resize chart:',e);}
+  });
+}
+// matchMedia('print') dispara ANTES de beforeprint em muitos browsers — dá mais
+// tempo pro Chart.js refazer o layout antes do snapshot do PDF
+try{
+  const printMQ=window.matchMedia('print');
+  printMQ.addEventListener('change',ev=>{
+    if(ev.matches)_resizeAllChartsForPrint();
+    else setTimeout(_resizeAllChartsForPrint,100);
+  });
+}catch(e){}
+window.addEventListener('beforeprint',_resizeAllChartsForPrint);
+window.addEventListener('afterprint',()=>setTimeout(_resizeAllChartsForPrint,100));
 
 // ════════════════ INLINE EDITOR (CLIQUE-E-EDITA) ════════════════
 const FIELD_LABELS={rec_2025:'Receita Bruta 2025',rec_2026_real:'Receita Bruta Real.',imp_2026_real:'Impostos Real.',cvar_2026_real:'Custos Variáveis Real.',cfix_2026_real:'Custos Fixos Real.',ebt_2026_real:'EBITDA Real.',ll_2026_real:'LAIR Real.',div_trib_1t:'Dívida Tributária 1T/26',div_trab_1t:'Dívida Trabalhista 1T/26',div_forn_1t:'Dívida Fornecedores 1T/26',div_bndes_1t:'Dívida BNDES 1T/26',pis_cofins_1t:'PIS/Cofins 1T/26',compensacoes_1t:'Compensações 1T/26',c_receber_1t:'Contas a Receber 1T/26',caixa_1t:'Caixa 1T/26',imp_2025:'Impostos 2025',cvar_2025:'Custos Variáveis 2025',cfix_2025:'Custos Fixos 2025',ebt_2025:'EBITDA 2025',ll_2025:'LAIR 2025',gae_2025:'Despesas G&A 2025',resfin_2025:'Res. Financeiro 2025',ircs_2025:'IR/CSLL 2025',outros_2025:'Outros 2025',rec_2026:'Receita Bruta 2026',imp_2026:'Impostos 2026',cvar_2026:'Custos Variáveis 2026',cfix_2026:'Custos Fixos 2026',ebt_2026:'EBITDA 2026',ll_2026:'LAIR 2026',liq_2026:'Receita Líquida 2026',rec_2023:'Receita Bruta 2023',rec_2024:'Receita Bruta 2024',liq_2023:'Receita Líquida 2023',liq_2024:'Receita Líquida 2024',ebitda_2023:'EBITDA 2023',ebitda_2024:'EBITDA 2024',ll_2023:'LAIR 2023',ll_2024:'LAIR 2024',tri_rec_2024:'Receita Trim. 2024',tri_ebitda_2024:'EBITDA Trim. 2024',div_trib:'Dívida Tributária',div_trab:'Dívida Trabalhista',div_forn:'Dívida Fornecedores',div_bndes:'Dívida BNDES',pis_cofins:'PIS/Cofins',compensacoes:'Compensações',c_receber:'Contas a Receber',caixa:'Caixa Disponível'};
