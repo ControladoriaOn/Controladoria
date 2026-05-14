@@ -890,6 +890,44 @@ const state={"rec_2025":[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14
 let pendingState=null;
 let pendingChanges=[];
 
+// ════════════════ CONFIGURAÇÃO GOOGLE SHEETS ════════════════
+// COLE AQUI a URL do seu Apps Script (termina em /exec)
+const SHEETS_API_URL='https://script.google.com/macros/s/AKfycbyVkz4nuG51VjiN8272HDEJwnvyKzLJ6AoICox08Xph3h6PlLhoSAOKe21HQieHWduO/exec';
+// COLE AQUI a MESMA senha que você colocou no Apps Script
+const SHEETS_SECRET='Teste1234';
+
+async function loadStateFromSheets(){
+  if(!SHEETS_API_URL||SHEETS_API_URL.startsWith('COLE_AQUI')){
+    console.warn('Google Sheets desativado (URL não configurada).');return null;
+  }
+  try{
+    // ?t= é só pra furar cache do navegador
+    const r=await fetch(SHEETS_API_URL+'?t='+Date.now());
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const txt=await r.text();
+    if(!txt||txt.trim()===''||txt.trim()==='{}')return null;
+    return JSON.parse(txt);
+  }catch(e){console.warn('Falha ao ler do Google Sheets:',e);return null;}
+}
+
+async function saveStateToSheets(stateObj){
+  if(!SHEETS_API_URL||SHEETS_API_URL.startsWith('COLE_AQUI')){
+    console.warn('Google Sheets desativado (URL não configurada).');return false;
+  }
+  try{
+    // text/plain evita o "preflight" CORS que o Apps Script não aceita
+    const r=await fetch(SHEETS_API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({secret:SHEETS_SECRET,state:stateObj})
+    });
+    const result=await r.json();
+    if(!result.ok)throw new Error(result.error||'erro desconhecido');
+    return true;
+  }catch(e){console.error('Falha ao gravar no Google Sheets:',e);return false;}
+}
+// ════════════════ FIM CONFIGURAÇÃO GOOGLE SHEETS ════════════════
+
 // ════════════════ PERSISTÊNCIA (localStorage + Exportar HTML) ════════════════
 const STORAGE_KEY='ot_dashboard_state_v1';
 
@@ -1905,7 +1943,7 @@ function showPreview(gc){
 
 function closePreview(){document.getElementById('previewModal').classList.remove('active');pendingState=null;pendingChanges=[];}
 
-function applyPendingChanges(){
+async function applyPendingChanges(){
   if(!pendingState)return;
   Object.assign(state,pendingState);
   // Atualiza arrays Budget (Orçado) quando XLSX é carregado com novos dados 2026
@@ -1919,11 +1957,15 @@ function applyPendingChanges(){
   else if(activeView==='view-dashboard'){initCharts();renderAll();attachEditors();}
   else{renderAll();}
   closePreview();
-  showToast('✅ Dashboard atualizado com sucesso!');
+  showToast('💾 Salvando na nuvem...');
+  // Envia o novo state para o Google Sheets
+  const ok=await saveStateToSheets(state);
+  if(ok)showToast('☁️ Dashboard salvo no Google Sheets!');
+  else showToast('⚠️ Salvo localmente, mas falhou enviar à nuvem','error');
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  // Restaura dados salvos no navegador (sobrevive a refresh)
+document.addEventListener('DOMContentLoaded',async()=>{
+  // 1) Cache local (mostra algo instantaneamente, mesmo offline)
   const restored=restoreFromStorage();
 
   document.body.addEventListener('dragover',e=>e.preventDefault());
@@ -1936,11 +1978,22 @@ document.addEventListener('DOMContentLoaded',()=>{
     }
   });
   renderKPIs();
-  // Aplica restaurações visuais (badges Orçado/Realizado, rótulos da tabela de Caixa)
   restoreMesBadges();
   restoreCaixaLabels();
-  if(restored){
-    setTimeout(()=>showToast('✓ Dados restaurados do navegador'),300);
+
+  // 2) Busca a versão mais recente do Google Sheets (fonte da verdade)
+  const cloudState=await loadStateFromSheets();
+  if(cloudState){
+    Object.assign(state,cloudState);
+    saveStateToStorage(); // atualiza cache local
+    renderKPIs();          // re-renderiza home com dados frescos
+    restoreMesBadges();
+    restoreCaixaLabels();
+    // Se a aba dashboard já foi inicializada, atualiza também
+    if(typeof charts!=='undefined'&&charts.recMensal){renderAll();}
+    showToast('☁️ Dados sincronizados do Google Sheets');
+  }else if(restored){
+    setTimeout(()=>showToast('✓ Dados restaurados do cache local'),300);
   }
 });
 
