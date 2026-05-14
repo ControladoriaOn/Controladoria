@@ -11,6 +11,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{--orange:#FF6E00;--orange-light:#FFF0E5;--orange-mid:#ff9544;--purple-dark:#3C003C;--purple-mid:#5C1A5C;--purple-soft:#8C3A8C;--purple-pale:#F6EEF6;--purple-tint:#FAF7FA;--white:#FFFFFF;--bg-light:#FAF7F5;--bg-dark:#1A0F1A;--card:#FFFFFF;--border:#E8E0E8;--text:#1A0F1A;--muted:#6B5E6B;--muted2:#9B8A9B;--green:#1F7A3D;--green-light:#DCFCE7;--red:#DC2626;--red-light:#FEE2E2;--shadow:0 1px 4px rgba(60,0,60,0.07),0 4px 16px rgba(60,0,60,0.05);--shadow-sm:0 1px 3px rgba(60,0,60,0.07)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -551,11 +553,11 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
   canvas { max-width: 100% !important; width: 100% !important; height: auto !important; box-sizing: border-box !important; }
 }
 </style>
-</head>
+<meta id="dcngeagmmhegagicpcmpinaoklddcgon"></head>
 <body style="background-color: var(--bg-light);">
 
 <!-- Loading overlay (escondido após o fetch inicial do Google Sheets) -->
-<div id="initial-loader" class="initial-loader">
+<div id="initial-loader" class="initial-loader hidden">
   <div class="loader-content">
     <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" class="loader-mascot" alt="ON TIME" onerror="this.style.display='none'">
     <div class="loader-text">Carregando dados</div>
@@ -692,37 +694,37 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 
 <div class="dash-nav">
-<div class="dash-tab active" onclick="showSection('dre',this)">📊 DRE 2025</div>
+<div class="dash-tab" onclick="showSection('dre',this)">📊 DRE 2025</div>
 <div class="dash-tab" onclick="showSection('trimestral',this)">📅 Trimestral</div>
 <div class="dash-tab" onclick="showSection('historico',this)">📈 Histórico</div>
 <div class="dash-tab" onclick="showSection('endividamento',this)">💳 Endividamento</div>
 <div class="dash-tab" onclick="showSection('caixa',this)">💰 Fluxo de Caixa</div>
-<div class="dash-tab" onclick="showSection('projecao',this)">🎯 Projeção 2026</div>
+<div class="dash-tab active" onclick="showSection('projecao',this)">🎯 Projeção 2026</div>
 </div>
 
 <div class="dash-content">
-<div id="section-dre" class="dash-section active">
+<div id="section-dre" class="dash-section">
 <div class="sec-header"><div class="sec-header-icon">📊</div><h2>DRE – Realizado 12M 2025</h2><div class="sec-tag">Dados ao vivo</div></div>
 <div class="kpi-grid">
 <div class="kpi-card k-orange"><div class="kpi-card-icon">📦</div><div class="kpi-label">Receita Bruta</div><div class="kpi-value" data-bind="kpi.rec_2025">R$ 115,6M</div><div class="kpi-sub" data-bind="kpi.rec_2025_sub">12 meses · 2025 Realizado</div><div class="kpi-var up" data-bind="kpi.rec_var">▲ +62,6% vs 2024</div></div>
 <div class="kpi-card k-purple"><div class="kpi-card-icon">💼</div><div class="kpi-label">Receita Líquida</div><div class="kpi-value" data-bind="kpi.liq_2025" style="color:var(--purple-dark)">R$ 101,3M</div><div class="kpi-sub" data-bind="kpi.liq_2025_sub">Após impostos e deduções (12,3%)</div><div class="kpi-var up" data-bind="kpi.liq_var">▲ +59,5% vs 2024</div></div>
 <div class="kpi-card k-teal"><div class="kpi-card-icon">📈</div><div class="kpi-label">EBITDA</div><div class="kpi-value" data-bind="kpi.ebt_2025" style="color:#0891b2">R$ 6,1M</div><div class="kpi-sub" data-bind="kpi.ebt_2025_sub">Margem: 6,0% s/ Receita Líquida</div><div class="kpi-var up" data-bind="kpi.ebt_var">▲ +89,4% vs 2024</div></div>
-<div class="kpi-card k-green"><div class="kpi-card-icon">✅</div><div class="kpi-label">LAIR</div><div class="kpi-value" data-bind="kpi.ll_2025" style="color:var(--green)">R$ 1,7M</div><div class="kpi-sub" data-bind="kpi.ll_2025_sub">Margem: 1,7% s/ Receita Líquida</div><div class="kpi-var up">▲ Positivo</div></div>
+<div class="kpi-card k-green"><div class="kpi-card-icon">✅</div><div class="kpi-label">LAIR</div><div class="kpi-value" data-bind="kpi.ll_2025" style="color:var(--green)">R$ 3,9M</div><div class="kpi-sub" data-bind="kpi.ll_2025_sub">Margem: 3,9% s/ Receita Líquida</div><div class="kpi-var up">▲ Positivo</div></div>
 </div>
 <div class="charts-2col">
-<div class="chart-card"><div class="chart-title">Evolução Mensal da Receita Bruta — 2025</div><div class="chart-sub">R$ mil · Barras + linha de tendência</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartRecMensal" width="861" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 861px; cursor: default;"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">LAIR Mensal — 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartLairMargem" width="558" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 558px;"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Evolução Mensal da Receita Bruta — 2025</div><div class="chart-sub">R$ mil · Barras + linha de tendência</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartRecMensal" width="688" height="200" style="display: block; box-sizing: border-box; height: 250px; width: 860px; cursor: default;"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">LAIR Mensal — 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartLairMargem" width="446" height="200" style="display: block; box-sizing: border-box; height: 250px; width: 558px;"></canvas></div></div>
 </div>
 <div class="charts-2col">
-<div class="chart-card"><div class="chart-title">EBITDA Mensal — 2025</div><div class="chart-sub">R$ mil · Barra + linha acumulada</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartEbitdaMensal" width="861" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 861px; cursor: pointer;"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">EBITDA Mensal — 2025 (R$ mil)</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartMargemMensal" width="558" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 558px;"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">EBITDA Mensal — 2025</div><div class="chart-sub">R$ mil · Barra + linha acumulada</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartEbitdaMensal" width="688" height="200" style="display: block; box-sizing: border-box; height: 250px; width: 860px; cursor: pointer;"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">EBITDA Mensal — 2025 (R$ mil)</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartMargemMensal" width="446" height="200" style="display: block; box-sizing: border-box; height: 250px; width: 558px;"></canvas></div></div>
 </div>
 <div class="table-card">
 <div class="table-title">Demonstrativo de Resultado (DRE) — Mensal 2025 · Gerencial</div>
 <div class="table-sub">Valores em R$ mil</div>
 <table>
 <thead><tr><th style="min-width:190px">Indicador</th><th>Jan</th><th>Fev</th><th>Mar</th><th>Abr</th><th>Mai</th><th>Jun</th><th>Jul</th><th>Ago</th><th>Set</th><th>Out</th><th>Nov</th><th>Dez</th><th style="color:var(--orange)">TOTAL</th><th>AV%</th></tr></thead>
-<tbody id="dre-2025-body"><tr><td>Receita Bruta</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="0">6.956</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="1">6.954</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="2">6.770</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="3">6.622</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="4">7.151</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="5">7.565</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="6">9.443</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="7">10.165</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="8">11.525</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="9">13.209</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="10">14.505</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="11">14.753</td><td class="c-ora">115.618</td><td class="c-av">114,1%</td></tr><tr><td>(-) Impostos e Deduções</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="0">(839)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="1">(832)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="2">(785)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="3">(824)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="4">(884)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="5">(906)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="6">(1.123)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="7">(1.194)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="8">(1.342)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="9">(1.746)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="10">(1.876)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="11">(1.920)</td><td class="">14.271</td><td class="c-av">14,1%</td></tr><tr class="t-total"><td>Receita Líquida</td><td class="">6.117</td><td class="">6.122</td><td class="">5.985</td><td class="">5.798</td><td class="">6.267</td><td class="">6.659</td><td class="">8.320</td><td class="">8.971</td><td class="">10.183</td><td class="">11.463</td><td class="">12.629</td><td class="">12.833</td><td class="c-ora">101.347</td><td class="c-av">100,0%</td></tr><tr><td>(-) Custos Variáveis</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="0">(4.038)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="1">(3.829)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="2">(3.823)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="3">(3.577)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="4">(3.934)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="5">(4.179)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="6">(5.394)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="7">(5.479)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="8">(6.243)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="9">(7.024)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="10">(7.329)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="11">(7.672)</td><td class="">62.521</td><td class="c-av">61,7%</td></tr><tr><td>(-) Custos Fixos</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="0">(1.297)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="1">(1.342)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="2">(1.471)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="3">(1.556)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="4">(1.562)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="5">(1.630)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="6">(1.865)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="7">(2.244)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="8">(2.519)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="9">(3.088)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="10">(3.919)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="11">(3.722)</td><td class="">26.215</td><td class="c-av">25,9%</td></tr><tr class="t-total"><td>Lucro Bruto</td><td class="">782</td><td class="">951</td><td class="">691</td><td class="">665</td><td class="">771</td><td class="">850</td><td class="">1.061</td><td class="">1.248</td><td class="">1.421</td><td class="">1.351</td><td class="">1.381</td><td class="">1.439</td><td class="c-ora">12.611</td><td class="c-av">12,4%</td></tr><tr class="t-ebitda"><td>Resultado Op. (EBITDA)</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="0">269</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="1">460</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="2">183</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="3">130</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="4">226</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="5">349</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="6">528</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="7">621</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="8">827</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="9">732</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="10">749</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="11">1.002</td><td class="">6.076</td><td class="c-av">6,0%</td></tr><tr class="t-margin"><td>Margem EBITDA %</td><td class="">4,4%</td><td class="">7,5%</td><td class="">3,1%</td><td class="">2,2%</td><td class="">3,6%</td><td class="">5,2%</td><td class="">6,3%</td><td class="">6,9%</td><td class="">8,1%</td><td class="">6,4%</td><td class="">5,9%</td><td class="">7,8%</td><td class="">6,0%</td><td class="c-av">–</td></tr><tr class="t-ll"><td>LAIR</td><td class="c-neg editable" data-edit-key="ll_2025" data-edit-idx="0">(151)</td><td class="c-neg editable" data-edit-key="ll_2025" data-edit-idx="1">(48)</td><td class="c-neg editable" data-edit-key="ll_2025" data-edit-idx="2">(85)</td><td class="c-neg editable" data-edit-key="ll_2025" data-edit-idx="3">(129)</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="4">1</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="5">111</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="6">219</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="7">277</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="8">421</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="9">298</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="10">291</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="11">487</td><td class="c-pos">1.692</td><td class="c-av">1,7%</td></tr></tbody>
+<tbody id="dre-2025-body"><tr><td>Receita Bruta</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="0">6.956</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="1">6.954</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="2">6.770</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="3">6.622</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="4">7.151</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="5">7.565</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="6">9.443</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="7">10.165</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="8">11.525</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="9">13.209</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="10">14.505</td><td class=" editable" data-edit-key="rec_2025" data-edit-idx="11">14.753</td><td class="c-ora">115.618</td><td class="c-av">114,1%</td></tr><tr><td>(-) Impostos e Deduções</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="0">(839)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="1">(832)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="2">(785)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="3">(824)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="4">(884)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="5">(906)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="6">(1.123)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="7">(1.194)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="8">(1.342)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="9">(1.746)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="10">(1.876)</td><td class=" editable" data-edit-key="imp_2025" data-edit-idx="11">(1.920)</td><td class="">14.271</td><td class="c-av">14,1%</td></tr><tr class="t-total"><td>Receita Líquida</td><td class="">6.117</td><td class="">6.122</td><td class="">5.985</td><td class="">5.798</td><td class="">6.267</td><td class="">6.659</td><td class="">8.320</td><td class="">8.971</td><td class="">10.183</td><td class="">11.463</td><td class="">12.629</td><td class="">12.833</td><td class="c-ora">101.347</td><td class="c-av">100,0%</td></tr><tr><td>(-) Custos Variáveis</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="0">(4.038)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="1">(3.829)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="2">(3.823)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="3">(3.577)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="4">(3.934)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="5">(4.179)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="6">(5.394)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="7">(5.479)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="8">(6.243)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="9">(7.024)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="10">(7.329)</td><td class=" editable" data-edit-key="cvar_2025" data-edit-idx="11">(7.672)</td><td class="">62.521</td><td class="c-av">61,7%</td></tr><tr><td>(-) Custos Fixos</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="0">(1.297)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="1">(1.342)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="2">(1.471)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="3">(1.556)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="4">(1.562)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="5">(1.630)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="6">(1.865)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="7">(2.244)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="8">(2.519)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="9">(3.088)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="10">(3.919)</td><td class=" editable" data-edit-key="cfix_2025" data-edit-idx="11">(3.722)</td><td class="">26.215</td><td class="c-av">25,9%</td></tr><tr class="t-total"><td>Lucro Bruto</td><td class="">782</td><td class="">951</td><td class="">691</td><td class="">665</td><td class="">771</td><td class="">850</td><td class="">1.061</td><td class="">1.248</td><td class="">1.421</td><td class="">1.351</td><td class="">1.381</td><td class="">1.439</td><td class="c-ora">12.611</td><td class="c-av">12,4%</td></tr><tr class="t-ebitda"><td>Resultado Op. (EBITDA)</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="0">269</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="1">460</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="2">183</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="3">130</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="4">226</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="5">349</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="6">528</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="7">621</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="8">827</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="9">732</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="10">749</td><td class=" editable" data-edit-key="ebt_2025" data-edit-idx="11">1.002</td><td class="">6.076</td><td class="c-av">6,0%</td></tr><tr class="t-margin"><td>Margem EBITDA %</td><td class="">4,4%</td><td class="">7,5%</td><td class="">3,1%</td><td class="">2,2%</td><td class="">3,6%</td><td class="">5,2%</td><td class="">6,3%</td><td class="">6,9%</td><td class="">8,1%</td><td class="">6,4%</td><td class="">5,9%</td><td class="">7,8%</td><td class="">6,0%</td><td class="c-av">–</td></tr><tr class="t-ll"><td>LAIR</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="0">87</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="1">280</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="2">18</td><td class="c-neg editable" data-edit-key="ll_2025" data-edit-idx="3">(26)</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="4">104</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="5">249</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="6">390</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="7">467</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="8">656</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="9">494</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="10">485</td><td class=" editable" data-edit-key="ll_2025" data-edit-idx="11">742</td><td class="c-pos">3.946</td><td class="c-av">3,9%</td></tr></tbody>
 </table>
 </div>
 </div>
@@ -731,8 +733,8 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="sec-header"><div class="sec-header-icon">📅</div><h2>Resultado Trimestral — Projeção 2026 vs 2025</h2><div class="sec-tag" id="tri-sec-tag">Comparativo por Trimestre</div></div>
 <div class="q-grid" id="q-cards-grid"><div class="q-card" style="border-top:3px solid #3b82f6"><div class="q-card-head" style="color:#3b82f6;display:flex;justify-content:space-between;align-items:center">1º Trimestre 2026<span style="font-size:9px;font-weight:700;padding:1px 8px;border-radius:8px;background:var(--orange-light);color:var(--orange);float:right;line-height:1.6">✓ Realizado</span></div><div class="q-row"><span class="q-label">Rec. Bruta</span><span class="q-val">R$ 45.618K</span></div><div class="q-row"><span class="q-label">vs 1ºT25 (R$ 20.680K)</span><span class="q-var up">▲ +120,6%</span></div><div style="height:1px;background:var(--border);margin:10px 0"></div><div class="q-row"><span class="q-label">EBITDA</span><span class="q-val" style="color:var(--orange)">R$ 2.072K</span></div><div class="q-row"><span class="q-label">vs 1ºT25 (R$ 912K)</span><span class="q-var up">▲ +127,2%</span></div><div class="q-row" style="margin-top:4px"><span class="q-label" style="font-size:10px">Mgm EBITDA</span><span class="q-val" style="font-size:11px;color:var(--muted)">5,2%</span></div></div><div class="q-card" style="border-top:3px solid #8b5cf6"><div class="q-card-head" style="color:#8b5cf6;display:flex;justify-content:space-between;align-items:center">2º Trimestre 2026<span style="font-size:9px;font-weight:700;padding:1px 8px;border-radius:8px;background:#ede8f5;color:var(--purple-soft);float:right;line-height:1.6">⚡ Parcial</span></div><div class="q-row"><span class="q-label">Rec. Bruta</span><span class="q-val">R$ 47.229K</span></div><div class="q-row"><span class="q-label">vs 2ºT25 (R$ 21.338K)</span><span class="q-var up">▲ +121,3%</span></div><div style="height:1px;background:var(--border);margin:10px 0"></div><div class="q-row"><span class="q-label">EBITDA</span><span class="q-val" style="color:var(--orange)">R$ 2.923K</span></div><div class="q-row"><span class="q-label">vs 2ºT25 (R$ 705K)</span><span class="q-var up">▲ +314,6%</span></div><div class="q-row" style="margin-top:4px"><span class="q-label" style="font-size:10px">Mgm EBITDA</span><span class="q-val" style="font-size:11px;color:var(--muted)">7,1%</span></div></div><div class="q-card" style="border-top:3px solid #FF6E00"><div class="q-card-head" style="color:#FF6E00;display:flex;justify-content:space-between;align-items:center">3º Trimestre 2026<span style="font-size:9px;font-weight:700;padding:1px 8px;border-radius:8px;background:var(--purple-pale);color:var(--purple-soft);float:right;line-height:1.6">○ Orçado</span></div><div class="q-row"><span class="q-label">Rec. Bruta</span><span class="q-val">R$ 46.921K</span></div><div class="q-row"><span class="q-label">vs 3ºT25 (R$ 31.133K)</span><span class="q-var up">▲ +50,7%</span></div><div style="height:1px;background:var(--border);margin:10px 0"></div><div class="q-row"><span class="q-label">EBITDA</span><span class="q-val" style="color:var(--orange)">R$ 2.973K</span></div><div class="q-row"><span class="q-label">vs 3ºT25 (R$ 1.976K)</span><span class="q-var up">▲ +50,5%</span></div><div class="q-row" style="margin-top:4px"><span class="q-label" style="font-size:10px">Mgm EBITDA</span><span class="q-val" style="font-size:11px;color:var(--muted)">7,3%</span></div></div><div class="q-card" style="border-top:3px solid #1F7A3D"><div class="q-card-head" style="color:#1F7A3D;display:flex;justify-content:space-between;align-items:center">4º Trimestre 2026<span style="font-size:9px;font-weight:700;padding:1px 8px;border-radius:8px;background:var(--purple-pale);color:var(--purple-soft);float:right;line-height:1.6">○ Orçado</span></div><div class="q-row"><span class="q-label">Rec. Bruta</span><span class="q-val">R$ 47.940K</span></div><div class="q-row"><span class="q-label">vs 4ºT25 (R$ 42.467K)</span><span class="q-var up">▲ +12,9%</span></div><div style="height:1px;background:var(--border);margin:10px 0"></div><div class="q-row"><span class="q-label">EBITDA</span><span class="q-val" style="color:var(--orange)">R$ 3.221K</span></div><div class="q-row"><span class="q-label">vs 4ºT25 (R$ 2.483K)</span><span class="q-var up">▲ +29,7%</span></div><div class="q-row" style="margin-top:4px"><span class="q-label" style="font-size:10px">Mgm EBITDA</span><span class="q-val" style="font-size:11px;color:var(--muted)">7,7%</span></div></div></div>
 <div class="charts-2eq">
-<div class="chart-card"><div class="chart-title">Receita Bruta por Trimestre — Projeção 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriRec" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px; cursor: pointer;" width="710"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">EBITDA por Trimestre — Projeção 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriEbitda" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px; cursor: default;" width="710"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Receita Bruta por Trimestre — Projeção 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriRec" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px; cursor: pointer;" width="0"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">EBITDA por Trimestre — Projeção 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartTriEbitda" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px; cursor: default;" width="0"></canvas></div></div>
 </div>
 <div class="table-card">
 <div class="table-title">Acumulado 12M Projeção 2026 vs 2025 — Destaques</div>
@@ -750,13 +752,13 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="kpi-card k-green"><div class="kpi-label">2026 · Projeção</div><div class="kpi-value" data-bind="hist.rec_2026" style="color:var(--green)">R$ 187,7M</div><div class="kpi-sub">Orçado</div></div>
 </div>
 <div class="charts-2eq">
-<div class="chart-card"><div class="chart-title">Receita Bruta — Histórico e Projeção</div><div class="chart-sub">R$ mil · 2023–2026</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartHistRec" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px;" width="710"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">EBITDA — Histórico e Projeção</div><div class="chart-sub">R$ mil + Margem %</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartHistEbitda" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px;" width="710"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Receita Bruta — Histórico e Projeção</div><div class="chart-sub">R$ mil · 2023–2026</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartHistRec" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">EBITDA — Histórico e Projeção</div><div class="chart-sub">R$ mil + Margem %</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartHistEbitda" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div></div>
 </div>
 <div class="table-card">
 <div class="table-title">DRE Histórico — 2023 | 2024 | 2025 Realizado | 2026 Projetado</div>
 <div class="table-sub">Valores em R$ mil</div>
-<table><thead><tr><th>Indicador</th><th>2023</th><th>2024</th><th>2025</th><th>2026 (Proj.)</th><th>Var 24→25</th><th>Var 25→26</th></tr></thead><tbody id="historico-body"><tr><td>Receita Bruta</td><td class="editable" data-edit-key="rec_2023">60.548</td><td class="editable" data-edit-key="rec_2024">71.088</td><td>115.618</td><td>187.708</td><td class="c-pos">+62,6%</td><td class="c-pos">+62,4%</td></tr><tr class="t-total"><td>Receita Líquida</td><td class="editable" data-edit-key="liq_2023">53.606</td><td class="editable" data-edit-key="liq_2024">63.528</td><td>101.347</td><td>162.971</td><td class="c-pos">+59,5%</td><td class="c-pos">+60,8%</td></tr><tr class="t-ebitda"><td>EBITDA</td><td class="editable" data-edit-key="ebitda_2023"><span class="c-neg">(1.912)</span></td><td class="editable" data-edit-key="ebitda_2024">3.208</td><td>6.076</td><td>11.189</td><td class="c-pos">+89,4%</td><td class="c-pos">+84,2%</td></tr><tr class="t-ll"><td>LAIR</td><td class="editable" data-edit-key="ll_2023"><span class="c-neg">(4.435)</span></td><td class="editable" data-edit-key="ll_2024">0</td><td>1.692</td><td>6.979</td><td class="c-pos">+0,0%</td><td class="c-pos">+312,5%</td></tr></tbody></table>
+<table><thead><tr><th>Indicador</th><th>2023</th><th>2024</th><th>2025</th><th>2026 (Proj.)</th><th>Var 24→25</th><th>Var 25→26</th></tr></thead><tbody id="historico-body"><tr><td>Receita Bruta</td><td class="editable" data-edit-key="rec_2023">60.548</td><td class="editable" data-edit-key="rec_2024">71.088</td><td>115.618</td><td>187.708</td><td class="c-pos">+62,6%</td><td class="c-pos">+62,4%</td></tr><tr class="t-total"><td>Receita Líquida</td><td class="editable" data-edit-key="liq_2023">53.606</td><td class="editable" data-edit-key="liq_2024">63.528</td><td>101.347</td><td>162.971</td><td class="c-pos">+59,5%</td><td class="c-pos">+60,8%</td></tr><tr class="t-ebitda"><td>EBITDA</td><td class="editable" data-edit-key="ebitda_2023"><span class="c-neg">(1.912)</span></td><td class="editable" data-edit-key="ebitda_2024">3.208</td><td>6.076</td><td>11.189</td><td class="c-pos">+89,4%</td><td class="c-pos">+84,2%</td></tr><tr class="t-ll"><td>LAIR</td><td class="editable" data-edit-key="ll_2023"><span class="c-neg">(4.435)</span></td><td class="editable" data-edit-key="ll_2024">0</td><td>3.946</td><td>6.979</td><td class="c-pos">+0,0%</td><td class="c-pos">+76,9%</td></tr></tbody></table>
 </div>
 </div>
 
@@ -776,12 +778,12 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 </div>
 <div class="charts-2eq">
-<div class="chart-card"><div class="chart-title">Evolução do Endividamento Total</div><div class="chart-sub">R$ mil · 2022 – 1T/2026</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartDivida" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px;" width="710"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">Composição do Endividamento por Categoria</div><div class="chart-sub">R$ mil · Empilhado</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartDividaComp" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px; cursor: default;" width="710"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Evolução do Endividamento Total</div><div class="chart-sub">R$ mil · 2022 – 1T/2026</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartDivida" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Composição do Endividamento por Categoria</div><div class="chart-sub">R$ mil · Empilhado</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartDividaComp" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px; cursor: default;" width="0"></canvas></div></div>
 </div>
 <div class="charts-2eq">
 <div class="table-card" style="margin-bottom:0"><div class="table-title">Abertura do Endividamento por Categoria</div><div class="table-sub">R$ mil</div><table><thead><tr><th>Categoria</th><th>Dez/22</th><th>Dez/23</th><th>Dez/24</th><th>Dez/25</th><th>1T/2026</th><th>Redução</th></tr></thead><tbody id="divida-body"><tr><td>Tributário</td><td class="editable" data-edit-key="div_trib" data-edit-idx="0">14.394</td><td class="editable" data-edit-key="div_trib" data-edit-idx="1">10.327</td><td class="editable" data-edit-key="div_trib" data-edit-idx="2">8.018</td><td class="editable" data-edit-key="div_trib" data-edit-idx="3">6.935</td><td class="editable" data-edit-key="div_trib_1t">6.275</td><td class="c-pos">▼ -7.459</td></tr><tr><td>Trabalhista e Cível</td><td class="editable" data-edit-key="div_trab" data-edit-idx="0">1.783</td><td class="editable" data-edit-key="div_trab" data-edit-idx="1">2.619</td><td class="editable" data-edit-key="div_trab" data-edit-idx="2">1.400</td><td class="editable" data-edit-key="div_trab" data-edit-idx="3">1.225</td><td class="editable" data-edit-key="div_trab_1t">1.225</td><td class="c-pos">▼ -558</td></tr><tr><td>Fornecedores (ECT)</td><td class="editable" data-edit-key="div_forn" data-edit-idx="0">2.344</td><td class="editable" data-edit-key="div_forn" data-edit-idx="1">2.134</td><td class="editable" data-edit-key="div_forn" data-edit-idx="2">1.885</td><td class="editable" data-edit-key="div_forn" data-edit-idx="3">1.494</td><td class="editable" data-edit-key="div_forn_1t">1.349</td><td class="c-pos">▼ -850</td></tr><tr><td>BNDES</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="0">150</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="1">93</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="2">0</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="3">0</td><td class="editable" data-edit-key="div_bndes_1t">0</td><td class="c-pos">▼ -150</td></tr><tr class="t-total"><td>TOTAL</td><td>18.671</td><td>15.173</td><td>11.303</td><td>9.654</td><td>8.849</td><td class="c-pos">▼ -9.017</td></tr></tbody></table></div>
-<div class="table-card" style="margin-bottom:0"><div class="table-title">Créditos Fiscais — PIS/COFINS</div><div class="table-sub">R$ mil</div><table><thead><tr><th>Categoria</th><th>Dez/21</th><th>Dez/22</th><th>Dez/23</th><th>Dez/24</th><th>Dez/25</th><th>1T/2026</th></tr></thead><tbody id="creditos-body"><tr><td>Saldo PIS/Cofins</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="0">0</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="1">0</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="2">0</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="3">0</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="4">0</td><td class="editable" data-edit-key="pis_cofins_1t">0</td></tr><tr class="t-ebitda"><td>Compensações</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="0">192</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="1">1.688</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="2">2.180</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="3">3.078</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="4">2.913</td><td class="editable" data-edit-key="compensacoes_1t">0</td></tr></tbody></table></div>
+<div class="table-card" style="margin-bottom:0"><div class="table-title">Créditos Fiscais — PIS/COFINS</div><div class="table-sub">R$ mil</div><table><thead><tr><th>Categoria</th><th>Dez/21</th><th>Dez/22</th><th>Dez/23</th><th>Dez/24</th><th>Dez/25</th><th>1T/2026</th></tr></thead><tbody id="creditos-body"><tr><td>Saldo PIS/Cofins</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="0">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="1">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="2">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="3">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="4">1.000</td><td class="editable" data-edit-key="pis_cofins_1t">1.000</td></tr><tr class="t-ebitda"><td>Compensações</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="0">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="1">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="2">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="3">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="4">1.000</td><td class="editable" data-edit-key="compensacoes_1t">405</td></tr></tbody></table></div>
 </div>
 </div>
 
@@ -789,17 +791,17 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="sec-header"><div class="sec-header-icon">💰</div><h2>Fluxo de Caixa — Realizado 2025 + Projeção 2026</h2><div class="sec-tag">Caixa e Contas a Receber</div></div>
 <div class="kpi-grid kpi-3" id="caixa-kpis"><div class="kpi-card k-purple"><div class="kpi-label">Jan/2025 · Posição Inicial</div><div class="kpi-value">R$ 11.611K</div><div class="kpi-sub">Contas a Receber: R$ 9.622K</div></div><div class="kpi-card k-orange"><div class="kpi-label">Dez/2025 · Posição Final</div><div class="kpi-value">R$ 20.799K</div><div class="kpi-sub">Contas a Receber: R$ 16.956K</div></div><div class="kpi-card k-green"><div class="kpi-label">2026 · Projeção</div><div class="kpi-value" style="color:var(--green)">R$ 23.497K</div><div class="kpi-sub">Contas a Receber: R$ 22.472K</div></div></div>
 <div class="charts-2eq">
-<div class="chart-card"><div class="chart-title">Posição de Caixa e Recebíveis</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartCaixa" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px; cursor: default;" width="710"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">Variação Líquida de Caixa</div><div class="chart-sub">R$ mil · Incrementos</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartCaixaVar" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px;" width="710"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Posição de Caixa e Recebíveis</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartCaixa" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px; cursor: default;" width="0"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Variação Líquida de Caixa</div><div class="chart-sub">R$ mil · Incrementos</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartCaixaVar" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div></div>
 </div>
 <div class="table-card">
 <div class="table-title">Posição de Caixa e Contas a Receber</div>
 <div class="table-sub">R$ mil</div>
-<table><thead><tr><th>Componente</th><th id="cx-th-0" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(0,this)">Jan/2025</th><th id="cx-th-1" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(1,this)">Dez/2025</th><th>Var. 2025</th><th id="cx-th-2" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(2,this)">1T</th><th id="cx-th-3" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(3,this)">Dez/2026 (Proj.)</th><th>Var. 2026</th></tr></thead><tbody id="caixa-body"><tr><td>Contas a Receber</td><td class="editable" data-edit-key="c_receber" data-edit-idx="0">9.622</td><td class="editable" data-edit-key="c_receber" data-edit-idx="1">16.956</td><td class="c-pos">▲ +7.334 (+76,2%)</td><td class="editable" data-edit-key="c_receber_1t">19.340</td><td class="editable" data-edit-key="c_receber" data-edit-idx="2">22.472</td><td class="c-pos">▲ +5.516 (+32,5%)</td></tr><tr><td>Caixa Disponível</td><td class="editable" data-edit-key="caixa" data-edit-idx="0">1.989</td><td class="editable" data-edit-key="caixa" data-edit-idx="1">3.843</td><td class="c-pos">▲ +1.854 (+93,2%)</td><td class="editable" data-edit-key="caixa_1t">2.009</td><td class="editable" data-edit-key="caixa" data-edit-idx="2">1.025</td><td class="c-neg">▼ -2.818 (-73,3%)</td></tr><tr class="t-total"><td>TOTAL</td><td>11.611</td><td>20.799</td><td class="c-pos">▲ +9.188 (+79,1%)</td><td>21.349</td><td>23.497</td><td class="c-pos">▲ +2.698 (+13,0%)</td></tr></tbody></table>
+<table><thead><tr><th>Componente</th><th id="cx-th-0" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(0,this)">Jan/2025</th><th id="cx-th-1" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(1,this)">Dez/2025</th><th>Var. 2025</th><th id="cx-th-2" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(2,this)">Dez/2026 (Proj.)</th><th id="cx-th-3" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(3,this)">Dez/2026 (Proj.)</th><th>Var. 2026</th></tr></thead><tbody id="caixa-body"><tr><td>Contas a Receber</td><td class="editable" data-edit-key="c_receber" data-edit-idx="0">9.622</td><td class="editable" data-edit-key="c_receber" data-edit-idx="1">16.956</td><td class="c-pos">▲ +7.334 (+76,2%)</td><td class="editable" data-edit-key="c_receber_1t">19.340</td><td class="editable" data-edit-key="c_receber" data-edit-idx="2">22.472</td><td class="c-pos">▲ +5.516 (+32,5%)</td></tr><tr><td>Caixa Disponível</td><td class="editable" data-edit-key="caixa" data-edit-idx="0">1.989</td><td class="editable" data-edit-key="caixa" data-edit-idx="1">3.843</td><td class="c-pos">▲ +1.854 (+93,2%)</td><td class="editable" data-edit-key="caixa_1t">2.009</td><td class="editable" data-edit-key="caixa" data-edit-idx="2">1.025</td><td class="c-neg">▼ -2.818 (-73,3%)</td></tr><tr class="t-total"><td>TOTAL</td><td>11.611</td><td>20.799</td><td class="c-pos">▲ +9.188 (+79,1%)</td><td>21.349</td><td>23.497</td><td class="c-pos">▲ +2.698 (+13,0%)</td></tr></tbody></table>
 </div>
 </div>
 
-<div id="section-projecao" class="dash-section">
+<div id="section-projecao" class="dash-section active">
 <div class="sec-header"><div class="sec-header-icon">🎯</div><h2>Projeção 2026 — DRE Mensal</h2><div class="sec-tag" id="proj-sec-tag">FY 2026 · Orçado / Realizado</div></div>
 <div class="kpi-grid">
 <div class="kpi-card k-orange"><div class="kpi-label">Receita Bruta Proj.</div><div class="kpi-value" data-bind="proj.rec">R$ 187,7M</div><div class="kpi-sub" data-bind="proj.rec_sub">vs 2025 Realizado: R$ 115,6M</div></div>
@@ -808,12 +810,12 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="kpi-card k-green"><div class="kpi-label">LAIR Proj.</div><div class="kpi-value" data-bind="proj.ll" style="color:var(--green)">R$ 7,0M</div><div class="kpi-sub" data-bind="proj.ll_sub">Margem: 4,3% s/ Rec. Líquida</div></div>
 </div>
 <div class="charts-2eq">
-<div class="chart-card"><div class="chart-title">Receita Bruta Mensal — 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartProjRec" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px; cursor: default;" width="710"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">EBITDA Mensal — 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartProjEbitda" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px; cursor: default;" width="710"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Receita Bruta Mensal — 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartProjRec" height="200" style="display: block; box-sizing: border-box; height: 250px; width: 709px; cursor: default;" width="567"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">EBITDA Mensal — 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartProjEbitda" height="200" style="display: block; box-sizing: border-box; height: 250px; width: 709px; cursor: default;" width="567"></canvas></div></div>
 </div>
 <div class="charts-2eq">
-<div class="chart-card"><div class="chart-title">Receita Líquida Mensal — 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartProjLiq" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px;" width="710"></canvas></div></div>
-<div class="chart-card"><div class="chart-title">LAIR Mensal — 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartProjLair" height="250" style="display: block; box-sizing: border-box; height: 250px; width: 710px;" width="710"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Receita Líquida Mensal — 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartProjLiq" height="200" style="display: block; box-sizing: border-box; height: 250px; width: 709px;" width="567"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">LAIR Mensal — 2026 vs 2025</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartProjLair" height="200" style="display: block; box-sizing: border-box; height: 250px; width: 709px;" width="567"></canvas></div></div>
 </div>
 <div class="table-card">
 <div class="table-title">DRE Projetado — Mensal 2026</div>
@@ -902,7 +904,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 </div>
 
-<div class="toast" id="toast">✓ Valor atualizado</div>
+<div class="toast" id="toast">☁️ Dados sincronizados do Google Sheets</div>
 
 <script>
 Chart.register(ChartDataLabels);
@@ -919,7 +921,7 @@ const dlBar={align:'end',anchor:'end',clip:false,color:OT.purple,font:{weight:'b
 const dlBarK={align:'end',anchor:'end',clip:false,color:OT.purple,font:{weight:'bold',size:10},formatter:v=>Math.round(v).toLocaleString('pt-BR')};
 const dl25=(color)=>({align:'bottom',anchor:'end',color:color||OT.muted,font:{weight:'600',size:9,style:'italic'},formatter:v=>Math.round(v).toLocaleString('pt-BR'),clip:false});
 const dlLineHide={display:false};
-const state={"rec_2025":[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14505,14753],"imp_2025":[839,832,785,824,884,906,1123,1194,1342,1746,1876,1920],"cvar_2025":[4038,3829,3823,3577,3934,4179,5394,5479,6243,7024,7329,7672],"cfix_2025":[1297,1342,1471,1556,1562,1630,1865,2244,2519,3088,3919,3722],"ebt_2025":[269,460,183,130,226,349,528,621,827,732,749,1002],"ll_2025":[-151,-48,-85,-129,1,111,219,277,421,298,291,487],"gae_2025":6675,"resfin_2025":1963,"ircs_2025":559,"outros_2025":274,"rec_2026":[15184,14489,15945,16251,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026":[2033,1898,2150,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026":[743,521,808,947,983,993,959,971,1043,1041,1055,1125],"ll_2026":[451,310,565,705,587,597,571,580,636,634,645,698],"gae_2026":7290,"resfin_2026":2502,"ircs_2026":3400,"outros_2026":100,"rec_2023":60548,"rec_2024":71088,"liq_2023":53606,"liq_2024":63528,"ebitda_2023":-1912,"ebitda_2024":3208,"ll_2023":-4435,"ll_2024":0,"tri_rec_2024":[15487,17160,17580,20861],"tri_ebitda_2024":[504,774,921,1023],"div_trib":[14394,10327,8018,6935],"div_trab":[1783,2619,1400,1225],"div_forn":[2344,2134,1885,1494],"div_bndes":[150,93,0,0],"pis_cofins":[0,0,0,0,0],"compensacoes":[192,1688,2180,3078,2913],"c_receber":[9622,16956,22472],"caixa":[1989,3843,1025],"caixa_month_labels":["Jan/2025","Dez/2025","1T"],"rec_2026_orc":[15164,14437,15326,15466,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026_orc":[2029,1921,2035,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026_orc":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_orc":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_orc":[642,552,957,1032,983,993,959,971,1043,1041,1055,1125],"ll_2026_orc":[323,257,566,625,587,597,571,580,636,634,645,698],"rec_2026_real":[15184,14489,15945,16251,0,0,0,0,0,0,0,0],"imp_2026_real":[2033,1898,2150,2048,0,0,0,0,0,0,0,0],"cvar_2026_real":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_real":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_real":[743,521,808,947,0,0,0,0,0,0,0,0],"ll_2026_real":[451,310,565,705,0,0,0,0,0,0,0,0],"div_trib_1t":6275,"div_trab_1t":1225,"div_forn_1t":1349,"div_bndes_1t":0,"pis_cofins_1t":0,"compensacoes_1t":0,"c_receber_1t":19340,"caixa_1t":2009,"proj_mes_status":[true,true,true,true,false,false,false,false,false,false,false,false]};
+const state={"rec_2025":[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14505,14753],"imp_2025":[839,832,785,824,884,906,1123,1194,1342,1746,1876,1920],"cvar_2025":[4038,3829,3823,3577,3934,4179,5394,5479,6243,7024,7329,7672],"cfix_2025":[1297,1342,1471,1556,1562,1630,1865,2244,2519,3088,3919,3722],"ebt_2025":[269,460,183,130,226,349,528,621,827,732,749,1002],"ll_2025":[87,280,18,-26,104,249,390,467,656,494,485,742],"gae_2025":6675,"resfin_2025":1963,"ircs_2025":559,"outros_2025":274,"rec_2026":[15184,14489,15945,16251,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026":[2033,1898,2150,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026":[743,521,808,947,983,993,959,971,1043,1041,1055,1125],"ll_2026":[451,310,565,705,587,597,571,580,636,634,645,698],"gae_2026":7290,"resfin_2026":2502,"ircs_2026":3400,"outros_2026":100,"rec_2023":60548,"rec_2024":71088,"liq_2023":53606,"liq_2024":63528,"ebitda_2023":-1912,"ebitda_2024":3208,"ll_2023":-4435,"ll_2024":0,"tri_rec_2024":[15487,17160,17580,20861],"tri_ebitda_2024":[504,774,921,1023],"div_trib":[14394,10327,8018,6935],"div_trab":[1783,2619,1400,1225],"div_forn":[2344,2134,1885,1494],"div_bndes":[150,93,0,0],"pis_cofins":[1000,1000,1000,1000,1000],"compensacoes":[1000,1000,1000,1000,1000],"c_receber":[9622,16956,22472],"caixa":[1989,3843,1025],"caixa_month_labels":["Jan/2025","Dez/2025","Dez/2026 (Proj.)"],"rec_2026_orc":[15184,14489,15945,16251,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026_orc":[2033,1898,2150,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026_orc":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_orc":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_orc":[743,521,808,947,983,993,959,971,1043,1041,1055,1125],"ll_2026_orc":[451,310,565,705,587,597,571,580,636,634,645,698],"rec_2026_real":[15184,14489,15945,16251,0,0,0,0,0,0,0,0],"imp_2026_real":[2033,1898,2150,2048,0,0,0,0,0,0,0,0],"cvar_2026_real":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_real":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_real":[743,521,808,947,0,0,0,0,0,0,0,0],"ll_2026_real":[451,310,565,705,0,0,0,0,0,0,0,0],"div_trib_1t":6275,"div_trab_1t":1225,"div_forn_1t":1349,"div_bndes_1t":0,"pis_cofins_1t":1000,"compensacoes_1t":405,"c_receber_1t":19340,"caixa_1t":2009,"proj_mes_status":[true,true,true,true,false,false,false,false,false,false,false,false]};
 let pendingState=null;
 let pendingChanges=[];
 
@@ -1089,62 +1091,156 @@ function exportDashboardHTML(){
   }
 }
 
-function printActiveSection(){
+async function printActiveSection(){
+  let activeSec=null;
+  let tempStyle=null;
   try{
-    // Fecha qualquer editor inline aberto (impede "quadro branco" sobreposto no PDF)
+    // ============================================================================
+    // GERAÇÃO DE PDF VIA CANVAS (html2canvas + jsPDF)
+    // - Não usa window.print() → evita overlays do engine de impressão do navegador
+    // - Charts com altura FIXA em pixel → Chart.js mede valores estáveis (sem flex 0px)
+    // ============================================================================
+
+    // Sanity check das libs
+    if(typeof html2canvas==='undefined'||typeof window.jspdf==='undefined'){
+      showToast('⚠️ Bibliotecas de PDF não carregaram. Usando print do navegador como fallback…','error');
+      setTimeout(()=>window.print(),300);
+      return;
+    }
+
+    // Fecha qualquer editor inline aberto
     if(typeof closeInlineEditor==='function')closeInlineEditor();
-    // Remove qualquer .inline-editor órfão que possa ter sobrado no DOM
     document.querySelectorAll('.inline-editor').forEach(el=>el.remove());
 
-    // Identifica seção ativa para nomear o PDF
-    const activeSec=document.querySelector('#view-dashboard .dash-section.active');
-    const titulo=activeSec?.querySelector('.sec-header h2')?.textContent?.trim()||'Dashboard';
-    // Limpa para nome de arquivo
+    // Identifica seção ativa
+    activeSec=document.querySelector('#view-dashboard .dash-section.active');
+    if(!activeSec){showToast('❌ Nenhuma guia ativa para exportar','error');return;}
+    const titulo=activeSec.querySelector('.sec-header h2')?.textContent?.trim()||'Dashboard';
     const nomeLimpo=titulo.replace(/[\\/:*?"<>|—–]/g,'').replace(/\s+/g,'_').slice(0,80);
     const dt=new Date().toISOString().slice(0,10).replace(/-/g,'');
-    const originalTitle=document.title;
-    // Define o título — os navegadores usam isso como sugestão de nome do PDF
-    document.title=`OT_${nomeLimpo}_${dt}`;
+    const fileName=`OT_${nomeLimpo}_${dt}.pdf`;
 
-    // Função para forçar Chart.js a recalcular dimensões (ao entrar/sair do print)
-    const resizeAllCharts=()=>{
-      if(typeof charts==='object'&&charts){
-        Object.entries(charts).forEach(([key,c])=>{
-          try{
-            if(c&&c.canvas&&c.resize){
-              c.resize();
-              c.update&&c.update('none');
-            }
-          }catch(e){console.error(`[Print] resize ${key}:`,e);}
-        });
+    showToast('📄 Gerando PDF… aguarde alguns segundos');
+
+    // 1) Injeta CSS temporário com regras de layout para PDF
+    tempStyle=document.createElement('style');
+    tempStyle.id='__pdf_render_style__';
+    tempStyle.textContent=`
+      body.__pdf_render__ .home-bg, body.__pdf_render__ .home-hdr, body.__pdf_render__ .home-hero,
+      body.__pdf_render__ .home-main, body.__pdf_render__ .home-ftr,
+      body.__pdf_render__ .dash-header, body.__pdf_render__ .dash-nav, body.__pdf_render__ .dash-footer,
+      body.__pdf_render__ .modal-overlay, body.__pdf_render__ .toast, body.__pdf_render__ .inline-editor,
+      body.__pdf_render__ .mc-actions, body.__pdf_render__ .mc-edit-hint { display: none !important; }
+      body.__pdf_render__ .dash-section.active {
+        display: block !important;
+        width: 1123px !important;
+        padding: 10px !important; box-sizing: border-box !important;
+        overflow: hidden !important;
+        animation: none !important;
       }
-    };
-    // beforeprint dispara quando @media print já é aplicado → containers já têm altura compacta
-    const onBeforePrint=()=>resizeAllCharts();
-    const onAfterPrint=()=>{
-      document.title=originalTitle;
-      window.removeEventListener('beforeprint',onBeforePrint);
-      window.removeEventListener('afterprint',onAfterPrint);
-      // Restaura gráficos ao tamanho de tela
-      setTimeout(resizeAllCharts,100);
-    };
-    window.addEventListener('beforeprint',onBeforePrint);
-    window.addEventListener('afterprint',onAfterPrint);
+      body.__pdf_render__ { background: #fff !important; }
 
-    // Dispara resize antecipadamente também, por segurança
+      /* Força layout completo dos grids, ignorando media queries responsivas */
+      body.__pdf_render__ .kpi-grid     { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; margin: 0 0 8px 0 !important; }
+      body.__pdf_render__ .kpi-3        { grid-template-columns: repeat(3, 1fr) !important; }
+      body.__pdf_render__ .q-grid       { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; margin: 0 0 8px 0 !important; }
+      body.__pdf_render__ .debt-grid    { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 6px !important; margin: 0 0 8px 0 !important; }
+      body.__pdf_render__ .charts-2col  { display: grid !important; grid-template-columns: 3fr 2fr !important; gap: 8px !important; margin: 0 0 8px 0 !important; }
+      body.__pdf_render__ .charts-2eq   { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; margin: 0 0 8px 0 !important; }
+      body.__pdf_render__ .gap-highlight{ flex-direction: row !important; }
+      body.__pdf_render__ .sec-header   { margin-bottom: 6px !important; padding-bottom: 4px !important; }
+
+      /* 🎯 CHART FIX: altura FIXA em pixel para o container do gráfico — Chart.js
+         consegue medir corretamente o canvas em vez de receber 0px durante o reflow flex */
+      body.__pdf_render__ .chart-card { display: block !important; padding: 10px !important; margin: 0 !important; }
+      body.__pdf_render__ .chart-card > div[style*="height"] {
+        height: 210px !important;
+        min-height: 210px !important;
+        max-height: 210px !important;
+        position: relative !important;
+      }
+      body.__pdf_render__ .chart-card canvas {
+        max-height: 210px !important;
+      }
+
+      /* KPI cards compactos */
+      body.__pdf_render__ .kpi-value     { font-size: 18pt !important; }
+      body.__pdf_render__ .kpi-label     { font-size: 8pt !important; }
+      body.__pdf_render__ .kpi-card,
+      body.__pdf_render__ .q-card,
+      body.__pdf_render__ .debt-card     { padding: 8px 10px !important; }
+
+      /* Tabela compacta */
+      body.__pdf_render__ .table-card    { padding: 8px 10px !important; margin: 0 !important; }
+      body.__pdf_render__ .table-card table { font-size: 8.5pt !important; }
+      body.__pdf_render__ .table-card th,
+      body.__pdf_render__ .table-card td { padding: 3px 4px !important; }
+    `;
+    document.head.appendChild(tempStyle);
+    document.body.classList.add('__pdf_render__');
+
+    // 2) Aguarda DOIS animation frames para o CSS aplicar + layout settling
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+
+    // 3) Dispara resize do window para forçar Chart.js a recalcular tamanhos
     window.dispatchEvent(new Event('resize'));
 
-    setTimeout(()=>{
-      window.print();
-      // Fallback caso o afterprint não dispare (raros casos em Safari etc.)
-      setTimeout(()=>{
-        document.title=originalTitle;
-        resizeAllCharts();
-      },500);
-    },120);
-    showToast('📄 Abrindo diálogo · escolha "Salvar como PDF" em paisagem');
+    // 4) Resize explícito de cada gráfico (update síncrono — sem 'none')
+    if(typeof charts==='object'&&charts){
+      Object.values(charts).forEach(c=>{
+        try{
+          if(c&&c.resize){c.resize();}
+          if(c&&c.update){c.update();}
+        }catch(e){console.warn('Chart resize err:',e);}
+      });
+    }
+
+    // 5) Espera Chart.js terminar de desenhar (1s é margem segura)
+    await new Promise(r=>setTimeout(r,1000));
+
+    // 6) Captura — usa altura REAL do elemento (não fixa em 794)
+    const secHeight=Math.max(activeSec.scrollHeight,activeSec.offsetHeight);
+    const canvas=await html2canvas(activeSec,{
+      scale:2,
+      backgroundColor:'#ffffff',
+      logging:false,
+      useCORS:true,
+      windowWidth:1280,
+      windowHeight:Math.max(secHeight+50,900),
+      width:1123,
+      height:secHeight
+    });
+
+    // 7) Empacota em PDF A4 paisagem mantendo proporção
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const imgData=canvas.toDataURL('image/jpeg',0.92);
+    const pageW=297, pageH=210;
+    const imgH=(canvas.height/canvas.width)*pageW;
+    if(imgH<=pageH){
+      pdf.addImage(imgData,'JPEG',0,(pageH-imgH)/2,pageW,imgH,undefined,'FAST');
+    }else{
+      const adjW=(pageH/imgH)*pageW;
+      pdf.addImage(imgData,'JPEG',(pageW-adjW)/2,0,adjW,pageH,undefined,'FAST');
+    }
+    pdf.save(fileName);
+
+    // 8) Limpa estado temporário
+    document.body.classList.remove('__pdf_render__');
+    tempStyle.remove();
+
+    // 9) Restaura gráficos ao tamanho de tela
+    await new Promise(r=>setTimeout(r,100));
+    if(typeof charts==='object'&&charts){
+      Object.values(charts).forEach(c=>{try{c&&c.resize&&c.resize();c&&c.update&&c.update('none');}catch(e){}});
+    }
+
+    showToast('✅ PDF salvo: '+fileName);
   }catch(e){
-    console.error(e);
+    console.error('[PDF] Erro:',e);
+    // Limpa estado mesmo em caso de erro
+    document.body.classList.remove('__pdf_render__');
+    if(tempStyle)tempStyle.remove();
     showToast('❌ Erro ao gerar PDF: '+e.message,'error');
   }
 }
@@ -2392,4 +2488,5 @@ function openMCEditor(tile,key,unit){
 </script>
 
 
-</body></html>
+
+<reclameaqui-extension-pin><section></section></reclameaqui-extension-pin></body><chatgpt-sidebar data-rendered="true" data-gpts-theme="light"></chatgpt-sidebar></html>
