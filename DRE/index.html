@@ -2,6 +2,8 @@
 <html lang="pt-BR"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png">
+<link rel="shortcut icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png">
 <title>ON TIME LOGÍSTICA – BI Portal Integrado</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -131,6 +133,7 @@ body{font-family:'Manrope','Inter',system-ui,sans-serif;margin:0;overflow-x:hidd
 }
 #view-dashboard{font-size:13px}
 .dash-header{background:var(--purple-dark);padding:0 36px;display:flex;align-items:stretch;justify-content:space-between;min-height:72px;position:relative}
+.dh-mascot{width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,110,0,.4);box-shadow:0 0 12px rgba(255,110,0,.25);flex-shrink:0;align-self:center;margin-right:4px}
 .dash-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--orange) 0%,var(--orange-mid) 50%,transparent 100%)}
 .dh-left{display:flex;align-items:center;gap:20px}
 .dh-divider{width:1px;background:rgba(255,255,255,0.15);margin:14px 0;align-self:stretch}
@@ -553,10 +556,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
   <div style="display:flex;align-items:center;gap:16px">
     <span class="home-hdr-pill">BI Portal</span>
     <div class="home-hdr-actions">
-      <button class="home-hdr-btn" onclick="downloadTemplate()">📥 <span>Template XLSX</span></button>
-      <button class="home-hdr-btn primary" onclick="document.getElementById('home-file-input').click()">📤 <span>Upload XLSX</span></button>
       <button class="home-hdr-btn" onclick="exportDashboardHTML()" title="Baixar HTML atualizado">💾 <span>Exportar HTML</span></button>
-      <input type="file" id="home-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
     </div>
   </div>
 </header>
@@ -637,6 +637,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="dash-header">
 <div class="dh-left">
 <button onclick="switchView('home')" class="btn-action">⬅ Voltar</button>
+<img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote ON TIME" class="dh-mascot" onerror="this.style.display='none'">
 <div class="dh-divider"></div>
 <svg width="210" height="46" viewBox="0 0 210 46" xmlns="http://www.w3.org/2000/svg">
 <rect width="210" height="46" rx="6" fill="#3C003C"></rect>
@@ -650,11 +651,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 <div class="dh-right">
 <button class="btn-action" onclick="printActiveSection()" title="Gerar PDF da guia atual (visualização pode ser salva ou enviada)">📄 PDF</button>
-<button class="btn-action" onclick="downloadTemplate()">📥 Template</button>
-<button class="btn-action btn-primary" onclick="document.getElementById('dash-file-input').click()">📤 Upload XLSX</button>
 <button class="btn-action" onclick="exportDashboardHTML()" title="Baixar HTML atualizado para commit no git">💾 Exportar HTML</button>
-<button class="btn-action" onclick="resetDashboard()" title="Limpar dados salvos no navegador e voltar aos valores originais">🔄 Resetar</button>
-<input type="file" id="dash-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
 </div>
 </div>
 
@@ -805,9 +802,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="mc-actions">
 <button onclick="switchView('home')" class="btn-action">⬅ Voltar</button>
 <div style="display:flex;gap:8px;">
-<button class="btn-action btn-primary" onclick="document.getElementById('card-file-input').click()">📤 Upload XLSX</button>
 <button class="btn-action" onclick="window.print()">⬇ Salvar PDF</button>
-<input type="file" id="card-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
 </div>
 </div>
 <div class="mobile-card">
@@ -882,8 +877,8 @@ Chart.defaults.maintainAspectRatio=false;
 const sc={x:{grid:{color:OT.grid},ticks:{color:OT.muted}},y:{grid:{color:OT.grid},ticks:{color:OT.muted}}};
 const tip={backgroundColor:'#3C003C',titleColor:'#fff',bodyColor:'rgba(255,255,255,0.7)',borderColor:OT.orange,borderWidth:1,padding:10,cornerRadius:8};
 const leg=(pos='top')=>({position:pos,labels:{color:OT.muted,boxWidth:12,padding:14,usePointStyle:true}});
-const dlBar={align:'end',anchor:'end',color:OT.purple,font:{weight:'bold',size:10},formatter:v=>v>1000?(v/1000).toFixed(1).replace('.',','):v.toLocaleString('pt-BR')};
-const dlBarK={align:'end',anchor:'end',color:OT.purple,font:{weight:'bold',size:10},formatter:v=>Math.round(v).toLocaleString('pt-BR')};
+const dlBar={align:'end',anchor:'end',clip:false,color:OT.purple,font:{weight:'bold',size:10},formatter:v=>v>1000?(v/1000).toFixed(1).replace('.',','):v.toLocaleString('pt-BR')};
+const dlBarK={align:'end',anchor:'end',clip:false,color:OT.purple,font:{weight:'bold',size:10},formatter:v=>Math.round(v).toLocaleString('pt-BR')};
 const dl25=(color)=>({align:'bottom',anchor:'end',color:color||OT.muted,font:{weight:'600',size:9,style:'italic'},formatter:v=>Math.round(v).toLocaleString('pt-BR'),clip:false});
 const dlLineHide={display:false};
 const state={"rec_2025":[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14505,14753],"imp_2025":[839,832,785,824,884,906,1123,1194,1342,1746,1876,1920],"cvar_2025":[4038,3829,3823,3577,3934,4179,5394,5479,6243,7024,7329,7672],"cfix_2025":[1297,1342,1471,1556,1562,1630,1865,2244,2519,3088,3919,3722],"ebt_2025":[269,460,183,130,226,349,528,621,827,732,749,1002],"ll_2025":[-151,-48,-85,-129,1,111,219,277,421,298,291,487],"gae_2025":6675,"resfin_2025":1963,"ircs_2025":559,"outros_2025":274,"rec_2026":[15184,14489,15945,16251,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026":[2033,1898,2150,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026":[743,521,808,947,983,993,959,971,1043,1041,1055,1125],"ll_2026":[451,310,565,705,587,597,571,580,636,634,645,698],"gae_2026":7290,"resfin_2026":2502,"ircs_2026":3400,"outros_2026":100,"rec_2023":60548,"rec_2024":71088,"liq_2023":53606,"liq_2024":63528,"ebitda_2023":-1912,"ebitda_2024":3208,"ll_2023":-4435,"ll_2024":0,"tri_rec_2024":[15487,17160,17580,20861],"tri_ebitda_2024":[504,774,921,1023],"div_trib":[14394,10327,8018,6935],"div_trab":[1783,2619,1400,1225],"div_forn":[2344,2134,1885,1494],"div_bndes":[150,93,0,0],"pis_cofins":[0,0,0,0,0],"compensacoes":[192,1688,2180,3078,2913],"c_receber":[9622,16956,22472],"caixa":[1989,3843,1025],"caixa_month_labels":["Jan/2025","Dez/2025","1T"],"rec_2026_orc":[15164,14437,15326,15466,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026_orc":[2029,1921,2035,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026_orc":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_orc":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_orc":[642,552,957,1032,983,993,959,971,1043,1041,1055,1125],"ll_2026_orc":[323,257,566,625,587,597,571,580,636,634,645,698],"rec_2026_real":[15184,14489,15945,16251,0,0,0,0,0,0,0,0],"imp_2026_real":[2033,1898,2150,2048,0,0,0,0,0,0,0,0],"cvar_2026_real":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_real":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_real":[743,521,808,947,0,0,0,0,0,0,0,0],"ll_2026_real":[451,310,565,705,0,0,0,0,0,0,0,0],"div_trib_1t":6275,"div_trab_1t":1225,"div_forn_1t":1349,"div_bndes_1t":0,"pis_cofins_1t":0,"compensacoes_1t":0,"c_receber_1t":19340,"caixa_1t":2009,"proj_mes_status":[true,true,true,true,false,false,false,false,false,false,false,false]};
@@ -906,7 +901,13 @@ async function loadStateFromSheets(){
     if(!r.ok)throw new Error('HTTP '+r.status);
     const txt=await r.text();
     if(!txt||txt.trim()===''||txt.trim()==='{}')return null;
-    return JSON.parse(txt);
+    const parsed=JSON.parse(txt);
+    // Extrai mcOverrides (overrides dos cards do mosaico) se presente
+    if(parsed._mcOverrides&&typeof parsed._mcOverrides==='object'){
+      if(typeof mcOverrides!=='undefined'){Object.assign(mcOverrides,parsed._mcOverrides);}
+      delete parsed._mcOverrides;
+    }
+    return parsed;
   }catch(e){console.warn('Falha ao ler do Google Sheets:',e);return null;}
 }
 
@@ -915,11 +916,14 @@ async function saveStateToSheets(stateObj){
     console.warn('Google Sheets desativado (URL não configurada).');return false;
   }
   try{
+    // Embute mcOverrides no payload (sob a chave _mcOverrides) — para sincronizar
+    // edições nos cards do mosaico junto com o resto do state
+    const payload={...stateObj,_mcOverrides:(typeof mcOverrides!=='undefined'?mcOverrides:{})};
     // text/plain evita o "preflight" CORS que o Apps Script não aceita
     const r=await fetch(SHEETS_API_URL,{
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({secret:SHEETS_SECRET,state:stateObj})
+      body:JSON.stringify({secret:SHEETS_SECRET,state:payload})
     });
     const result=await r.json();
     if(!result.ok)throw new Error(result.error||'erro desconhecido');
@@ -1422,7 +1426,7 @@ function initCharts(){
       {label:'Receita Bruta',data:[...state.rec_2025],backgroundColor:state.rec_2025.map((_,i)=>`rgba(255,110,0,${0.45+i*0.048})`),borderColor:OT.orange,borderWidth:1,borderRadius:5,datalabels:dlBar},
       {label:'Tendência',data:[...state.rec_2025],type:'line',borderColor:OT.purple,backgroundColor:'transparent',borderWidth:2,pointRadius:3,pointBackgroundColor:OT.purple,tension:0.4,datalabels:dlLineHide}
     ]},
-    options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}
+    options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:sc}
   });
 
   const lairMetaM=Math.round(d.ll_total_2025/12);
@@ -1436,7 +1440,7 @@ function initCharts(){
       {label:'Meta R$ '+lairMetaM.toLocaleString('pt-BR')+'mil',data:Array(12).fill(lairMetaM),borderColor:OT.purple,borderDash:[5,4],borderWidth:1.5,
        pointRadius:0,backgroundColor:'transparent',datalabels:dlLineHide}
     ]},
-    options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:{...tip,callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},
+    options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:{...tip,callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},
       scales:{x:sc.x,y:{...sc.y,ticks:{callback:v=>v.toLocaleString('pt-BR'),color:OT.muted}}}}
   });
 
@@ -1448,7 +1452,7 @@ function initCharts(){
       {label:'EBITDA',data:[...state.ebt_2025],backgroundColor:state.ebt_2025.map((_,i)=>`rgba(60,0,60,${0.38+i*0.052})`),borderRadius:5,datalabels:dlBar},
       {label:'Acumulado',data:acumArr,type:'line',borderColor:OT.purple,backgroundColor:OT.purpleL,borderWidth:2,pointRadius:3,pointBackgroundColor:OT.purple,fill:false,tension:0.4,yAxisID:'y2',datalabels:dlLineHide}
     ]},
-    options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:{x:sc.x,y:sc.y,y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:OT.purpleM}}}}
+    options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:{x:sc.x,y:sc.y,y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:OT.purpleM}}}}
   });
 
   const ebtMetaM=Math.round(d.ebt_total_2025/12);
@@ -1459,22 +1463,22 @@ function initCharts(){
         datalabels:{align:'top',color:OT.orange,font:{weight:'bold',size:9},formatter:v=>v.toLocaleString('pt-BR')}},
       {label:'Meta R$ '+ebtMetaM.toLocaleString('pt-BR')+'mil',data:Array(12).fill(ebtMetaM),borderColor:OT.purple,borderDash:[5,4],borderWidth:1.5,pointRadius:0,backgroundColor:'transparent',datalabels:dlLineHide}
     ]},
-    options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:{...tip,callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},scales:{x:sc.x,y:{...sc.y,ticks:{callback:v=>v.toLocaleString('pt-BR'),color:OT.muted}}}}
+    options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:{...tip,callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},scales:{x:sc.x,y:{...sc.y,ticks:{callback:v=>v.toLocaleString('pt-BR'),color:OT.muted}}}}
   });
 
   charts.triRec=new Chart('chartTriRec',{type:'bar',data:{labels:['1T','2T','3T','4T'],datasets:[
     {label:'Proj. 2026',data:d.tri_rec_2026,backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar},
     {label:'2025',data:d.tri_rec_2025,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
-  ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
+  ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.triEbitda=new Chart('chartTriEbitda',{type:'bar',data:{labels:['1T','2T','3T','4T'],datasets:[
     {label:'Proj. 2026',data:d.tri_ebitda_2026,backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar},
     {label:'2025',data:d.tri_ebitda_2025,backgroundColor:'rgba(140,58,140,0.4)',borderRadius:5,datalabels:dlBar}
-  ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
+  ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   charts.histRec=new Chart('chartHistRec',{type:'bar',data:{labels:['2023','2024','2025','2026 Proj.'],datasets:[
     {label:'Receita Bruta (R$ mil)',data:[state.rec_2023,state.rec_2024,d.rec_total_2025,d.rec_total_2026],backgroundColor:['rgba(140,58,140,0.5)','rgba(140,58,140,0.7)',OT.orangeA,OT.greenA],borderRadius:6,datalabels:dlBar}
-  ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:{display:false},tooltip:tip},scales:{x:sc.x,y:{...sc.y,ticks:{callback:v=>'R$ '+(v/1000).toFixed(0)+'M'}}}}});
+  ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:{display:false},tooltip:tip},scales:{x:sc.x,y:{...sc.y,ticks:{callback:v=>'R$ '+(v/1000).toFixed(0)+'M'}}}}});
 
   const margens=[
     pct(state.ebitda_2023,state.liq_2023),
@@ -1485,14 +1489,14 @@ function initCharts(){
   charts.histEbitda=new Chart('chartHistEbitda',{type:'bar',data:{labels:['2023','2024','2025','2026 Proj.'],datasets:[
     {label:'EBITDA (R$ mil)',data:[state.ebitda_2023,state.ebitda_2024,d.ebt_total_2025,d.ebt_total_2026],backgroundColor:[OT.redA,'rgba(140,58,140,0.7)',OT.orangeA,OT.greenA],borderRadius:6,datalabels:dlBar},
     {label:'Margem %',data:margens,type:'line',borderColor:OT.purple,backgroundColor:'transparent',borderWidth:2.5,pointRadius:5,pointBackgroundColor:OT.purple,yAxisID:'y2',datalabels:dlLineHide}
-  ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:{x:sc.x,y:sc.y,y2:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v.toFixed(1)+'%',color:OT.purpleM}}}}});
+  ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:{x:sc.x,y:sc.y,y2:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v.toFixed(1)+'%',color:OT.purpleM}}}}});
 
   const tot1tD=(state.div_trib_1t||0)+(state.div_trab_1t||0)+(state.div_forn_1t||0)+(state.div_bndes_1t||0);
   charts.divida=new Chart('chartDivida',{type:'line',data:{labels:['Dez/22','Dez/23','Dez/24','Dez/25','1T/26'],datasets:[
     {label:'Endividamento Total (R$ mil)',data:[...d.div_total,tot1tD],borderColor:OT.red,backgroundColor:'rgba(220,38,38,0.1)',borderWidth:2.5,fill:true,tension:0.3,
       pointRadius:[6,6,6,6,8],pointBackgroundColor:[OT.red,OT.red,OT.red,OT.red,'#0891b2'],pointBorderColor:['transparent','transparent','transparent','transparent','#fff'],pointBorderWidth:[0,0,0,0,2],
       datalabels:{align:'top',color:[OT.red,OT.red,OT.red,OT.red,'#0891b2'],font:{weight:'bold'},formatter:v=>v>0?(v/1000).toFixed(1):'—'}}
-  ]},options:{responsive:true,layout:{padding:{top:25}},plugins:{legend:{display:false},tooltip:tip},scales:sc}});
+  ]},options:{responsive:true,layout:{padding:{top:32}},plugins:{legend:{display:false},tooltip:tip},scales:sc}});
 
   charts.dividaComp=new Chart('chartDividaComp',{type:'bar',data:{labels:['Dez/22','Dez/23','Dez/24','Dez/25','1T/26'],datasets:[
     {label:'Tributário',data:[...state.div_trib,state.div_trib_1t||0],backgroundColor:OT.redA,datalabels:{display:false}},
@@ -1504,7 +1508,7 @@ function initCharts(){
   charts.caixa=new Chart('chartCaixa',{type:'bar',data:{labels:['Jan/2025','Dez/2025','1T/2026','Dez/2026 (Proj.)'],datasets:[
     {label:'Contas a Receber',data:[state.c_receber[0],state.c_receber[1],state.c_receber_1t||0,state.c_receber[2]],backgroundColor:OT.purpleMa,borderRadius:5,datalabels:dlBar},
     {label:'Caixa',data:[state.caixa[0],state.caixa[1],state.caixa_1t||0,state.caixa[2]],backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar}
-  ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
+  ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
   const cx1t=(state.c_receber_1t||0)+(state.caixa_1t||0);
   const variacoes=[
@@ -1519,28 +1523,28 @@ function initCharts(){
   ];
   charts.caixaVar=new Chart('chartCaixaVar',{type:'bar',data:{labels:['Δ C.Rec\n2025','Δ Caixa\n2025','Δ Total\n2025','Δ C.Rec\n1T','Δ Caixa\n1T','Δ Total\n1T','Δ C.Rec\n2026','Δ Total\n2026'],datasets:[
     {label:'Variação (R$ mil)',data:variacoes,backgroundColor:[OT.purpleMa,OT.orangeA,'rgba(60,0,60,0.75)','rgba(8,145,178,0.75)','rgba(8,145,178,0.75)','rgba(8,145,178,0.9)',OT.purpleMa,'rgba(60,0,60,0.65)'],borderRadius:5,datalabels:dlBar}
-  ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:{display:false},tooltip:tip},scales:sc}});
+  ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:{display:false},tooltip:tip},scales:sc}});
 
   // Gráficos de Projeção 2026 — try/catch defensivo (não cascateia se um falhar)
   try{
     if(!charts.projRec)charts.projRec=new Chart('chartProjRec',{type:'bar',data:{labels:MONTHS,datasets:[
       {label:'2026 Projetado',data:[...state.rec_2026],backgroundColor:state.rec_2026.map((_,i)=>`rgba(255,110,0,${0.42+i*0.046})`),borderRadius:4,datalabels:dlBarK},
       {label:'2025 Realizado',data:[...state.rec_2025],type:'line',borderColor:OT.orange,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dl25('#fff')}
-    ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
+    ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
   }catch(e){console.error('[Chart] projRec falhou:',e);}
 
   try{
     if(!charts.projEbitda)charts.projEbitda=new Chart('chartProjEbitda',{type:'line',data:{labels:MONTHS,datasets:[
       {label:'2026 Projetado',data:[...state.ebt_2026],borderColor:OT.purple,backgroundColor:OT.purpleL,borderWidth:2.5,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:OT.purple,datalabels:{align:'top',color:OT.purple,font:{weight:'bold'}}},
       {label:'2025 Realizado',data:[...state.ebt_2025],borderColor:OT.purpleM,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dl25(OT.purpleM)}
-    ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
+    ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
   }catch(e){console.error('[Chart] projEbitda falhou:',e);}
 
   try{
     if(!charts.projLiq)charts.projLiq=new Chart('chartProjLiq',{type:'bar',data:{labels:MONTHS,datasets:[
       {label:'2026 Projetado',data:d.liq_2026,backgroundColor:d.liq_2026.map((_,i)=>`rgba(255,110,0,${0.42+i*0.046})`),borderRadius:4,datalabels:dlBarK},
       {label:'2025 Realizado',data:d.liq_2025,type:'line',borderColor:OT.orange,backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dl25('#fff')}
-    ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
+    ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
   }catch(e){console.error('[Chart] projLiq falhou:',e);}
 
   try{
@@ -1548,7 +1552,7 @@ function initCharts(){
       {label:'LAIR 2026 (R$ mil)',data:state.ll_2026.map(v=>Math.round(v)),borderColor:'#6B7280',backgroundColor:'rgba(107,114,128,0.10)',borderWidth:2.5,fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#6B7280',
        datalabels:{align:'top',color:'#6B7280',font:{weight:'bold',size:9},formatter:v=>v.toLocaleString('pt-BR')}},
       {label:'LAIR 2025 (R$ mil)',data:state.ll_2025.map(v=>Math.round(v)),borderColor:'#9CA3AF',backgroundColor:'transparent',borderWidth:1.5,borderDash:[4,3],pointRadius:2,tension:0.4,datalabels:dl25('#9CA3AF')}
-    ]},options:{responsive:true,layout:{padding:{top:20}},plugins:{legend:leg(),tooltip:{...tip,callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},
+    ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:{...tip,callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},
       scales:{x:sc.x,y:{...sc.y,ticks:{callback:v=>Math.round(v).toLocaleString('pt-BR'),color:OT.muted}}}}});
   }catch(e){console.error('[Chart] projLair falhou:',e);}
 }
@@ -1958,7 +1962,6 @@ async function applyPendingChanges(){
   else{renderAll();}
   closePreview();
   showToast('💾 Salvando na nuvem...');
-  // Envia o novo state para o Google Sheets
   const ok=await saveStateToSheets(state);
   if(ok)showToast('☁️ Dashboard salvo no Google Sheets!');
   else showToast('⚠️ Salvo localmente, mas falhou enviar à nuvem','error');
@@ -1968,15 +1971,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
   // 1) Cache local (mostra algo instantaneamente, mesmo offline)
   const restored=restoreFromStorage();
 
-  document.body.addEventListener('dragover',e=>e.preventDefault());
-  document.body.addEventListener('drop',e=>{
-    e.preventDefault();
-    const file=e.dataTransfer.files[0];
-    if(file&&/\.xlsx?$/i.test(file.name)){
-      const fakeEvent={target:{files:[file],value:''}};
-      handleFileUpload(fakeEvent);
-    }
-  });
   renderKPIs();
   restoreMesBadges();
   restoreCaixaLabels();
@@ -2059,6 +2053,10 @@ function openInlineEditor(opts){
       renderAll();attachEditors();
       saveStateToStorage();
       showToast('✓ Valor atualizado');
+      // Sincroniza com Google Sheets em segundo plano (não trava UX)
+      saveStateToSheets(state).then(ok=>{
+        if(!ok)showToast('⚠️ Falhou enviar à nuvem','error');
+      });
     }
     closeInlineEditor();
   };
@@ -2172,6 +2170,10 @@ function toggleMesBadge(el){
     });
   }
   renderAll();attachEditors();saveStateToStorage();
+  // Sincroniza com Google Sheets em segundo plano
+  saveStateToSheets(state).then(ok=>{
+    if(!ok)showToast('⚠️ Falhou enviar à nuvem','error');
+  });
 }
 
 // ════════════════ CAIXA HEADER LABEL EDITOR ════════════════
@@ -2198,6 +2200,10 @@ function openCaixaLabelEditor(idx, th){
       th.textContent=nv;
       saveStateToStorage();
       showToast('✓ Período atualizado');
+      // Sincroniza com Google Sheets em segundo plano
+      saveStateToSheets(state).then(ok=>{
+        if(!ok)showToast('⚠️ Falhou enviar à nuvem','error');
+      });
     }
     closeInlineEditor();
   };
@@ -2234,6 +2240,10 @@ function openMCEditor(tile,key,unit){
     closeInlineEditor();
     saveStateToStorage();
     showToast('✓ Valor do card atualizado');
+    // Sincroniza com Google Sheets (mcOverrides entra automaticamente via _mcOverrides)
+    saveStateToSheets(state).then(ok=>{
+      if(!ok)showToast('⚠️ Falhou enviar à nuvem','error');
+    });
   };
   ed.querySelector('.ie-save').onclick=save;
   ed.querySelector('.ie-cancel').onclick=closeInlineEditor;
