@@ -764,7 +764,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 
 <div id="section-endividamento" class="dash-section">
 <div class="sec-header"><div class="sec-header-icon">💳</div><h2>Endividamento e Créditos Fiscais</h2><div class="sec-tag">Saldos 2022–2025</div></div>
-<div class="debt-grid" id="debt-grid"><div class="debt-card"><div class="debt-year">DEZ / 2022 · Pico</div><div class="debt-total" style="color:var(--red)">R$ 18.671K</div><div class="debt-sub">Base de referência</div></div><div class="debt-card"><div class="debt-year">DEZ / 2023</div><div class="debt-total" style="color:#ea580c">R$ 15.173K</div><div class="debt-sub"><span style="color:var(--green)">▼ Redução: R$ 3.498K</span></div></div><div class="debt-card"><div class="debt-year">DEZ / 2024</div><div class="debt-total" style="color:#ca8a04">R$ 11.303K</div><div class="debt-sub"><span style="color:var(--green)">▼ Redução: R$ 3.870K</span></div></div><div class="debt-card"><div class="debt-year">DEZ / 2025</div><div class="debt-total" style="color:var(--green)">R$ 9.654K</div><div class="debt-sub"><span style="color:var(--green)">▼ Redução: R$ 1.649K</span></div></div><div class="debt-card"><div class="debt-year">1T / 2026</div><div class="debt-total" style="color:#0891b2">R$ 8.849K</div><div class="debt-sub"><span style="color:var(--muted)">Digite na tabela abaixo</span></div></div></div>
+<div class="debt-grid" id="debt-grid"><div class="debt-card"><div class="debt-year">DEZ / 2022</div><div class="debt-total" style="color:var(--red)">R$ 18.671K</div><div class="debt-sub">Base de referência</div></div><div class="debt-card"><div class="debt-year">DEZ / 2023</div><div class="debt-total" style="color:#ea580c">R$ 15.173K</div><div class="debt-sub"><span style="color:var(--green)">▼ Redução: R$ 3.498K</span></div></div><div class="debt-card"><div class="debt-year">DEZ / 2024</div><div class="debt-total" style="color:#ca8a04">R$ 11.303K</div><div class="debt-sub"><span style="color:var(--green)">▼ Redução: R$ 3.870K</span></div></div><div class="debt-card"><div class="debt-year">DEZ / 2025</div><div class="debt-total" style="color:var(--green)">R$ 9.654K</div><div class="debt-sub"><span style="color:var(--green)">▼ Redução: R$ 1.649K</span></div></div><div class="debt-card"><div class="debt-year">1T / 2026</div><div class="debt-total" style="color:#0891b2">R$ 8.849K</div><div class="debt-sub"><span style="color:var(--muted)"></span></div></div></div>
 <div class="gap-highlight">
 <div>
 <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">GAP de Redução de Endividamento (2022→2025)</div>
@@ -1488,14 +1488,14 @@ function renderTables(){
 
   const debtGrid=document.getElementById('debt-grid');
   debtGrid.innerHTML='';
-  const debtYears=['DEZ / 2022 · Pico','DEZ / 2023','DEZ / 2024','DEZ / 2025','1T / 2026'];
+  const debtYears=['DEZ / 2022','DEZ / 2023','DEZ / 2024','DEZ / 2025','1T / 2026'];
   const debtColors=['var(--red)','#ea580c','#ca8a04','var(--green)','#0891b2'];
   const tot1tDebt2=(state.div_trib_1t||0)+(state.div_trab_1t||0)+(state.div_forn_1t||0)+(state.div_bndes_1t||0);
   for(let i=0;i<5;i++){
     let sub;
     if(i===0)sub='Base de referência';
     else if(i<4)sub=`<span style="color:var(--green)">▼ Redução: R$ ${fmtK(d.div_total[i-1]-d.div_total[i])}K</span>`;
-    else sub='<span style="color:var(--muted)">Digite na tabela abaixo</span>';
+    else sub='<span style="color:var(--muted)"></span>';
     const val=i<4?d.div_total[i]:tot1tDebt2;
     debtGrid.innerHTML+=`<div class="debt-card"><div class="debt-year">${debtYears[i]}</div><div class="debt-total" style="color:${debtColors[i]}">R$ ${fmtK(val)}K</div><div class="debt-sub">${sub}</div></div>`;
   }
