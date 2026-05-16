@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>On Time - Antecipação de Recebíveis</title>
-    <!-- Favicon na raiz do repo (HTML está em Antecipacao/, sobe 1 nível) -->
     <link rel="icon" type="image/png" href="../favicon.png">
+    <title>On Time - Antecipação de Recebíveis</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -35,10 +34,12 @@
         .table-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .table-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        .drag-overlay { position: fixed; inset: 0; background: rgba(60,0,60,0.10); backdrop-filter: blur(2px); z-index: 100; display: none; align-items: center; justify-content: center; border: 4px dashed #3C003C; }
+        /* Drag overlay */
+        .drag-overlay { position: fixed; inset: 0; background: rgba(107,33,168,0.10); backdrop-filter: blur(2px); z-index: 100; display: none; align-items: center; justify-content: center; border: 4px dashed #6B21A8; }
         .drag-overlay.show { display: flex; }
 
-        .toast { position: fixed; bottom: 24px; right: 24px; background: #3C003C; color: #fff; padding: 12px 18px; border-radius: 11px; font-size: 13px; font-weight: 600; z-index: 200; box-shadow: 0 12px 28px rgba(0,0,0,.18); display: flex; align-items: center; gap: 9px; transform: translateY(80px); opacity: 0; transition: all .3s; pointer-events: none; max-width: 380px; }
+        /* Toast */
+        .toast { position: fixed; bottom: 24px; right: 24px; background: #6B21A8; color: #fff; padding: 12px 18px; border-radius: 11px; font-size: 13px; font-weight: 600; z-index: 200; box-shadow: 0 12px 28px rgba(0,0,0,.18); display: flex; align-items: center; gap: 9px; transform: translateY(80px); opacity: 0; transition: all .3s; pointer-events: none; max-width: 380px; }
         .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .toast.ok { background: #16A34A; }
         .toast.err { background: #DC2626; }
@@ -46,34 +47,47 @@
         @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
         .pulse-dot { animation: pulse-dot 1.6s infinite; }
 
+        /* View toggle */
         .view-toggle { display: inline-flex; background: #F3F4F6; border-radius: 10px; padding: 3px; gap: 2px; }
         .view-toggle button { padding: 6px 14px; font-size: 12px; font-weight: 700; border: none; background: transparent; color: #6B7280; cursor: pointer; border-radius: 7px; transition: all .18s; font-family: 'Inter', sans-serif; letter-spacing: 0.2px; }
-        .view-toggle button.active { background: #3C003C; color: #fff; box-shadow: 0 2px 6px rgba(60,0,60,0.25); }
-        .view-toggle button:not(.active):hover { color: #3C003C; background: rgba(60,0,60,0.04); }
+        .view-toggle button.active { background: #6B21A8; color: #fff; box-shadow: 0 2px 6px rgba(107,33,168,0.25); }
+        .view-toggle button:not(.active):hover { color: #6B21A8; background: rgba(107,33,168,0.04); }
 
-        .pdf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 12px; font-weight: 700; background: #fff; color: #DC2626; border: 1.5px solid #FECACA; border-radius: 9px; cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif; }
-        .pdf-btn:hover { background: #FEF2F2; border-color: #DC2626; }
-        .pdf-btn svg { width: 14px; height: 14px; }
-
+        /* Google Sheets buttons */
         .gs-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 12px; font-weight: 700; background: #fff; color: #3C003C; border: 1.5px solid #e9d5ff; border-radius: 9px; cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif; }
         .gs-btn:hover { background: #faf5ff; border-color: #3C003C; }
         .gs-btn svg { width: 14px; height: 14px; }
 
+        /* PDF button */
+        .pdf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 12px; font-weight: 700; background: #fff; color: #DC2626; border: 1.5px solid #FECACA; border-radius: 9px; cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif; }
+        .pdf-btn:hover { background: #FEF2F2; border-color: #DC2626; }
+        .pdf-btn svg { width: 14px; height: 14px; }
+
+        /* ═══ PRINT STYLES (One-Page A4 Portrait PDF) ═══ */
         @page { size: A4 portrait; margin: 6mm 7mm; }
         .print-stamp { display: none; }
 
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
             html, body { background: #fff !important; font-size: 11px; }
+
+            /* ── FORÇA O LAYOUT DO FRONT-END ── */
+            /* 3 cards lado a lado */
             .grid.md\:grid-cols-3 { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+            /* 2 gráficos lado a lado */
             .grid.lg\:grid-cols-2 { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }
+            /* Header em linha */
             .md\:flex-row { flex-direction: row !important; }
             .md\:items-center { align-items: center !important; }
+
+            /* ── ESCONDER CONTROLES ── */
             .no-print, #emptyState, .pdf-btn, .gs-btn, .view-toggle, .toast, .drag-overlay { display: none !important; }
             nav button, nav input[type="file"] { display: none !important; }
             nav .pulse-dot, nav #statusTxt, nav #statusDot { display: none !important; }
             nav .border-l { border-left: none !important; padding-left: 0 !important; }
             .flex.items-center.gap-2.flex-wrap { display: none !important; }
+
+            /* ── NAV COMPACTA ── */
             nav { position: relative !important; box-shadow: none !important; border-bottom-width: 2px !important; }
             nav .h-16 { height: 44px !important; min-height: 44px !important; }
             nav .w-10 { width: 32px !important; height: 32px !important; font-size: 16px !important; border-radius: 8px !important; }
@@ -83,9 +97,13 @@
             nav p.text-xs { font-size: 9.5px !important; }
             nav .gap-3 { gap: 6px !important; }
             nav .gap-4 { gap: 6px !important; }
+
+            /* ── CONTAINER ── */
             .max-w-7xl { max-width: 100% !important; }
             .py-8 { padding: 10px 0 !important; }
             .px-4, .sm\:px-6, .lg\:px-8 { padding-left: 8px !important; padding-right: 8px !important; }
+
+            /* ── ESPAÇAMENTO ENXUTO ── */
             .mb-8 { margin-bottom: 10px !important; }
             .mb-6 { margin-bottom: 8px !important; }
             .mb-4 { margin-bottom: 3px !important; }
@@ -95,9 +113,13 @@
             .mt-1 { margin-top: 0 !important; }
             .gap-6 { gap: 10px !important; }
             .gap-4 { gap: 6px !important; }
+
+            /* ── TÍTULO DO PAINEL ── */
             h2.text-2xl { font-size: 16px !important; line-height: 1.2 !important; font-weight: 700 !important; }
             .text-gray-500.text-sm { font-size: 10px !important; line-height: 1.3 !important; }
             #kpiHeader { font-size: 10px !important; letter-spacing: 0.8px !important; margin-bottom: 4px !important; }
+
+            /* ── KPI CARDS (3 LADO A LADO) ── */
             .rounded-xl.p-6 { padding: 14px 16px !important; border-radius: 10px !important; border-left-width: 4px !important; }
             .card-shadow { box-shadow: none !important; border: 1px solid #E5E7EB !important; }
             h4.text-2xl { font-size: 22px !important; line-height: 1.1 !important; margin-top: 4px !important; font-weight: 700 !important; }
@@ -107,12 +129,16 @@
             #kpi-valor-var, #kpi-taxa-var, #kpi-desagio-var { font-size: 11px !important; font-weight: 700 !important; }
             #kpi-valor-var svg, #kpi-taxa-var svg { width: 13px !important; height: 13px !important; }
             #kpi-valor-vsLabel, #kpi-taxa-vsLabel { font-size: 9.5px !important; }
+
+            /* ── GRÁFICOS (2 LADO A LADO) ── */
             .relative.h-\[300px\], .chart-container { height: 215px !important; max-height: 215px !important; }
             .relative.h-\[300px\] canvas, .chart-container canvas { max-height: 215px !important; }
             .p-6.rounded-xl { padding: 12px 14px !important; }
             h3.text-lg { font-size: 13px !important; line-height: 1.2 !important; font-weight: 700 !important; }
             .text-xs.font-semibold.px-2 { font-size: 9px !important; padding: 2px 8px !important; }
             .chart-container + div .text-xs, p.text-xs { font-size: 7.5px !important; }
+
+            /* ── TABELA ── */
             .overflow-x-auto { overflow: visible !important; }
             table { font-size: 9.5px !important; }
             thead th { padding: 6px 8px !important; font-size: 8.5px !important; letter-spacing: 0.5px !important; }
@@ -121,8 +147,12 @@
             tbody .text-xs, tbody span.text-xs { font-size: 8px !important; padding: 2px 7px !important; }
             .p-6.border-b { padding: 10px 14px !important; }
             .rounded-md.text-xs { font-size: 8.5px !important; padding: 2px 6px !important; font-weight: 700 !important; }
+
+            /* ── QUEBRAS DE PÁGINA ── */
             .grid.md\:grid-cols-3, .grid.lg\:grid-cols-2, table, tfoot, thead { page-break-inside: avoid !important; break-inside: avoid !important; }
             tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+
+            /* ── PRINT STAMP ── */
             .print-stamp { display: inline !important; font-size: 7.5px !important; }
         }
     </style>
@@ -130,11 +160,11 @@
 </head>
 <body class="text-gray-800">
 
+    <!-- Top Navigation -->
     <nav class="bg-white border-b-4 border-onpurple shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center gap-3">
                 <div class="flex items-center gap-3">
-                    <!-- Mascote sobe 1 nível porque o HTML está em Antecipacao/ -->
                     <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-onpurple to-onorange flex items-center justify-center text-white font-bold text-xl overflow-hidden">
                         <img src="../logo-mascote.jpg" alt="OT" class="w-full h-full object-cover" onerror="this.style.display='none';this.parentElement.textContent='OT'">
                     </div>
@@ -168,8 +198,10 @@
         </div>
     </nav>
 
+    <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+        <!-- Empty State -->
         <div id="emptyState" class="hidden">
             <div class="bg-gradient-to-br from-purple-50 via-white to-orange-50 border-2 border-dashed border-onpurple/30 rounded-2xl p-12 text-center max-w-2xl mx-auto my-8">
                 <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-onpurple to-onorange flex items-center justify-center text-white text-4xl shadow-lg">
@@ -182,15 +214,19 @@
                 <p class="text-xs text-gray-400 mb-6">
                     Formato esperado: <strong>ANO · Mês · TOTAL · Valor de Face · Valor Recebido · Deságio · Custo Efetivo a.m.</strong>
                 </p>
-                <button onclick="document.getElementById('fileInput').click()"
+                <button onclick="loadFromGoogleSheets()"
+                            class="gs-btn" title="Carregar dados do Google Sheets">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Sincronizar Sheets
+                    </button>
+                    <button onclick="document.getElementById('fileInput').click()"
                         class="inline-flex items-center gap-2 bg-onorange hover:bg-orange-600 text-white text-base font-bold px-7 py-3 rounded-xl shadow-md transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                     Selecionar arquivo XLSX
                 </button>
                 <p class="text-xs text-gray-400 mt-4 italic">⚡ Ou arraste o arquivo para qualquer lugar desta página</p>
                 <div class="mt-6">
-                    <button onclick="loadFromGoogleSheets()"
-                            class="inline-flex items-center gap-2 bg-onpurple hover:bg-purple-800 text-white text-sm font-bold px-5 py-2 rounded-lg shadow transition">
+                    <button onclick="loadFromGoogleSheets()" class="inline-flex items-center gap-2 bg-onpurple hover:bg-purple-800 text-white text-sm font-bold px-5 py-2 rounded-lg shadow transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                         Ou carregar do Google Sheets
                     </button>
@@ -198,8 +234,10 @@
             </div>
         </div>
 
+        <!-- Dashboard Content -->
         <div id="dashboard" class="hidden">
 
+            <!-- Header & Controls -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-800">Painel de Evolução de Recebíveis</h2>
@@ -218,6 +256,11 @@
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                         Exportar PDF
                     </button>
+                    <button onclick="loadFromGoogleSheets()"
+                            class="gs-btn" title="Carregar dados do Google Sheets">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Sincronizar Sheets
+                    </button>
                     <button onclick="document.getElementById('fileInput').click()"
                             class="text-onpurple text-sm font-semibold hover:underline flex items-center gap-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
@@ -226,10 +269,12 @@
                 </div>
             </div>
 
+            <!-- KPI Cards (Fixed on Q1 Comparison) -->
             <div class="mb-2">
                 <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3" id="kpiHeader">Destaques 1º Trimestre</h3>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Card 1 -->
                 <div class="bg-white rounded-xl p-6 border-l-4 border-onpurple card-shadow">
                     <div class="flex justify-between items-start">
                         <div>
@@ -246,6 +291,7 @@
                     </div>
                 </div>
 
+                <!-- Card 2 -->
                 <div class="bg-white rounded-xl p-6 border-l-4 border-onorange card-shadow">
                     <div class="flex justify-between items-start">
                         <div>
@@ -262,6 +308,7 @@
                     </div>
                 </div>
 
+                <!-- Card 3 -->
                 <div class="bg-white rounded-xl p-6 border-l-4 border-gray-800 card-shadow">
                     <div class="flex justify-between items-start">
                         <div>
@@ -278,6 +325,7 @@
                 </div>
             </div>
 
+            <!-- Charts Area -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                 <div class="bg-white p-6 rounded-xl card-shadow border border-gray-100">
                     <div class="mb-4 flex justify-between items-center">
@@ -300,6 +348,7 @@
                 </div>
             </div>
 
+            <!-- Data Table -->
             <div class="bg-white rounded-xl card-shadow border border-gray-100 overflow-hidden">
                 <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                     <h3 class="text-lg font-bold text-gray-800">Detalhamento Operacional (<span id="tableTitle">—</span>)</h3>
@@ -341,6 +390,7 @@
         </div>
     </div>
 
+    <!-- Drag overlay -->
     <div class="drag-overlay" id="dragOv">
         <div class="bg-white px-10 py-6 rounded-2xl shadow-2xl text-center">
             <div class="text-5xl mb-2">📂</div>
@@ -355,8 +405,6 @@
         'use strict';
         Chart.register(ChartDataLabels);
 
-        const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby02oVbLuYQdDnSpuuPt2vOa5s5ZMqlo3sXafYTr-ElwAqe5laUYE5x7MmcQpQ10kWz/exec';
-
         const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
         const MONTHS_FULL = {
             'JANEIRO':1,'JAN':1,'FEVEREIRO':2,'FEV':2,'MARÇO':3,'MARCO':3,'MAR':3,
@@ -365,6 +413,7 @@
             'OUTUBRO':10,'OUT':10,'NOVEMBRO':11,'NOV':11,'DEZEMBRO':12,'DEZ':12,
         };
 
+        // db structure: { [year]: { face:[12], recebido:[12], desagio:[12], taxa:[12], q1_face, q1_taxa, q1_desagio, q1_recebido } }
         let db = {};
         let yearPrev = null, yearCurr = null;
         let evolucaoChart, taxaChart;
@@ -373,7 +422,7 @@
         const formatMoneyMillions = (val) => (val / 1000000).toFixed(1);
         const formatPercent = (val) => val.toFixed(2).replace('.', ',') + '%';
 
-        // ═══════════════ PARSER DE NÚMEROS BR ═══════════════
+        // ═══════════════ XLSX PARSER ═══════════════
         function parseBR(v) {
             if (v == null) return NaN;
             if (typeof v === 'number') return v;
@@ -382,14 +431,20 @@
             return parseFloat(s);
         }
 
+        // ═══════════════ URL DO GOOGLE SHEETS ═══════════════
+        const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby02oVbLuYQdDnSpuuPt2vOa5s5ZMqlo3sXafYTr-ElwAqe5laUYE5x7MmcQpQ10kWz/exec';
+
         // ═══════════════ BUILD DB A PARTIR DE ARRAYS (XLSX local) ═══════════════
         function buildDbFromRows(rows) {
             const newDB = {};
+
             rows.forEach(row => {
                 if (!row || row.length < 6) return;
+
                 let year = null, monthNum = null;
                 let faceIdx, recIdx, desIdx, taxaIdx;
 
+                // Test BASE.xlsx layout (year in col 0, month in col 1, TOTAL in col 3, values in col 5+)
                 const c0 = row[0], c1 = row[1], c3 = row[3];
                 const yearC0 = typeof c0 === 'number' && c0 >= 2020 && c0 <= 2099 ? c0 : (typeof c0 === 'string' && /^20\d{2}$/.test(c0.trim()) ? parseInt(c0) : null);
                 const monthC1 = typeof c1 === 'string' ? MONTHS_FULL[c1.trim().toUpperCase()] : null;
@@ -398,6 +453,17 @@
                 if (isMonthlyTotalBase) {
                     year = yearC0; monthNum = monthC1;
                     faceIdx = 5; recIdx = 6; desIdx = 7; taxaIdx = 8;
+                }
+
+                // Fallback: older format (Month in col 0, TOTAL in col 2, values in col 4+)
+                if (!year) {
+                    const monthC0 = typeof c0 === 'string' ? MONTHS_FULL[c0.trim().toUpperCase()] : null;
+                    const c2 = row[2];
+                    if (monthC0 && String(c2 || '').trim() === 'TOTAL') {
+                        monthNum = monthC0;
+                        faceIdx = 4; recIdx = 5; desIdx = 6; taxaIdx = 7;
+                        year = '__PENDING__';
+                    }
                 }
 
                 if (!year || !monthNum) return;
@@ -425,6 +491,23 @@
                 newDB[year].taxa[monthNum-1] = +taxa.toFixed(3);
             });
 
+            // Handle pending year resolution
+            if (newDB['__PENDING__']) {
+                let detectedYear = null;
+                for (const row of rows) {
+                    if (!row) continue;
+                    const flat = row.map(c => String(c||'').trim().toUpperCase()).join('|');
+                    const yMatch = flat.match(/(20\d{2})/);
+                    if (yMatch && /TOTAL ANO|TOTAL_ANO|TOTALANO|TOTAL$/.test(flat)) { detectedYear = parseInt(yMatch[1]); break; }
+                    if (yMatch && !detectedYear) detectedYear = parseInt(yMatch[1]);
+                }
+                if (detectedYear) {
+                    newDB[detectedYear] = newDB['__PENDING__'];
+                }
+                delete newDB['__PENDING__'];
+            }
+
+            // Compute 1T values
             Object.keys(newDB).forEach(y => {
                 const d = newDB[y];
                 const q1Face = (d.face[0]||0) + (d.face[1]||0) + (d.face[2]||0);
@@ -447,55 +530,91 @@
         }
 
         // ═══════════════ BUILD DB A PARTIR DE OBJETOS JSON (Google Sheets) ═══════════════
-        // O Sheets devolve objetos com chaves = nomes das colunas. Precisamos mapear pelo nome.
         function buildDbFromObjects(lista) {
             const newDB = {};
             if (!lista || lista.length === 0) return newDB;
 
-            // Detecta nomes de coluna (primeiro objeto define as chaves)
             const first = lista[0];
             const keys = Object.keys(first);
 
-            // Mapeamento flexível: encontra a chave que contém o texto buscado
+            console.log('[DIAGNOSTICO SHEETS] Total de registros recebidos:', lista.length);
+            console.log('[DIAGNOSTICO SHEETS] Todas as chaves do primeiro objeto:', keys);
+            console.log('[DIAGNOSTICO SHEETS] Primeiro objeto completo:', JSON.stringify(first, null, 2));
+            console.log('[DIAGNOSTICO SHEETS] Segundo objeto completo:', JSON.stringify(lista[1], null, 2));
+
             function findKey(...terms) {
                 for (const k of keys) {
-                    const lower = k.toLowerCase();
+                    const lower = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u030f]/g, '');
                     for (const t of terms) {
-                        if (lower.includes(t.toLowerCase())) return k;
+                        const tNorm = t.toLowerCase().normalize('NFD').replace(/[\u0300-\u030f]/g, '');
+                        if (lower.includes(tNorm)) return k;
                     }
                 }
                 return null;
             }
 
             const kAno = findKey('ano');
-            const kMes = findKey('data antecipação', 'mes', 'mês', 'data');
-            const kPeriodo = findKey('periodo', 'período', 'número de identificação', 'identificação');
+            const kMes = findKey('data antecipacao', 'data antecipação', 'mes', 'mês');
+            const kNumId = findKey('numero de identificacao', 'número de identificação', 'identificacao', 'identificação');
             const kFace = findKey('valor de face');
             const kRec = findKey('valor recebido');
-            const kDes = findKey('deságio/juros', 'desagio/juros', 'deságio');
+            const kDes = findKey('desagio/juros', 'deságio/juros');
             const kTaxa = findKey('custo efetivo');
 
-            if (!kAno || !kMes || !kFace) return newDB;
+            console.log('[DIAGNOSTICO SHEETS] Mapeamento de colunas:', { kAno, kMes, kNumId, kFace, kRec, kDes, kTaxa });
 
-            lista.forEach(obj => {
+            if (!kAno || !kMes || !kNumId || !kFace) {
+                console.error('[DIAGNOSTICO SHEETS] ERRO: Colunas obrigatórias não encontradas');
+                return newDB;
+            }
+
+            let linhasProcessadas = 0;
+            let linhasIgnoradas = 0;
+
+            lista.forEach((obj, idx) => {
                 const anoVal = obj[kAno];
                 const mesVal = obj[kMes];
-                const perVal = obj[kPeriodo];
+                const numIdVal = obj[kNumId];
 
                 const year = typeof anoVal === 'number' ? anoVal : (typeof anoVal === 'string' ? parseInt(anoVal) : null);
                 const monthNum = typeof mesVal === 'string' ? MONTHS_FULL[mesVal.trim().toUpperCase()] : null;
-                const isTotal = perVal && String(perVal).trim().toUpperCase() === 'TOTAL';
+                const isTotal = numIdVal && String(numIdVal).trim().toUpperCase() === 'TOTAL';
 
-                if (!year || !monthNum || !isTotal) return;
+                // LOG para cada linha que NÃO é processada
+                if (!isTotal) {
+                    if (idx < 5) {
+                        console.log('[DIAGNOSTICO SHEETS] Linha', idx, 'IGNORADA - numIdVal:', numIdVal, 'mesVal:', mesVal, 'anoVal:', anoVal);
+                    }
+                    linhasIgnoradas++;
+                    return;
+                }
+
+                if (!year || !monthNum) {
+                    console.log('[DIAGNOSTICO SHEETS] Linha', idx, 'IGNORADA - year:', year, 'monthNum:', monthNum);
+                    linhasIgnoradas++;
+                    return;
+                }
 
                 const face = parseBR(obj[kFace]);
                 const rec = kRec ? parseBR(obj[kRec]) : NaN;
                 const des = kDes ? parseBR(obj[kDes]) : NaN;
                 let taxa = kTaxa ? parseBR(obj[kTaxa]) : 0;
 
-                if (isNaN(face)) return;
+                // LOG dos valores brutos e parseados
+                if (idx < 5 || isNaN(face)) {
+                    console.log('[DIAGNOSTICO SHEETS] Linha', idx, 'VALORES:', {
+                        raw: { anoVal, mesVal, numIdVal, faceRaw: obj[kFace], recRaw: obj[kRec], desRaw: obj[kDes], taxaRaw: obj[kTaxa] },
+                        parsed: { year, monthNum, face, rec, des, taxa }
+                    });
+                }
+
+                if (isNaN(face)) {
+                    console.warn('[DIAGNOSTICO SHEETS] Linha', idx, ': Face inválido após parseBR:', obj[kFace]);
+                    linhasIgnoradas++;
+                    return;
+                }
                 if (isNaN(taxa)) taxa = 0;
-                if (taxa > 0 && taxa < 1) taxa *= 100;
+                if (taxa > 0 && taxa < 0.5) taxa *= 100;
 
                 if (!newDB[year]) {
                     newDB[year] = {
@@ -509,9 +628,12 @@
                 newDB[year].recebido[monthNum-1] = isNaN(rec) ? face : rec;
                 newDB[year].desagio[monthNum-1] = !isNaN(des) && des >= 0 ? des : (face - (isNaN(rec) ? face : rec));
                 newDB[year].taxa[monthNum-1] = +taxa.toFixed(3);
+                linhasProcessadas++;
             });
 
-            // Calcula Q1
+            console.log('[DIAGNOSTICO SHEETS] Resumo:', { linhasProcessadas, linhasIgnoradas, anos: Object.keys(newDB) });
+
+            // Compute 1T values
             Object.keys(newDB).forEach(y => {
                 const d = newDB[y];
                 const q1Face = (d.face[0]||0) + (d.face[1]||0) + (d.face[2]||0);
@@ -530,9 +652,11 @@
                 d.q1_taxa = q1FaceSum ? +(q1TaxaW / q1FaceSum).toFixed(4) : 0;
             });
 
+            console.log('[DIAGNOSTICO SHEETS] DB final:', JSON.stringify(newDB, null, 2));
             return newDB;
         }
 
+        // ═══════════════ XLSX PARSER (wrapper) ═══════════════
         function parseXLSX(wb) {
             const sheetName = wb.SheetNames[0];
             const ws = wb.Sheets[sheetName];
@@ -562,7 +686,7 @@
 
                 const parsed = buildDbFromObjects(resultado.dados);
                 if (!parsed || Object.keys(parsed).length === 0) {
-                    showToast('❌ Nenhum dado mensal reconhecido no Sheets. Verifique se os cabeçalhos estão corretos.', 'err');
+                    showToast('❌ Nenhum dado mensal reconhecido no Sheets. Verifique os cabeçalhos.', 'err');
                     return;
                 }
 
@@ -627,6 +751,7 @@
                 }
 
                 const parsed = parseXLSX(wb);
+                console.log('[DIAGNOSTICO XLSX] DB construído:', JSON.stringify(parsed, null, 2));
                 if (!parsed || Object.keys(parsed).length === 0) {
                     showToast('❌ Nenhum dado mensal reconhecido no arquivo', 'err');
                     return;
@@ -636,12 +761,13 @@
                 yearPrev = years[0];
                 yearCurr = years[years.length - 1];
                 if (yearPrev === yearCurr) {
-                    showToast('⚠️ Apenas ' + yearCurr + ' encontrado · carregue arquivo com ambos os anos', 'err');
+                    // Only one year loaded — duplicate for comparison
+                    showToast(`⚠️ Apenas ${yearCurr} encontrado · carregue arquivo com ambos os anos`, 'err');
                     return;
                 }
                 renderAll();
                 const totalMonths = Object.values(db).reduce((a, d) => a + d.face.filter(v => v != null).length, 0);
-                showToast('✅ ' + years.length + ' anos · ' + totalMonths + ' meses carregados (' + yearPrev + ' vs ' + yearCurr + ')', 'ok');
+                showToast(`✅ ${years.length} anos · ${totalMonths} meses carregados (${yearPrev} vs ${yearCurr})`, 'ok');
             } catch (e) {
                 console.error(e);
                 showToast('❌ Erro ao processar arquivo: ' + e.message, 'err');
@@ -659,7 +785,7 @@
         }
 
         // ═══════════════ VIEW STATE ═══════════════
-        let viewMode = 'mensal';
+        let viewMode = 'mensal'; // 'mensal' | 'trimestral'
         const QUARTER_LABELS = ['1T', '2T', '3T', '4T'];
 
         function setView(mode) {
@@ -675,6 +801,7 @@
         }
 
         function aggregateQuarter(yearData) {
+            // Returns {face:[Q1,Q2,Q3,Q4], recebido, desagio, taxa, hasData:[bool,bool,bool,bool]}
             const result = {
                 face: [0, 0, 0, 0],
                 recebido: [0, 0, 0, 0],
@@ -704,14 +831,19 @@
         // ═══════════════ PDF / PRINT ═══════════════
         function generatePDF() {
             document.getElementById('printDate').textContent = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            // Give the DOM a tick to apply the stamp, then trigger print.
+            // beforeprint/afterprint handlers below take care of chart resizing.
             setTimeout(() => window.print(), 80);
         }
 
+        // ═══ Resize charts before and after print ═══
+        // Without this Chart.js keeps the on-screen canvas size, breaking the print layout.
         window.addEventListener('beforeprint', () => {
             document.querySelectorAll('.chart-container').forEach(c => {
                 if (c.dataset.origHeight === undefined) c.dataset.origHeight = c.style.height || '';
                 c.style.height = '215px';
             });
+            // Force chart.js to recompute internal canvas pixel size
             [evolucaoChart, taxaChart].forEach(ch => { if (ch) { ch.resize(); ch.update('none'); } });
         });
         window.addEventListener('afterprint', () => {
@@ -734,14 +866,14 @@
                 return;
             }
             document.getElementById('statusDot').className = 'pulse-dot w-2 h-2 rounded-full bg-green-500';
-            document.getElementById('statusTxt').textContent = yearPrev + ' & ' + yearCurr + ' carregados';
-            document.getElementById('periodLabel').textContent = yearPrev + ' vs ' + yearCurr;
-            document.getElementById('tableTitle').textContent = yearPrev + ' vs ' + yearCurr;
-            document.getElementById('kpiHeader').textContent = 'Destaques 1º Trimestre (1T' + String(yearCurr).slice(-2) + ' vs 1T' + String(yearPrev).slice(-2) + ')';
-            document.getElementById('kpi-valor-vsLabel').textContent = 'vs 1T' + yearPrev;
-            document.getElementById('kpi-taxa-vsLabel').textContent = 'vs 1T' + yearPrev;
-            document.getElementById('tfoot-prev-label').textContent = 'Total ' + yearPrev;
-            document.getElementById('tfoot-curr-label').textContent = 'Total ' + yearCurr;
+            document.getElementById('statusTxt').textContent = `${yearPrev} & ${yearCurr} carregados`;
+            document.getElementById('periodLabel').textContent = `${yearPrev} vs ${yearCurr}`;
+            document.getElementById('tableTitle').textContent = `${yearPrev} vs ${yearCurr}`;
+            document.getElementById('kpiHeader').textContent = `Destaques 1º Trimestre (1T${String(yearCurr).slice(-2)} vs 1T${String(yearPrev).slice(-2)})`;
+            document.getElementById('kpi-valor-vsLabel').textContent = `vs 1T${yearPrev}`;
+            document.getElementById('kpi-taxa-vsLabel').textContent = `vs 1T${yearPrev}`;
+            document.getElementById('tfoot-prev-label').textContent = `Total ${yearPrev}`;
+            document.getElementById('tfoot-curr-label').textContent = `Total ${yearCurr}`;
             initCards();
             renderCharts();
             renderTable();
@@ -752,14 +884,14 @@
             const val26 = dCurr.q1_face, val25 = dPrev.q1_face;
             const varVal = val25 ? ((val26 / val25) - 1) * 100 : 0;
 
-            document.getElementById('kpi-valor').innerText = 'R$ ' + (val26/1000000).toFixed(2) + 'M';
+            document.getElementById('kpi-valor').innerText = `R$ ${(val26/1000000).toFixed(2)}M`;
             const elVar = document.getElementById('kpi-valor-var');
             if (varVal > 0) {
                 elVar.className = 'text-green-500 font-bold flex items-center';
-                elVar.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> +' + varVal.toFixed(1) + '%';
+                elVar.innerHTML = `<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> +${varVal.toFixed(1)}%`;
             } else {
                 elVar.className = 'text-red-500 font-bold flex items-center';
-                elVar.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg> ' + varVal.toFixed(1) + '%';
+                elVar.innerHTML = `<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg> ${varVal.toFixed(1)}%`;
             }
 
             const taxa26 = dCurr.q1_taxa, taxa25 = dPrev.q1_taxa;
@@ -768,16 +900,16 @@
             const elT = document.getElementById('kpi-taxa-var');
             if (varTaxa > 0) {
                 elT.className = 'text-red-500 font-bold flex items-center';
-                elT.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> +' + varTaxa.toFixed(2) + ' p.p';
+                elT.innerHTML = `<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg> +${varTaxa.toFixed(2)} p.p`;
             } else {
                 elT.className = 'text-green-500 font-bold flex items-center';
-                elT.innerHTML = '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg> ' + varTaxa.toFixed(2) + ' p.p';
+                elT.innerHTML = `<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg> ${varTaxa.toFixed(2)} p.p`;
             }
 
-            document.getElementById('kpi-desagio').innerText = 'R$ ' + (dCurr.q1_desagio/1000).toFixed(1) + 'K';
+            document.getElementById('kpi-desagio').innerText = `R$ ${(dCurr.q1_desagio/1000).toFixed(1)}K`;
             const desDiff = dCurr.q1_desagio - dPrev.q1_desagio;
             const desVar = dPrev.q1_desagio ? ((dCurr.q1_desagio/dPrev.q1_desagio)-1)*100 : 0;
-            document.getElementById('kpi-desagio-var').innerHTML = 'vs 1T' + yearPrev + ': <span class="text-onorange">' + (desVar>=0?'+':'') + desVar.toFixed(1) + '%</span> · juros + IOF';
+            document.getElementById('kpi-desagio-var').innerHTML = `vs 1T${yearPrev}: <span class="text-onorange">${desVar>=0?'+':''}${desVar.toFixed(1)}%</span> · juros + IOF`;
         }
 
         function renderCharts() {
@@ -791,6 +923,7 @@
             const ctxT = document.getElementById('taxaChart').getContext('2d');
             const dPrev = db[yearPrev], dCurr = db[yearCurr];
 
+            // Build labels & data based on viewMode
             let labels, facePrev, faceCurr, taxaPrev, taxaCurr;
             if (viewMode === 'mensal') {
                 labels = months;
@@ -814,7 +947,7 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Face ' + yearPrev,
+                            label: `Face ${yearPrev}`,
                             data: facePrev,
                             backgroundColor: '#CBD5E1',
                             borderRadius: 4,
@@ -826,13 +959,13 @@
                             }
                         },
                         {
-                            label: 'Face ' + yearCurr,
+                            label: `Face ${yearCurr}`,
                             data: faceCurr,
-                            backgroundColor: '#9333EA',
+                            backgroundColor: '#5a005a',
                             borderRadius: 4,
                             datalabels: {
                                 display: (c) => c.dataset.data[c.dataIndex] != null,
-                                color: '#6B21A8', align: 'end', anchor: 'end',
+                                color: '#3C003C', align: 'end', anchor: 'end',
                                 font: { weight: 'bold', size: viewMode === 'trimestral' ? 11 : 10 },
                                 formatter: (v) => v ? formatMoneyMillions(v) + 'M' : ''
                             }
@@ -844,7 +977,7 @@
                     layout: { padding: { top: 30 } },
                     plugins: {
                         legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
-                        tooltip: { callbacks: { label: (ctx) => ctx.raw==null ? null : ctx.dataset.label + ': ' + formatMoney(ctx.raw) } }
+                        tooltip: { callbacks: { label: (ctx) => ctx.raw==null ? null : `${ctx.dataset.label}: ${formatMoney(ctx.raw)}` } }
                     },
                     scales: {
                         y: { beginAtZero: true, grid: { borderDash: [4,4], color: '#f1f5f9' }, ticks: { callback: (v) => (v/1000000) + 'M' } },
@@ -859,7 +992,7 @@
                     labels: labels,
                     datasets: [
                         {
-                            label: 'Custo Efetivo ' + yearPrev,
+                            label: `Custo Efetivo ${yearPrev}`,
                             data: taxaPrev,
                             borderColor: '#94A3B8', backgroundColor: 'transparent',
                             borderWidth: 2, borderDash: [5,5],
@@ -873,15 +1006,15 @@
                             }
                         },
                         {
-                            label: 'Custo Efetivo ' + yearCurr,
+                            label: `Custo Efetivo ${yearCurr}`,
                             data: taxaCurr,
-                            borderColor: '#F97316', backgroundColor: 'rgba(249,115,22,0.1)',
+                            borderColor: '#FF6E00', backgroundColor: 'rgba(249,115,22,0.1)',
                             borderWidth: 3,
-                            pointBackgroundColor: '#fff', pointBorderColor: '#F97316', pointBorderWidth: 2, pointRadius: 5,
+                            pointBackgroundColor: '#fff', pointBorderColor: '#FF6E00', pointBorderWidth: 2, pointRadius: 5,
                             fill: true, tension: 0.4, spanGaps: true,
                             datalabels: {
                                 display: (c) => c.dataset.data[c.dataIndex] != null,
-                                color: '#F97316', align: 'top', anchor: 'center', offset: 8,
+                                color: '#FF6E00', align: 'top', anchor: 'center', offset: 8,
                                 font: { weight: 'bold', size: 11 },
                                 formatter: (v) => v ? formatPercent(v) : ''
                             }
@@ -893,7 +1026,7 @@
                     layout: { padding: { top: 30, bottom: 20 } },
                     plugins: {
                         legend: { display: true, position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
-                        tooltip: { callbacks: { label: (ctx) => ctx.raw==null ? null : 'Taxa: ' + formatPercent(ctx.raw) } }
+                        tooltip: { callbacks: { label: (ctx) => ctx.raw==null ? null : `Taxa: ${formatPercent(ctx.raw)}` } }
                     },
                     scales: {
                         y: { beginAtZero: false, grid: { borderDash: [4,4], color: '#f1f5f9' }, ticks: { callback: (v) => v.toFixed(2) + '%' } },
@@ -917,22 +1050,44 @@
                         sumRecPrev += dPrev.recebido[i];
                         sumDesPrev += dPrev.desagio[i];
                         sumTaxaPrev += dPrev.taxa[i] * dPrev.face[i];
-                        html += '<tr class="hover:bg-gray-50 transition-colors"><td class="p-4 font-semibold text-gray-500 uppercase">' + months[i] + ' / ' + String(yearPrev).slice(-2) + '</td><td class="p-4 text-right">' + formatMoney(dPrev.face[i]) + '</td><td class="p-4 text-right text-gray-400">' + formatMoney(dPrev.recebido[i]) + '</td><td class="p-4 text-right text-red-400 font-medium">' + formatMoney(dPrev.desagio[i]) + '</td><td class="p-4 text-center"><span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-xs font-bold border border-gray-200">' + formatPercent(dPrev.taxa[i]) + '</span></td><td class="p-4 text-center"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Liquidado</span></td></tr>';
+                        html += `
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="p-4 font-semibold text-gray-500 uppercase">${months[i]} / ${String(yearPrev).slice(-2)}</td>
+                                <td class="p-4 text-right">${formatMoney(dPrev.face[i])}</td>
+                                <td class="p-4 text-right text-gray-400">${formatMoney(dPrev.recebido[i])}</td>
+                                <td class="p-4 text-right text-red-400 font-medium">${formatMoney(dPrev.desagio[i])}</td>
+                                <td class="p-4 text-center">
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-xs font-bold border border-gray-200">${formatPercent(dPrev.taxa[i])}</span>
+                                </td>
+                                <td class="p-4 text-center"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Liquidado</span></td>
+                            </tr>`;
                     }
                     if (dCurr.face[i] != null) {
                         sumFaceCurr += dCurr.face[i];
                         sumRecCurr += dCurr.recebido[i];
                         sumDesCurr += dCurr.desagio[i];
                         sumTaxaCurr += dCurr.taxa[i] * dCurr.face[i];
-                        html += '<tr class="hover:bg-purple-50 transition-colors bg-purple-50/30"><td class="p-4 font-bold text-onpurple uppercase">' + months[i] + ' / ' + String(yearCurr).slice(-2) + '</td><td class="p-4 text-right font-medium">' + formatMoney(dCurr.face[i]) + '</td><td class="p-4 text-right text-gray-600">' + formatMoney(dCurr.recebido[i]) + '</td><td class="p-4 text-right text-red-500 font-bold">' + formatMoney(dCurr.desagio[i]) + '</td><td class="p-4 text-center"><span class="bg-orange-50 text-onorange px-2 py-1 rounded-md text-xs font-bold border border-orange-100">' + formatPercent(dCurr.taxa[i]) + '</span></td><td class="p-4 text-center"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Liquidado</span></td></tr>';
+                        html += `
+                            <tr class="hover:bg-purple-50 transition-colors bg-purple-50/30">
+                                <td class="p-4 font-bold text-onpurple uppercase">${months[i]} / ${String(yearCurr).slice(-2)}</td>
+                                <td class="p-4 text-right font-medium">${formatMoney(dCurr.face[i])}</td>
+                                <td class="p-4 text-right text-gray-600">${formatMoney(dCurr.recebido[i])}</td>
+                                <td class="p-4 text-right text-red-500 font-bold">${formatMoney(dCurr.desagio[i])}</td>
+                                <td class="p-4 text-center">
+                                    <span class="bg-orange-50 text-onorange px-2 py-1 rounded-md text-xs font-bold border border-orange-100">${formatPercent(dCurr.taxa[i])}</span>
+                                </td>
+                                <td class="p-4 text-center"><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Liquidado</span></td>
+                            </tr>`;
                     }
                 }
             } else {
+                // ── TRIMESTRAL VIEW ──
                 const qPrev = aggregateQuarter(dPrev);
                 const qCurr = aggregateQuarter(dCurr);
                 const yPS = String(yearPrev).slice(-2), yCS = String(yearCurr).slice(-2);
 
                 for (let q = 0; q < 4; q++) {
+                    // Prev year row (always show, zero if no data)
                     const pFace = qPrev.face[q] || 0;
                     const pRec = qPrev.recebido[q] || 0;
                     const pDes = qPrev.desagio[q] || 0;
@@ -945,8 +1100,19 @@
                     const pStatus = pHas
                         ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Liquidado</span>'
                         : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Sem dados</span>';
-                    html += '<tr class="hover:bg-gray-50 transition-colors"><td class="p-4 font-semibold text-gray-500 uppercase">' + QUARTER_LABELS[q] + ' / ' + yPS + '</td><td class="p-4 text-right ' + (pHas ? '' : 'text-gray-300') + '">' + formatMoney(pFace) + '</td><td class="p-4 text-right ' + (pHas ? 'text-gray-400' : 'text-gray-300') + '">' + formatMoney(pRec) + '</td><td class="p-4 text-right ' + (pHas ? 'text-red-400 font-medium' : 'text-gray-300') + '">' + formatMoney(pDes) + '</td><td class="p-4 text-center"><span class="' + (pHas ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-gray-50 text-gray-300 border-gray-100') + ' px-2 py-1 rounded-md text-xs font-bold border">' + (pHas ? formatPercent(pTaxa || 0) : '—') + '</span></td><td class="p-4 text-center">' + pStatus + '</td></tr>';
+                    html += `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="p-4 font-semibold text-gray-500 uppercase">${QUARTER_LABELS[q]} / ${yPS}</td>
+                            <td class="p-4 text-right ${pHas ? '' : 'text-gray-300'}">${formatMoney(pFace)}</td>
+                            <td class="p-4 text-right ${pHas ? 'text-gray-400' : 'text-gray-300'}">${formatMoney(pRec)}</td>
+                            <td class="p-4 text-right ${pHas ? 'text-red-400 font-medium' : 'text-gray-300'}">${formatMoney(pDes)}</td>
+                            <td class="p-4 text-center">
+                                <span class="${pHas ? 'bg-gray-100 text-gray-600 border-gray-200' : 'bg-gray-50 text-gray-300 border-gray-100'} px-2 py-1 rounded-md text-xs font-bold border">${pHas ? formatPercent(pTaxa || 0) : '—'}</span>
+                            </td>
+                            <td class="p-4 text-center">${pStatus}</td>
+                        </tr>`;
 
+                    // Curr year row (always show, zero if no data)
                     const cFace = qCurr.face[q] || 0;
                     const cRec = qCurr.recebido[q] || 0;
                     const cDes = qCurr.desagio[q] || 0;
@@ -959,7 +1125,17 @@
                     const cStatus = cHas
                         ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Liquidado</span>'
                         : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">Aguardando</span>';
-                    html += '<tr class="hover:bg-purple-50 transition-colors bg-purple-50/30"><td class="p-4 font-bold text-onpurple uppercase">' + QUARTER_LABELS[q] + ' / ' + yCS + '</td><td class="p-4 text-right ' + (cHas ? 'font-medium' : 'text-gray-300') + '">' + formatMoney(cFace) + '</td><td class="p-4 text-right ' + (cHas ? 'text-gray-600' : 'text-gray-300') + '">' + formatMoney(cRec) + '</td><td class="p-4 text-right ' + (cHas ? 'text-red-500 font-bold' : 'text-gray-300') + '">' + formatMoney(cDes) + '</td><td class="p-4 text-center"><span class="' + (cHas ? 'bg-orange-50 text-onorange border-orange-100' : 'bg-gray-50 text-gray-300 border-gray-100') + ' px-2 py-1 rounded-md text-xs font-bold border">' + (cHas ? formatPercent(cTaxa || 0) : '—') + '</span></td><td class="p-4 text-center">' + cStatus + '</td></tr>';
+                    html += `
+                        <tr class="hover:bg-purple-50 transition-colors bg-purple-50/30">
+                            <td class="p-4 font-bold text-onpurple uppercase">${QUARTER_LABELS[q]} / ${yCS}</td>
+                            <td class="p-4 text-right ${cHas ? 'font-medium' : 'text-gray-300'}">${formatMoney(cFace)}</td>
+                            <td class="p-4 text-right ${cHas ? 'text-gray-600' : 'text-gray-300'}">${formatMoney(cRec)}</td>
+                            <td class="p-4 text-right ${cHas ? 'text-red-500 font-bold' : 'text-gray-300'}">${formatMoney(cDes)}</td>
+                            <td class="p-4 text-center">
+                                <span class="${cHas ? 'bg-orange-50 text-onorange border-orange-100' : 'bg-gray-50 text-gray-300 border-gray-100'} px-2 py-1 rounded-md text-xs font-bold border">${cHas ? formatPercent(cTaxa || 0) : '—'}</span>
+                            </td>
+                            <td class="p-4 text-center">${cStatus}</td>
+                        </tr>`;
                 }
             }
 
