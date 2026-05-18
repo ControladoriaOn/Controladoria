@@ -315,11 +315,11 @@
                     <!-- Botão "Voltar ao hub": começa oculto (hidden). O JavaScript
                          no fim da página o exibe apenas quando a página foi aberta
                          a partir do hub de ferramentas (ver objeto HubLink). -->
-                    <a id="btnVoltarHub" href="../index.html"
+                    <button type="button" id="btnVoltarHub" style="background:none;border:none;padding:0;margin:0;cursor:pointer;"
                        class="hidden no-print inline-flex items-center gap-1.5 text-sm font-bold text-onpurple hover:text-onpurplelight transition pr-2 mr-1 border-r border-gray-200">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                         <span class="hidden sm:inline">Voltar ao hub</span>
-                    </a>
+                    </button>
                     <!-- Mascote da empresa (arquivo está na raiz do repositório, por isso ../) -->
                     <img src="../logo-mascote.jpg" alt="Mascote On Time"
                          class="w-10 h-10 rounded-lg object-cover shadow-sm">
@@ -1263,6 +1263,31 @@
         // Ao abrir a página, busca automaticamente os dados salvos no
         // Google Sheets. Se não houver URL configurada ou dados, mostra
         // o estado vazio com o botão de upload.
+        // Forçar navegação na mesma aba para o botão voltar
+        (function() {
+            function irParaHub() {
+                try {
+                    window.location.replace('../index.html');
+                } catch(e) {
+                    window.location.href = '../index.html';
+                }
+                return false;
+            }
+            function setupVoltar() {
+                const btn = document.getElementById('btnVoltarHub');
+                if (!btn || btn.dataset.voltarSetup) return;
+                btn.dataset.voltarSetup = '1';
+                btn.onclick = irParaHub;
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setupVoltar);
+            } else {
+                setupVoltar();
+            }
+            setTimeout(setupVoltar, 500);
+            setTimeout(setupVoltar, 1500);
+        })();
+
         window.onload = () => {
             HubLink.init();
             loadFromSheets();
