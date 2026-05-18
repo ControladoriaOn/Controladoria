@@ -152,9 +152,28 @@
             /* ── PRINT STAMP ── */
             .print-stamp { display: inline !important; font-size: 7.5px !important; }
         }
+        .loading-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(250, 247, 245, 0.96);
+            transition: opacity 0.4s;
+        }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
     </style>
+<base target="_blank">
 </head>
 <body class="text-gray-800">
+    <div id="loadingOverlay" class="loading-overlay">
+        <div style="text-align:center;">
+            <img src="../logo-mascote.jpg" alt="Carregando"
+                 style="width:64px;height:64px;border-radius:14px;object-fit:cover;
+                        box-shadow:0 4px 14px -6px rgba(0,0,0,0.25);">
+            <p style="margin-top:16px;font:600 14px sans-serif;color:#6B5E6F;">
+                Carregando dados do sistema...
+            </p>
+        </div>
+    </div>
+
 
     <!-- Top Navigation -->
     <nav class="bg-white border-b-4 border-onpurple shadow-sm sticky top-0 z-50">
@@ -529,6 +548,7 @@
         async function loadFile(event) {
             const file = event.target.files[0];
             if (!file) return;
+            document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
                 const buf = await file.arrayBuffer();
                 const wb = XLSX.read(buf, { type: 'array', cellDates: false });
@@ -555,6 +575,7 @@
                 console.error(e);
                 showToast('❌ Erro ao processar arquivo: ' + e.message, 'err');
             } finally {
+                document.getElementById('loadingOverlay').classList.add('hidden');
                 event.target.value = '';
             }
         }
@@ -564,6 +585,7 @@
         async function loadFromSheets() {
             if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.startsWith('COLE_AQUI')) {
                 // URL ainda não configurada — exibe estado vazio normal
+                document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('emptyState').classList.remove('hidden');
                 document.getElementById('statusTxt').textContent = 'URL do Apps Script não configurada';
                 return;
@@ -574,6 +596,7 @@
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 if (!data.years || Object.keys(data.years).length === 0) {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
                     document.getElementById('emptyState').classList.remove('hidden');
                     document.getElementById('statusTxt').textContent = 'Sem dados na planilha';
                     return;
@@ -612,6 +635,7 @@
 
                 const yearsArr = Object.keys(db).map(Number).sort((a,b) => a-b);
                 if (yearsArr.length < 2) {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
                     document.getElementById('emptyState').classList.remove('hidden');
                     showToast(`⚠️ Planilha tem apenas ${yearsArr.length} ano. São necessários 2 para comparação.`, 'err');
                     return;
@@ -620,11 +644,13 @@
                 yearCurr = yearsArr[yearsArr.length - 1];
                 renderAll();
                 document.getElementById('statusTxt').textContent = 'Dados carregados da planilha';
+                document.getElementById('loadingOverlay').classList.add('hidden');
             } catch (e) {
                 console.error('Erro ao carregar do Sheets:', e);
                 document.getElementById('emptyState').classList.remove('hidden');
                 document.getElementById('statusTxt').textContent = 'Falha ao carregar';
                 showToast('❌ Erro ao ler planilha: ' + e.message, 'err');
+                document.getElementById('loadingOverlay').classList.add('hidden');
             }
         }
 
