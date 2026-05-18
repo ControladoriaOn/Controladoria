@@ -152,25 +152,157 @@
             /* ── PRINT STAMP ── */
             .print-stamp { display: inline !important; font-size: 7.5px !important; }
         }
+        /* ═══ TELA DE CARREGAMENTO CRIATIVA ═══ */
         .loading-overlay {
             position: fixed; inset: 0; z-index: 9999;
             display: flex; align-items: center; justify-content: center;
-            background: rgba(250, 247, 245, 0.96);
-            transition: opacity 0.4s;
+            background: linear-gradient(135deg, #faf7f5 0%, #f3e8ff 50%, #fff7ed 100%);
+            transition: opacity 0.6s ease, visibility 0.6s ease;
+            overflow: hidden;
         }
-        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; visibility: hidden; }
+
+        /* Orbs flutuantes de fundo */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.35;
+            animation: orbFloat 8s ease-in-out infinite;
+        }
+        .orb-1 { width: 300px; height: 300px; background: #9333EA; top: -80px; left: -60px; animation-delay: 0s; }
+        .orb-2 { width: 220px; height: 220px; background: #F97316; bottom: -40px; right: -40px; animation-delay: -3s; }
+        .orb-3 { width: 160px; height: 160px; background: #6B21A8; top: 40%; right: 15%; animation-delay: -5s; opacity: 0.2; }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.08); }
+            66% { transform: translate(-20px, 15px) scale(0.95); }
+        }
+
+        /* Container central */
+        .loader-box {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 48px 56px;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 24px 48px -12px rgba(107,33,168,0.15), 0 0 0 1px rgba(107,33,168,0.05);
+            animation: boxEnter 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px) scale(0.96);
+        }
+        @keyframes boxEnter {
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Mascote com anel orbitando */
+        .mascote-wrap {
+            position: relative;
+            width: 88px;
+            height: 88px;
+            margin: 0 auto 20px;
+        }
+        .mascote-wrap img {
+            width: 64px; height: 64px;
+            border-radius: 16px;
+            object-fit: cover;
+            position: absolute;
+            top: 12px; left: 12px;
+            z-index: 2;
+            box-shadow: 0 8px 20px -4px rgba(0,0,0,0.18);
+            animation: mascotePulse 2s ease-in-out infinite;
+        }
+        @keyframes mascotePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+
+        /* Anel SVG orbitando */
+        .orbit-ring {
+            position: absolute;
+            inset: 0;
+            animation: orbitSpin 2.4s linear infinite;
+        }
+        @keyframes orbitSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Texto principal */
+        .loader-text {
+            font: 700 16px 'Inter', sans-serif;
+            color: #4a1d75;
+            letter-spacing: 0.3px;
+            margin-bottom: 6px;
+        }
+        .loader-sub {
+            font: 500 12px 'Inter', sans-serif;
+            color: #9ca3af;
+            letter-spacing: 0.2px;
+        }
+
+        /* Pontos animados */
+        .dots::after {
+            content: '';
+            animation: dotsCycle 1.4s steps(4, end) infinite;
+        }
+        @keyframes dotsCycle {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+        }
+
+        /* Barra de progresso indeterminada */
+        .loader-track {
+            width: 180px;
+            height: 4px;
+            background: #e9d5ff;
+            border-radius: 999px;
+            margin: 18px auto 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .loader-bar {
+            position: absolute;
+            left: -40%;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(90deg, #6B21A8, #F97316);
+            border-radius: 999px;
+            animation: barSlide 1.4s ease-in-out infinite;
+        }
+        @keyframes barSlide {
+            0% { left: -40%; }
+            100% { left: 100%; }
+        }
     </style>
 <base target="_blank">
 </head>
 <body class="text-gray-800">
     <div id="loadingOverlay" class="loading-overlay">
-        <div style="text-align:center;">
-            <img src="../logo-mascote.jpg" alt="Carregando"
-                 style="width:64px;height:64px;border-radius:14px;object-fit:cover;
-                        box-shadow:0 4px 14px -6px rgba(0,0,0,0.25);">
-            <p style="margin-top:16px;font:600 14px sans-serif;color:#6B5E6F;">
-                Carregando dados do sistema...
-            </p>
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="loader-box">
+            <div class="mascote-wrap">
+                <svg class="orbit-ring" viewBox="0 0 88 88" fill="none">
+                    <circle cx="44" cy="44" r="40" stroke="url(#gradRing)" stroke-width="3" stroke-linecap="round" stroke-dasharray="60 180" opacity="0.9"/>
+                    <defs>
+                        <linearGradient id="gradRing" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6B21A8"/>
+                            <stop offset="100%" stop-color="#F97316"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <img src="../logo-mascote.jpg" alt="Carregando">
+            </div>
+            <div class="loader-text">Carregando dados do sistema<span class="dots"></span></div>
+            <div class="loader-sub">Preparando análise comparativa</div>
+            <div class="loader-track"><div class="loader-bar"></div></div>
         </div>
     </div>
 
