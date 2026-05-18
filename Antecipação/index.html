@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="../favicon.png">
     <title>On Time - Antecipação de Recebíveis</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,10 +15,10 @@
             theme: {
                 extend: {
                     colors: {
-                        onpurple: '#3C003C',
-                        onpurplelight: '#5a005a',
-                        onorange: '#FF6E00',
-                        onorangelight: '#ff8f3c',
+                        onpurple: '#6B21A8',
+                        onpurplelight: '#9333EA',
+                        onorange: '#F97316',
+                        onorangelight: '#FDBA74',
                     }
                 }
             }
@@ -53,11 +52,6 @@
         .view-toggle button.active { background: #6B21A8; color: #fff; box-shadow: 0 2px 6px rgba(107,33,168,0.25); }
         .view-toggle button:not(.active):hover { color: #6B21A8; background: rgba(107,33,168,0.04); }
 
-        /* Google Sheets buttons */
-        .gs-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 12px; font-weight: 700; background: #fff; color: #3C003C; border: 1.5px solid #e9d5ff; border-radius: 9px; cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif; }
-        .gs-btn:hover { background: #faf5ff; border-color: #3C003C; }
-        .gs-btn svg { width: 14px; height: 14px; }
-
         /* PDF button */
         .pdf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; font-size: 12px; font-weight: 700; background: #fff; color: #DC2626; border: 1.5px solid #FECACA; border-radius: 9px; cursor: pointer; transition: all .18s; font-family: 'Inter', sans-serif; }
         .pdf-btn:hover { background: #FEF2F2; border-color: #DC2626; }
@@ -81,7 +75,7 @@
             .md\:items-center { align-items: center !important; }
 
             /* ── ESCONDER CONTROLES ── */
-            .no-print, #emptyState, .pdf-btn, .gs-btn, .view-toggle, .toast, .drag-overlay { display: none !important; }
+            .no-print, #emptyState, .pdf-btn, .view-toggle, .toast, .drag-overlay { display: none !important; }
             nav button, nav input[type="file"] { display: none !important; }
             nav .pulse-dot, nav #statusTxt, nav #statusDot { display: none !important; }
             nav .border-l { border-left: none !important; padding-left: 0 !important; }
@@ -156,7 +150,6 @@
             .print-stamp { display: inline !important; font-size: 7.5px !important; }
         }
     </style>
-<base target="_blank">
 </head>
 <body class="text-gray-800">
 
@@ -165,8 +158,8 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-onpurple to-onorange flex items-center justify-center text-white font-bold text-xl overflow-hidden">
-                        <img src="../logo-mascote.jpg" alt="OT" class="w-full h-full object-cover" onerror="this.style.display='none';this.parentElement.textContent='OT'">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-onpurple to-onorange flex items-center justify-center text-white font-bold text-xl">
+                        OT
                     </div>
                     <div>
                         <h1 class="text-xl font-bold text-onpurple leading-tight">On Time</h1>
@@ -178,11 +171,6 @@
                         <span class="pulse-dot w-2 h-2 rounded-full bg-green-500" id="statusDot"></span>
                         <span class="text-gray-600 font-semibold" id="statusTxt">Aguardando dados</span>
                     </div>
-                    <button onclick="loadFromGoogleSheets()"
-                            class="gs-btn" title="Carregar dados do Google Sheets">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Sincronizar Sheets
-                    </button>
                     <button onclick="document.getElementById('fileInput').click()"
                             class="inline-flex items-center gap-2 bg-onorange hover:bg-orange-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
@@ -214,23 +202,12 @@
                 <p class="text-xs text-gray-400 mb-6">
                     Formato esperado: <strong>ANO · Mês · TOTAL · Valor de Face · Valor Recebido · Deságio · Custo Efetivo a.m.</strong>
                 </p>
-                <button onclick="loadFromGoogleSheets()"
-                            class="gs-btn" title="Carregar dados do Google Sheets">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Sincronizar Sheets
-                    </button>
-                    <button onclick="document.getElementById('fileInput').click()"
+                <button onclick="document.getElementById('fileInput').click()"
                         class="inline-flex items-center gap-2 bg-onorange hover:bg-orange-600 text-white text-base font-bold px-7 py-3 rounded-xl shadow-md transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                     Selecionar arquivo XLSX
                 </button>
                 <p class="text-xs text-gray-400 mt-4 italic">⚡ Ou arraste o arquivo para qualquer lugar desta página</p>
-                <div class="mt-6">
-                    <button onclick="loadFromGoogleSheets()" class="inline-flex items-center gap-2 bg-onpurple hover:bg-purple-800 text-white text-sm font-bold px-5 py-2 rounded-lg shadow transition">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Ou carregar do Google Sheets
-                    </button>
-                </div>
             </div>
         </div>
 
@@ -248,18 +225,9 @@
                         <button id="btnMensal" class="active" onclick="setView('mensal')">📅 Mensal</button>
                         <button id="btnTrim" onclick="setView('trimestral')">📊 Trimestral</button>
                     </div>
-                    <button class="gs-btn" onclick="loadFromGoogleSheets()">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Sheets
-                    </button>
                     <button class="pdf-btn" onclick="generatePDF()">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
                         Exportar PDF
-                    </button>
-                    <button onclick="loadFromGoogleSheets()"
-                            class="gs-btn" title="Carregar dados do Google Sheets">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Sincronizar Sheets
                     </button>
                     <button onclick="document.getElementById('fileInput').click()"
                             class="text-onpurple text-sm font-semibold hover:underline flex items-center gap-1">
@@ -405,6 +373,15 @@
         'use strict';
         Chart.register(ChartDataLabels);
 
+        // ═══════════════════════════════════════════════════════════════════
+        //  CONFIGURAÇÃO DO GOOGLE SHEETS
+        // ═══════════════════════════════════════════════════════════════════
+        //  ATENÇÃO: cole abaixo a URL do Web App do Apps Script.
+        //  Você vai obter essa URL depois de publicar o Apps Script
+        //  (a URL termina em ".../exec"). Veja o passo 4 do INSTRUCOES.md.
+        // ═══════════════════════════════════════════════════════════════════
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwNCvgPdM-F56mc-MGglQdBTY89NfptBHAhj4jiT8dftaPqrUSM_I0K2K6PWy5u0e5I/exec';
+
         const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
         const MONTHS_FULL = {
             'JANEIRO':1,'JAN':1,'FEVEREIRO':2,'FEV':2,'MARÇO':3,'MARCO':3,'MAR':3,
@@ -431,16 +408,20 @@
             return parseFloat(s);
         }
 
-        // ═══════════════ URL DO GOOGLE SHEETS ═══════════════
-        const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycby02oVbLuYQdDnSpuuPt2vOa5s5ZMqlo3sXafYTr-ElwAqe5laUYE5x7MmcQpQ10kWz/exec';
+        function parseXLSX(wb) {
+            const sheetName = wb.SheetNames[0];
+            const ws = wb.Sheets[sheetName];
+            if (!ws) return null;
+            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
 
-        // ═══════════════ BUILD DB A PARTIR DE ARRAYS (XLSX local) ═══════════════
-        function buildDbFromRows(rows) {
+            // Detect column layout by scanning header row
+            // Standard BASE format: ANO | Data Antecipação(Mês) | Data Venc | TOTAL/Período | Valor Face | Valor Recebido | Deságio | Custo | IOF | %IOF
             const newDB = {};
 
             rows.forEach(row => {
                 if (!row || row.length < 6) return;
-
+                
+                // Try to find: which column has month name, which has year, which has TOTAL marker
                 let year = null, monthNum = null;
                 let faceIdx, recIdx, desIdx, taxaIdx;
 
@@ -449,19 +430,22 @@
                 const yearC0 = typeof c0 === 'number' && c0 >= 2020 && c0 <= 2099 ? c0 : (typeof c0 === 'string' && /^20\d{2}$/.test(c0.trim()) ? parseInt(c0) : null);
                 const monthC1 = typeof c1 === 'string' ? MONTHS_FULL[c1.trim().toUpperCase()] : null;
                 const isMonthlyTotalBase = yearC0 && monthC1 && String(c3 || '').trim() === 'TOTAL';
-
+                
                 if (isMonthlyTotalBase) {
                     year = yearC0; monthNum = monthC1;
                     faceIdx = 5; recIdx = 6; desIdx = 7; taxaIdx = 8;
                 }
-
+                
                 // Fallback: older format (Month in col 0, TOTAL in col 2, values in col 4+)
                 if (!year) {
                     const monthC0 = typeof c0 === 'string' ? MONTHS_FULL[c0.trim().toUpperCase()] : null;
                     const c2 = row[2];
                     if (monthC0 && String(c2 || '').trim() === 'TOTAL') {
+                        // Year needs to be inferred — look at nearby TOTAL ANO row or filename
                         monthNum = monthC0;
                         faceIdx = 4; recIdx = 5; desIdx = 6; taxaIdx = 7;
+                        // Year detection: look at the row before for ANO marker, or scan for TOTAL ANO row later
+                        // For now, mark as 'pending' — we'll resolve from filename or TOTAL ANO row
                         year = '__PENDING__';
                     }
                 }
@@ -475,7 +459,7 @@
 
                 if (isNaN(face)) return;
                 if (isNaN(taxa)) taxa = 0;
-                if (taxa > 0 && taxa < 1) taxa *= 100;
+                if (taxa > 0 && taxa < 1) taxa *= 100; // 0.0125 -> 1.25
 
                 if (!newDB[year]) {
                     newDB[year] = {
@@ -493,6 +477,7 @@
 
             // Handle pending year resolution
             if (newDB['__PENDING__']) {
+                // Try to find a year by scanning TOTAL ANO rows
                 let detectedYear = null;
                 for (const row of rows) {
                     if (!row) continue;
@@ -529,229 +514,14 @@
             return newDB;
         }
 
-        // ═══════════════ BUILD DB A PARTIR DE OBJETOS JSON (Google Sheets) ═══════════════
-        function buildDbFromObjects(lista) {
-            const newDB = {};
-            if (!lista || lista.length === 0) return newDB;
-
-            const first = lista[0];
-            const keys = Object.keys(first);
-
-            console.log('[DIAGNOSTICO SHEETS] Total de registros recebidos:', lista.length);
-            console.log('[DIAGNOSTICO SHEETS] Todas as chaves do primeiro objeto:', keys);
-            console.log('[DIAGNOSTICO SHEETS] Primeiro objeto completo:', JSON.stringify(first, null, 2));
-            console.log('[DIAGNOSTICO SHEETS] Segundo objeto completo:', JSON.stringify(lista[1], null, 2));
-
-            function findKey(...terms) {
-                for (const k of keys) {
-                    const lower = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u030f]/g, '');
-                    for (const t of terms) {
-                        const tNorm = t.toLowerCase().normalize('NFD').replace(/[\u0300-\u030f]/g, '');
-                        if (lower.includes(tNorm)) return k;
-                    }
-                }
-                return null;
-            }
-
-            const kAno = findKey('ano');
-            const kMes = findKey('data antecipacao', 'data antecipação', 'mes', 'mês');
-            const kNumId = findKey('numero de identificacao', 'número de identificação', 'identificacao', 'identificação');
-            const kFace = findKey('valor de face');
-            const kRec = findKey('valor recebido');
-            const kDes = findKey('desagio/juros', 'deságio/juros');
-            const kTaxa = findKey('custo efetivo');
-
-            console.log('[DIAGNOSTICO SHEETS] Mapeamento de colunas:', { kAno, kMes, kNumId, kFace, kRec, kDes, kTaxa });
-
-            if (!kAno || !kMes || !kNumId || !kFace) {
-                console.error('[DIAGNOSTICO SHEETS] ERRO: Colunas obrigatórias não encontradas');
-                return newDB;
-            }
-
-            let linhasProcessadas = 0;
-            let linhasIgnoradas = 0;
-
-            lista.forEach((obj, idx) => {
-                const anoVal = obj[kAno];
-                const mesVal = obj[kMes];
-                const numIdVal = obj[kNumId];
-
-                const year = typeof anoVal === 'number' ? anoVal : (typeof anoVal === 'string' ? parseInt(anoVal) : null);
-                const monthNum = typeof mesVal === 'string' ? MONTHS_FULL[mesVal.trim().toUpperCase()] : null;
-                const isTotal = numIdVal && String(numIdVal).trim().toUpperCase() === 'TOTAL';
-
-                // LOG para cada linha que NÃO é processada
-                if (!isTotal) {
-                    if (idx < 5) {
-                        console.log('[DIAGNOSTICO SHEETS] Linha', idx, 'IGNORADA - numIdVal:', numIdVal, 'mesVal:', mesVal, 'anoVal:', anoVal);
-                    }
-                    linhasIgnoradas++;
-                    return;
-                }
-
-                if (!year || !monthNum) {
-                    console.log('[DIAGNOSTICO SHEETS] Linha', idx, 'IGNORADA - year:', year, 'monthNum:', monthNum);
-                    linhasIgnoradas++;
-                    return;
-                }
-
-                const face = parseBR(obj[kFace]);
-                const rec = kRec ? parseBR(obj[kRec]) : NaN;
-                const des = kDes ? parseBR(obj[kDes]) : NaN;
-                let taxa = kTaxa ? parseBR(obj[kTaxa]) : 0;
-
-                // LOG dos valores brutos e parseados
-                if (idx < 5 || isNaN(face)) {
-                    console.log('[DIAGNOSTICO SHEETS] Linha', idx, 'VALORES:', {
-                        raw: { anoVal, mesVal, numIdVal, faceRaw: obj[kFace], recRaw: obj[kRec], desRaw: obj[kDes], taxaRaw: obj[kTaxa] },
-                        parsed: { year, monthNum, face, rec, des, taxa }
-                    });
-                }
-
-                if (isNaN(face)) {
-                    console.warn('[DIAGNOSTICO SHEETS] Linha', idx, ': Face inválido após parseBR:', obj[kFace]);
-                    linhasIgnoradas++;
-                    return;
-                }
-                if (isNaN(taxa)) taxa = 0;
-                if (taxa > 0 && taxa < 0.5) taxa *= 100;
-
-                if (!newDB[year]) {
-                    newDB[year] = {
-                        face: new Array(12).fill(null),
-                        recebido: new Array(12).fill(null),
-                        desagio: new Array(12).fill(null),
-                        taxa: new Array(12).fill(null),
-                    };
-                }
-                newDB[year].face[monthNum-1] = face;
-                newDB[year].recebido[monthNum-1] = isNaN(rec) ? face : rec;
-                newDB[year].desagio[monthNum-1] = !isNaN(des) && des >= 0 ? des : (face - (isNaN(rec) ? face : rec));
-                newDB[year].taxa[monthNum-1] = +taxa.toFixed(3);
-                linhasProcessadas++;
-            });
-
-            console.log('[DIAGNOSTICO SHEETS] Resumo:', { linhasProcessadas, linhasIgnoradas, anos: Object.keys(newDB) });
-
-            // Compute 1T values
-            Object.keys(newDB).forEach(y => {
-                const d = newDB[y];
-                const q1Face = (d.face[0]||0) + (d.face[1]||0) + (d.face[2]||0);
-                const q1Rec = (d.recebido[0]||0) + (d.recebido[1]||0) + (d.recebido[2]||0);
-                const q1Des = (d.desagio[0]||0) + (d.desagio[1]||0) + (d.desagio[2]||0);
-                let q1TaxaW = 0, q1FaceSum = 0;
-                for (let i=0; i<3; i++) {
-                    if (d.face[i] && d.taxa[i] != null) {
-                        q1TaxaW += d.taxa[i] * d.face[i];
-                        q1FaceSum += d.face[i];
-                    }
-                }
-                d.q1_face = q1Face;
-                d.q1_recebido = q1Rec;
-                d.q1_desagio = q1Des;
-                d.q1_taxa = q1FaceSum ? +(q1TaxaW / q1FaceSum).toFixed(4) : 0;
-            });
-
-            console.log('[DIAGNOSTICO SHEETS] DB final:', JSON.stringify(newDB, null, 2));
-            return newDB;
-        }
-
-        // ═══════════════ XLSX PARSER (wrapper) ═══════════════
-        function parseXLSX(wb) {
-            const sheetName = wb.SheetNames[0];
-            const ws = wb.Sheets[sheetName];
-            if (!ws) return null;
-            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
-            return buildDbFromRows(rows);
-        }
-
-        /* ============================================
-           GOOGLE SHEETS: CARREGAR DADOS (GET)
-           ============================================ */
-        async function loadFromGoogleSheets() {
-            showToast('⏳ Buscando dados do Google Sheets...', 'info');
-            try {
-                const resposta = await fetch(URL_SCRIPT + '?t=' + Date.now());
-                const resultado = await resposta.json();
-
-                if (resultado.status !== 'ok') {
-                    showToast('❌ Erro do Sheets: ' + (resultado.mensagem || 'Falha na leitura'), 'err');
-                    return;
-                }
-
-                if (!resultado.dados || resultado.dados.length === 0) {
-                    showToast('⚠️ Planilha do Sheets está vazia.', 'err');
-                    return;
-                }
-
-                const parsed = buildDbFromObjects(resultado.dados);
-                if (!parsed || Object.keys(parsed).length === 0) {
-                    showToast('❌ Nenhum dado mensal reconhecido no Sheets. Verifique os cabeçalhos.', 'err');
-                    return;
-                }
-
-                db = parsed;
-                const years = Object.keys(db).map(Number).sort((a,b) => a-b);
-                yearPrev = years[0];
-                yearCurr = years[years.length - 1];
-                if (yearPrev === yearCurr) {
-                    showToast('⚠️ Apenas ' + yearCurr + ' encontrado no Sheets.', 'err');
-                    return;
-                }
-                renderAll();
-                const totalMonths = Object.values(db).reduce((a, d) => a + d.face.filter(v => v != null).length, 0);
-                showToast('✅ ' + years.length + ' anos · ' + totalMonths + ' meses do Sheets (' + yearPrev + ' vs ' + yearCurr + ')', 'ok');
-
-            } catch (e) {
-                console.error(e);
-                showToast('❌ Falha ao conectar no Sheets. Verifique a URL.', 'err');
-            }
-        }
-
-        /* ============================================
-           GOOGLE SHEETS: ENVIAR DADOS (POST)
-           ============================================ */
-        async function sendToGoogleSheets(csvText) {
-            try {
-                const resposta = await fetch(URL_SCRIPT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: csvText
-                });
-                const resultado = await resposta.json();
-                if (resultado.status === 'ok') {
-                    showToast('☁️ Sheets: ' + resultado.mensagem + ' (' + resultado.linhas + ' linhas)', 'ok');
-                } else {
-                    showToast('❌ Sheets: ' + (resultado.mensagem || 'Erro ao salvar'), 'err');
-                }
-            } catch (e) {
-                console.error(e);
-                showToast('❌ Falha ao enviar para Sheets.', 'err');
-            }
-        }
-
-        // ═══════════════ LOAD FILE ═══════════════
+        // ═══════════════ LOAD FILE (local + envia ao Google Sheets) ═══════════════
         async function loadFile(event) {
             const file = event.target.files[0];
             if (!file) return;
             try {
                 const buf = await file.arrayBuffer();
                 const wb = XLSX.read(buf, { type: 'array', cellDates: false });
-
-                // Envia para Google Sheets em paralelo (não bloqueia a UI)
-                try {
-                    const primeiraAba = wb.SheetNames[0];
-                    const ws = wb.Sheets[primeiraAba];
-                    const csv = XLSX.utils.sheet_to_csv(ws);
-                    if (csv && csv.trim()) {
-                        sendToGoogleSheets(csv);
-                    }
-                } catch (syncErr) {
-                    console.error('Erro ao sincronizar com Sheets:', syncErr);
-                }
-
                 const parsed = parseXLSX(wb);
-                console.log('[DIAGNOSTICO XLSX] DB construído:', JSON.stringify(parsed, null, 2));
                 if (!parsed || Object.keys(parsed).length === 0) {
                     showToast('❌ Nenhum dado mensal reconhecido no arquivo', 'err');
                     return;
@@ -761,18 +531,124 @@
                 yearPrev = years[0];
                 yearCurr = years[years.length - 1];
                 if (yearPrev === yearCurr) {
-                    // Only one year loaded — duplicate for comparison
                     showToast(`⚠️ Apenas ${yearCurr} encontrado · carregue arquivo com ambos os anos`, 'err');
                     return;
                 }
                 renderAll();
                 const totalMonths = Object.values(db).reduce((a, d) => a + d.face.filter(v => v != null).length, 0);
-                showToast(`✅ ${years.length} anos · ${totalMonths} meses carregados (${yearPrev} vs ${yearCurr})`, 'ok');
+                showToast(`✅ ${years.length} anos · ${totalMonths} meses carregados — enviando ao Google Sheets...`, 'ok');
+
+                // Envia para o Google Sheets para persistência
+                await saveToSheets(db);
             } catch (e) {
                 console.error(e);
                 showToast('❌ Erro ao processar arquivo: ' + e.message, 'err');
             } finally {
                 event.target.value = '';
+            }
+        }
+
+        // ═══════════════ GOOGLE SHEETS — LEITURA ═══════════════
+        // Chamado ao carregar a página: busca os dados salvos na planilha.
+        async function loadFromSheets() {
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.startsWith('COLE_AQUI')) {
+                // URL ainda não configurada — exibe estado vazio normal
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('statusTxt').textContent = 'URL do Apps Script não configurada';
+                return;
+            }
+            try {
+                document.getElementById('statusTxt').textContent = 'Carregando dados...';
+                const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data.years || Object.keys(data.years).length === 0) {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                    document.getElementById('statusTxt').textContent = 'Sem dados na planilha';
+                    return;
+                }
+
+                // Converte ano (string vinda do JSON) em chave numérica e calcula 1T
+                db = {};
+                Object.keys(data.years).forEach(y => {
+                    const yi = parseInt(y);
+                    const d = data.years[y];
+                    db[yi] = {
+                        face: d.face || new Array(12).fill(null),
+                        recebido: d.recebido || new Array(12).fill(null),
+                        desagio: d.desagio || new Array(12).fill(null),
+                        taxa: d.taxa || new Array(12).fill(null),
+                    };
+                });
+                // Recalcula valores do 1º trimestre (mesmo cálculo de parseXLSX)
+                Object.keys(db).forEach(y => {
+                    const d = db[y];
+                    const q1Face = (d.face[0]||0) + (d.face[1]||0) + (d.face[2]||0);
+                    const q1Rec = (d.recebido[0]||0) + (d.recebido[1]||0) + (d.recebido[2]||0);
+                    const q1Des = (d.desagio[0]||0) + (d.desagio[1]||0) + (d.desagio[2]||0);
+                    let q1TaxaW = 0, q1FaceSum = 0;
+                    for (let i=0; i<3; i++) {
+                        if (d.face[i] && d.taxa[i] != null) {
+                            q1TaxaW += d.taxa[i] * d.face[i];
+                            q1FaceSum += d.face[i];
+                        }
+                    }
+                    d.q1_face = q1Face;
+                    d.q1_recebido = q1Rec;
+                    d.q1_desagio = q1Des;
+                    d.q1_taxa = q1FaceSum ? +(q1TaxaW / q1FaceSum).toFixed(4) : 0;
+                });
+
+                const yearsArr = Object.keys(db).map(Number).sort((a,b) => a-b);
+                if (yearsArr.length < 2) {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                    showToast(`⚠️ Planilha tem apenas ${yearsArr.length} ano. São necessários 2 para comparação.`, 'err');
+                    return;
+                }
+                yearPrev = yearsArr[0];
+                yearCurr = yearsArr[yearsArr.length - 1];
+                renderAll();
+                document.getElementById('statusTxt').textContent = 'Dados carregados da planilha';
+            } catch (e) {
+                console.error('Erro ao carregar do Sheets:', e);
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('statusTxt').textContent = 'Falha ao carregar';
+                showToast('❌ Erro ao ler planilha: ' + e.message, 'err');
+            }
+        }
+
+        // ═══════════════ GOOGLE SHEETS — GRAVAÇÃO ═══════════════
+        // Chamado após carregar um XLSX: envia os dados parseados ao Apps Script.
+        async function saveToSheets(parsedDb) {
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.startsWith('COLE_AQUI')) {
+                showToast('⚠️ Dados exibidos apenas em memória — URL do Sheets não configurada', 'err');
+                return;
+            }
+            try {
+                // Monta payload enxuto (sem os campos q1_*, que são recalculados)
+                const payload = { years: {} };
+                Object.keys(parsedDb).forEach(y => {
+                    payload.years[y] = {
+                        face: parsedDb[y].face,
+                        recebido: parsedDb[y].recebido,
+                        desagio: parsedDb[y].desagio,
+                        taxa: parsedDb[y].taxa,
+                    };
+                });
+                // IMPORTANTE: usamos text/plain para evitar o preflight CORS
+                // (Apps Script aceita o corpo igualmente via e.postData.contents).
+                const res = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (data.ok === false) throw new Error(data.error || 'Erro desconhecido');
+                showToast('✅ Dados salvos no Google Sheets com sucesso', 'ok');
+            } catch (e) {
+                console.error('Erro ao salvar no Sheets:', e);
+                showToast('❌ Falha ao salvar na planilha: ' + e.message, 'err');
             }
         }
 
@@ -961,11 +837,11 @@
                         {
                             label: `Face ${yearCurr}`,
                             data: faceCurr,
-                            backgroundColor: '#5a005a',
+                            backgroundColor: '#9333EA',
                             borderRadius: 4,
                             datalabels: {
                                 display: (c) => c.dataset.data[c.dataIndex] != null,
-                                color: '#3C003C', align: 'end', anchor: 'end',
+                                color: '#6B21A8', align: 'end', anchor: 'end',
                                 font: { weight: 'bold', size: viewMode === 'trimestral' ? 11 : 10 },
                                 formatter: (v) => v ? formatMoneyMillions(v) + 'M' : ''
                             }
@@ -1008,13 +884,13 @@
                         {
                             label: `Custo Efetivo ${yearCurr}`,
                             data: taxaCurr,
-                            borderColor: '#FF6E00', backgroundColor: 'rgba(249,115,22,0.1)',
+                            borderColor: '#F97316', backgroundColor: 'rgba(249,115,22,0.1)',
                             borderWidth: 3,
-                            pointBackgroundColor: '#fff', pointBorderColor: '#FF6E00', pointBorderWidth: 2, pointRadius: 5,
+                            pointBackgroundColor: '#fff', pointBorderColor: '#F97316', pointBorderWidth: 2, pointRadius: 5,
                             fill: true, tension: 0.4, spanGaps: true,
                             datalabels: {
                                 display: (c) => c.dataset.data[c.dataIndex] != null,
-                                color: '#FF6E00', align: 'top', anchor: 'center', offset: 8,
+                                color: '#F97316', align: 'top', anchor: 'center', offset: 8,
                                 font: { weight: 'bold', size: 11 },
                                 formatter: (v) => v ? formatPercent(v) : ''
                             }
@@ -1169,8 +1045,11 @@
         });
 
         // ═══════════════ INIT ═══════════════
+        // Ao abrir a página, busca automaticamente os dados salvos no
+        // Google Sheets. Se não houver URL configurada ou dados, mostra
+        // o estado vazio com o botão de upload.
         window.onload = () => {
-            document.getElementById('emptyState').classList.remove('hidden');
+            loadFromSheets();
         };
     </script>
 </body>
