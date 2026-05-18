@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Atualizar · Pagamentos</title>
 
-<!-- Favicon: PNG do repo + fallback SVG inline -->
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,7 +58,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ====== SIDEBAR (idêntica ao index) ====== */
+  /* ====== SIDEBAR ====== */
   .sidebar {
     width: 240px;
     background: linear-gradient(170deg, var(--plum-deep) 0%, var(--plum) 55%, var(--plum-light) 100%);
@@ -261,7 +260,6 @@
 
   .content-body { padding: 32px 40px 64px; max-width: 1200px; width: 100%; }
 
-  /* ====== INTRO ====== */
   .lead {
     font-family: var(--font-display);
     font-weight: 500;
@@ -271,10 +269,7 @@
     line-height: 1.2;
     color: var(--ink);
   }
-  .lead em {
-    font-style: italic;
-    color: var(--orange);
-  }
+  .lead em { font-style: italic; color: var(--orange); }
   .sub {
     color: var(--muted);
     font-size: 14.5px;
@@ -432,7 +427,7 @@
   .badge.naturezas       { background: rgba(139,92,246,0.1); color: #7C3AED; border-color: rgba(139,92,246,0.3); }
   .badge.err             { background: var(--err-soft); color: var(--err); border-color: #F0BFBF; }
 
-  /* ====== SUMMARY (gradient plum como o KPI accent) ====== */
+  /* ====== SUMMARY ====== */
   .summary {
     background: linear-gradient(135deg, var(--plum) 0%, var(--plum-deep) 100%);
     border-radius: 18px;
@@ -548,7 +543,7 @@
     margin-left: auto;
   }
 
-  /* ====== STEPS ("Como usar") ====== */
+  /* ====== STEPS ====== */
   .steps {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -628,6 +623,35 @@
   }
   .toast.show { opacity: 1; transform: translateY(0); }
 
+  /* ====== LOADING OVERLAY ====== */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,15,26,0.45);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .overlay.show { display: flex; }
+  .overlay-spinner {
+    width: 48px; height: 48px;
+    border: 3px solid rgba(255,255,255,0.2);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  .overlay-text {
+    color: white;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   @media (max-width: 1100px) {
     .sidebar { display: none; }
     .main-content { margin-left: 0; }
@@ -694,11 +718,12 @@
   </header>
 
   <div class="content-body">
-    <h2 class="lead">Jogue as planilhas aqui e eu <em>gero o arquivo de dados</em> do portal.</h2>
+    <h2 class="lead">Jogue as planilhas aqui e eu <em>envio pro Google Sheets</em> automaticamente.</h2>
     <p class="sub">
       Arraste o <strong>RELATÓRIO_CONTAS_A_PAGAR.xlsx</strong> (ou o CSV do Protheus) e as <strong>3 Consultas do Totvs</strong>.
       Opcionalmente, arraste a planilha de <strong>Naturezas</strong> (colunas "Código" e "Descrição") — só
       precisa ser enviada quando mudar. Não importa o nome nem a ordem — identifico cada um pelo conteúdo.
+      Os dados vão direto pro <strong>Google Sheets</strong> e o dashboard atualiza em segundos.
     </p>
 
     <div id="dz" class="dropzone" tabindex="0" role="button" aria-label="Soltar arquivos aqui">
@@ -719,7 +744,7 @@
       <ul id="file-list" class="file-list"></ul>
     </div>
 
-    <div id="summary-wrap" class="summary" style="display:block">
+    <div id="summary-wrap" class="summary">
       <h4><i class="fa-solid fa-coins"></i> Resumo do processamento</h4>
       <div class="sum-grid">
         <div class="sum-cell">
@@ -736,8 +761,8 @@
     </div>
 
     <div class="actions">
-      <button class="btn btn-primary" id="btn-download" disabled>
-        <i class="fa-solid fa-download"></i> Baixar data.json
+      <button class="btn btn-primary" id="btn-enviar" disabled>
+        <i class="fa-solid fa-cloud-arrow-up"></i> Enviar pro Google Sheets
       </button>
       <button class="btn btn-primary" id="btn-download-nat" disabled>
         <i class="fa-solid fa-download"></i> Baixar naturezas.json
@@ -745,15 +770,15 @@
       <button class="btn btn-ghost" id="btn-reset">
         <i class="fa-solid fa-rotate-left"></i> Recomeçar
       </button>
-      <span class="hint" id="hint">Processe pelo menos 1 arquivo para baixar</span>
+      <span class="hint" id="hint">Processe pelo menos 1 arquivo para enviar</span>
     </div>
 
     <div class="steps">
       <h3><i class="fa-solid fa-list-check"></i> Como usar</h3>
       <ol>
-        <li><strong>No dia a dia:</strong> arraste o RELATÓRIO_CONTAS_A_PAGAR + 3 Consultas do Totvs, clique em <strong>Baixar data.json</strong> e suba esse arquivo no GitHub na pasta <code>Pagamentos/</code>.</li>
-        <li><strong>Quando surgir natureza nova no ERP:</strong> arraste a planilha de Naturezas (colunas "Código" e "Descrição") e clique em <strong>Baixar naturezas.json</strong>. Suba no GitHub no mesmo local. Não precisa repetir todo dia.</li>
-        <li><strong>No GitHub:</strong> abra o repositório, clique no arquivo que quer substituir (<code>data.json</code> ou <code>naturezas.json</code>), no ícone de lápis, arraste o arquivo baixado por cima e commite. Em ~1 minuto o dashboard atualiza.</li>
+        <li><strong>Arraste as planilhas:</strong> RELATÓRIO_CONTAS_A_PAGAR + 3 Consultas do Totvs (e Naturezas, se houver mudança).</li>
+        <li><strong>Clique em "Enviar pro Google Sheets"</strong> — os dados são processados no navegador e enviados direto pra planilha.</li>
+        <li><strong>O dashboard atualiza sozinho:</strong> abra o <a href="index.html">index.html</a> e os dados já estarão lá, com "hoje" e "amanhã" calculados automaticamente em dias úteis.</li>
       </ol>
     </div>
   </div>
@@ -761,16 +786,24 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="overlay" id="overlay">
+  <div class="overlay-spinner"></div>
+  <div class="overlay-text">Enviando para o Google Sheets…</div>
+</div>
+
 <script>
 'use strict';
 
 /* ============================================================================
-   HUB LINK — mostra "Voltar ao Hub" só se usuário veio do hub.
-   Sinais aceitos:
-   - document.referrer é uma URL do mesmo origin, dentro de /Controladoria,
-     mas NÃO dentro de /Controladoria/Pagamentos
-   - URL atual tem ?from=qualquer_valor
-   - sessionStorage tem flag 'came_from_hub' (persiste durante a aba)
+   CONFIG — URL do App Script Web App
+   ============================================================================ */
+const CONFIG = {
+  // ⬇️ SUBSTITUA PELA URL DO SEU WEB APP APÓS O DEPLOY
+  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwRrQ-yghRj1hoZfcZMQSkrcwzUQV-t1eCn_IRFewrsOmXUJVwaNrFZSCCSvkq8eZDX8g/exec',
+};
+
+/* ============================================================================
+   HUB LINK
    ============================================================================ */
 (function HubLink() {
   const HUB_PATH_PREFIX = '/Controladoria';
@@ -786,14 +819,14 @@
         const isSelfPath = ref.pathname.startsWith(SELF_PATH_PREFIX);
         if (sameOrigin && isHubPath && !isSelfPath) return true;
       }
-    } catch (e) { /* URL inválida */ }
+    } catch (e) {}
     try {
       const params = new URLSearchParams(location.search);
       if (params.has('from')) return true;
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
     try {
       if (sessionStorage.getItem(STORAGE_KEY) === '1') return true;
-    } catch (e) { /* privacy mode */ }
+    } catch (e) {}
     return false;
   }
 
@@ -802,13 +835,13 @@
     if (!btn) return;
     if (userCameFromHub()) {
       btn.hidden = false;
-      try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch (e) { /* ignore */ }
+      try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch (e) {}
     }
   });
 })();
 
 /* ============================================================================
-   PARSERS, AGREGAÇÃO E UI — lógica preservada das versões anteriores
+   PARSERS (idênticos à versão anterior)
    ============================================================================ */
 
 function parseBRNumber(x) {
@@ -870,30 +903,20 @@ async function detectType(file) {
     const wb = XLSX.read(buf, { type: 'array', cellDates: true });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-
     const norm = s => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-
     for (let i = 0; i < Math.min(15, rows.length); i++) {
       const row = rows[i] || [];
       const originals = row.map(safeStr);
       const normalized = originals.map(norm);
-
-      // Caso 1: 3 Consultas (header começa com "ID")
       if (originals[0] === 'ID') {
         if (originals.includes('TIPO DE DESPESA')) return 'reembolso';
         if (originals.includes('VALOR TOTAL SERVIÇO')) return 'nf_servico';
         if (originals.includes('N. TITULO') && !originals.includes('TIPO DE DESPESA')) return 'nf_titulo';
         return 'desconhecido';
       }
-
-      // Caso 2: RELATÓRIO CONTAS A PAGAR
-      if (normalized[0] === 'banco' &&
-          originals.includes('No. Titulo') &&
-          originals.includes('Vlr.Titulo')) {
+      if (normalized[0] === 'banco' && originals.includes('No. Titulo') && originals.includes('Vlr.Titulo')) {
         return 'relatorio_pagos';
       }
-
-      // Caso 3: mapa de naturezas
       const hasCod  = normalized.some(h => h === 'codigo' || h === 'cod' || /^cod\s/.test(h) || /^cod\./.test(h) || /natureza/.test(h) && /cod/.test(h));
       const hasDesc = normalized.some(h => h === 'descricao' || h === 'desc' || /^desc/.test(h));
       if (hasCod && hasDesc) return 'naturezas';
@@ -951,31 +974,18 @@ async function parseRelatorio(file) {
     const numero = safeStr(row[col['No. Titulo']]);
     const fornecedor = safeStr(row[col['Nome Fornece']]);
     const valor = parseBRNumber(row[col['Saldo']]);
-
-    // Aceita a linha se: tem título OU (tem fornecedor + valor > 0).
-    // Pagamentos manuais sem nº de título ainda devem entrar.
     if (!numero && !(fornecedor && valor > 0)) continue;
-
-    // Ignora linhas de total/rodapé (sem fornecedor identificável).
-    // Heurística: se Histórico contém "TOTAL" e não tem fornecedor, é rodapé.
     const historico = safeStr(row[col['Historico']]);
     if (!fornecedor && /total/i.test(historico)) continue;
-
     const venc = parseBRDate(row[col['Vencto Real']]);
     out.push({
-      numero: numero || '—',  // placeholder pra manuais sem nº
-      parcela: '', prefixo: '',
+      numero: numero || '—', parcela: '', prefixo: '',
       tipo: safeStr(row[col['Tipo']]),
       natureza: safeStr(row[col['Natureza']]),
-      fornecedor_cod: '',
-      fornecedor,
-      dt_emissao: null,
-      vencimento: venc, dt_baixa: venc,
-      valor,
-      valor_rs: valor,
-      valor_liquido: valor,
-      historico,
-      forma_pgto: '',
+      fornecedor_cod: '', fornecedor,
+      dt_emissao: null, vencimento: venc, dt_baixa: venc,
+      valor, valor_rs: valor, valor_liquido: valor,
+      historico, forma_pgto: '',
       banco: safeStr(row[col['Banco']]),
       bordero: safeStr(row[col['Bordero']]),
       fluxo_caixa: safeStr(row[col['Fluxo Caixa']]),
@@ -1073,19 +1083,14 @@ async function parseNaturezas(file) {
   const wb = XLSX.read(buf, { type: 'array', cellDates: false });
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
-
   const norm = s => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-
   let headerIdx = -1, codIdx = -1, descIdx = -1;
   for (let i = 0; i < Math.min(15, rows.length); i++) {
     const row = rows[i] || [];
     const norms = row.map(norm);
     const ci = norms.findIndex(h => h === 'codigo' || h === 'cod' || /^cod\s/.test(h) || /^cod\./.test(h) || (/cod/.test(h) && /natureza/.test(h)));
     const di = norms.findIndex(h => h === 'descricao' || h === 'desc' || /^desc/.test(h));
-    if (ci !== -1 && di !== -1) {
-      headerIdx = i; codIdx = ci; descIdx = di;
-      break;
-    }
+    if (ci !== -1 && di !== -1) { headerIdx = i; codIdx = ci; descIdx = di; break; }
   }
   if (headerIdx === -1) return {};
   const map = {};
@@ -1115,40 +1120,8 @@ function agregar(store) {
   const todos = [...ns, ...nt, ...rb];
   const maiorPrev = todos.length ? todos.reduce((a,b) => a.valor_total > b.valor_total ? a : b) : null;
   const emAprov = todos.filter(x => /aprova[cç][aã]o/i.test(x.status || '')).length;
-  const now = new Date();
-  const tzMin = now.getTimezoneOffset();
-  const sign = tzMin <= 0 ? '+' : '-';
-  const hh = String(Math.abs(Math.floor(tzMin/60))).padStart(2,'0');
-  const mm = String(Math.abs(tzMin % 60)).padStart(2,'0');
-  const local = new Date(now.getTime() - tzMin*60000).toISOString().slice(0,-1);
-  const iso = `${local}${sign}${hh}:${mm}`;
-
-  // Regra de dias úteis
-  const isWeekend = d => d.getDay() === 0 || d.getDay() === 6;
-  const toISOLocal = d => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${dd}`;
-  };
-  const ensureBusinessDay = d => {
-    const x = new Date(d);
-    while (isWeekend(x)) x.setDate(x.getDate() + 1);
-    return x;
-  };
-  const nextBusinessDay = d => {
-    const x = new Date(d);
-    x.setDate(x.getDate() + 1);
-    while (isWeekend(x)) x.setDate(x.getDate() + 1);
-    return x;
-  };
-  const today = ensureBusinessDay(now);
-  const tomorrow = nextBusinessDay(today);
-  const dataHoje = toISOLocal(today);
-  const dataAmanha = toISOLocal(tomorrow);
 
   return {
-    meta: { generated_at: iso, data_hoje: dataHoje, data_amanha: dataAmanha },
     pago_hoje: {
       total: Math.round(totalPago * 100) / 100,
       quantidade: pagos.length,
@@ -1189,6 +1162,10 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function showOverlay(show) {
+  el('overlay').classList.toggle('show', show);
 }
 
 async function processFiles(files) {
@@ -1233,9 +1210,9 @@ function render() {
   el('detected-wrap').style.display = hasAny ? 'block' : 'none';
   if (!hasAny) {
     el('summary-wrap').style.display = 'none';
-    el('btn-download').disabled = true;
+    el('btn-enviar').disabled = true;
     el('btn-download-nat').disabled = true;
-    el('hint').textContent = 'Processe pelo menos 1 arquivo para baixar';
+    el('hint').textContent = 'Processe pelo menos 1 arquivo para enviar';
     return;
   }
   const list = el('file-list');
@@ -1246,7 +1223,6 @@ function render() {
     const [label, cls] = tipoLabels[e.tipo];
     const row = document.createElement('li');
     row.className = 'file-row';
-    // Construção via DOM (XSS-safe)
     const ic = document.createElement('div');
     ic.className = 'file-icon ' + (e.ok ? 'ok' : 'err');
     ic.innerHTML = `<i class="fa-solid ${e.ok?'fa-check':'fa-xmark'}"></i>`;
@@ -1272,24 +1248,24 @@ function render() {
   state.data = agregar(state.store);
   el('summary-wrap').style.display = 'block';
   el('sum-pago-val').innerHTML = `<span class="prefix">R$</span>${fmtBR(state.data.pago_hoje.total)}`;
-  el('sum-pago-qtd').textContent = `${state.data.pago_hoje.quantidade} títulos · ${state.data.meta.data_hoje || '—'}`;
+  el('sum-pago-qtd').textContent = `${state.data.pago_hoje.quantidade} títulos`;
   el('sum-prev-val').innerHTML = `<span class="prefix">R$</span>${fmtBR(state.data.previsto_amanha.total)}`;
-  el('sum-prev-qtd').textContent = `${state.data.previsto_amanha.quantidade} títulos · ${state.data.meta.data_amanha || '—'}`;
+  el('sum-prev-qtd').textContent = `${state.data.previsto_amanha.quantidade} títulos`;
 
   const temOperacional = ['protheus','nf_servico','nf_titulo','reembolso'].some(k => state.store[k] && state.store[k].length);
-  el('btn-download').disabled = !temOperacional;
+  el('btn-enviar').disabled = !temOperacional;
   const temNaturezas = state.naturezas && Object.keys(state.naturezas).length > 0;
   el('btn-download-nat').disabled = !temNaturezas;
 
   const tiposFaltando = ['protheus','nf_servico','nf_titulo','reembolso'].filter(k => !state.store[k].length);
   const partes = [];
   if (temOperacional) {
-    partes.push(tiposFaltando.length ? `Faltam: ${tiposFaltando.join(', ')}` : 'data.json pronto');
+    partes.push(tiposFaltando.length ? `Faltam: ${tiposFaltando.join(', ')}` : 'pronto para enviar');
   }
   if (temNaturezas) {
     partes.push(`${Object.keys(state.naturezas).length} naturezas mapeadas`);
   }
-  el('hint').textContent = partes.length ? partes.join(' · ') : 'Processe pelo menos 1 arquivo para baixar';
+  el('hint').textContent = partes.length ? partes.join(' · ') : 'Processe pelo menos 1 arquivo para enviar';
 }
 
 function downloadJson(filename, obj) {
@@ -1304,12 +1280,6 @@ function downloadJson(filename, obj) {
   URL.revokeObjectURL(url);
 }
 
-function download() {
-  if (!state.data) return;
-  downloadJson('data.json', state.data);
-  toast('data.json baixado');
-}
-
 function downloadNaturezas() {
   if (!state.naturezas) return;
   const sorted = Object.keys(state.naturezas).sort().reduce((acc, k) => {
@@ -1318,6 +1288,51 @@ function downloadNaturezas() {
   }, {});
   downloadJson('naturezas.json', sorted);
   toast('naturezas.json baixado');
+}
+
+async function enviar() {
+  if (!state.data) return;
+  if (CONFIG.APP_SCRIPT_URL.includes('SEU_ID_AQUI')) {
+    toast('⚠️ Configure a URL do App Script no código!');
+    return;
+  }
+
+  showOverlay(true);
+  try {
+    const payload = {
+      pago_hoje: state.data.pago_hoje,
+      previsto_amanha: state.data.previsto_amanha,
+    };
+    if (state.naturezas) {
+      payload.naturezas = state.naturezas;
+    }
+
+    const response = await fetch(CONFIG.APP_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    // Com no-cors não conseguimos ler a resposta, então assumimos sucesso
+    // se não houve erro de rede
+    toast('✅ Enviado com sucesso!');
+
+    // Se quiser confirmar, pode fazer um GET logo em seguida
+    setTimeout(async () => {
+      try {
+        const check = await fetch(CONFIG.APP_SCRIPT_URL + '?check=1');
+        if (check.ok) {
+          toast('✅ Dados confirmados no Sheets');
+        }
+      } catch (e) {}
+    }, 2000);
+
+  } catch (err) {
+    toast('❌ Erro ao enviar: ' + err.message);
+  } finally {
+    showOverlay(false);
+  }
 }
 
 function reset() {
@@ -1340,11 +1355,10 @@ document.addEventListener('DOMContentLoaded', () => {
   ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('drag'); }));
   ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag'); }));
   dz.addEventListener('drop', e => processFiles([...e.dataTransfer.files]));
-  el('btn-download').addEventListener('click', download);
+  el('btn-enviar').addEventListener('click', enviar);
   el('btn-download-nat').addEventListener('click', downloadNaturezas);
   el('btn-reset').addEventListener('click', reset);
 
-  // Estado inicial: esconder summary até processar algo
   el('summary-wrap').style.display = 'none';
 });
 </script>

@@ -4,7 +4,8 @@
    CONFIG
    ============================================================================ */
 const CONFIG = Object.freeze({
-  DATA_URL: 'data.json',
+  // ⬇️ SUBSTITUA PELA URL DO SEU WEB APP APÓS O DEPLOY
+  DATA_URL: 'https://script.google.com/macros/s/AKfycbwRrQ-yghRj1hoZfcZMQSkrcwzUQV-t1eCn_IRFewrsOmXUJVwaNrFZSCCSvkq8eZDX8g/exec',
   NATUREZAS_URL: 'naturezas.json',
   FETCH_RETRIES: 3,
   FETCH_BACKOFF_MS: 600,
@@ -66,7 +67,6 @@ const Utils = {
   delay(ms) {
     return new Promise(r => setTimeout(r, ms));
   },
-  /** Debounce com window de `wait` ms — essencial pro search */
   debounce(fn, wait) {
     let timer = null;
     return function debounced(...args) {
@@ -74,7 +74,6 @@ const Utils = {
       timer = setTimeout(() => fn.apply(this, args), wait);
     };
   },
-  /** Capitaliza uma frase ALL CAPS: "SEGURO DE VEICULOS" → "Seguro de Veículos" (simplificado) */
   titleCase(s) {
     if (!s) return s;
     const low = ['de', 'da', 'do', 'dos', 'das', 'e', 'em', 'ou', 'a', 'o'];
@@ -85,16 +84,13 @@ const Utils = {
 };
 
 /* ============================================================================
-   DATE UTILS — regra de dias úteis (sáb/dom → próxima segunda)
+   DATE UTILS
    ============================================================================ */
 const DateUtils = {
-  /** true se o dia é sábado (6) ou domingo (0) */
   isWeekend(date) {
     const d = date.getDay();
     return d === 0 || d === 6;
   },
-
-  /** Converte 'YYYY-MM-DD' para Date local (sem timezone) */
   fromISO(iso) {
     if (!iso) return null;
     const parts = iso.slice(0, 10).split('-');
@@ -102,41 +98,31 @@ const DateUtils = {
     const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
     return isNaN(d) ? null : d;
   },
-
-  /** Converte Date para 'YYYY-MM-DD' */
   toISO(date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   },
-
-  /** Próximo dia útil a partir da data fornecida (não inclui o próprio dia).
-   * Se for sexta → retorna segunda. Se for sábado → segunda. Se for domingo → segunda.
-   */
   nextBusinessDay(date) {
     const d = new Date(date);
     d.setDate(d.getDate() + 1);
     while (this.isWeekend(d)) d.setDate(d.getDate() + 1);
     return d;
   },
-
-  /** Se a data cai em fim de semana, retorna o próximo dia útil. Senão retorna a própria. */
   ensureBusinessDay(date) {
     if (!this.isWeekend(date)) return new Date(date);
     const d = new Date(date);
     while (this.isWeekend(d)) d.setDate(d.getDate() + 1);
     return d;
   },
-
-  /** Nome do dia da semana em PT-BR */
   weekdayName(date) {
     return date.toLocaleDateString(CONFIG.LOCALE, { weekday: 'long' });
   },
 };
 
 /* ============================================================================
-   DOM — XSS-safe builder (createElement + textContent)
+   DOM — XSS-safe builder
    ============================================================================ */
 const DOM = {
   h(tag, props, children) {
@@ -191,14 +177,12 @@ const DataService = {
       try {
         const response = await fetch(url, { cache: 'no-store' });
         if (!response.ok) {
-          // 404: permite falha silenciosa quando silent404 = true
           if (silent404 && response.status === 404) throw new Error('404');
           throw new Error(`HTTP ${response.status} ${response.statusText}`);
         }
         return response;
       } catch (err) {
         lastError = err;
-        // Não tenta de novo em 404 silencioso
         if (silent404 && err.message === '404') throw err;
         if (attempt < retries) {
           const waitMs = backoff * Math.pow(2, attempt);
@@ -219,7 +203,6 @@ const DataService = {
   },
 
   async loadNaturezas() {
-    // Falha graciosa: se o arquivo não existir, segue sem o mapa
     try {
       const url = CONFIG.NATUREZAS_URL + '?v=' + Date.now();
       const response = await this.fetchWithRetry(url, { retries: 1, silent404: true });
@@ -241,26 +224,22 @@ const DataService = {
 };
 
 /* ============================================================================
-   NATUREZA MAP — lookup de código → descrição
+   NATUREZA MAP
    ============================================================================ */
 const NaturezaMap = {
   _map: {},
-
   set(obj) {
     this._map = obj && typeof obj === 'object' ? obj : {};
   },
-
   get(code) {
     if (!code) return null;
     return this._map[String(code).trim()] || null;
   },
-
   describe(code) {
     const desc = this.get(code);
     if (!desc) return null;
     return Utils.titleCase(desc);
   },
-
   size() {
     return Object.keys(this._map).length;
   },
@@ -303,14 +282,9 @@ const UI_Sidebar = {
 };
 
 /* ============================================================================
-   PAGINATION WIDGET — reutilizado em UI_Hoje e UI_Previsto
+   PAGINATION WIDGET
    ============================================================================ */
 const Pagination = {
-  /**
-   * Constrói o container de paginação.
-   * @param {Object} opts { page, pageSize, total, onPage }
-   * @returns {HTMLElement|null} null se total ≤ pageSize (sem necessidade)
-   */
   render({ page, pageSize, total, onPage }) {
     if (total <= pageSize) return null;
 
@@ -342,12 +316,9 @@ const Pagination = {
       return btn;
     };
 
-    // « primeira
     controls.appendChild(mkBtn(DOM.icon('fa-angles-left'), 1, { disabled: page === 1, ariaLabel: 'Primeira página' }));
-    // ‹ anterior
     controls.appendChild(mkBtn(DOM.icon('fa-angle-left'), page - 1, { disabled: page === 1, ariaLabel: 'Anterior' }));
 
-    // Números — estratégia: sempre mostrar 1, current±1, last, com elipses
     const pages = this._computePageList(page, totalPages);
     for (const p of pages) {
       if (p === '…') {
@@ -357,9 +328,7 @@ const Pagination = {
       }
     }
 
-    // › próxima
     controls.appendChild(mkBtn(DOM.icon('fa-angle-right'), page + 1, { disabled: page === totalPages, ariaLabel: 'Próxima' }));
-    // » última
     controls.appendChild(mkBtn(DOM.icon('fa-angles-right'), totalPages, { disabled: page === totalPages, ariaLabel: 'Última página' }));
 
     return DOM.h('div', { class: 'pagination' }, [info, controls]);
@@ -414,7 +383,6 @@ const UI_Dashboard = {
     const arr = [];
     const { previsto_amanha: prev, pago_hoje: hoje } = data;
 
-    // Alerta de fim de semana: se data_hoje gravada cair em sábado/domingo
     const dataHoje = DateUtils.fromISO(data.meta.data_hoje);
     if (dataHoje && DateUtils.isWeekend(dataHoje)) {
       const wd = DateUtils.weekdayName(dataHoje);
@@ -516,9 +484,6 @@ const UI_Dashboard = {
    COMMON — builders de células reutilizáveis
    ============================================================================ */
 
-/**
- * Célula Fornecedor com histórico abaixo (sem natureza — ela tem coluna própria).
- */
 function buildFornecedorCell(fornecedor, historicoRaw) {
   const children = [fornecedor || '—'];
   const hasHist = historicoRaw && String(historicoRaw).trim();
@@ -528,21 +493,12 @@ function buildFornecedorCell(fornecedor, historicoRaw) {
   return DOM.h('div', {}, children);
 }
 
-/**
- * Célula Desc. Nat. — só a descrição legível. Sem mostrar código.
- * Retorna '—' se a natureza não estiver no mapa.
- */
 function buildDescNatCell(natCode) {
   const desc = NaturezaMap.describe(natCode);
   if (!desc) return DOM.h('span', { class: 'nat-empty' }, '—');
   return DOM.h('span', { class: 'nat-desc' }, desc);
 }
 
-/**
- * Célula Bordero — pílula visual.
- * "Manual" recebe destaque laranja (pagamento adicionado fora do Totvs).
- * Borderos numéricos ficam em cinza discreto (lote automático).
- */
 function buildBorderoCell(bordero) {
   const v = (bordero || '').trim();
   if (!v) return DOM.h('span', { class: 'nat-empty' }, '—');
@@ -553,7 +509,7 @@ function buildBorderoCell(bordero) {
 }
 
 /* ============================================================================
-   UI_HOJE — Pagamentos Realizados (com paginação + debounce)
+   UI_HOJE — Pagamentos Realizados
    ============================================================================ */
 const UI_Hoje = {
   _state: null,
@@ -623,7 +579,6 @@ const UI_Hoje = {
     const cols = this._columns();
     const tipos = [...new Set(this._data.titulos.map(t => t.tipo).filter(Boolean))].sort();
 
-    // Toolbar
     const searchInput = DOM.h('input', {
       id: 'hoje-search',
       placeholder: 'Buscar fornecedor, histórico, título...',
@@ -654,7 +609,6 @@ const UI_Hoje = {
 
     const toolbar = DOM.h('div', { class: 'toolbar' }, [searchBox, ...chips, toolbarRight]);
 
-    // Table
     const thead = DOM.h('thead', {}, DOM.h('tr', {},
       cols.map(c => {
         const th = DOM.h('th', {
@@ -732,11 +686,9 @@ const UI_Hoje = {
     countEl.textContent = String(allFiltered.length);
     totalEl.textContent = 'R$ ' + Utils.fmtBR(total);
 
-    // Paginar
     const start = (this._state.page - 1) * this._state.pageSize;
     const pageRows = allFiltered.slice(start, start + this._state.pageSize);
 
-    // TBODY
     DOM.clear(tbody);
     if (pageRows.length === 0) {
       tbody.appendChild(DOM.h('tr', {},
@@ -746,7 +698,6 @@ const UI_Hoje = {
       for (const t of pageRows) tbody.appendChild(this._renderRow(t, cols));
     }
 
-    // TFOOT
     DOM.clear(tfoot);
     const spanCount = cols.length - 1;
     tfoot.appendChild(DOM.h('tr', {}, [
@@ -754,7 +705,6 @@ const UI_Hoje = {
       DOM.h('td', { class: 'num center' }, 'R$ ' + Utils.fmtBR(total)),
     ]));
 
-    // Paginação
     DOM.clear(paginationMount);
     const pag = Pagination.render({
       page: this._state.page,
@@ -764,7 +714,6 @@ const UI_Hoje = {
     });
     if (pag) paginationMount.appendChild(pag);
 
-    // Sort indicators
     thead.querySelectorAll('th').forEach(th => {
       const isSorted = th.dataset.key === col;
       th.classList.toggle('sorted', isSorted);
@@ -793,7 +742,7 @@ const UI_Hoje = {
 };
 
 /* ============================================================================
-   UI_PREVISTO — Prévia de Pagamentos (com paginação + debounce, "Contas")
+   UI_PREVISTO — Prévia de Pagamentos
    ============================================================================ */
 const UI_Previsto = {
   _state: null,
@@ -807,7 +756,6 @@ const UI_Previsto = {
     this._data = data.previsto_amanha;
     this._meta = data.meta;
 
-    // RENOMEADO: "NFs de Título" → "Contas"
     this._cats = [
       { key: 'nf_servico', label: 'NFs de Serviço', icon: 'fa-truck',        data: this._data.nf_servico },
       { key: 'nf_titulo',  label: 'Contas',          icon: 'fa-file-invoice', data: this._data.nf_titulo },
@@ -885,7 +833,6 @@ const UI_Previsto = {
         common.valor,
       ];
     }
-    // reembolso
     return [
       { key: 'solicitante',      label: 'Solicitante',  renderCell: r => r.solicitante || '—' },
       { key: 'tipo_despesa',     label: 'Tipo despesa', renderCell: r => DOM.pill(r.tipo_despesa || '—') },
@@ -907,7 +854,6 @@ const UI_Previsto = {
   },
 
   _renderCard() {
-    // Cat summary
     const catItems = this._cats.map(c => {
       const isActive = c.key === this._state.activeCat;
       const item = DOM.h('div', {
@@ -929,7 +875,6 @@ const UI_Previsto = {
 
     const catSummary = DOM.h('div', { class: 'cat-summary' }, catItems);
 
-    // Tabs
     const tabs = this._cats.map(c => {
       const isActive = c.key === this._state.activeCat;
       const tab = DOM.h('button', {
@@ -946,7 +891,6 @@ const UI_Previsto = {
     });
     const tabsBar = DOM.h('div', { class: 'tabs', role: 'tablist' }, tabs);
 
-    // Toolbar
     const searchInput = DOM.h('input', {
       id: 'prev-search',
       placeholder: 'Buscar fornecedor, solicitante, aprovador...',
@@ -1003,7 +947,6 @@ const UI_Previsto = {
     const rows = cat.data.filter(r => {
       if (!q) return true;
       const query = q.toLowerCase();
-      // Busca combinada: campos do registro + descrição de natureza
       const natDesc = NaturezaMap.get(r.natureza_cod) || '';
       const blob = (JSON.stringify(r) + ' ' + natDesc).toLowerCase();
       return blob.includes(query);
@@ -1029,7 +972,6 @@ const UI_Previsto = {
     const start = (this._state.page - 1) * this._state.pageSize;
     const pageRows = allFiltered.slice(start, start + this._state.pageSize);
 
-    // THEAD
     DOM.clear(thead);
     const headerRow = DOM.h('tr', {});
     for (const c of cols) {
@@ -1048,7 +990,6 @@ const UI_Previsto = {
     }
     thead.appendChild(headerRow);
 
-    // TBODY
     DOM.clear(tbody);
     if (pageRows.length === 0) {
       tbody.appendChild(DOM.h('tr', {},
@@ -1059,7 +1000,6 @@ const UI_Previsto = {
       for (const r of pageRows) tbody.appendChild(this._renderRow(r, cols));
     }
 
-    // TFOOT
     DOM.clear(tfoot);
     tfoot.appendChild(DOM.h('tr', {}, [
       DOM.h('td', { colspan: cols.length - 1 },
@@ -1067,7 +1007,6 @@ const UI_Previsto = {
       DOM.h('td', { class: 'num center' }, 'R$ ' + Utils.fmtBR(total)),
     ]));
 
-    // Paginação
     DOM.clear(paginationMount);
     const pag = Pagination.render({
       page: this._state.page,
@@ -1160,18 +1099,11 @@ const ScrollSpy = {
 };
 
 /* ============================================================================
-   HUB LINK — mostra botão "Voltar ao Hub" apenas se usuário veio do hub
-   Funciona em produção (github.io) E em localhost.
-
-   Aceita 3 sinais (qualquer um basta):
-   - document.referrer é uma página do mesmo origin, no path do hub, mas NÃO
-     no path do próprio dashboard (evita que reload conte como "vindo do hub")
-   - URL atual tem ?from=qualquer_valor (fallback robusto)
-   - sessionStorage tem flag 'came_from_hub' (persiste durante a aba)
+   HUB LINK
    ============================================================================ */
 const HubLink = {
-  HUB_PATH_PREFIX: '/Controladoria',          // Path do hub no repo
-  SELF_PATH_PREFIX: '/Controladoria/Pagamentos', // Path do próprio dashboard
+  HUB_PATH_PREFIX: '/Controladoria',
+  SELF_PATH_PREFIX: '/Controladoria/Pagamentos',
   STORAGE_KEY: 'came_from_hub',
 
   init() {
@@ -1181,12 +1113,11 @@ const HubLink = {
     if (this._userCameFromHub()) {
       if (btn) btn.hidden = false;
       if (linkAtualizar) linkAtualizar.hidden = false;
-      try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { /* privacy mode */ }
+      try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
     }
   },
 
   _userCameFromHub() {
-    // 1. Referrer: same-origin, dentro do path do hub, mas fora do path deste dashboard
     try {
       if (document.referrer) {
         const ref = new URL(document.referrer);
@@ -1195,19 +1126,14 @@ const HubLink = {
         const isSelfPath = ref.pathname.startsWith(this.SELF_PATH_PREFIX);
         if (sameOrigin && isHubPath && !isSelfPath) return true;
       }
-    } catch (e) { /* URL inválida ou bloqueada */ }
-
-    // 2. Query string ?from=... (coloque no link do hub como seguro extra)
+    } catch (e) {}
     try {
       const params = new URLSearchParams(location.search);
       if (params.has('from')) return true;
-    } catch (e) { /* ignore */ }
-
-    // 3. SessionStorage (mantém o botão após F5 dentro da mesma aba)
+    } catch (e) {}
     try {
       if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
-    } catch (e) { /* privacy mode */ }
-
+    } catch (e) {}
     return false;
   },
 };
@@ -1215,7 +1141,6 @@ const HubLink = {
 const App = {
   async init() {
     try {
-      // Fetch paralelo: data obrigatório, naturezas opcional
       const [data, naturezas] = await Promise.all([
         DataService.loadData(),
         DataService.loadNaturezas(),
@@ -1264,8 +1189,7 @@ const App = {
     container.appendChild(DOM.h('div', { class: 'empty-state' }, [
       DOM.h('h2', {}, 'Não foi possível carregar o dashboard'),
       DOM.h('p', {}, [
-        'Tentamos buscar ', DOM.h('code', {}, 'data.json'),
-        ' algumas vezes e não conseguimos. Verifique se o arquivo está na mesma pasta deste index.html.',
+        'Tentamos buscar os dados do Google Sheets e não conseguimos. Verifique se a URL do App Script está configurada corretamente.',
       ]),
       DOM.h('p', { style: { color: 'var(--subtle)', fontSize: '12px', marginBottom: '20px' } },
         `Detalhe técnico: ${message}`),
