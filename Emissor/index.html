@@ -94,7 +94,7 @@
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center flex-wrap gap-y-3">
             <div class="flex items-center gap-3">
                 
-                <a href="../" class="btn-voltar text-white/80 hover:text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 border-r border-white/20 pr-3" title="Voltar ao Menu Principal">
+                <a href="../" id="btnVoltarHub" style="display:none;" class="btn-voltar text-white/80 hover:text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 border-r border-white/20 pr-3" title="Voltar ao Menu Principal">
                     <i class="fas fa-arrow-left"></i> Voltar
                 </a>
 
@@ -696,6 +696,48 @@
                 });
             }
         }
+
+        // ============================================
+        // BOTÃO "VOLTAR AO HUB" — detecção automática
+        // ============================================
+        (function () {
+            var HubLink = {
+                HUB_PATH_PREFIX: '/Controladoria',
+                STORAGE_KEY: 'came_from_hub_gerador_nd',
+
+                init: function () {
+                    var btn = document.getElementById('btnVoltarHub');
+                    if (!btn) return;
+                    if (this.veioDoHub()) {
+                        btn.style.display = 'inline-flex';
+                        try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
+                    }
+                },
+
+                veioDoHub: function () {
+                    try {
+                        if (document.referrer) {
+                            var ref = new URL(document.referrer);
+                            var refPath = decodeURIComponent(ref.pathname);
+                            var selfPath = decodeURIComponent(location.pathname);
+                            var selfDir = selfPath.slice(0, selfPath.lastIndexOf('/') + 1);
+                            var mesmaOrigem = ref.origin === location.origin;
+                            var dentroDoPortal = refPath.indexOf(this.HUB_PATH_PREFIX) === 0;
+                            var mesmaFerramenta = refPath.indexOf(selfDir) === 0;
+                            if (mesmaOrigem && dentroDoPortal && !mesmaFerramenta) return true;
+                        }
+                    } catch (e) {}
+                    try {
+                        if (new URLSearchParams(location.search).has('from')) return true;
+                    } catch (e) {}
+                    try {
+                        if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
+                    } catch (e) {}
+                    return false;
+                }
+            };
+            HubLink.init();
+        })();
     </script>
 </body>
 </html>
