@@ -163,7 +163,7 @@
                 <div class="flex items-center gap-3">
                     <!-- Botão "Voltar ao hub": começa oculto (hidden). O JavaScript
                          no fim da página o exibe apenas quando a página foi aberta
-                         a partir do hub de ferramentas (ver função checkHubOrigin). -->
+                         a partir do hub de ferramentas (ver objeto HubLink). -->
                     <a id="btnVoltarHub" href="../index.html"
                        class="hidden no-print inline-flex items-center gap-1.5 text-sm font-bold text-onpurple hover:text-onpurplelight transition pr-2 mr-1 border-r border-gray-200">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -1056,27 +1056,57 @@
         });
 
         // ═══════════════ BOTÃO "VOLTAR AO HUB" ═══════════════
-        // Mostra o botão SOMENTE se a página foi aberta pelo hub.
-        // O hub deve linkar para esta ferramenta com "?hub=1" no final
-        // da URL (ex.: Antecipação/index.html?hub=1).
-        // Guardamos a informação na sessão para o botão continuar
-        // visível mesmo após recarregar a página (F5).
-        function checkHubOrigin() {
-            const params = new URLSearchParams(location.search);
-            if (params.get('hub') === '1') {
-                sessionStorage.setItem('cameFromHub', '1');
-            }
-            if (sessionStorage.getItem('cameFromHub') === '1') {
-                document.getElementById('btnVoltarHub').classList.remove('hidden');
-            }
-        }
+        // Mostra o botão SOMENTE quando a página foi aberta a partir do
+        // hub (ou de outra página do mesmo portal). A detecção é
+        // automática, via document.referrer — não é preciso editar o hub.
+        // Reforços: o parâmetro "?from" na URL e o sessionStorage (para
+        // o botão continuar visível após recarregar a página com F5).
+        const HubLink = {
+            HUB_PATH_PREFIX: '/Controladoria',          // pasta-raiz do portal no GitHub Pages
+            STORAGE_KEY: 'came_from_hub_antecipacao',   // chave única desta ferramenta
+
+            init() {
+                const btn = document.getElementById('btnVoltarHub');
+                if (!btn) return;
+                if (this._veioDoHub()) {
+                    btn.classList.remove('hidden');
+                    try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
+                }
+            },
+
+            _veioDoHub() {
+                // 1) A página anterior é outra página do portal (e não esta própria ferramenta)?
+                try {
+                    if (document.referrer) {
+                        const ref = new URL(document.referrer);
+                        const refPath = decodeURIComponent(ref.pathname);
+                        const selfPath = decodeURIComponent(location.pathname);
+                        const selfDir = selfPath.slice(0, selfPath.lastIndexOf('/') + 1);
+                        const mesmaOrigem = ref.origin === location.origin;
+                        const dentroDoPortal = refPath.indexOf(this.HUB_PATH_PREFIX) === 0;
+                        const mesmaFerramenta = refPath.indexOf(selfDir) === 0;
+                        if (mesmaOrigem && dentroDoPortal && !mesmaFerramenta) return true;
+                    }
+                } catch (e) {}
+                // 2) Reforço opcional: URL contém "?from" ou "?hub=1"
+                try {
+                    const p = new URLSearchParams(location.search);
+                    if (p.has('from') || p.get('hub') === '1') return true;
+                } catch (e) {}
+                // 3) Já marcado nesta sessão (sobrevive ao recarregar a página)
+                try {
+                    if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
+                } catch (e) {}
+                return false;
+            },
+        };
 
         // ═══════════════ INIT ═══════════════
         // Ao abrir a página, busca automaticamente os dados salvos no
         // Google Sheets. Se não houver URL configurada ou dados, mostra
         // o estado vazio com o botão de upload.
         window.onload = () => {
-            checkHubOrigin();
+            HubLink.init();
             loadFromSheets();
         };
     </script>
