@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>On Time - Antecipação de Recebíveis</title>
 
+    <!-- Favicon da empresa (arquivo está na raiz do repositório, por isso ../) -->
+    <link rel="icon" type="image/png" href="../favicon.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -158,9 +161,17 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-onpurple to-onorange flex items-center justify-center text-white font-bold text-xl">
-                        OT
-                    </div>
+                    <!-- Botão "Voltar ao hub": começa oculto (hidden). O JavaScript
+                         no fim da página o exibe apenas quando a página foi aberta
+                         a partir do hub de ferramentas (ver função checkHubOrigin). -->
+                    <a id="btnVoltarHub" href="../index.html"
+                       class="hidden no-print inline-flex items-center gap-1.5 text-sm font-bold text-onpurple hover:text-onpurplelight transition pr-2 mr-1 border-r border-gray-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        <span class="hidden sm:inline">Voltar ao hub</span>
+                    </a>
+                    <!-- Mascote da empresa (arquivo está na raiz do repositório, por isso ../) -->
+                    <img src="../logo-mascote.jpg" alt="Mascote On Time"
+                         class="w-10 h-10 rounded-lg object-cover shadow-sm">
                     <div>
                         <h1 class="text-xl font-bold text-onpurple leading-tight">On Time</h1>
                         <span class="text-xs text-gray-500 font-semibold tracking-wider uppercase">Portal de Antecipação</span>
@@ -1044,11 +1055,28 @@
             loadFile({ target: { files: [f], value: '' } });
         });
 
+        // ═══════════════ BOTÃO "VOLTAR AO HUB" ═══════════════
+        // Mostra o botão SOMENTE se a página foi aberta pelo hub.
+        // O hub deve linkar para esta ferramenta com "?hub=1" no final
+        // da URL (ex.: Antecipação/index.html?hub=1).
+        // Guardamos a informação na sessão para o botão continuar
+        // visível mesmo após recarregar a página (F5).
+        function checkHubOrigin() {
+            const params = new URLSearchParams(location.search);
+            if (params.get('hub') === '1') {
+                sessionStorage.setItem('cameFromHub', '1');
+            }
+            if (sessionStorage.getItem('cameFromHub') === '1') {
+                document.getElementById('btnVoltarHub').classList.remove('hidden');
+            }
+        }
+
         // ═══════════════ INIT ═══════════════
         // Ao abrir a página, busca automaticamente os dados salvos no
         // Google Sheets. Se não houver URL configurada ou dados, mostra
         // o estado vazio com o botão de upload.
         window.onload = () => {
+            checkHubOrigin();
             loadFromSheets();
         };
     </script>
