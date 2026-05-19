@@ -1,11 +1,5 @@
 # CONTEXTO DO PROJETO — Portal de Ferramentas "On Time" / Controladoria
 
-> Cole este texto inteiro no início de um chat novo sempre que for criar
-> ou editar o `index.html` de uma ferramenta deste projeto. Com ele, o
-> Claude consegue adicionar o favicon, o mascote, o botão "Voltar ao hub"
-> e a tela de carregamento sem precisar de prints do repositório.
-
----
 
 ## Estrutura do repositório (GitHub Pages)
 
