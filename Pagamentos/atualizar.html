@@ -652,6 +652,228 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ====== LISTA DE TÍTULOS (conferência antes de enviar) ====== */
+  .titulos-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 8px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .titulos-head {
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .titulos-head h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 17px;
+    margin: 0;
+    color: var(--ink);
+  }
+  .titulos-sub { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+  .titulos-list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    max-height: 440px;
+    overflow-y: auto;
+  }
+  .tit-row {
+    display: grid;
+    grid-template-columns: 22px 1fr auto auto 32px;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 9px;
+    transition: background 0.1s, opacity 0.12s;
+  }
+  .tit-row:hover { background: var(--surface-soft); }
+  .tit-row + .tit-row { border-top: 1px solid var(--border-soft); }
+  .tit-row.off { opacity: 0.42; }
+  .tit-check { width: 17px; height: 17px; accent-color: var(--orange); cursor: pointer; }
+  .tit-info { min-width: 0; }
+  .tit-name {
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tit-hist {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tag-manual {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--orange-soft);
+    color: var(--orange-deep);
+    border: 1px solid #F9C69C;
+  }
+  .tipo-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .tipo-tag.t-nf   { background: var(--orange-soft); color: var(--orange-deep); border-color: #F9C69C; }
+  .tipo-tag.t-bol  { background: rgba(139,92,246,0.1); color: #7C3AED; border-color: rgba(139,92,246,0.3); }
+  .tipo-tag.t-ciot { background: rgba(99,102,241,0.12); color: #4338CA; border-color: rgba(99,102,241,0.3); }
+  .tipo-tag.t-rd, .tipo-tag.t-pa { background: var(--ok-soft); color: var(--ok); border-color: #C2E4CC; }
+  .tit-value {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--plum);
+    white-space: nowrap;
+  }
+  .tit-trash {
+    width: 30px; height: 30px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 8px;
+    color: var(--subtle);
+    cursor: pointer;
+    transition: all 0.12s;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+  }
+  .tit-trash:hover { border-color: var(--err); color: var(--err); background: var(--err-soft); }
+  .titulos-empty {
+    padding: 28px;
+    text-align: center;
+    color: var(--subtle);
+    font-style: italic;
+    font-size: 13px;
+  }
+  .titulos-foot {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-soft);
+    background: var(--surface-soft);
+    border-radius: 0 0 12px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .titulos-foot span:last-child { color: var(--plum); font-family: var(--font-mono); }
+
+  /* ====== MODAL — pagamento manual ====== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,15,26,0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1500;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 460px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: modal-in 0.2s ease-out;
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .modal-head h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 19px;
+    margin: 0;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .modal-head h3 i { color: var(--orange); font-size: 15px; }
+  .modal-close {
+    width: 30px; height: 30px;
+    border: 0;
+    background: var(--surface-soft);
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .modal-close:hover { background: var(--border-soft); color: var(--ink); }
+  .modal-body { padding: 20px 22px; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    font-family: inherit;
+    font-size: 13.5px;
+    color: var(--ink);
+    background: var(--surface);
+    transition: border-color 0.12s;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--orange); }
+  .modal-error {
+    margin: 12px 0 0;
+    padding: 8px 12px;
+    background: var(--err-soft);
+    color: var(--err);
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .modal-error[hidden] { display: none; }
+  .modal-foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 22px;
+    border-top: 1px solid var(--border-soft);
+    background: var(--surface-soft);
+  }
+
   @media (max-width: 1100px) {
     .sidebar { display: none; }
     .main-content { margin-left: 0; }
@@ -662,6 +884,9 @@
     .content-body { padding: 20px; }
     .lead { font-size: 22px; }
     .actions .hint { width: 100%; margin-left: 0; }
+    .tit-row { grid-template-columns: 20px 1fr auto 30px; }
+    .tipo-tag { display: none; }
+    .field-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -744,6 +969,18 @@
       <ul id="file-list" class="file-list"></ul>
     </div>
 
+    <div id="titulos-wrap" class="titulos-card" style="display:none">
+      <div class="titulos-head">
+        <h4><i class="fa-solid fa-list-check"></i> Conferir pagamentos de hoje</h4>
+        <p class="titulos-sub">Desmarque um título para não enviá-lo &middot; use a lixeira para removê-lo da lista.</p>
+      </div>
+      <ul id="titulos-list" class="titulos-list"></ul>
+      <div class="titulos-foot">
+        <span id="titulos-counter">0 de 0 selecionados</span>
+        <span id="titulos-total">Total: R$ 0,00</span>
+      </div>
+    </div>
+
     <div id="summary-wrap" class="summary">
       <h4><i class="fa-solid fa-coins"></i> Resumo do processamento</h4>
       <div class="sum-grid">
@@ -767,6 +1004,9 @@
       <button class="btn btn-primary" id="btn-download-nat" disabled>
         <i class="fa-solid fa-download"></i> Baixar naturezas.json
       </button>
+      <button class="btn btn-ghost" id="btn-add-manual">
+        <i class="fa-solid fa-plus"></i> Adicionar manual
+      </button>
       <button class="btn btn-ghost" id="btn-reset">
         <i class="fa-solid fa-rotate-left"></i> Recomeçar
       </button>
@@ -780,6 +1020,64 @@
         <li><strong>Clique em "Enviar pro Google Sheets"</strong> — os dados são processados no navegador e enviados direto pra planilha.</li>
         <li><strong>O dashboard atualiza sozinho:</strong> abra o <a href="index.html">index.html</a> e os dados já estarão lá, com "hoje" e "amanhã" calculados automaticamente em dias úteis.</li>
       </ol>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-manual">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <h3 id="modal-title"><i class="fa-solid fa-plus"></i> Novo pagamento manual</h3>
+      <button class="modal-close" id="modal-close" type="button" aria-label="Fechar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label for="m-fornecedor">Fornecedor *</label>
+        <input id="m-fornecedor" type="text" placeholder="Nome do fornecedor" autocomplete="off">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="m-valor">Valor (R$) *</label>
+          <input id="m-valor" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="m-tipo">Tipo *</label>
+          <select id="m-tipo">
+            <option value="NF">NF</option>
+            <option value="BOL">BOL</option>
+            <option value="CIOT">CIOT</option>
+            <option value="RD">RD</option>
+            <option value="PA">PA</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="m-natureza">Natureza</label>
+          <input id="m-natureza" type="text" placeholder="Ex: 33030905" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="m-bordero">Bordero</label>
+          <input id="m-bordero" type="text" value="Manual" autocomplete="off">
+        </div>
+      </div>
+      <div class="field">
+        <label for="m-historico">Histórico</label>
+        <input id="m-historico" type="text" placeholder="Descrição do pagamento" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="m-banco">Banco</label>
+        <input id="m-banco" type="text" placeholder="Ex: ITAU" autocomplete="off">
+      </div>
+      <p class="modal-error" id="modal-error" hidden></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="modal-cancel" type="button">Cancelar</button>
+      <button class="btn btn-primary" id="modal-save" type="button">
+        <i class="fa-solid fa-check"></i> Adicionar
+      </button>
     </div>
   </div>
 </div>
@@ -1144,7 +1442,14 @@ function agregar(store) {
   };
 }
 
-const state = { files: [], store: null, naturezas: null, data: null };
+const state = {
+  files: [], store: null, naturezas: null, data: null,
+  titMeta: [],          // [{removed, selected}] paralelo a store.protheus
+  manuais: [],          // pagamentos manuais [{...titulo, _id, _selected, _removed}]
+  _protheusRef: null,   // referência do array protheus (detecta reprocessamento)
+  payload: null,        // payload final pronto para envio
+};
+let manualSeq = 0;
 const el = id => document.getElementById(id);
 const fmtBR = n => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const tipoLabels = {
@@ -1206,66 +1511,74 @@ async function processFiles(files) {
 function render() {
   state.store = state.store || { protheus: [], nf_servico: [], nf_titulo: [], reembolso: [] };
   ['protheus','nf_servico','nf_titulo','reembolso'].forEach(k => state.store[k] = state.store[k] || []);
-  const hasAny = state.files.length > 0;
-  el('detected-wrap').style.display = hasAny ? 'block' : 'none';
-  if (!hasAny) {
-    el('summary-wrap').style.display = 'none';
-    el('btn-enviar').disabled = true;
-    el('btn-download-nat').disabled = true;
-    el('hint').textContent = 'Processe pelo menos 1 arquivo para enviar';
-    return;
-  }
-  const list = el('file-list');
-  list.innerHTML = '';
-  const ordem = { protheus: 0, relatorio_pagos: 0, nf_servico: 1, nf_titulo: 2, reembolso: 3, naturezas: 4, desconhecido: 9 };
-  const sorted = [...state.files].sort((a,b) => (ordem[a.tipo]||99) - (ordem[b.tipo]||99));
-  for (const e of sorted) {
-    const [label, cls] = tipoLabels[e.tipo];
-    const row = document.createElement('li');
-    row.className = 'file-row';
-    const ic = document.createElement('div');
-    ic.className = 'file-icon ' + (e.ok ? 'ok' : 'err');
-    ic.innerHTML = `<i class="fa-solid ${e.ok?'fa-check':'fa-xmark'}"></i>`;
-    const info = document.createElement('div');
-    const nm = document.createElement('div');
-    nm.className = 'file-name';
-    nm.textContent = e.file.name;
-    const mt = document.createElement('div');
-    mt.className = 'file-meta';
-    mt.textContent = `${(e.file.size/1024).toFixed(1)} KB · ${e.err ? 'Erro: ' + e.err : 'processado em memória'}`;
-    info.appendChild(nm); info.appendChild(mt);
-    const bd = document.createElement('span');
-    bd.className = 'badge ' + cls;
-    bd.textContent = label;
-    const ct = document.createElement('span');
-    ct.className = 'file-count';
-    ct.textContent = `${e.count.toLocaleString('pt-BR')} registros`;
-    row.appendChild(ic); row.appendChild(info); row.appendChild(bd); row.appendChild(ct);
-    list.appendChild(row);
-  }
-  const reconhecidos = state.files.filter(f => f.ok).length;
-  el('counter').textContent = `${reconhecidos}/${state.files.length} reconhecidos`;
-  state.data = agregar(state.store);
-  el('summary-wrap').style.display = 'block';
-  el('sum-pago-val').innerHTML = `<span class="prefix">R$</span>${fmtBR(state.data.pago_hoje.total)}`;
-  el('sum-pago-qtd').textContent = `${state.data.pago_hoje.quantidade} títulos`;
-  el('sum-prev-val').innerHTML = `<span class="prefix">R$</span>${fmtBR(state.data.previsto_amanha.total)}`;
-  el('sum-prev-qtd').textContent = `${state.data.previsto_amanha.quantidade} títulos`;
 
-  const temOperacional = ['protheus','nf_servico','nf_titulo','reembolso'].some(k => state.store[k] && state.store[k].length);
-  el('btn-enviar').disabled = !temOperacional;
+  const preview = recomputar();
+  const hasFiles = state.files.length > 0;
+  el('detected-wrap').style.display = hasFiles ? 'block' : 'none';
+
+  // ----- lista de arquivos processados -----
+  if (hasFiles) {
+    const list = el('file-list');
+    list.innerHTML = '';
+    const ordem = { protheus: 0, relatorio_pagos: 0, nf_servico: 1, nf_titulo: 2, reembolso: 3, naturezas: 4, desconhecido: 9 };
+    const sorted = [...state.files].sort((a,b) => (ordem[a.tipo]||99) - (ordem[b.tipo]||99));
+    for (const e of sorted) {
+      const [label, cls] = tipoLabels[e.tipo];
+      const row = document.createElement('li');
+      row.className = 'file-row';
+      const ic = document.createElement('div');
+      ic.className = 'file-icon ' + (e.ok ? 'ok' : 'err');
+      ic.innerHTML = `<i class="fa-solid ${e.ok?'fa-check':'fa-xmark'}"></i>`;
+      const info = document.createElement('div');
+      const nm = document.createElement('div');
+      nm.className = 'file-name';
+      nm.textContent = e.file.name;
+      const mt = document.createElement('div');
+      mt.className = 'file-meta';
+      mt.textContent = `${(e.file.size/1024).toFixed(1)} KB · ${e.err ? 'Erro: ' + e.err : 'processado em memória'}`;
+      info.appendChild(nm); info.appendChild(mt);
+      const bd = document.createElement('span');
+      bd.className = 'badge ' + cls;
+      bd.textContent = label;
+      const ct = document.createElement('span');
+      ct.className = 'file-count';
+      ct.textContent = `${e.count.toLocaleString('pt-BR')} registros`;
+      row.appendChild(ic); row.appendChild(info); row.appendChild(bd); row.appendChild(ct);
+      list.appendChild(row);
+    }
+    const reconhecidos = state.files.filter(f => f.ok).length;
+    el('counter').textContent = `${reconhecidos}/${state.files.length} reconhecidos`;
+  }
+
+  // ----- lista de títulos (Totvs + manuais) -----
+  renderTitulos();
+
+  // ----- resumo -----
+  const temConteudo = hasFiles || state.manuais.length > 0;
+  el('summary-wrap').style.display = temConteudo ? 'block' : 'none';
+  el('sum-pago-val').innerHTML = `<span class="prefix">R$</span>${fmtBR(preview.pagoTotal)}`;
+  el('sum-pago-qtd').textContent = `${preview.pagoQtd} títulos`;
+  el('sum-prev-val').innerHTML = `<span class="prefix">R$</span>${fmtBR(preview.prevTotal)}`;
+  el('sum-prev-qtd').textContent = `${preview.prevQtd} títulos`;
+
+  // ----- botões -----
+  const temOperacional = ['protheus','nf_servico','nf_titulo','reembolso'].some(k => state.store[k].length);
+  const temManualAtivo = state.manuais.some(m => !m._removed && m._selected);
+  el('btn-enviar').disabled = !(temOperacional || temManualAtivo);
   const temNaturezas = state.naturezas && Object.keys(state.naturezas).length > 0;
   el('btn-download-nat').disabled = !temNaturezas;
 
+  // ----- hint -----
   const tiposFaltando = ['protheus','nf_servico','nf_titulo','reembolso'].filter(k => !state.store[k].length);
   const partes = [];
   if (temOperacional) {
     partes.push(tiposFaltando.length ? `Faltam: ${tiposFaltando.join(', ')}` : 'pronto para enviar');
   }
-  if (temNaturezas) {
-    partes.push(`${Object.keys(state.naturezas).length} naturezas mapeadas`);
+  if (temNaturezas) partes.push(`${Object.keys(state.naturezas).length} naturezas mapeadas`);
+  if (state.manuais.filter(m => !m._removed).length) {
+    partes.push(`${state.manuais.filter(m => !m._removed).length} manual(is)`);
   }
-  el('hint').textContent = partes.length ? partes.join(' · ') : 'Processe pelo menos 1 arquivo para enviar';
+  el('hint').textContent = partes.length ? partes.join(' · ') : 'Processe um arquivo ou adicione um pagamento manual';
 }
 
 function downloadJson(filename, obj) {
@@ -1291,45 +1604,39 @@ function downloadNaturezas() {
 }
 
 async function enviar() {
-  if (!state.data) return;
-  if (CONFIG.APP_SCRIPT_URL.includes('SEU_ID_AQUI')) {
-    toast('⚠️ Configure a URL do App Script no código!');
+  recomputar();
+  if (!state.payload) return;
+  const url = CONFIG.APP_SCRIPT_URL || '';
+  if (!url || url.includes('SEU_ID_AQUI') || url.includes('COLE_A_URL') || !/^https?:\/\//.test(url)) {
+    toast('⚠️ Configure a URL do App Script no código (CONFIG.APP_SCRIPT_URL)!');
     return;
   }
 
   showOverlay(true);
   try {
-    const payload = {
-      pago_hoje: state.data.pago_hoje,
-      previsto_amanha: state.data.previsto_amanha,
-    };
-    if (state.naturezas) {
-      payload.naturezas = state.naturezas;
-    }
-
-    const response = await fetch(CONFIG.APP_SCRIPT_URL, {
+    await fetch(url, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(state.payload),
     });
 
-    // Com no-cors não conseguimos ler a resposta, então assumimos sucesso
-    // se não houve erro de rede
+    // Com no-cors não dá pra ler a resposta — sem erro de rede = enviado.
     toast('✅ Enviado com sucesso!');
 
-    // Se quiser confirmar, pode fazer um GET logo em seguida
+    // Confirmação opcional via GET (?check=1).
     setTimeout(async () => {
       try {
-        const check = await fetch(CONFIG.APP_SCRIPT_URL + '?check=1');
+        const check = await fetch(url + '?check=1');
         if (check.ok) {
-          toast('✅ Dados confirmados no Sheets');
+          const j = await check.json().catch(() => null);
+          if (j && j.ok) toast('✅ Confirmado no Sheets');
         }
       } catch (e) {}
     }, 2000);
 
   } catch (err) {
-    toast('❌ Erro ao enviar: ' + err.message);
+    toast('❌ Erro ao enviar: ' + (err.message || err));
   } finally {
     showOverlay(false);
   }
@@ -1340,6 +1647,10 @@ function reset() {
   state.store = null;
   state.naturezas = null;
   state.data = null;
+  state.titMeta = [];
+  state.manuais = [];
+  state._protheusRef = null;
+  state.payload = null;
   render();
   el('file-input').value = '';
   toast('Limpado');
@@ -1359,8 +1670,265 @@ document.addEventListener('DOMContentLoaded', () => {
   el('btn-download-nat').addEventListener('click', downloadNaturezas);
   el('btn-reset').addEventListener('click', reset);
 
-  el('summary-wrap').style.display = 'none';
+  // ----- modal de pagamento manual -----
+  el('btn-add-manual').addEventListener('click', abrirModalManual);
+  el('modal-close').addEventListener('click', fecharModalManual);
+  el('modal-cancel').addEventListener('click', fecharModalManual);
+  el('modal-save').addEventListener('click', salvarManual);
+  el('modal-manual').addEventListener('click', e => {
+    if (e.target === el('modal-manual')) fecharModalManual();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') fecharModalManual();
+  });
+  el('modal-manual').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); salvarManual(); }
+  });
+
+  render();
 });
+
+/* ============================================================================
+   CONFERÊNCIA DE TÍTULOS + PAGAMENTOS MANUAIS
+   ============================================================================ */
+
+/* Recalcula o payload a partir dos títulos selecionados + manuais.
+   Devolve os totais para o resumo. Os manuais vão SEPARADOS no payload
+   (o App Script grava na aba PagoHojeManual e o doGet junta tudo).        */
+function recomputar() {
+  state.store = state.store || { protheus: [], nf_servico: [], nf_titulo: [], reembolso: [] };
+  ['protheus','nf_servico','nf_titulo','reembolso'].forEach(k => state.store[k] = state.store[k] || []);
+
+  // Sincroniza titMeta com o array protheus (reprocessar o arquivo reseta a seleção).
+  if (state._protheusRef !== state.store.protheus) {
+    state._protheusRef = state.store.protheus;
+    state.titMeta = state.store.protheus.map(() => ({ removed: false, selected: true }));
+  }
+
+  const totvsSel = state.store.protheus.filter((t, i) => {
+    const m = state.titMeta[i];
+    return m && !m.removed && m.selected;
+  });
+  const manuaisSel = state.manuais.filter(m => !m._removed && m._selected);
+
+  // agregar() apenas com os títulos do Totvs selecionados.
+  const ag = agregar({
+    protheus: totvsSel,
+    nf_servico: state.store.nf_servico,
+    nf_titulo: state.store.nf_titulo,
+    reembolso: state.store.reembolso,
+  });
+
+  state.data = ag;
+  state.payload = {
+    pago_hoje: ag.pago_hoje,
+    pago_hoje_manual: manuaisSel.map(limparManual),
+    previsto_amanha: ag.previsto_amanha,
+  };
+  if (state.naturezas) state.payload.naturezas = state.naturezas;
+
+  const manuaisTotal = manuaisSel.reduce((s, m) => s + (Number(m.valor_rs) || 0), 0);
+  return {
+    pagoTotal: Math.round((ag.pago_hoje.total + manuaisTotal) * 100) / 100,
+    pagoQtd:   ag.pago_hoje.quantidade + manuaisSel.length,
+    prevTotal: ag.previsto_amanha.total,
+    prevQtd:   ag.previsto_amanha.quantidade,
+  };
+}
+
+/* Remove os campos de controle de UI antes de enviar. */
+function limparManual(m) {
+  const o = {};
+  for (const k in m) {
+    if (k !== '_id' && k !== '_selected' && k !== '_removed') o[k] = m[k];
+  }
+  return o;
+}
+
+/* Monta a lista de conferência (títulos do Totvs + manuais). */
+function renderTitulos() {
+  const wrap = el('titulos-wrap');
+  const protheus = (state.store && state.store.protheus) || [];
+  const manuaisVisiveis = state.manuais.filter(m => !m._removed);
+  const temAlgo = protheus.length > 0 || manuaisVisiveis.length > 0;
+  wrap.style.display = temAlgo ? 'block' : 'none';
+  if (!temAlgo) return;
+
+  const list = el('titulos-list');
+  list.innerHTML = '';
+  let selCount = 0, total = 0, totalLinhas = 0;
+
+  // títulos do Totvs
+  protheus.forEach((t, i) => {
+    const meta = state.titMeta[i];
+    if (!meta || meta.removed) return;
+    totalLinhas++;
+    if (meta.selected) { selCount++; total += Number(t.valor_rs) || 0; }
+    list.appendChild(montaLinhaTitulo({
+      selected: meta.selected,
+      fornecedor: t.fornecedor || '—',
+      tipo: t.tipo || '?',
+      valor: Number(t.valor_rs) || 0,
+      historico: t.historico || '',
+      manual: false,
+      onToggle: () => { meta.selected = !meta.selected; render(); },
+      onTrash:  () => { meta.removed = true; render(); },
+    }));
+  });
+
+  // pagamentos manuais
+  state.manuais.forEach(m => {
+    if (m._removed) return;
+    totalLinhas++;
+    if (m._selected) { selCount++; total += Number(m.valor_rs) || 0; }
+    list.appendChild(montaLinhaTitulo({
+      selected: m._selected,
+      fornecedor: m.fornecedor || '—',
+      tipo: m.tipo || '?',
+      valor: Number(m.valor_rs) || 0,
+      historico: m.historico || '',
+      manual: true,
+      onToggle: () => { m._selected = !m._selected; render(); },
+      onTrash:  () => { m._removed = true; render(); },
+    }));
+  });
+
+  if (totalLinhas === 0) {
+    const li = document.createElement('li');
+    li.className = 'titulos-empty';
+    li.textContent = 'Nenhum título — todos foram removidos da lista.';
+    list.appendChild(li);
+  }
+
+  el('titulos-counter').textContent = `${selCount} de ${totalLinhas} selecionados`;
+  el('titulos-total').textContent = `Total: R$ ${fmtBR(total)}`;
+}
+
+function montaLinhaTitulo(opt) {
+  const li = document.createElement('li');
+  li.className = 'tit-row' + (opt.selected ? '' : ' off');
+
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.className = 'tit-check';
+  cb.checked = opt.selected;
+  cb.addEventListener('change', opt.onToggle);
+
+  const info = document.createElement('div');
+  info.className = 'tit-info';
+  const nm = document.createElement('div');
+  nm.className = 'tit-name';
+  nm.textContent = opt.fornecedor;
+  if (opt.manual) {
+    const bdg = document.createElement('span');
+    bdg.className = 'tag-manual';
+    bdg.textContent = 'MANUAL';
+    nm.appendChild(bdg);
+  }
+  info.appendChild(nm);
+  if (opt.historico) {
+    const h = document.createElement('div');
+    h.className = 'tit-hist';
+    h.textContent = opt.historico;
+    info.appendChild(h);
+  }
+
+  const tp = document.createElement('span');
+  tp.className = 'tipo-tag t-' + String(opt.tipo || '').toLowerCase();
+  tp.textContent = opt.tipo;
+
+  const vl = document.createElement('span');
+  vl.className = 'tit-value';
+  vl.textContent = 'R$ ' + fmtBR(opt.valor);
+
+  const tr = document.createElement('button');
+  tr.className = 'tit-trash';
+  tr.type = 'button';
+  tr.title = 'Remover da lista';
+  tr.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+  tr.addEventListener('click', opt.onTrash);
+
+  li.appendChild(cb);
+  li.appendChild(info);
+  li.appendChild(tp);
+  li.appendChild(vl);
+  li.appendChild(tr);
+  return li;
+}
+
+/* --------------------------- MODAL MANUAL ------------------------------- */
+
+function abrirModalManual() {
+  el('m-fornecedor').value = '';
+  el('m-valor').value = '';
+  el('m-tipo').value = 'NF';
+  el('m-natureza').value = '';
+  el('m-bordero').value = 'Manual';
+  el('m-historico').value = '';
+  el('m-banco').value = '';
+  el('modal-error').hidden = true;
+  el('modal-manual').classList.add('show');
+  setTimeout(() => el('m-fornecedor').focus(), 60);
+}
+
+function fecharModalManual() {
+  el('modal-manual').classList.remove('show');
+}
+
+/* Aceita "1.234,56", "1234,56", "1234.56" ou "1234". */
+function parseValorBR(x) {
+  if (x === null || x === undefined) return NaN;
+  let s = String(x).trim().replace(/r\$/i, '').replace(/\s/g, '');
+  if (!s) return NaN;
+  if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+  return parseFloat(s);
+}
+
+function salvarManual() {
+  const erroEl = el('modal-error');
+  const fornecedor = el('m-fornecedor').value.trim();
+  const valor = parseValorBR(el('m-valor').value);
+
+  if (!fornecedor) {
+    erroEl.textContent = 'Informe o fornecedor.';
+    erroEl.hidden = false;
+    el('m-fornecedor').focus();
+    return;
+  }
+  if (isNaN(valor) || valor <= 0) {
+    erroEl.textContent = 'Informe um valor válido (maior que zero).';
+    erroEl.hidden = false;
+    el('m-valor').focus();
+    return;
+  }
+
+  const hoje = new Date();
+  const iso = hoje.getFullYear() + '-' +
+              String(hoje.getMonth() + 1).padStart(2, '0') + '-' +
+              String(hoje.getDate()).padStart(2, '0');
+  const id = ++manualSeq;
+
+  state.manuais.push({
+    _id: id, _selected: true, _removed: false,
+    numero: 'MANUAL-' + id, parcela: '', prefixo: '',
+    tipo: el('m-tipo').value,
+    natureza: el('m-natureza').value.trim(),
+    fornecedor_cod: '',
+    fornecedor: fornecedor,
+    dt_emissao: null, vencimento: iso, dt_baixa: iso,
+    valor: valor, valor_rs: valor, valor_liquido: valor,
+    historico: el('m-historico').value.trim(),
+    forma_pgto: '',
+    banco: el('m-banco').value.trim(),
+    bordero: el('m-bordero').value.trim() || 'Manual',
+    fluxo_caixa: '',
+    manual: true,
+  });
+
+  fecharModalManual();
+  toast('Pagamento manual adicionado');
+  render();
+}
 </script>
 </body>
 </html>

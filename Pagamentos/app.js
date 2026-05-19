@@ -1138,8 +1138,118 @@ const HubLink = {
   },
 };
 
+/* ============================================================================
+   UI_LOADING — shimmer nos cards + mensagens rotativas + barra de progresso
+   ============================================================================ */
+const UI_Loading = {
+  _msgTimer: null,
+  _progTimer: null,
+  _refs: null,
+  _progress: 0,
+  _msgIndex: 0,
+
+  MESSAGES: [
+    'Conectando ao Google Sheets…',
+    'Lendo os pagamentos realizados…',
+    'Conferindo a prévia de amanhã…',
+    'Calculando totais e somas…',
+    'Verificando títulos em aprovação…',
+    'Montando o painel…',
+  ],
+
+  start() {
+    const container = DOM.byId('main-container');
+    if (!container) return;
+    DOM.clear(container);
+
+    const skKpi = () => DOM.h('div', { class: 'kpi kpi-sk' }, [
+      DOM.h('div', { class: 'sk-line sk-label' }),
+      DOM.h('div', { class: 'sk-line sk-value' }),
+      DOM.h('div', { class: 'sk-line sk-sub' }),
+    ]);
+    const skRow = w => DOM.h('div', { class: 'sk-row ' + w });
+
+    const msgEl = DOM.h('div', { class: 'load-msg' }, this.MESSAGES[0]);
+    const barEl = DOM.h('div', { class: 'load-bar' });
+    const pctEl = DOM.h('div', { class: 'load-pct' }, '0%');
+    const statusEl = DOM.h('div', { class: 'load-status' }, [
+      DOM.h('div', { class: 'load-spinner' }),
+      msgEl,
+      DOM.h('div', { class: 'load-track' }, barEl),
+      pctEl,
+    ]);
+
+    container.appendChild(DOM.h('div', { class: 'dash-loading' }, [
+      DOM.h('div', { class: 'kpi-grid' }, [skKpi(), skKpi(), skKpi(), skKpi()]),
+      statusEl,
+      DOM.h('div', { class: 'card sk-card' }, [
+        skRow('w-90'), skRow('w-75'), skRow('w-90'), skRow('w-60'), skRow('w-75'),
+      ]),
+    ]));
+
+    this._refs = { msgEl, barEl, pctEl, statusEl };
+    this._progress = 0;
+    this._msgIndex = 0;
+
+    // Mensagens rotativas — trocam a cada ~1,1s.
+    this._msgTimer = setInterval(() => this._rotateMsg(), 1100);
+
+    // Barra simulada — sobe até ~92% enquanto os dados não chegam.
+    this._progTimer = setInterval(() => {
+      if (this._progress < 92) {
+        this._progress = Math.min(92, this._progress + 4 + Math.random() * 11);
+        this._setBar(this._progress);
+      }
+    }, 240);
+    this._setBar(6);
+  },
+
+  _rotateMsg() {
+    if (!this._refs) return;
+    const el = this._refs.msgEl;
+    el.classList.add('fading');
+    setTimeout(() => {
+      if (!this._refs) return;
+      this._msgIndex = (this._msgIndex + 1) % this.MESSAGES.length;
+      el.textContent = this.MESSAGES[this._msgIndex];
+      el.classList.remove('fading');
+    }, 250);
+  },
+
+  _setBar(pct) {
+    if (!this._refs) return;
+    const p = Math.min(100, Math.round(pct));
+    this._refs.barEl.style.width = p + '%';
+    this._refs.pctEl.textContent = p + '%';
+  },
+
+  _clearTimers() {
+    if (this._msgTimer) { clearInterval(this._msgTimer); this._msgTimer = null; }
+    if (this._progTimer) { clearInterval(this._progTimer); this._progTimer = null; }
+  },
+
+  // Completa a barra e devolve uma Promise (para o conteúdo surgir suave).
+  finish() {
+    this._clearTimers();
+    if (!this._refs) return Promise.resolve();
+    this._refs.statusEl.classList.add('done');
+    this._refs.msgEl.textContent = 'Tudo pronto!';
+    this._setBar(100);
+    return Utils.delay(420);
+  },
+
+  stop() {
+    this._clearTimers();
+    this._refs = null;
+  },
+};
+
+/* ============================================================================
+   APP
+   ============================================================================ */
 const App = {
   async init() {
+    UI_Loading.start();
     try {
       const [data, naturezas] = await Promise.all([
         DataService.loadData(),
@@ -1147,6 +1257,7 @@ const App = {
       ]);
 
       NaturezaMap.set(naturezas);
+      await UI_Loading.finish();
       UI_Sidebar.updateStamp(data);
       HubLink.init();
       this._renderAll(data);
@@ -1154,6 +1265,7 @@ const App = {
 
       console.info(`[App] Dashboard pronto · ${NaturezaMap.size()} naturezas carregadas`);
     } catch (err) {
+      UI_Loading.stop();
       console.error('[App] Falha ao carregar dashboard:', err);
       UI_Sidebar.setError();
       this._renderError(err);

@@ -70,9 +70,14 @@
   </header>
 
   <div class="content-body" id="main-container">
-    <div class="empty-state" id="initial-state">
-      <h2>Carregando dados…</h2>
-      <p>Aguarde enquanto buscamos as informações mais recentes.</p>
+    <!-- Esqueleto inicial (pré-JS). O app.js troca por um loading animado. -->
+    <div class="dash-loading" id="initial-state">
+      <div class="kpi-grid">
+        <div class="kpi kpi-sk"><div class="sk-line sk-label"></div><div class="sk-line sk-value"></div><div class="sk-line sk-sub"></div></div>
+        <div class="kpi kpi-sk"><div class="sk-line sk-label"></div><div class="sk-line sk-value"></div><div class="sk-line sk-sub"></div></div>
+        <div class="kpi kpi-sk"><div class="sk-line sk-label"></div><div class="sk-line sk-value"></div><div class="sk-line sk-sub"></div></div>
+        <div class="kpi kpi-sk"><div class="sk-line sk-label"></div><div class="sk-line sk-value"></div><div class="sk-line sk-sub"></div></div>
+      </div>
     </div>
   </div>
 </div>

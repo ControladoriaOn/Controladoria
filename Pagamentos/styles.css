@@ -865,3 +865,129 @@
     .search { flex: 1 1 100%; }
     .pagination { justify-content: center; }
   }
+  /* ============================================================
+     LOADING — shimmer nos cards + barra de progresso (dashboard)
+     Usado por app.js → UI_Loading enquanto busca dados do Sheets
+     ============================================================ */
+  .dash-loading { animation: reveal 0.4s ease-out both; }
+
+  @keyframes shimmer {
+    0%   { background-position: -680px 0; }
+    100% { background-position: 680px 0; }
+  }
+
+  .sk {
+    background: linear-gradient(
+      100deg,
+      var(--surface-soft) 30%,
+      #FFFFFF 50%,
+      var(--surface-soft) 70%
+    );
+    background-size: 680px 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+
+  /* KPI cards "fantasma" */
+  .kpi.kpi-sk {
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .sk-line {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(
+      100deg, var(--border-soft) 30%, #FFFFFF 50%, var(--border-soft) 70%);
+    background-size: 680px 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+  .sk-line.sk-label { width: 42%; height: 10px; }
+  .sk-line.sk-value { width: 70%; height: 28px; border-radius: 8px; }
+  .sk-line.sk-sub   { width: 55%; }
+
+  /* Tabela "fantasma" */
+  .sk-card { padding: 22px 24px; }
+  .sk-row {
+    height: 16px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+    background: linear-gradient(
+      100deg, var(--border-soft) 30%, #FFFFFF 50%, var(--border-soft) 70%);
+    background-size: 680px 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+  .sk-row:last-child { margin-bottom: 0; }
+  .sk-row.w-90 { width: 90%; }
+  .sk-row.w-75 { width: 75%; }
+  .sk-row.w-60 { width: 60%; }
+
+  /* Painel de status (spinner + mensagem rotativa + barra) */
+  .load-status {
+    margin: 26px 0;
+    padding: 30px 28px;
+    background: linear-gradient(135deg, var(--plum) 0%, var(--plum-deep) 100%);
+    border-radius: 18px;
+    color: #FFFFFF;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .load-status::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(255,110,0,0.25) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .load-spinner {
+    width: 40px; height: 40px;
+    margin: 0 auto 16px;
+    border: 3px solid rgba(255,255,255,0.18);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    position: relative;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .load-msg {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 19px;
+    letter-spacing: -0.01em;
+    min-height: 26px;
+    transition: opacity 0.25s ease;
+    position: relative;
+  }
+  .load-msg.fading { opacity: 0; }
+
+  .load-track {
+    margin: 18px auto 8px;
+    max-width: 420px;
+    height: 8px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .load-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--orange) 0%, #FFB066 100%);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .load-pct {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: 0.04em;
+  }
+  .load-status.done .load-spinner { border-top-color: #4ade80; }
+
+  @media (max-width: 640px) {
+    .load-status { padding: 24px 18px; }
+    .load-msg { font-size: 16px; }
+  }
