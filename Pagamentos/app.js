@@ -544,17 +544,63 @@ const UI_Hoje = {
   },
 
   _renderSectionHead() {
+    const exportBtn = DOM.h('button', {
+      class: 'btn-export', type: 'button', title: 'Exportar a tabela para Excel (.xlsx)',
+    }, [DOM.icon('fa-file-excel'), 'Exportar Excel']);
+    exportBtn.addEventListener('click', () => this._exportXlsx());
+    if (!this._data.titulos || !this._data.titulos.length) exportBtn.disabled = true;
+
     return DOM.h('div', { class: 'section-head' }, [
       DOM.h('div', { class: 'section-head-left' }, [
         DOM.h('h2', { class: 'section-title' }, [DOM.icon('fa-check-double'), 'Pagamentos Realizados']),
         DOM.h('p', { class: 'section-sub' },
           `${this._data.quantidade} títulos liquidados · Total R$ ${Utils.fmtBR(this._data.total)}`),
       ]),
-      DOM.h('span', { class: 'date-badge' }, [
-        DOM.icon('fa-calendar-check'),
-        Utils.fmtDate(this._meta.data_hoje),
+      DOM.h('div', { class: 'section-head-right' }, [
+        DOM.h('span', { class: 'date-badge' }, [
+          DOM.icon('fa-calendar-check'),
+          Utils.fmtDate(this._meta.data_hoje),
+        ]),
+        exportBtn,
       ]),
     ]);
+  },
+
+  /* Exporta a tabela de Pagamentos Realizados para um .xlsx (todas as linhas). */
+  _exportXlsx() {
+    if (typeof XLSX === 'undefined') {
+      console.error('[Export] Biblioteca XLSX não carregou.');
+      alert('Não foi possível gerar o Excel: a biblioteca não carregou. Verifique sua conexão e recarregue a página.');
+      return;
+    }
+    const titulos = (this._data && this._data.titulos) || [];
+    const header = ['Tipo', 'Título', 'Fornecedor', 'Histórico', 'Natureza',
+                    'Descrição da Natureza', 'Bordero', 'Valor'];
+    const rows = titulos.map(t => [
+      t.tipo || '',
+      String(t.numero || ''),
+      t.fornecedor || '',
+      t.historico || '',
+      String(t.natureza || ''),
+      NaturezaMap.describe(t.natureza) || '',
+      t.bordero || '',
+      Number(t.valor_rs) || 0,
+    ]);
+    const totalValor = titulos.reduce((s, t) => s + (Number(t.valor_rs) || 0), 0);
+    const aoa = [header, ...rows, [], ['TOTAL', '', '', '', '', '', '', totalValor]];
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{ wch: 8 }, { wch: 12 }, { wch: 36 }, { wch: 42 },
+                   { wch: 12 }, { wch: 30 }, { wch: 14 }, { wch: 16 }];
+    // Formato moeda na coluna "Valor" (coluna H).
+    for (let r = 2; r <= aoa.length; r++) {
+      const cell = ws['H' + r];
+      if (cell && typeof cell.v === 'number') cell.z = 'R$ #,##0.00';
+    }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Pagamentos Realizados');
+    const dia = (this._meta && this._meta.data_hoje) ? this._meta.data_hoje : 'export';
+    XLSX.writeFile(wb, `pagamentos-realizados-${dia}.xlsx`);
   },
 
   _columns() {

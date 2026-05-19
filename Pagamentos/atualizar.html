@@ -662,6 +662,11 @@
     box-shadow: var(--shadow-sm);
   }
   .titulos-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
     padding: 14px 14px 12px;
     border-bottom: 1px solid var(--border-soft);
   }
@@ -673,6 +678,84 @@
     color: var(--ink);
   }
   .titulos-sub { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+
+  /* Campo de busca da lista de títulos */
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    min-width: 240px;
+    flex: 1 1 240px;
+    max-width: 340px;
+    transition: border-color 0.12s;
+  }
+  .search-box:focus-within { border-color: var(--orange); }
+  .search-box i { color: var(--subtle); font-size: 12px; }
+  .search-box input {
+    border: 0;
+    background: transparent;
+    outline: none;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink);
+    width: 100%;
+  }
+  .search-box input::placeholder { color: var(--subtle); }
+
+  /* Aviso de falha ao carregar os manuais */
+  .manuais-aviso {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 12px 0;
+    padding: 10px 14px;
+    background: var(--err-soft);
+    border: 1px solid #F1C2C2;
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: var(--err);
+    font-weight: 600;
+  }
+  .manuais-aviso button {
+    border: 1px solid var(--err);
+    background: var(--surface);
+    color: var(--err);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .manuais-aviso button:hover { background: var(--err); color: #fff; }
+
+  /* Botão de ação destrutiva (limpar) */
+  .btn-danger {
+    background: var(--surface);
+    color: var(--err);
+    border: 1px solid #F1C2C2;
+  }
+  .btn-danger:hover { background: var(--err-soft); border-color: var(--err); }
+  .modal-danger-opts { display: flex; flex-direction: column; gap: 8px; }
+  .radio-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+  }
+  .radio-row:hover { border-color: var(--orange); }
+  .radio-row input { margin-top: 2px; accent-color: var(--orange); }
+  .radio-row .ro-title { font-weight: 700; font-size: 13px; color: var(--ink); }
+  .radio-row .ro-sub { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
   .titulos-list {
     list-style: none;
     margin: 0;
@@ -971,8 +1054,18 @@
 
     <div id="titulos-wrap" class="titulos-card" style="display:none">
       <div class="titulos-head">
-        <h4><i class="fa-solid fa-list-check"></i> Conferir pagamentos de hoje</h4>
-        <p class="titulos-sub">Desmarque um título para não enviá-lo &middot; use a lixeira para removê-lo da lista.</p>
+        <div>
+          <h4><i class="fa-solid fa-list-check"></i> Conferir pagamentos de hoje</h4>
+          <p class="titulos-sub">Desmarque para não enviar &middot; lixeira remove da lista.</p>
+        </div>
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="titulos-search" type="text" placeholder="Buscar fornecedor ou histórico…" autocomplete="off">
+        </div>
+      </div>
+      <div id="manuais-aviso" class="manuais-aviso" style="display:none">
+        <span><i class="fa-solid fa-triangle-exclamation"></i> Não consegui carregar os pagamentos manuais já salvos no Sheets.</span>
+        <button type="button" id="btn-recarregar-manuais">Tentar de novo</button>
       </div>
       <ul id="titulos-list" class="titulos-list"></ul>
       <div class="titulos-foot">
@@ -1007,6 +1100,9 @@
       <button class="btn btn-ghost" id="btn-add-manual">
         <i class="fa-solid fa-plus"></i> Adicionar manual
       </button>
+      <button class="btn btn-danger" id="btn-limpar">
+        <i class="fa-solid fa-eraser"></i> Limpar dados
+      </button>
       <button class="btn btn-ghost" id="btn-reset">
         <i class="fa-solid fa-rotate-left"></i> Recomeçar
       </button>
@@ -1017,7 +1113,8 @@
       <h3><i class="fa-solid fa-list-check"></i> Como usar</h3>
       <ol>
         <li><strong>Arraste as planilhas:</strong> RELATÓRIO_CONTAS_A_PAGAR + 3 Consultas do Totvs (e Naturezas, se houver mudança).</li>
-        <li><strong>Clique em "Enviar pro Google Sheets"</strong> — os dados são processados no navegador e enviados direto pra planilha.</li>
+        <li><strong>Confira a lista:</strong> use a busca para achar um título, desmarque ou remova o que não deve ir, e use <em>"Adicionar manual"</em> para pagamentos fora do Totvs.</li>
+        <li><strong>Clique em "Enviar pro Google Sheets"</strong> — só as abas que você processou são atualizadas; os manuais ficam guardados separados e não somem.</li>
         <li><strong>O dashboard atualiza sozinho:</strong> abra o <a href="index.html">index.html</a> e os dados já estarão lá, com "hoje" e "amanhã" calculados automaticamente em dias úteis.</li>
       </ol>
     </div>
@@ -1077,6 +1174,52 @@
       <button class="btn btn-ghost" id="modal-cancel" type="button">Cancelar</button>
       <button class="btn btn-primary" id="modal-save" type="button">
         <i class="fa-solid fa-check"></i> Adicionar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-limpar">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="ml-title">
+    <div class="modal-head">
+      <h3 id="ml-title"><i class="fa-solid fa-eraser"></i> Limpar dados do Sheets</h3>
+      <button class="modal-close" id="ml-close" type="button" aria-label="Fechar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="margin:0 0 14px;font-size:13px;color:var(--muted)">
+        Escolha o que apagar. A ação é imediata e <strong>não tem desfazer</strong>.
+      </p>
+      <div class="modal-danger-opts">
+        <label class="radio-row">
+          <input type="radio" name="ml-alvo" value="totvs">
+          <span>
+            <span class="ro-title">Dados do Totvs</span>
+            <span class="ro-sub">Apaga PagoHoje, NF Serviço, NF Título e Reembolso. Mantém os manuais.</span>
+          </span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="ml-alvo" value="manuais">
+          <span>
+            <span class="ro-title">Pagamentos manuais</span>
+            <span class="ro-sub">Apaga só a aba PagoHojeManual. Mantém os dados do Totvs.</span>
+          </span>
+        </label>
+        <label class="radio-row">
+          <input type="radio" name="ml-alvo" value="tudo">
+          <span>
+            <span class="ro-title">Tudo</span>
+            <span class="ro-sub">Zera todas as abas. O dashboard volta para o estado "sem dados".</span>
+          </span>
+        </label>
+      </div>
+      <p class="modal-error" id="ml-error" hidden></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="ml-cancel" type="button">Cancelar</button>
+      <button class="btn btn-danger" id="ml-confirm" type="button">
+        <i class="fa-solid fa-trash-can"></i> Limpar
       </button>
     </div>
   </div>
@@ -1446,8 +1589,11 @@ const state = {
   files: [], store: null, naturezas: null, data: null,
   titMeta: [],          // [{removed, selected}] paralelo a store.protheus
   manuais: [],          // pagamentos manuais [{...titulo, _id, _selected, _removed}]
+  manuaisLoaded: null,  // null=carregando · true=ok · false=falhou
+  titFilter: '',        // texto do campo de busca da lista
   _protheusRef: null,   // referência do array protheus (detecta reprocessamento)
-  payload: null,        // payload final pronto para envio
+  _totvsSel: [],        // títulos do Totvs selecionados (preenchido por recomputar)
+  _manuaisSel: [],      // manuais selecionados (preenchido por recomputar)
 };
 let manualSeq = 0;
 const el = id => document.getElementById(id);
@@ -1563,21 +1709,26 @@ function render() {
 
   // ----- botões -----
   const temOperacional = ['protheus','nf_servico','nf_titulo','reembolso'].some(k => state.store[k].length);
-  const temManualAtivo = state.manuais.some(m => !m._removed && m._selected);
+  const temManualAtivo = state.manuais.some(m => !m._removed);
   el('btn-enviar').disabled = !(temOperacional || temManualAtivo);
   const temNaturezas = state.naturezas && Object.keys(state.naturezas).length > 0;
   el('btn-download-nat').disabled = !temNaturezas;
+  // Só permite adicionar manual depois que a lista atual carregou (evita sobrescrever).
+  el('btn-add-manual').disabled = state.manuaisLoaded !== true;
+  el('btn-add-manual').title = state.manuaisLoaded === true ? ''
+    : (state.manuaisLoaded === null ? 'Carregando pagamentos manuais…'
+       : 'Recarregue a lista de manuais antes de adicionar');
 
   // ----- hint -----
   const tiposFaltando = ['protheus','nf_servico','nf_titulo','reembolso'].filter(k => !state.store[k].length);
   const partes = [];
   if (temOperacional) {
-    partes.push(tiposFaltando.length ? `Faltam: ${tiposFaltando.join(', ')}` : 'pronto para enviar');
+    partes.push(tiposFaltando.length ? `Faltam: ${tiposFaltando.join(', ')}` : 'Totvs pronto');
   }
-  if (temNaturezas) partes.push(`${Object.keys(state.naturezas).length} naturezas mapeadas`);
-  if (state.manuais.filter(m => !m._removed).length) {
-    partes.push(`${state.manuais.filter(m => !m._removed).length} manual(is)`);
-  }
+  if (temNaturezas) partes.push(`${Object.keys(state.naturezas).length} naturezas`);
+  const nMan = state.manuais.filter(m => !m._removed).length;
+  if (nMan) partes.push(`${nMan} manual(is)`);
+  if (state.manuaisLoaded === null) partes.push('carregando manuais…');
   el('hint').textContent = partes.length ? partes.join(' · ') : 'Processe um arquivo ou adicione um pagamento manual';
 }
 
@@ -1604,10 +1755,10 @@ function downloadNaturezas() {
 }
 
 async function enviar() {
-  recomputar();
-  if (!state.payload) return;
+  const payload = montarPayload();
+  if (Object.keys(payload).length === 0) { toast('Nada para enviar.'); return; }
   const url = CONFIG.APP_SCRIPT_URL || '';
-  if (!url || url.includes('SEU_ID_AQUI') || url.includes('COLE_A_URL') || !/^https?:\/\//.test(url)) {
+  if (!url || !/^https?:\/\//.test(url) || url.includes('SEU_ID_AQUI')) {
     toast('⚠️ Configure a URL do App Script no código (CONFIG.APP_SCRIPT_URL)!');
     return;
   }
@@ -1618,7 +1769,7 @@ async function enviar() {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(state.payload),
+      body: JSON.stringify(payload),
     });
 
     // Com no-cors não dá pra ler a resposta — sem erro de rede = enviado.
@@ -1648,12 +1799,13 @@ function reset() {
   state.naturezas = null;
   state.data = null;
   state.titMeta = [];
-  state.manuais = [];
   state._protheusRef = null;
-  state.payload = null;
-  render();
+  state.titFilter = '';
+  const busca = el('titulos-search');
+  if (busca) busca.value = '';
   el('file-input').value = '';
-  toast('Limpado');
+  toast('Sessão reiniciada');
+  carregarManuais();   // recarrega os manuais já salvos e re-renderiza
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1670,6 +1822,13 @@ document.addEventListener('DOMContentLoaded', () => {
   el('btn-download-nat').addEventListener('click', downloadNaturezas);
   el('btn-reset').addEventListener('click', reset);
 
+  // ----- busca na lista de títulos -----
+  el('titulos-search').addEventListener('input', e => {
+    state.titFilter = e.target.value;
+    renderTitulos();
+  });
+  el('btn-recarregar-manuais').addEventListener('click', carregarManuais);
+
   // ----- modal de pagamento manual -----
   el('btn-add-manual').addEventListener('click', abrirModalManual);
   el('modal-close').addEventListener('click', fecharModalManual);
@@ -1678,23 +1837,32 @@ document.addEventListener('DOMContentLoaded', () => {
   el('modal-manual').addEventListener('click', e => {
     if (e.target === el('modal-manual')) fecharModalManual();
   });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') fecharModalManual();
-  });
   el('modal-manual').addEventListener('keydown', e => {
     if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); salvarManual(); }
   });
 
-  render();
+  // ----- modal de limpar dados -----
+  el('btn-limpar').addEventListener('click', abrirModalLimpar);
+  el('ml-close').addEventListener('click', fecharModalLimpar);
+  el('ml-cancel').addEventListener('click', fecharModalLimpar);
+  el('ml-confirm').addEventListener('click', confirmarLimpar);
+  el('modal-limpar').addEventListener('click', e => {
+    if (e.target === el('modal-limpar')) fecharModalLimpar();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { fecharModalManual(); fecharModalLimpar(); }
+  });
+
+  carregarManuais();   // carrega os manuais já salvos no Sheets e faz o 1º render
 });
 
 /* ============================================================================
    CONFERÊNCIA DE TÍTULOS + PAGAMENTOS MANUAIS
    ============================================================================ */
 
-/* Recalcula o payload a partir dos títulos selecionados + manuais.
-   Devolve os totais para o resumo. Os manuais vão SEPARADOS no payload
-   (o App Script grava na aba PagoHojeManual e o doGet junta tudo).        */
+/* Recalcula os títulos selecionados (Totvs + manuais) e os totais do resumo.
+   Não monta o payload — isso é feito por montarPayload() no momento do envio. */
 function recomputar() {
   state.store = state.store || { protheus: [], nf_servico: [], nf_titulo: [], reembolso: [] };
   ['protheus','nf_servico','nf_titulo','reembolso'].forEach(k => state.store[k] = state.store[k] || []);
@@ -1710,22 +1878,17 @@ function recomputar() {
     return m && !m.removed && m.selected;
   });
   const manuaisSel = state.manuais.filter(m => !m._removed && m._selected);
+  state._totvsSel = totvsSel;
+  state._manuaisSel = manuaisSel;
 
-  // agregar() apenas com os títulos do Totvs selecionados.
+  // agregar() apenas com os títulos do Totvs selecionados (para o resumo).
   const ag = agregar({
     protheus: totvsSel,
     nf_servico: state.store.nf_servico,
     nf_titulo: state.store.nf_titulo,
     reembolso: state.store.reembolso,
   });
-
   state.data = ag;
-  state.payload = {
-    pago_hoje: ag.pago_hoje,
-    pago_hoje_manual: manuaisSel.map(limparManual),
-    previsto_amanha: ag.previsto_amanha,
-  };
-  if (state.naturezas) state.payload.naturezas = state.naturezas;
 
   const manuaisTotal = manuaisSel.reduce((s, m) => s + (Number(m.valor_rs) || 0), 0);
   return {
@@ -1734,6 +1897,67 @@ function recomputar() {
     prevTotal: ag.previsto_amanha.total,
     prevQtd:   ag.previsto_amanha.quantidade,
   };
+}
+
+/* Quais tipos de planilha foram processados nesta sessão. */
+function tiposProcessados() {
+  const has = t => state.files.some(f => f.ok && f.tipo === t);
+  return {
+    protheus:   has('protheus') || has('relatorio_pagos'),
+    nf_servico: has('nf_servico'),
+    nf_titulo:  has('nf_titulo'),
+    reembolso:  has('reembolso'),
+  };
+}
+
+/* Monta o payload PLANO. Cada chave só entra se foi processada/carregada —
+   assim o App Script só regrava as abas correspondentes (Path B). */
+function montarPayload() {
+  recomputar();
+  const proc = tiposProcessados();
+  const payload = {};
+  if (proc.protheus)   payload.pago_hoje  = state._totvsSel;
+  if (proc.nf_servico) payload.nf_servico = state.store.nf_servico;
+  if (proc.nf_titulo)  payload.nf_titulo  = state.store.nf_titulo;
+  if (proc.reembolso)  payload.reembolso  = state.store.reembolso;
+  if (state.naturezas) payload.naturezas  = state.naturezas;
+  // Manuais só entram se a lista atual carregou com sucesso (senão, risco de apagar).
+  if (state.manuaisLoaded === true) {
+    payload.pago_hoje_manual = state._manuaisSel.map(limparManual);
+  }
+  return payload;
+}
+
+/* Carrega do Sheets os pagamentos manuais já salvos (Path B). */
+async function carregarManuais() {
+  state.manuaisLoaded = null;
+  render();
+  const url = CONFIG.APP_SCRIPT_URL || '';
+  if (!url || !/^https?:\/\//.test(url) || url.includes('SEU_ID_AQUI')) {
+    state.manuais = [];
+    state.manuaisLoaded = false;
+    render();
+    return;
+  }
+  try {
+    const r = await fetch(url + '?manuais=1&v=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const arr = await r.json();
+    state.manuais = (Array.isArray(arr) ? arr : []).map(m => Object.assign({}, m, {
+      _id: ++manualSeq, _selected: true, _removed: false,
+    }));
+    state.manuaisLoaded = true;
+  } catch (err) {
+    state.manuais = [];
+    state.manuaisLoaded = false;
+    console.error('Falha ao carregar pagamentos manuais:', err);
+  }
+  render();
+}
+
+/* Normaliza texto para busca (minúsculas, sem acento). */
+function normaliza(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
 /* Remove os campos de controle de UI antes de enviar. */
@@ -1745,18 +1969,24 @@ function limparManual(m) {
   return o;
 }
 
-/* Monta a lista de conferência (títulos do Totvs + manuais). */
+/* Monta a lista de conferência (títulos do Totvs + manuais) com busca. */
 function renderTitulos() {
   const wrap = el('titulos-wrap');
   const protheus = (state.store && state.store.protheus) || [];
   const manuaisVisiveis = state.manuais.filter(m => !m._removed);
-  const temAlgo = protheus.length > 0 || manuaisVisiveis.length > 0;
-  wrap.style.display = temAlgo ? 'block' : 'none';
-  if (!temAlgo) return;
+  const mostrarCard = protheus.length > 0 || manuaisVisiveis.length > 0 || state.manuaisLoaded === false;
+  wrap.style.display = mostrarCard ? 'block' : 'none';
+  if (!mostrarCard) return;
+
+  el('manuais-aviso').style.display = state.manuaisLoaded === false ? 'flex' : 'none';
 
   const list = el('titulos-list');
   list.innerHTML = '';
-  let selCount = 0, total = 0, totalLinhas = 0;
+  const filtro = normaliza(state.titFilter);
+  const passa = (forn, hist) => !filtro ||
+    normaliza(forn).indexOf(filtro) >= 0 || normaliza(hist).indexOf(filtro) >= 0;
+
+  let selCount = 0, total = 0, totalLinhas = 0, mostrados = 0;
 
   // títulos do Totvs
   protheus.forEach((t, i) => {
@@ -1764,6 +1994,8 @@ function renderTitulos() {
     if (!meta || meta.removed) return;
     totalLinhas++;
     if (meta.selected) { selCount++; total += Number(t.valor_rs) || 0; }
+    if (!passa(t.fornecedor, t.historico)) return;
+    mostrados++;
     list.appendChild(montaLinhaTitulo({
       selected: meta.selected,
       fornecedor: t.fornecedor || '—',
@@ -1781,6 +2013,8 @@ function renderTitulos() {
     if (m._removed) return;
     totalLinhas++;
     if (m._selected) { selCount++; total += Number(m.valor_rs) || 0; }
+    if (!passa(m.fornecedor, m.historico)) return;
+    mostrados++;
     list.appendChild(montaLinhaTitulo({
       selected: m._selected,
       fornecedor: m.fornecedor || '—',
@@ -1794,14 +2028,22 @@ function renderTitulos() {
   });
 
   if (totalLinhas === 0) {
-    const li = document.createElement('li');
-    li.className = 'titulos-empty';
-    li.textContent = 'Nenhum título — todos foram removidos da lista.';
-    list.appendChild(li);
+    list.appendChild(linhaVazia('Nenhum pagamento na lista no momento.'));
+  } else if (mostrados === 0) {
+    list.appendChild(linhaVazia('Nenhum resultado para "' + state.titFilter + '".'));
   }
 
-  el('titulos-counter').textContent = `${selCount} de ${totalLinhas} selecionados`;
+  let txt = `${selCount} de ${totalLinhas} selecionados`;
+  if (filtro) txt += ` · mostrando ${mostrados}`;
+  el('titulos-counter').textContent = txt;
   el('titulos-total').textContent = `Total: R$ ${fmtBR(total)}`;
+}
+
+function linhaVazia(msg) {
+  const li = document.createElement('li');
+  li.className = 'titulos-empty';
+  li.textContent = msg;
+  return li;
 }
 
 function montaLinhaTitulo(opt) {
@@ -1928,6 +2170,55 @@ function salvarManual() {
   fecharModalManual();
   toast('Pagamento manual adicionado');
   render();
+}
+
+/* --------------------------- MODAL LIMPAR ------------------------------- */
+
+function abrirModalLimpar() {
+  el('ml-error').hidden = true;
+  document.querySelectorAll('input[name="ml-alvo"]').forEach(r => { r.checked = false; });
+  el('modal-limpar').classList.add('show');
+}
+
+function fecharModalLimpar() {
+  el('modal-limpar').classList.remove('show');
+}
+
+async function confirmarLimpar() {
+  const sel = document.querySelector('input[name="ml-alvo"]:checked');
+  const erroEl = el('ml-error');
+  if (!sel) {
+    erroEl.textContent = 'Escolha o que limpar.';
+    erroEl.hidden = false;
+    return;
+  }
+  const alvo = sel.value;
+  const url = CONFIG.APP_SCRIPT_URL || '';
+  if (!url || !/^https?:\/\//.test(url) || url.includes('SEU_ID_AQUI')) {
+    erroEl.textContent = 'URL do App Script não configurada no código.';
+    erroEl.hidden = false;
+    return;
+  }
+
+  fecharModalLimpar();
+  showOverlay(true);
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'limpar', alvo: alvo }),
+    });
+    const nomes = { totvs: 'dados do Totvs', manuais: 'pagamentos manuais', tudo: 'todos os dados' };
+    toast('🧹 Limpo: ' + (nomes[alvo] || alvo));
+  } catch (err) {
+    toast('❌ Erro ao limpar: ' + (err.message || err));
+  } finally {
+    showOverlay(false);
+  }
+
+  // Recarrega os manuais para refletir o estado novo do Sheets.
+  setTimeout(carregarManuais, 1500);
 }
 </script>
 </body>
