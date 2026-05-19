@@ -5,7 +5,7 @@
    ============================================================================ */
 const CONFIG = Object.freeze({
   // ⬇️ SUBSTITUA PELA URL DO SEU WEB APP APÓS O DEPLOY
-  DATA_URL: 'https://script.google.com/macros/s/AKfycbwRrQ-yghRj1hoZfcZMQSkrcwzUQV-t1eCn_IRFewrsOmXUJVwaNrFZSCCSvkq8eZDX8g/exec',
+  DATA_URL: 'https://script.google.com/macros/s/AKfycbzm2fFfi9BtOlK4u6Ffq3BK0Q24P_59510wAeYduAxqWnZiO0j3MqOgAygDtkPKalZo/exec',
   NATUREZAS_URL: 'naturezas.json',
   FETCH_RETRIES: 3,
   FETCH_BACKOFF_MS: 600,
