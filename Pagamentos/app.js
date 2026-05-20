@@ -431,7 +431,9 @@ const UI_Dashboard = {
 
   _renderKPIs(data) {
     const { pago_hoje: hoje, previsto_amanha: prev, meta } = data;
-    const maiorForn = (hoje.maior && hoje.maior.fornecedor) ? hoje.maior.fornecedor : '—';
+    const maiorNat = (hoje.maior && hoje.maior.natureza)
+      ? (NaturezaMap.describe(hoje.maior.natureza) || `Natureza ${hoje.maior.natureza}`)
+      : '—';
 
     return DOM.h('div', { class: 'kpi-grid' }, [
       this._buildKPI({
@@ -447,7 +449,7 @@ const UI_Dashboard = {
       this._buildKPI({
         icon: 'fa-trophy', label: 'Maior pagamento hoje',
         value: (hoje.maior && hoje.maior.valor) || 0,
-        subNode: DOM.h('span', { title: maiorForn }, Utils.truncate(maiorForn, 30)),
+        subNode: DOM.h('span', { title: maiorNat }, Utils.truncate(maiorNat, 30)),
       }),
       this._buildKPIPlain({
         icon: 'fa-triangle-exclamation', label: 'Pend. de aprovação',
@@ -566,7 +568,8 @@ const UI_Hoje = {
     ]);
   },
 
-  /* Exporta a tabela de Pagamentos Realizados para um .xlsx (todas as linhas). */
+  /* Exporta a tabela de Pagamentos Realizados para .xlsx no modelo do
+     RELATÓRIO CONTAS A PAGAR (12 colunas + título + linha de total). */
   _exportXlsx() {
     if (typeof XLSX === 'undefined') {
       console.error('[Export] Biblioteca XLSX não carregou.');
@@ -574,33 +577,116 @@ const UI_Hoje = {
       return;
     }
     const titulos = (this._data && this._data.titulos) || [];
-    const header = ['Tipo', 'Título', 'Fornecedor', 'Histórico', 'Natureza',
-                    'Descrição da Natureza', 'Bordero', 'Valor'];
-    const rows = titulos.map(t => [
-      t.tipo || '',
-      String(t.numero || ''),
-      t.fornecedor || '',
-      t.historico || '',
-      String(t.natureza || ''),
-      NaturezaMap.describe(t.natureza) || '',
-      t.bordero || '',
-      Number(t.valor_rs) || 0,
-    ]);
-    const totalValor = titulos.reduce((s, t) => s + (Number(t.valor_rs) || 0), 0);
-    const aoa = [header, ...rows, [], ['TOTAL', '', '', '', '', '', '', totalValor]];
+
+    const fmtDateBR = iso => {
+      if (!iso) return '';
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso);
+    };
+    // Devolve número quando o valor é só dígitos (para Natureza, Conta Fluxo, Bordero etc.).
+    const numOrStr = v => {
+      if (v === null || v === undefined || v === '') return '';
+      const s = String(v).trim();
+      return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : s;
+    };
+
+    const dataHoje = (this._meta && this._meta.data_hoje) || '';
+    const dataLabel = fmtDateBR(dataHoje) || '—';
+
+    // 13 colunas — espelho fiel do RELATÓRIO CONTAS A PAGAR ON TIME +
+    // uma coluna nova "Desc. Natureza" logo ao lado do código.
+    const COLS = [
+      { h: 'Banco',          get: t => t.banco || '',                         w:  7.0, center: true },
+      { h: 'No. Titulo',     get: t => numOrStr(t.numero),                    w: 12.2, center: true },
+      { h: 'Tipo',           get: t => t.tipo || '',                          w:  7.2, center: true },
+      { h: 'Natureza',       get: t => numOrStr(t.natureza),                  w: 11.3, center: true },
+      { h: 'Desc. Natureza', get: t => NaturezaMap.describe(t.natureza) || '',w: 28.0 },
+      { h: 'Conta Fluxo C',  get: t => numOrStr(t.conta_fluxo),               w:  9.0, center: true },
+      { h: 'Fluxo Caixa',    get: t => t.fluxo_caixa || '',                   w: 25.1 },
+      { h: 'Nome Fornece',   get: t => t.fornecedor || '',                    w: 18.8 },
+      { h: 'Vencto Real',    get: t => fmtDateBR(t.vencimento),               w: 13.4, center: true, peach: true },
+      { h: 'Vlr.Titulo',     get: t => Number(t.valor) || 0,                  w: 11.3, num: true },
+      { h: 'Historico',      get: t => t.historico || '',                     w: 36.3 },
+      { h: 'Saldo',          get: t => Number(t.valor_rs) || 0,               w: 11.6, num: true },
+      { h: 'Bordero',        get: t => numOrStr(t.bordero),                   w:  9.9, center: true },
+    ];
+    const N = COLS.length;
+
+    // Layout do relatório original:
+    // r1 vazia · r2 título (mesclado) · r3 vazia · r4 header · r5+ dados · 2 vazias · total
+    const aoa = [];
+    aoa.push([]);                                                    // r1
+    aoa.push([`RELATÓRIO CONTAS A PAGAR ON TIME - ${dataLabel}`]);    // r2 (mesclado)
+    aoa.push([]);                                                    // r3
+    aoa.push(COLS.map(c => c.h));                                    // r4: header
+    titulos.forEach(t => aoa.push(COLS.map(c => c.get(t))));         // r5+: dados
+    aoa.push([]);                                                    // vazia
+    aoa.push([]);                                                    // vazia
+    const idxHist  = COLS.findIndex(c => c.h === 'Historico');
+    const idxSaldo = COLS.findIndex(c => c.h === 'Saldo');
+    const total = titulos.reduce((s, t) => s + (Number(t.valor_rs) || 0), 0);
+    const linhaTotal = new Array(N).fill('');
+    linhaTotal[idxHist]  = 'TOTAL A PAGAR ';
+    linhaTotal[idxSaldo] = total;
+    aoa.push(linhaTotal);
 
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{ wch: 8 }, { wch: 12 }, { wch: 36 }, { wch: 42 },
-                   { wch: 12 }, { wch: 30 }, { wch: 14 }, { wch: 16 }];
-    // Formato moeda na coluna "Valor" (coluna H).
-    for (let r = 2; r <= aoa.length; r++) {
-      const cell = ws['H' + r];
-      if (cell && typeof cell.v === 'number') cell.z = 'R$ #,##0.00';
+    ws['!cols'] = COLS.map(c => ({ wch: c.w }));
+    ws['!merges'] = [{ s: { r: 1, c: 0 }, e: { r: 1, c: N - 1 } }];
+    ws['!rows'] = [{ hpt: 6 }, { hpt: 22 }, { hpt: 6 }, { hpt: 20 }];
+
+    const PEACH  = 'F8CBAD';
+    const ORANGE = 'FFC000';
+    const ACCFMT = '_-* #,##0.00_-;\\-* #,##0.00_-;_-* "-"??_-;_-@_-';
+    const lastRow = aoa.length;
+    const firstData = 4;
+    const lastData  = 4 + titulos.length - 1;
+
+    for (let r = 0; r < lastRow; r++) {
+      for (let c = 0; c < N; c++) {
+        const addr = XLSX.utils.encode_cell({ r: r, c: c });
+        let cell = ws[addr];
+        if (!cell) { cell = { v: '', t: 's' }; ws[addr] = cell; }
+
+        if (r === 1) {                       // título mesclado
+          cell.s = {
+            font: { bold: true, sz: 12, color: { rgb: '7B3F00' } },
+            fill: { patternType: 'solid', fgColor: { rgb: PEACH } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+          };
+        } else if (r === 3) {                // header
+          cell.s = {
+            font: { bold: true, sz: 9 },
+            fill: { patternType: 'solid', fgColor: { rgb: PEACH } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          };
+        } else if (r === lastRow - 1) {      // linha do TOTAL
+          const halign = (c === idxHist || c === idxSaldo) ? 'right' : 'center';
+          cell.s = {
+            font: { bold: true, sz: 9 },
+            alignment: { horizontal: halign, vertical: 'center' },
+          };
+          if (c === idxSaldo) cell.z = ACCFMT;
+        } else if (r >= firstData && r <= lastData) {  // linhas de dados
+          const def = COLS[c];
+          const halign = def.center ? 'center' : (def.num ? 'right' : 'left');
+          let fillColor = null;
+          if (c === 0) fillColor = ORANGE;       // Banco
+          else if (def.peach) fillColor = PEACH; // Vencto Real
+          const style = {
+            font: { sz: 8 },
+            alignment: { horizontal: halign, vertical: 'center' },
+          };
+          if (fillColor) style.fill = { patternType: 'solid', fgColor: { rgb: fillColor } };
+          cell.s = style;
+          if (def.num) cell.z = ACCFMT;
+        }
+      }
     }
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Pagamentos Realizados');
-    const dia = (this._meta && this._meta.data_hoje) ? this._meta.data_hoje : 'export';
-    XLSX.writeFile(wb, `pagamentos-realizados-${dia}.xlsx`);
+    XLSX.writeFile(wb, `pagamentos-realizados-${dataHoje || 'export'}.xlsx`);
   },
 
   _columns() {
@@ -618,6 +704,18 @@ const UI_Hoje = {
       { key: 'valor_rs',   label: 'Valor',
         num: true, strong: true, center: true,
         renderCell: t => `R$ ${Utils.fmtBR(t.valor_rs)}` },
+      { key: '_acoes',     label: '', center: true, noSort: true,
+        renderCell: t => {
+          const btn = DOM.h('button', {
+            class: 'btn-row-action', type: 'button',
+            title: 'Postergar este pagamento para amanhã',
+          }, [DOM.icon('fa-clock-rotate-left'), 'Amanhã']);
+          btn.addEventListener('click', e => {
+            e.stopPropagation();
+            App.postergar(t);
+          });
+          return btn;
+        } },
     ];
   },
 
@@ -807,6 +905,12 @@ const UI_Previsto = {
       { key: 'nf_titulo',  label: 'Contas',          icon: 'fa-file-invoice', data: this._data.nf_titulo },
       { key: 'reembolso',  label: 'Reembolsos',     icon: 'fa-receipt',      data: this._data.reembolso },
     ];
+    if (this._data.postergados && this._data.postergados.length) {
+      this._cats.push({
+        key: 'postergados', label: 'Postergados', icon: 'fa-clock-rotate-left',
+        data: this._data.postergados,
+      });
+    }
 
     const activeCat = this._cats.reduce((a, b) => a.data.length >= b.data.length ? a : b).key;
 
@@ -877,6 +981,18 @@ const UI_Previsto = {
         common.aprovador,
         common.status,
         common.valor,
+      ];
+    }
+    if (catKey === 'postergados') {
+      return [
+        { key: 'tipo',       label: 'Tipo',       renderCell: r => DOM.pill(r.tipo || '?', Utils.pillClass(r.tipo)) },
+        { key: 'numero',     label: 'Título',     renderCell: r => String(r.numero || '—') },
+        { key: 'fornecedor', label: 'Fornecedor', renderCell: r => buildFornecedorCell(r.fornecedor, r.historico) },
+        { key: 'natureza',   label: 'Desc. Nat.', renderCell: r => buildDescNatCell(r.natureza) },
+        { key: 'bordero',    label: 'Bordero',    center: true,
+          renderCell: r => buildBorderoCell(r.bordero) },
+        { key: 'valor_rs',   label: 'Valor',      num: true, strong: true, center: true,
+          renderCell: r => `R$ ${Utils.fmtBR(r.valor_rs)}` },
       ];
     }
     return [
@@ -1291,6 +1407,40 @@ const UI_Loading = {
 };
 
 /* ============================================================================
+   showConfirm — modal de confirmação leve construído em JS
+   ============================================================================ */
+function showConfirm({ icon, title, message, details, confirmLabel, onConfirm }) {
+  const close = () => overlay.remove();
+  const cancelBtn = DOM.h('button', { class: 'cf-btn cf-cancel', type: 'button' }, 'Cancelar');
+  const okBtn = DOM.h('button', { class: 'cf-btn cf-confirm', type: 'button' },
+    confirmLabel || 'Confirmar');
+  cancelBtn.addEventListener('click', close);
+  okBtn.addEventListener('click', () => { close(); onConfirm && onConfirm(); });
+
+  const body = [
+    DOM.h('h3', { class: 'cf-title' }, [
+      icon ? DOM.icon(icon) : null,
+      title || 'Confirmar?',
+    ].filter(Boolean)),
+    DOM.h('p', { class: 'cf-text' }, message || ''),
+  ];
+  if (details) body.push(DOM.h('p', { class: 'cf-details' }, details));
+
+  const overlay = DOM.h('div', { class: 'cf-overlay' }, [
+    DOM.h('div', { class: 'cf-modal', role: 'dialog', 'aria-modal': 'true' }, [
+      DOM.h('div', { class: 'cf-body' }, body),
+      DOM.h('div', { class: 'cf-foot' }, [cancelBtn, okBtn]),
+    ]),
+  ]);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  const onKey = e => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
+
+  document.body.appendChild(overlay);
+  setTimeout(() => okBtn.focus(), 40);
+}
+
+/* ============================================================================
    APP
    ============================================================================ */
 const App = {
@@ -1324,6 +1474,58 @@ const App = {
     container.appendChild(UI_Dashboard.render(data));
     container.appendChild(UI_Hoje.render(data));
     container.appendChild(UI_Previsto.render(data));
+  },
+
+  /* Re-busca os dados e re-renderiza tudo (sem o loading inicial, mais leve). */
+  async refresh() {
+    try {
+      const [data, naturezas] = await Promise.all([
+        DataService.loadData(),
+        DataService.loadNaturezas(),
+      ]);
+      NaturezaMap.set(naturezas);
+      UI_Sidebar.updateStamp(data);
+      this._renderAll(data);
+      ScrollSpy.init();
+    } catch (err) {
+      console.error('[App] Falha ao recarregar:', err);
+      this._renderError(err);
+    }
+  },
+
+  /* Move um título de Pagamentos Realizados para Postergados (amanhã). */
+  postergar(titulo) {
+    if (!titulo) return;
+    const valor = 'R$ ' + Utils.fmtBR(titulo.valor_rs || 0);
+    const forn  = titulo.fornecedor || '—';
+    showConfirm({
+      icon: 'fa-clock-rotate-left',
+      title: 'Postergar para amanhã?',
+      message: `Este pagamento sairá de Pagamentos Realizados e entrará na Prévia de amanhã, na lista de "Postergados".`,
+      details: `${forn} · ${valor}`,
+      confirmLabel: 'Postergar',
+      onConfirm: async () => {
+        const url = CONFIG.DATA_URL || '';
+        if (!url || !/^https?:\/\//.test(url)) {
+          alert('URL do App Script não configurada.');
+          return;
+        }
+        try {
+          await fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acao: 'postergar', titulo: titulo }),
+          });
+          // Pequena espera p/ o App Script processar + cache ser limpo.
+          await Utils.delay(900);
+          await this.refresh();
+        } catch (err) {
+          console.error('[App] Falha ao postergar:', err);
+          alert('Erro ao postergar: ' + (err.message || err));
+        }
+      },
+    });
   },
 
   _renderError(err) {

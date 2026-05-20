@@ -1207,6 +1207,13 @@
           </span>
         </label>
         <label class="radio-row">
+          <input type="radio" name="ml-alvo" value="postergados">
+          <span>
+            <span class="ro-title">Postergados</span>
+            <span class="ro-sub">Apaga só a aba Postergados. Os títulos voltam a aparecer no PagoHoje no próximo envio do Totvs.</span>
+          </span>
+        </label>
+        <label class="radio-row">
           <input type="radio" name="ml-alvo" value="tudo">
           <span>
             <span class="ro-title">Tudo</span>
@@ -1342,6 +1349,10 @@ async function detectType(file) {
   if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
     const buf = await readAsArrayBuffer(file);
     const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+    // Atalho: se houver uma aba "NATUREZA X FLUXO", o arquivo é o relatório de naturezas.
+    if (wb.SheetNames.some(n => /natureza\s*x\s*fluxo/i.test(String(n)))) {
+      return 'naturezas';
+    }
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
     const norm = s => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -1367,11 +1378,36 @@ async function detectType(file) {
   return 'desconhecido';
 }
 
+/* Normaliza um cabeçalho para comparação (minúsculas, sem acento/pontuação). */
+function normHdr(s) {
+  return safeStr(s).toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+}
+/* Acha o índice do cabeçalho que contém TODAS as palavras-chave. -1 se não achar. */
+function acharIdx(headers, kws) {
+  for (let i = 0; i < headers.length; i++) {
+    const h = normHdr(headers[i]);
+    if (kws.every(k => h.indexOf(k) >= 0)) return i;
+  }
+  return -1;
+}
+/* Igual ao acharIdx, mas devolve o NOME do campo (p/ linhas em objeto). */
+function acharCampo(campos, kws) {
+  for (const c of campos) {
+    const h = normHdr(c);
+    if (kws.every(k => h.indexOf(k) >= 0)) return c;
+  }
+  return null;
+}
+
 async function parseProtheus(file) {
   const text = await readAsText(file, 'iso-8859-1');
   const lines = text.split(/\r?\n/);
   const body = lines.slice(2).join('\n');
   const parsed = Papa.parse(body, { header: true, delimiter: ';', skipEmptyLines: true });
+  const campos = (parsed.meta && parsed.meta.fields) ||
+                 (parsed.data[0] ? Object.keys(parsed.data[0]) : []);
+  const kConta = acharCampo(campos, ['conta', 'fluxo']);
   const out = [];
   for (const r of parsed.data) {
     if (!safeStr(r['No. Titulo'])) continue;
@@ -1379,6 +1415,7 @@ async function parseProtheus(file) {
       numero: safeStr(r['No. Titulo']), parcela: safeStr(r['Parcela']),
       prefixo: safeStr(r['Prefixo']), tipo: safeStr(r['Tipo']),
       natureza: safeStr(r['Natureza']),
+      conta_fluxo: kConta ? safeStr(r[kConta]) : '',
       fornecedor_cod: safeStr(r['Fornecedor']),
       fornecedor: safeStr(r['Nome Fornece']),
       dt_emissao: parseBRDate(r['DT Emissao']),
@@ -1409,23 +1446,31 @@ async function parseRelatorio(file) {
   const headers = rows[headerIdx].map(safeStr);
   const col = {};
   headers.forEach((h, i) => { col[h] = i; });
+
+  // Colunas que aparecem truncadas/variando no relatório — resolvidas por aproximação.
+  const idxConta = acharIdx(headers, ['conta', 'fluxo']);
+  let idxVlrTit = (col['Vlr.Titulo'] != null) ? col['Vlr.Titulo'] : -1;
+  if (idxVlrTit < 0) idxVlrTit = acharIdx(headers, ['vlr', 'titulo']);
+
   const out = [];
   for (let i = headerIdx + 1; i < rows.length; i++) {
     const row = rows[i] || [];
     const numero = safeStr(row[col['No. Titulo']]);
     const fornecedor = safeStr(row[col['Nome Fornece']]);
-    const valor = parseBRNumber(row[col['Saldo']]);
-    if (!numero && !(fornecedor && valor > 0)) continue;
+    const saldo = parseBRNumber(row[col['Saldo']]);
+    if (!numero && !(fornecedor && saldo > 0)) continue;
     const historico = safeStr(row[col['Historico']]);
     if (!fornecedor && /total/i.test(historico)) continue;
     const venc = parseBRDate(row[col['Vencto Real']]);
+    const vlrTitulo = (idxVlrTit >= 0) ? parseBRNumber(row[idxVlrTit]) : saldo;
     out.push({
       numero: numero || '—', parcela: '', prefixo: '',
       tipo: safeStr(row[col['Tipo']]),
       natureza: safeStr(row[col['Natureza']]),
+      conta_fluxo: idxConta >= 0 ? safeStr(row[idxConta]) : '',
       fornecedor_cod: '', fornecedor,
       dt_emissao: null, vencimento: venc, dt_baixa: venc,
-      valor, valor_rs: valor, valor_liquido: valor,
+      valor: vlrTitulo, valor_rs: saldo, valor_liquido: saldo,
       historico, forma_pgto: '',
       banco: safeStr(row[col['Banco']]),
       bordero: safeStr(row[col['Bordero']]),
@@ -1522,9 +1567,14 @@ async function parseReembolso(file) {
 async function parseNaturezas(file) {
   const buf = await readAsArrayBuffer(file);
   const wb = XLSX.read(buf, { type: 'array', cellDates: false });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+  // Preferência: a aba "NATUREZA X FLUXO" (insensível a acento/maiúscula).
+  // Se não existir, cai pra primeira aba — busca cabeçalho codigo+descricao.
   const norm = s => (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const preferida = wb.SheetNames.find(n => /natureza\s*x\s*fluxo/i.test(norm(n)));
+  const sheetName = preferida || wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+
   let headerIdx = -1, codIdx = -1, descIdx = -1;
   for (let i = 0; i < Math.min(15, rows.length); i++) {
     const row = rows[i] || [];
@@ -1539,7 +1589,7 @@ async function parseNaturezas(file) {
     const row = rows[i] || [];
     const code = safeStr(row[codIdx]);
     const desc = safeStr(row[descIdx]);
-    if (code && desc) map[code] = desc;
+    if (code && desc && !(code in map)) map[code] = desc;
   }
   return map;
 }
@@ -2155,6 +2205,7 @@ function salvarManual() {
     numero: 'MANUAL-' + id, parcela: '', prefixo: '',
     tipo: el('m-tipo').value,
     natureza: el('m-natureza').value.trim(),
+    conta_fluxo: '',
     fornecedor_cod: '',
     fornecedor: fornecedor,
     dt_emissao: null, vencimento: iso, dt_baixa: iso,

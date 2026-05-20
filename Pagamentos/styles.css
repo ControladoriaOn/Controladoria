@@ -1017,3 +1017,107 @@
     .load-status { padding: 24px 18px; }
     .load-msg { font-size: 16px; }
   }
+
+  /* ============================================================
+     Botão de ação por linha (postergar) e modal de confirmação
+     ============================================================ */
+  .btn-row-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.12s ease;
+  }
+  .btn-row-action i { font-size: 10.5px; color: var(--orange); }
+  .btn-row-action:hover {
+    background: var(--orange-soft);
+    border-color: var(--orange);
+    color: var(--orange-deep);
+    transform: translateX(2px);
+  }
+  .btn-row-action:active { transform: translateX(0); }
+
+  /* Modal de confirmação (App.postergar usa) */
+  .cf-overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,15,26,0.55);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+    animation: cf-fade 0.16s ease-out;
+  }
+  @keyframes cf-fade { from { opacity: 0; } to { opacity: 1; } }
+  .cf-modal {
+    background: var(--surface);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 24px 60px rgba(26,15,26,0.4);
+    overflow: hidden;
+    animation: cf-in 0.22s ease-out;
+  }
+  @keyframes cf-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .cf-body { padding: 24px 24px 18px; }
+  .cf-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 20px;
+    margin: 0 0 10px;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .cf-title i { color: var(--orange); font-size: 17px; }
+  .cf-text {
+    margin: 0 0 14px;
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .cf-details {
+    margin: 0;
+    padding: 10px 14px;
+    background: var(--surface-soft);
+    border-left: 3px solid var(--orange);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .cf-foot {
+    display: flex; justify-content: flex-end; gap: 10px;
+    padding: 14px 20px;
+    background: var(--surface-soft);
+    border-top: 1px solid var(--border-soft);
+  }
+  .cf-btn {
+    padding: 9px 18px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .cf-cancel:hover { background: var(--surface-soft); border-color: var(--subtle); }
+  .cf-confirm {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: #FFFFFF;
+  }
+  .cf-confirm:hover { background: var(--orange-deep); border-color: var(--orange-deep); }
