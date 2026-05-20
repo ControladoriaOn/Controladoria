@@ -153,10 +153,3 @@ document.getElementById('loadingOverlay').classList.add('hidden');
 ## Cores da identidade
 
 - Roxo: `#6B21A8`  ·  Laranja: `#F97316`
-
----
-
-*Este briefing cobre favicon, mascote, botão "Voltar ao hub" e tela de
-carregamento. A integração com Google Sheets é específica do dashboard de
-Antecipação — se uma ferramenta nova também precisar salvar dados, peça
-essa parte separadamente no chat.*
