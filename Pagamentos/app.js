@@ -231,15 +231,29 @@ const NaturezaMap = {
   set(obj) {
     this._map = obj && typeof obj === 'object' ? obj : {};
   },
-  get(code) {
-    if (!code) return null;
+  /* Devolve a entrada bruta (string OU objeto {descricao,conta_fluxo,fluxo_caixa}). */
+  _entry(code) {
+    if (!code && code !== 0) return null;
     return this._map[String(code).trim()] || null;
   },
-  describe(code) {
-    const desc = this.get(code);
-    if (!desc) return null;
-    return Utils.titleCase(desc);
+  /* Extrai um campo da entrada — funciona tanto p/ formato antigo (string)
+     quanto p/ o novo (objeto). Antes só existia a descrição como string. */
+  _field(code, name) {
+    const e = this._entry(code);
+    if (!e) return '';
+    if (typeof e === 'string') return name === 'descricao' ? e : '';
+    return e[name] || '';
   },
+  /* Compatível com chamadas legadas: devolve só a descrição (raw). */
+  get(code) {
+    return this._field(code, 'descricao') || null;
+  },
+  describe(code) {
+    const desc = this._field(code, 'descricao');
+    return desc ? Utils.titleCase(desc) : null;
+  },
+  contaFluxo(code) { return this._field(code, 'conta_fluxo'); },
+  fluxoCaixa(code) { return this._field(code, 'fluxo_caixa'); },
   size() {
     return Object.keys(this._map).length;
   },
@@ -595,14 +609,18 @@ const UI_Hoje = {
 
     // 13 colunas — espelho fiel do RELATÓRIO CONTAS A PAGAR ON TIME +
     // uma coluna nova "Desc. Natureza" logo ao lado do código.
+    // Conta Fluxo e Fluxo Caixa: se o dado não veio no upload, busca pelo código
+    // da natureza no naturezas.json (mesma lógica do VLOOKUP do relatório).
     const COLS = [
       { h: 'Banco',          get: t => t.banco || '',                         w:  7.0, center: true },
       { h: 'No. Titulo',     get: t => numOrStr(t.numero),                    w: 12.2, center: true },
       { h: 'Tipo',           get: t => t.tipo || '',                          w:  7.2, center: true },
       { h: 'Natureza',       get: t => numOrStr(t.natureza),                  w: 11.3, center: true },
       { h: 'Desc. Natureza', get: t => NaturezaMap.describe(t.natureza) || '',w: 28.0 },
-      { h: 'Conta Fluxo C',  get: t => numOrStr(t.conta_fluxo),               w:  9.0, center: true },
-      { h: 'Fluxo Caixa',    get: t => t.fluxo_caixa || '',                   w: 25.1 },
+      { h: 'Conta Fluxo C',  get: t => numOrStr(t.conta_fluxo || NaturezaMap.contaFluxo(t.natureza)),
+                                                                              w:  9.0, center: true },
+      { h: 'Fluxo Caixa',    get: t => t.fluxo_caixa || NaturezaMap.fluxoCaixa(t.natureza) || '',
+                                                                              w: 25.1 },
       { h: 'Nome Fornece',   get: t => t.fornecedor || '',                    w: 18.8 },
       { h: 'Vencto Real',    get: t => fmtDateBR(t.vencimento),               w: 13.4, center: true, peach: true },
       { h: 'Vlr.Titulo',     get: t => Number(t.valor) || 0,                  w: 11.3, num: true },
@@ -690,7 +708,7 @@ const UI_Hoje = {
   },
 
   _columns() {
-    return [
+    const cols = [
       { key: 'tipo',       label: 'Tipo',
         renderCell: t => DOM.pill(t.tipo || '?', Utils.pillClass(t.tipo)) },
       { key: 'numero',     label: 'Título',
@@ -704,7 +722,12 @@ const UI_Hoje = {
       { key: 'valor_rs',   label: 'Valor',
         num: true, strong: true, center: true,
         renderCell: t => `R$ ${Utils.fmtBR(t.valor_rs)}` },
-      { key: '_acoes',     label: '', center: true, noSort: true,
+    ];
+    // O botão "→ Amanhã" é uma ação de edição: só aparece pra quem entrou
+    // pelo hub / atualizar (mesma regra do botão "Voltar ao Hub").
+    if (HubLink.cameFromHub()) {
+      cols.push({
+        key: '_acoes', label: '', center: true, noSort: true,
         renderCell: t => {
           const btn = DOM.h('button', {
             class: 'btn-row-action', type: 'button',
@@ -715,8 +738,10 @@ const UI_Hoje = {
             App.postergar(t);
           });
           return btn;
-        } },
-    ];
+        },
+      });
+    }
+    return cols;
   },
 
   _renderCard() {
@@ -1267,16 +1292,25 @@ const HubLink = {
   HUB_PATH_PREFIX: '/Controladoria',
   SELF_PATH_PREFIX: '/Controladoria/Pagamentos',
   STORAGE_KEY: 'came_from_hub',
+  _cached: null,
 
   init() {
     const btn = DOM.byId('btn-hub');
     const linkAtualizar = DOM.byId('link-atualizar');
 
-    if (this._userCameFromHub()) {
+    if (this.cameFromHub()) {
       if (btn) btn.hidden = false;
       if (linkAtualizar) linkAtualizar.hidden = false;
       try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
     }
+  },
+
+  /* Public: outros módulos checam isso pra liberar ações de edição
+     (postergar etc.) que devem ficar escondidas no acesso público. */
+  cameFromHub() {
+    if (this._cached !== null) return this._cached;
+    this._cached = this._userCameFromHub();
+    return this._cached;
   },
 
   _userCameFromHub() {
