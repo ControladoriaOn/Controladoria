@@ -2205,12 +2205,12 @@
     "fluxo_caixa": "Frota Tercerizada"
   },
   "33030905": {
-    "descricao": "MALHA PROVADA PROPRIA",
+    "descricao": "MALHA PRIVADA PROPRIA",
     "conta_fluxo": "21004",
     "fluxo_caixa": "Frota Tercerizada"
   },
   "33030906": {
-    "descricao": "MALHA PROVADA TERCEIRA",
+    "descricao": "MALHA PRIVADA TERCEIRA",
     "conta_fluxo": "21004",
     "fluxo_caixa": "Frota Tercerizada"
   },
