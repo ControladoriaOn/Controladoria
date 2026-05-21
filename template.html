@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nova Ferramenta - Portal On Time</title>
+
+  <!-- FAVICON -->
+  <link rel="icon" type="image/png" href="../favicon.png">
+
+  <!-- CSS COMPARTILHADO -->
+  <link rel="stylesheet" href="../styles.css">
+
+  <style>
+    /* Coloque aqui estilos ESPECÍFICOS desta ferramenta (se precisar) */
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================
+       SIDEBAR (navegação fixa)
+       ============================================================ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <img src="../logo-mascote.jpg" alt="Mascote">
+      </div>
+      <div class="logo-text">
+        <span>On Time</span>
+        <span>Controladoria</span>
+      </div>
+    </div>
+
+    <nav>
+      <a href="../index.html" class="active">
+        <i>📊</i> Hub
+      </a>
+      <a href="#">
+        <i>📈</i> Ferramenta Atual
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-stamp">
+        <span class="dot"></span>
+        <div>
+          <span class="stamp-label">Status</span>
+          <span class="stamp-text">Online</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       CONTEÚDO PRINCIPAL
+       ============================================================ -->
+  <div class="main-content">
+
+    <!-- HEADER -->
+    <header>
+      <div class="header-left">
+        <!-- Botão "Voltar ao hub" (aparece automaticamente se aberto do hub) -->
+        <a id="btnVoltarHub" href="../index.html"
+           style="display:none;align-items:center;gap:6px;padding:7px 12px;
+                  font:600 13px sans-serif;color:#6B21A8;text-decoration:none;
+                  border:1.5px solid #E5E7EB;border-radius:9px;">
+          ← Voltar ao hub
+        </a>
+
+        <h1 class="page-title">
+          <i>📋</i> Sua Ferramenta
+        </h1>
+      </div>
+    </header>
+
+    <!-- CORPO DO CONTEÚDO -->
+    <main class="content-body">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Total</div>
+          <div class="kpi-value">0</div>
+          <div class="kpi-sub">Atualizado agora</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Status</div>
+          <div class="kpi-value">—</div>
+          <div class="kpi-sub">Aguardando dados</div>
+        </div>
+      </div>
+
+      <!-- Seção vazia como exemplo -->
+      <div class="empty-state">
+        <h2>Bem-vindo!</h2>
+        <p>Customize este template com seu conteúdo. Mantenha a estrutura HTML, altere apenas o que está entre as tags <code>&lt;main&gt;</code>.</p>
+        <button class="btn-retry">Carregar dados</button>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- ============================================================
+       SCRIPT: BOTÃO "VOLTAR AO HUB" (detecção automática)
+       ============================================================ -->
+  <script>
+    (function () {
+      var HubLink = {
+        HUB_PATH_PREFIX: '/Controladoria',
+        STORAGE_KEY: 'came_from_hub_NOME',  // 👈 SUBSTITUA "NOME" pelo nome da pasta
+
+        init: function () {
+          var btn = document.getElementById('btnVoltarHub');
+          if (!btn) return;
+          if (this.veioDoHub()) {
+            btn.style.display = 'inline-flex';
+            try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
+          }
+        },
+
+        veioDoHub: function () {
+          try {
+            if (document.referrer) {
+              var ref = new URL(document.referrer);
+              var refPath = decodeURIComponent(ref.pathname);
+              var selfPath = decodeURIComponent(location.pathname);
+              var selfDir = selfPath.slice(0, selfPath.lastIndexOf('/') + 1);
+              var mesmaOrigem = ref.origin === location.origin;
+              var dentroDoPortal = refPath.indexOf(this.HUB_PATH_PREFIX) === 0;
+              var mesmaFerramenta = refPath.indexOf(selfDir) === 0;
+              if (mesmaOrigem && dentroDoPortal && !mesmaFerramenta) return true;
+            }
+          } catch (e) {}
+          try {
+            if (new URLSearchParams(location.search).has('from')) return true;
+          } catch (e) {}
+          try {
+            if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
+          } catch (e) {}
+          return false;
+        }
+      };
+      HubLink.init();
+    })();
+  </script>
+
+</body>
+</html>
