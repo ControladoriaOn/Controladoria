@@ -1,5 +1,5 @@
 /* =================================================================
-   HUB LINK — Validação Inteligente de Origem - 
+   HUB LINK — Validação Inteligente de Origem
    ================================================================= */
 const HubLink = {
     HUB_PATH_PREFIX: '/Controladoria',          
@@ -8,11 +8,10 @@ const HubLink = {
 
     init() {
         const btn = document.getElementById('btn-hub');
-        const btnAtualizar = document.getElementById('btnAtualizar');
-        
+        if (!btn) return;
+
         if (this._userCameFromHub()) {
-            if (btn) btn.hidden = false;
-            if (btnAtualizar) btnAtualizar.hidden = false;
+            btn.hidden = false;
             try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { }
         }
     },
@@ -898,7 +897,7 @@ const App = (() => {
         ChartManager.destroyChart('quitacao');
         ChartManager.upsertChart('quitacao', 'chartQuitacao', 'bar',
             () => ({ labels: qL, datasets: [{ data: qD, backgroundColor: Utils.grad('chartQuitacao', Config.theme.orangeHex, Config.theme.orangeLight), borderRadius: 6, maxBarThickness: 60 }] }),
-            () => ({ ...ChartManager.baseOptions(), scales: { x: { display: true, grid: { display: true, color: 'rgba(232,224,232,0.3)', lineWidth: 0.5 }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 } } }, y: { display: false, grid: { display: true, color: 'rgba(232,224,232,0.3)', lineWidth: 0.5 } } } })
+            () => ({ ...ChartManager.baseOptions(), scales: { x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 } } }, y: { display: false } } })
         );
     };
 
@@ -912,7 +911,7 @@ const App = (() => {
             () => ({ labels: orgE.map(e => e[0]), datasets: [{ data: orgE.map(e => e[1]), backgroundColor: orgE.map(e => e[0] === selectedOrgao ? Config.theme.orangeLight : Config.theme.orangeHex), borderRadius: 6, maxBarThickness: 28 }] }),
             () => ({
                 ...ChartManager.baseOptions(), indexAxis: 'y', layout: { padding: { right: 90, top: 20, bottom: 10 } },
-                scales: { x: { display: false, grace: '15%', grid: { display: true, color: 'rgba(232,224,232,0.3)', lineWidth: 0.5 } }, y: { display: true, grid: { display: true, color: 'rgba(232,224,232,0.3)', lineWidth: 0.5 }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 }, padding: 8 } } },
+                scales: { x: { display: false, grace: '15%' }, y: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 }, padding: 8 } } },
                 onClick: (_evt, elements) => {
                     if (elements.length > 0) {
                         setOrgaoFilter(orgE[elements[0].index][0]);
@@ -927,7 +926,7 @@ const App = (() => {
         ChartManager.destroyChart('caixa');
         ChartManager.upsertChart('caixa', 'chartCaixa', 'bar',
             () => ({ labels: ['Jan/2023', `${Config.MONTH_NAMES[currMonth]}/${currYear}`], datasets: [{ data: [Config.CAIXA_JAN_2023, dashData.caixaM], backgroundColor: [Config.theme.purpleHex, Config.theme.orangeHex], borderRadius: 6, maxBarThickness: 90, barPercentage: 0.8, categoryPercentage: 0.8 }] }),
-            () => ({ ...ChartManager.baseOptions(), plugins: { ...ChartManager.baseOptions().plugins, legend: { display: false } }, scales: { x: { display: true, grid: { display: true, color: 'rgba(232,224,232,0.3)', lineWidth: 0.5 }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 700 }, padding: 10 } }, y: { display: false, grid: { display: true, color: 'rgba(232,224,232,0.3)', lineWidth: 0.5 } } } })
+            () => ({ ...ChartManager.baseOptions(), plugins: { ...ChartManager.baseOptions().plugins, legend: { display: false } }, scales: { x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 700 }, padding: 10 } }, y: { display: false } } })
         );
         updateQuitacaoChart();
     };
