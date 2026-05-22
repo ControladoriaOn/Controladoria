@@ -318,17 +318,6 @@
 
         .btn-export.pdf.loading i { animation: spin 1s linear infinite; }
 
-        .btn-export.update {
-            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-deep) 100%);
-            color: #fff;
-            box-shadow: 0 4px 14px -6px rgba(255,110,0,0.5);
-        }
-
-        .btn-export.update:hover {
-            background: linear-gradient(135deg, var(--orange-deep) 0%, var(--orange) 100%);
-            transform: translateY(-1px);
-        }
-
         /* ============================================================
            DATA-BASE SELECTOR
            ============================================================ */

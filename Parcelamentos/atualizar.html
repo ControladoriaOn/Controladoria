@@ -123,6 +123,24 @@
   }
   .btn-hub:hover { background: rgba(255,255,255,0.2); }
 
+  .nav-item {
+    background: transparent;
+    border: 0;
+    color: rgba(255,255,255,0.8);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.1); color: #FFFFFF; }
+  .nav-item.active { background: rgba(255,255,255,0.15); color: #FFFFFF; }
+
   /* ====== MAIN ====== */
   .main {
     margin-left: 240px;
@@ -448,11 +466,24 @@
       <span>Parcelamentos</span>
     </div>
   </div>
-  
-  <div style="flex: 1;"></div>
+
+  <nav style="display: flex; flex-direction: column; gap: 4px;">
+    <a href="index.html" class="nav-item" style="text-decoration: none; color: inherit;">
+      <i class="ph-fill ph-chart-pie-slice"></i> Dashboard
+    </a>
+    <a href="index.html" class="nav-item" style="text-decoration: none; color: inherit;">
+      <i class="ph-fill ph-list-numbers"></i> Resumo Sintético
+    </a>
+    <a href="index.html" class="nav-item" style="text-decoration: none; color: inherit;">
+      <i class="ph-fill ph-table"></i> Detalhamento
+    </a>
+    <a href="atualizar.html" class="nav-item active" style="text-decoration: none; color: inherit; cursor: default;">
+      <i class="ph-fill ph-pencil-simple"></i> Atualizar
+    </a>
+  </nav>
   
   <div class="sidebar-footer">
-    <a id="btn-hub" class="btn-hub" href="../" rel="noopener">
+    <a id="btn-hub" class="btn-hub" href="../" rel="noopener" hidden>
       <i class="ph ph-arrow-left"></i>
       Voltar
     </a>
