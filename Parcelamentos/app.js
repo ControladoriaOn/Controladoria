@@ -8,10 +8,11 @@ const HubLink = {
 
     init() {
         const btn = document.getElementById('btn-hub');
-        if (!btn) return;
-
+        const btnAtualizar = document.getElementById('btnAtualizar');
+        
         if (this._userCameFromHub()) {
-            btn.hidden = false;
+            if (btn) btn.hidden = false;
+            if (btnAtualizar) btnAtualizar.hidden = false;
             try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { }
         }
     },
