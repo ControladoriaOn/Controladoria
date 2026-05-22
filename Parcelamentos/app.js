@@ -1,5 +1,5 @@
 /* =================================================================
-   HUB LINK — Validação Inteligente de Origem
+   HUB LINK — Validação Inteligente de Origem - 
    ================================================================= */
 const HubLink = {
     HUB_PATH_PREFIX: '/Controladoria',          
