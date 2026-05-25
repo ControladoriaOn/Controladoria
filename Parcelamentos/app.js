@@ -8,10 +8,11 @@ const HubLink = {
 
     init() {
         const btn = document.getElementById('btn-hub');
-        if (!btn) return;
+        const linkAtualizar = document.getElementById('link-atualizar');
 
         if (this._userCameFromHub()) {
-            btn.hidden = false;
+            if (btn) btn.hidden = false;
+            if (linkAtualizar) linkAtualizar.hidden = false;
             try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { }
         }
     },
@@ -705,7 +706,7 @@ const App = (() => {
     const initScrollSpy = () => {
         const ct = $('scroll-container'), hd = $('main-header');
         const secs = document.querySelectorAll('.scroll-section');
-        const navs = document.querySelectorAll('.nav-item');
+        const navs = document.querySelectorAll('.nav-item[data-target]');
         if (!ct || !hd) return;
         ct.addEventListener('scroll', () => {
             const trigger = hd.getBoundingClientRect().bottom + 100;
@@ -897,7 +898,18 @@ const App = (() => {
         ChartManager.destroyChart('quitacao');
         ChartManager.upsertChart('quitacao', 'chartQuitacao', 'bar',
             () => ({ labels: qL, datasets: [{ data: qD, backgroundColor: Utils.grad('chartQuitacao', Config.theme.orangeHex, Config.theme.orangeLight), borderRadius: 6, maxBarThickness: 60 }] }),
-            () => ({ ...ChartManager.baseOptions(), scales: { x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 } } }, y: { display: false } } })
+            () => ({
+                ...ChartManager.baseOptions(),
+                scales: {
+                    x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 } } },
+                    y: {
+                        display: true, beginAtZero: true,
+                        grid: { color: 'rgba(107, 94, 107, 0.10)', drawTicks: false, drawBorder: false },
+                        border: { display: false },
+                        ticks: { color: '#9B8FA0', font: { family: "'Manrope'", size: 10.5, weight: 500 }, padding: 8, maxTicksLimit: 5, callback: v => Utils.fmtD(v) }
+                    }
+                }
+            })
         );
     };
 
@@ -911,7 +923,15 @@ const App = (() => {
             () => ({ labels: orgE.map(e => e[0]), datasets: [{ data: orgE.map(e => e[1]), backgroundColor: orgE.map(e => e[0] === selectedOrgao ? Config.theme.orangeLight : Config.theme.orangeHex), borderRadius: 6, maxBarThickness: 28 }] }),
             () => ({
                 ...ChartManager.baseOptions(), indexAxis: 'y', layout: { padding: { right: 90, top: 20, bottom: 10 } },
-                scales: { x: { display: false, grace: '15%' }, y: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 }, padding: 8 } } },
+                scales: {
+                    x: {
+                        display: true, grace: '15%', beginAtZero: true,
+                        grid: { color: 'rgba(107, 94, 107, 0.10)', drawTicks: false, drawBorder: false },
+                        border: { display: false },
+                        ticks: { color: '#9B8FA0', font: { family: "'Manrope'", size: 10.5, weight: 500 }, padding: 8, maxTicksLimit: 5, callback: v => Utils.fmtD(v) }
+                    },
+                    y: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 }, padding: 8 } }
+                },
                 onClick: (_evt, elements) => {
                     if (elements.length > 0) {
                         setOrgaoFilter(orgE[elements[0].index][0]);
@@ -926,7 +946,19 @@ const App = (() => {
         ChartManager.destroyChart('caixa');
         ChartManager.upsertChart('caixa', 'chartCaixa', 'bar',
             () => ({ labels: ['Jan/2023', `${Config.MONTH_NAMES[currMonth]}/${currYear}`], datasets: [{ data: [Config.CAIXA_JAN_2023, dashData.caixaM], backgroundColor: [Config.theme.purpleHex, Config.theme.orangeHex], borderRadius: 6, maxBarThickness: 90, barPercentage: 0.8, categoryPercentage: 0.8 }] }),
-            () => ({ ...ChartManager.baseOptions(), plugins: { ...ChartManager.baseOptions().plugins, legend: { display: false } }, scales: { x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 700 }, padding: 10 } }, y: { display: false } } })
+            () => ({
+                ...ChartManager.baseOptions(),
+                plugins: { ...ChartManager.baseOptions().plugins, legend: { display: false } },
+                scales: {
+                    x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 700 }, padding: 10 } },
+                    y: {
+                        display: true, beginAtZero: true,
+                        grid: { color: 'rgba(107, 94, 107, 0.10)', drawTicks: false, drawBorder: false },
+                        border: { display: false },
+                        ticks: { color: '#9B8FA0', font: { family: "'Manrope'", size: 10.5, weight: 500 }, padding: 8, maxTicksLimit: 5, callback: v => Utils.fmtD(v) }
+                    }
+                }
+            })
         );
         updateQuitacaoChart();
     };
@@ -1056,7 +1088,7 @@ const App = (() => {
     const bindEvents = () => {
         $('sidebarOverlay').addEventListener('click', toggleSidebar);
         $('btnHamburger').addEventListener('click', toggleSidebar);
-        document.querySelectorAll('.nav-item').forEach(btn => {
+        document.querySelectorAll('.nav-item[data-target]').forEach(btn => {
             btn.addEventListener('click', () => { scrollToSection(btn.dataset.target); if (window.innerWidth <= 1024) toggleSidebar(); });
         });
         $('dataBaseMes').addEventListener('change', changeDataBase);
