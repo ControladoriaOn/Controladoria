@@ -18,350 +18,193 @@
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     
     <style>
-        /* ============================================================
-           DESIGN TOKENS — V8
-           ============================================================ */
         :root {
-            --bg:              #FAF7F5;
-            --surface:         #FFFFFF;
-            --surface-soft:    #F6F2F6;
-            --border:          #E8E0E8;
-            --border-soft:     #F0EAF0;
-            --ink:             #1A0F1A;
-            --muted:           #6B5E6B;
-            --subtle:          #A89CB0;
-            --plum:            #3C003C;
-            --plum-deep:       #2A0028;
-            --plum-light:      #5C1A5C;
-            --plum-mist:       rgba(60,0,60,0.06);
-            --orange:          #FF6E00;
-            --orange-soft:     #FFF1E4;
-            --orange-deep:     #D25500;
-            --ok:              #1F7A3D;
-            --ok-soft:         #EAF7EE;
-            --warn:            #C77700;
-            --err:             #B91C1C;
-            
-            --font-display:    'Fraunces', 'Times New Roman', serif;
-            --font-body:       'Manrope', system-ui, sans-serif;
-            --font-mono:       'JetBrains Mono', ui-monospace, monospace;
-            
-            --shadow-sm:       0 1px 2px rgba(26,15,26,0.04);
-            --shadow-md:       0 4px 14px -6px rgba(26,15,26,0.08);
-            --shadow-lg:       0 14px 32px -14px rgba(26,15,26,0.15);
-            
-            /* Ajustes para manter as cores originais dos KPIS */
-            --color-margem: #166534;
-            --color-margem-soft: rgba(22,101,52,0.10);
-            --color-ticket: #0f766e;
-            --color-ticket-soft: rgba(15,118,110,0.10);
-            --transition-speed: 0.2s;
+            --bg:#FAF7F5; --surface:#FFFFFF; --surface-soft:#F6F2F6;
+            --border:#E8E0E8; --border-soft:#F0EAF0;
+            --ink:#1A0F1A; --muted:#6B5E6B; --subtle:#A89CB0;
+            --plum:#3C003C; --plum-deep:#2A0028; --plum-light:#5C1A5C;
+            --plum-mist:rgba(60,0,60,0.06);
+            --orange:#FF6E00; --orange-soft:#FFF1E4; --orange-deep:#D25500;
+            --ok:#1F7A3D; --ok-soft:#EAF7EE;
+            --warn:#C77700; --err:#B91C1C;
+            --font-display:'Fraunces','Times New Roman',serif;
+            --font-body:'Manrope',system-ui,sans-serif;
+            --font-mono:'JetBrains Mono',ui-monospace,monospace;
+            --shadow-sm:0 1px 2px rgba(26,15,26,0.04);
+            --shadow-md:0 4px 14px -6px rgba(26,15,26,0.08);
+            --shadow-lg:0 14px 32px -14px rgba(26,15,26,0.15);
+            --color-margem:#166534; --color-margem-soft:rgba(22,101,52,0.10);
+            --color-ticket:#0f766e; --color-ticket-soft:rgba(15,118,110,0.10);
+            --transition-speed:0.2s;
         }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background-color:var(--bg); color:var(--ink); font-family:var(--font-body); display:flex; flex-direction:column; min-height:100vh; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+        ::-webkit-scrollbar { width:8px; height:8px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#C0C4C8; border-radius:10px; }
+        ::-webkit-scrollbar-thumb:hover { background:#A0A4A8; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            background-color: var(--bg); 
-            color: var(--ink); 
-            font-family: var(--font-body); 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
-            overflow-x: hidden; 
-            -webkit-font-smoothing: antialiased;
+        .sidebar { width:250px; background:linear-gradient(170deg,var(--plum-deep) 0%,var(--plum) 55%,var(--plum-light) 100%); color:rgba(255,255,255,0.9); padding:24px 18px; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; height:100vh; z-index:90; overflow-y:auto; overflow-x:hidden; box-shadow:2px 0 10px rgba(0,0,0,0.1); }
+        .sidebar::-webkit-scrollbar { width:6px; }
+        .sidebar::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
+        .sidebar .logo { font-family:var(--font-display); font-weight:500; font-size:22px; letter-spacing:-0.01em; padding:4px 10px 22px; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:14px; display:flex; align-items:center; gap:12px; color:#FFFFFF; flex-shrink:0; }
+        .sidebar .logo-mark { width:42px; height:42px; border-radius:10px; background:rgba(255,255,255,0.08); backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.12); display:grid; place-items:center; overflow:hidden; flex-shrink:0; }
+        .sidebar .logo-mark img { width:100%; height:100%; object-fit:cover; display:block; }
+        .sidebar .logo-text { display:flex; flex-direction:column; line-height:1.1; }
+        .sidebar .logo-text span:first-child { font-family:var(--font-display); font-weight:500; font-size:18px; }
+        .sidebar .logo-text span:last-child { font-family:var(--font-body); font-weight:600; font-size:10px; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.14em; margin-top:2px; }
+
+        .sidebar-footer { margin-top:auto; padding-top:16px; border-top:1px solid rgba(255,255,255,0.1); display:flex; flex-direction:column; gap:10px; }
+        .btn-hub { padding:11px 14px; background:var(--orange); border:1px solid var(--orange); color:#FFFFFF; font-family:inherit; font-weight:600; font-size:13px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.15s; box-shadow:0 6px 18px -8px rgba(255,110,0,0.55); }
+        .btn-hub[hidden] { display:none; }
+        .btn-hub:hover { background:var(--orange-deep); border-color:var(--orange-deep); transform:translateY(-1px); box-shadow:0 10px 24px -8px rgba(255,110,0,0.7); }
+        .btn-atualizar { padding:11px 14px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); color:#FFFFFF; font-family:inherit; font-weight:600; font-size:13px; border-radius:10px; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.15s; }
+        .btn-atualizar[hidden] { display:none; }
+        .btn-atualizar:hover { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.4); transform:translateY(-1px); }
+
+        .main-content { margin-left:250px; display:flex; flex-direction:column; min-width:0; min-height:100vh; }
+        header { height:80px; background:rgba(255,255,255,0.85); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; padding:0 40px; position:sticky; top:0; z-index:50; }
+        .page-title { font-family:var(--font-display); font-size:26px; font-weight:500; letter-spacing:-0.015em; margin:0; display:flex; align-items:center; gap:12px; }
+        .page-title i { color:var(--orange); font-size:24px; }
+        .menu-toggle { display:none; background:transparent; border:none; color:var(--ink); font-size:26px; cursor:pointer; transition:transform 0.2s; }
+        .menu-toggle:hover { transform:scale(1.1); color:var(--orange); }
+        .content-body { padding:32px 40px 64px; max-width:1600px; width:100%; margin:0 auto; flex:1; }
+
+        .loading-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(250,247,245,0.95); z-index:9999; display:flex; flex-direction:column; justify-content:center; align-items:center; transition:opacity 0.5s; }
+        .loading-overlay.hidden { opacity:0; pointer-events:none; }
+        .loading-overlay h2 { font-family:var(--font-display); color:var(--plum); margin:0; }
+        .loading-overlay h2 span { color:var(--orange); }
+        @keyframes spin { 100% { transform:rotate(360deg); } }
+        .spin-anim { animation:spin 1s linear infinite; }
+
+        .nav-bar { display:flex; justify-content:flex-start; gap:8px; margin-bottom:25px; align-items:center; flex-wrap:wrap; }
+        .nav-tab { padding:12px 18px; background:transparent; border:0; border-bottom:2px solid transparent; color:var(--muted); font-weight:600; cursor:pointer; transition:all var(--transition-speed); font-size:14px; font-family:inherit; display:flex; align-items:center; gap:8px; }
+        .nav-tab:hover { color:var(--ink); }
+        .nav-tab.active { color:var(--plum); border-bottom-color:var(--orange); }
+
+        .btn { background:var(--surface); border:1px solid var(--border); color:var(--ink); padding:8px 16px; border-radius:10px; font-weight:600; font-family:inherit; cursor:pointer; transition:all var(--transition-speed); display:inline-flex; align-items:center; gap:8px; font-size:13px; box-shadow:var(--shadow-sm); }
+        .btn:hover { background:var(--surface-soft); border-color:var(--plum-light); }
+        .btn.primary { background:var(--orange); color:white; border-color:var(--orange); box-shadow:0 4px 14px -6px rgba(255,110,0,0.5); }
+        .btn.primary:hover { background:var(--orange-deep); border-color:var(--orange-deep); }
+        .btn.icon-only { padding:8px; border-radius:10px; display:flex; align-items:center; justify-content:center; width:36px; height:36px; font-size:16px; }
+
+        .page { display:none; }
+        .page.active { display:block; animation:fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+        #export-title-container { display:none; text-align:center; margin-bottom:25px; padding-bottom:12px; border-bottom:3px solid var(--orange); }
+        #export-title-text { font-family:var(--font-display); font-size:26px; font-weight:500; color:var(--plum); margin:0 0 6px 0; }
+        #export-subtitle { font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--muted); margin:0; }
+        body.exporting #export-title-container { display:block; }
+
+        .sidebar-title { font-size:11px; font-weight:700; color:rgba(255,255,255,0.5); margin-bottom:15px; display:block; letter-spacing:0.1em; text-transform:uppercase; }
+        .filtro-grupo { margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1); }
+        .filtro-grupo:last-child { border-bottom:none; margin-bottom:0; }
+        .filtro-grupo label { display:block; font-size:11px; font-weight:700; color:rgba(255,255,255,0.8); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.05em; }
+        .quick-links { float:right; font-weight:600; font-size:10px; text-transform:none; }
+        .quick-links a { color:var(--orange); cursor:pointer; text-decoration:none; margin-left:5px; }
+        .quick-links a:hover { color:#fff; }
+        .buttons-container { display:flex; flex-wrap:wrap; gap:6px; }
+        .filter-btn { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.7); padding:6px 10px; border-radius:8px; font-weight:500; cursor:pointer; transition:all var(--transition-speed); font-size:12px; font-family:inherit; }
+        .filter-btn:hover { background:rgba(255,255,255,0.15); color:#fff; }
+        .filter-btn.active { background:rgba(255,110,0,0.2); color:#fff; border-color:var(--orange); font-weight:600; }
+        .mode-buttons { display:flex; gap:8px; margin-bottom:10px; }
+        .mode-btn { flex:1; text-align:center; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.7); padding:8px 0; border-radius:8px; font-weight:600; cursor:pointer; transition:all var(--transition-speed); font-size:12px; font-family:inherit; }
+        #modeRB.active { background:rgba(255,255,255,0.15); color:#fff; border-color:#fff; }
+        #modeCusto.active { background:rgba(255,110,0,0.2); color:#fff; border-color:var(--orange); }
+        .clear-filters-btn { background:transparent; color:var(--orange); border:1px solid var(--orange); padding:10px 16px; border-radius:10px; font-weight:600; cursor:pointer; width:100%; margin-top:15px; font-size:12px; transition:all 0.2s; font-family:inherit; }
+        .clear-filters-btn:hover { background:var(--orange); color:white; }
+
+        .empty-state-msg { display:none; text-align:center; padding:60px 20px; background:var(--surface); border-radius:18px; border:1px dashed var(--border); margin-top:20px; }
+        .empty-state-msg h2 { color:var(--ink); font-family:var(--font-display); font-size:24px; font-weight:500; margin-bottom:10px; }
+        .empty-state-msg p { color:var(--muted); }
+        #page-dashboard.is-empty .empty-state-msg { display:block; }
+        #page-dashboard.is-empty #export-block-1, #page-dashboard.is-empty #export-block-2, #page-dashboard.is-empty #export-block-3 { display:none; }
+
+        .kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin-bottom:25px; }
+        .kpi-card { background:var(--surface); padding:22px 24px; border-radius:16px; border:1px solid var(--border); box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:10px; transition:all 0.25s; position:relative; overflow:hidden; }
+        .kpi-card:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); border-color:var(--subtle); }
+        .kpi-card::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; }
+        .kpi-card.kpi-rb::before { background:var(--plum); }
+        .kpi-card.kpi-custo::before { background:var(--orange); }
+        .kpi-card.kpi-margem::before { background:var(--color-margem); }
+        .kpi-card.kpi-ticket::before { background:var(--color-ticket); }
+        .kpi-header { display:flex; align-items:center; gap:8px; }
+        .kpi-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+        .kpi-rb .kpi-icon { background:var(--surface-soft); color:var(--plum); }
+        .kpi-custo .kpi-icon { background:var(--orange-soft); color:var(--orange-deep); }
+        .kpi-margem .kpi-icon { background:var(--color-margem-soft); color:var(--color-margem); }
+        .kpi-ticket .kpi-icon { background:var(--color-ticket-soft); color:var(--color-ticket); }
+        .kpi-card h3 { font-family:var(--font-body); font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.12em; margin:0; font-weight:700; }
+        .kpi-card .valor { font-family:var(--font-display); font-size:28px; font-weight:700; color:var(--ink); line-height:1; letter-spacing:-0.02em; }
+        .kpi-card .variacao { font-size:10.5px; font-weight:600; font-family:var(--font-mono); display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; background:var(--border-soft); width:fit-content; }
+        .kpi-card .variacao.positiva { color:var(--ok); background:var(--ok-soft); border:1px solid #C2E4CC; }
+        .kpi-card .variacao.negativa { color:var(--err); background:#FEE2E2; border:1px solid #F9D5D5; }
+        .kpi-card .variacao.neutra { color:var(--muted); background:var(--border-soft); border:1px solid var(--border); }
+
+        .graficos { display:grid; grid-template-columns:repeat(2, 1fr); gap:20px; margin-bottom:25px; }
+        .grafico-linha-unica { display:block; margin-bottom:25px; }
+        .grafico-card { background:var(--surface); border-radius:18px; padding:24px; border:1px solid var(--border); box-shadow:var(--shadow-sm); display:flex; flex-direction:column; transition:all 0.3s; }
+        .grafico-card h2 { font-family:var(--font-display); font-size:18px; font-weight:500; color:var(--ink); margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid var(--border-soft); letter-spacing:-0.01em; }
+        .grafico-card canvas { max-height:320px; width:100% !important; }
+        #graficoMensal { max-height:400px; }
+
+        .tabela-container { overflow-x:auto; overflow-y:auto; max-height:600px; background:var(--surface); border-radius:18px; box-shadow:var(--shadow-sm); border:1px solid var(--border); }
+        table { width:100%; border-collapse:separate; border-spacing:0; font-size:13px; min-width:800px; }
+        th, td { background-clip:padding-box; padding:12px 16px; white-space:nowrap; text-align:right; }
+        th { border-bottom:1px solid var(--border); border-right:1px solid var(--border); }
+        td { border-bottom:1px solid var(--border-soft); border-right:1px solid var(--border-soft); color:var(--ink); }
+        th:last-child, td:last-child { border-right:none; }
+        thead th { position:sticky; top:0; z-index:20; background-color:var(--surface-soft); color:var(--muted); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:0.1em; border-bottom:1px solid var(--border); }
+        tr:nth-child(2) th { top:41px; z-index:20; }
+        th:nth-child(1), th:nth-child(2), th:nth-child(3), th:nth-child(4) { text-align:left; }
+        td:nth-child(1), td:nth-child(2), td:nth-child(3), td:nth-child(4) { text-align:left; font-weight:600; color:var(--muted); }
+        thead th:nth-child(1), thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) { z-index:50 !important; left:0; }
+        tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(4) { position:sticky; left:0; z-index:15; background-color:var(--surface); }
+        th:nth-child(1), td:nth-child(1) { min-width:100px; left:0; }
+        th:nth-child(2), td:nth-child(2) { min-width:130px; left:100px; }
+        th:nth-child(3), td:nth-child(3) { min-width:120px; left:230px; }
+        th:nth-child(4), td:nth-child(4) { min-width:100px; left:350px; border-right:1px solid var(--border); box-shadow:4px 0 6px -4px rgba(0,0,0,0.05); }
+        tbody tr:hover td { background:rgba(255,110,0,0.035); }
+        tbody td.grupo-mes-par { background-color:#FAFAFA; font-family:var(--font-mono); font-size:12.5px; }
+        tbody td.grupo-mes-impar { background-color:#FFFFFF; font-family:var(--font-mono); font-size:12.5px; }
+        th.subcol.sortable { cursor:pointer; transition:color 0.2s; }
+        th.subcol.sortable:hover { color:var(--ink); background:var(--border-soft); }
+        th.mes-header { text-align:center; background-color:var(--plum); color:white; border-bottom:none; }
+
+        footer { text-align:center; color:var(--muted); font-size:12px; margin-top:30px; padding-bottom:20px; font-family:var(--font-mono); }
+
+        body.exporting * { transition:none !important; animation:none !important; }
+        body.exporting .sidebar, body.exporting .nav-bar, body.exporting .menu-toggle { display:none !important; }
+        body.exporting .main-content { margin-left:0 !important; padding:0 !important; width:100%; background:white !important; }
+        body.exporting .grafico-card, body.exporting .kpi-card { border:1px solid #E2E8F0 !important; box-shadow:none !important; }
+        body.exporting header { display:none !important; }
+
+        @media (max-width:1024px) {
+            .menu-toggle { display:block; }
+            .sidebar { left:-320px; transition:left 0.3s ease; }
+            .sidebar.open { left:0; }
+            .main-content { margin-left:0; }
+            .graficos { grid-template-columns:1fr; }
         }
-
-        /* --- SCROLLBARS --- */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #C0C4C8; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #A0A4A8; }
-
-        /* ============================================================
-           SIDEBAR — Padronizada com V8
-           ============================================================ */
-        .sidebar {
-            width: 250px;
-            background: linear-gradient(170deg, var(--plum-deep) 0%, var(--plum) 55%, var(--plum-light) 100%);
-            color: rgba(255,255,255,0.9);
-            padding: 24px 18px;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            height: 100vh;
-            z-index: 90;
-            overflow-y: auto;
-            overflow-x: hidden;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-        }
-        .sidebar::-webkit-scrollbar { width: 6px; }
-        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-        
-        .sidebar .logo {
-            font-family: var(--font-display);
-            font-weight: 500;
-            font-size: 22px;
-            letter-spacing: -0.01em;
-            padding: 4px 10px 22px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #FFFFFF;
-            flex-shrink: 0;
-        }
-        .sidebar .logo-mark {
-            width: 42px; height: 42px; border-radius: 10px;
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255,255,255,0.12);
-            display: grid; place-items: center;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-        .sidebar .logo-mark img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .sidebar .logo-text { display: flex; flex-direction: column; line-height: 1.1; }
-        .sidebar .logo-text span:first-child { font-family: var(--font-display); font-weight: 500; font-size: 18px; }
-        .sidebar .logo-text span:last-child {
-            font-family: var(--font-body); font-weight: 600; font-size: 10px;
-            color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.14em; margin-top: 2px;
-        }
-
-        .sidebar-footer {
-            margin-top: auto;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .btn-hub {
-            padding: 11px 14px;
-            background: var(--orange);
-            border: 1px solid var(--orange);
-            color: #FFFFFF;
-            font-family: inherit;
-            font-weight: 600;
-            font-size: 13px;
-            border-radius: 10px;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.15s;
-            box-shadow: 0 6px 18px -8px rgba(255,110,0,0.55);
-        }
-        .btn-hub[hidden] { display: none; }
-        .btn-hub:hover {
-            background: var(--orange-deep);
-            border-color: var(--orange-deep);
-            transform: translateY(-1px);
-            box-shadow: 0 10px 24px -8px rgba(255,110,0,0.7);
-        }
-
-        /* --- LAYOUT PRINCIPAL E HEADER --- */
-        .main-content { 
-            margin-left: 250px; 
-            display: flex; 
-            flex-direction: column; 
-            min-width: 0; 
-            min-height: 100vh;
-        }
-        
-        header { 
-            height: 80px;
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 0 40px; 
-            position: sticky; 
-            top: 0; 
-            z-index: 50; 
-        }
-        
-        .page-title {
-            font-family: var(--font-display);
-            font-size: 26px;
-            font-weight: 500;
-            letter-spacing: -0.015em;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .page-title i { color: var(--orange); font-size: 24px; }
-
-        .menu-toggle { display: none; background: transparent; border: none; color: var(--ink); font-size: 26px; cursor: pointer; transition: transform 0.2s; }
-        .menu-toggle:hover { transform: scale(1.1); color: var(--orange); }
-
-        .content-body { padding: 32px 40px 64px; max-width: 1600px; width: 100%; margin: 0 auto; flex: 1; }
-
-        /* LOADING */
-        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(250, 247, 245, 0.95); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s; }
-        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-        .loading-overlay h2 { font-family: var(--font-display); color: var(--plum); margin: 0; }
-        .loading-overlay h2 span { color: var(--orange); }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        .spin-anim { animation: spin 1s linear infinite; }
-
-        /* NAVEGAÇÃO SUPERIOR */
-        .nav-bar { display: flex; justify-content: flex-start; gap: 8px; margin-bottom: 25px; align-items: center; flex-wrap: wrap; }
-        .nav-tab { padding: 12px 18px; background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 600; cursor: pointer; transition: all var(--transition-speed); font-size: 14px; font-family: inherit; display: flex; align-items: center; gap: 8px; }
-        .nav-tab:hover { color: var(--ink); }
-        .nav-tab.active { color: var(--plum); border-bottom-color: var(--orange); }
-        
-        .btn { background: var(--surface); border: 1px solid var(--border); color: var(--ink); padding: 8px 16px; border-radius: 10px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all var(--transition-speed); display: inline-flex; align-items: center; gap: 8px; font-size: 13px; box-shadow: var(--shadow-sm); }
-        .btn:hover { background: var(--surface-soft); border-color: var(--plum-light); }
-        .btn.primary { background: var(--orange); color: white; border-color: var(--orange); box-shadow: 0 4px 14px -6px rgba(255,110,0,0.5); }
-        .btn.primary:hover { background: var(--orange-deep); border-color: var(--orange-deep); }
-        .btn.icon-only { padding: 8px; border-radius: 10px; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; font-size: 16px; }
-
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* TÍTULO EXPORTAÇÃO */
-        #export-title-container { display: none; text-align: center; margin-bottom: 25px; padding-bottom: 12px; border-bottom: 3px solid var(--orange); }
-        #export-title-text { font-family: var(--font-display); font-size: 26px; font-weight: 500; color: var(--plum); margin: 0 0 6px 0; }
-        #export-subtitle { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--muted); margin: 0; }
-        body.exporting #export-title-container { display: block; }
-
-        /* FILTROS LATERAL */
-        .sidebar-title { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); margin-bottom: 15px; display: block; letter-spacing: 0.1em; text-transform: uppercase; }
-        .filtro-grupo { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .filtro-grupo:last-child { border-bottom: none; margin-bottom: 0; }
-        .filtro-grupo label { display: block; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.8); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em; }
-        
-        .quick-links { float: right; font-weight: 600; font-size: 10px; text-transform: none; }
-        .quick-links a { color: var(--orange); cursor: pointer; text-decoration: none; margin-left: 5px; }
-        .quick-links a:hover { color: #fff; }
-
-        .buttons-container { display: flex; flex-wrap: wrap; gap: 6px; }
-        .filter-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); padding: 6px 10px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: all var(--transition-speed); font-size: 12px; font-family: inherit; }
-        .filter-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
-        .filter-btn.active { background: rgba(255,110,0,0.2); color: #fff; border-color: var(--orange); font-weight: 600; }
-        
-        .mode-buttons { display: flex; gap: 8px; margin-bottom: 10px; }
-        .mode-btn { flex: 1; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); padding: 8px 0; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all var(--transition-speed); font-size: 12px; font-family: inherit; }
-        #modeRB.active { background: rgba(255,255,255,0.15); color: #fff; border-color: #fff; }
-        #modeCusto.active { background: rgba(255,110,0,0.2); color: #fff; border-color: var(--orange); }
-        
-        .clear-filters-btn { background: transparent; color: var(--orange); border: 1px solid var(--orange); padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 15px; font-size: 12px; transition: all 0.2s; font-family: inherit; }
-        .clear-filters-btn:hover { background: var(--orange); color: white; }
-
-        .empty-state-msg { display: none; text-align: center; padding: 60px 20px; background: var(--surface); border-radius: 18px; border: 1px dashed var(--border); margin-top: 20px; }
-        .empty-state-msg h2 { color: var(--ink); font-family: var(--font-display); font-size: 24px; font-weight: 500; margin-bottom: 10px; }
-        .empty-state-msg p { color: var(--muted); }
-        #page-dashboard.is-empty .empty-state-msg { display: block; }
-        #page-dashboard.is-empty #export-block-1, #page-dashboard.is-empty #export-block-2, #page-dashboard.is-empty #export-block-3 { display: none; }
-
-        /* KPIS E GRÁFICOS (Padrão Card) */
-        .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 25px; }
-        .kpi-card { background: var(--surface); padding: 22px 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; transition: all 0.25s; position: relative; overflow: hidden; }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--subtle); }
-        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
-        .kpi-card.kpi-rb::before   { background: var(--plum); }
-        .kpi-card.kpi-custo::before { background: var(--orange); }
-        .kpi-card.kpi-margem::before { background: var(--color-margem); }
-        .kpi-card.kpi-ticket::before { background: var(--color-ticket); }
-        
-        .kpi-header { display: flex; align-items: center; gap: 8px; }
-        .kpi-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-        .kpi-rb .kpi-icon      { background: var(--surface-soft); color: var(--plum); }
-        .kpi-custo .kpi-icon   { background: var(--orange-soft); color: var(--orange-deep); }
-        .kpi-margem .kpi-icon  { background: var(--color-margem-soft); color: var(--color-margem); }
-        .kpi-ticket .kpi-icon  { background: var(--color-ticket-soft); color: var(--color-ticket); }
-        
-        .kpi-card h3 { font-family: var(--font-body); font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; margin: 0; font-weight: 700; }
-        .kpi-card .valor { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--ink); line-height: 1; letter-spacing: -0.02em; }
-        .kpi-card .variacao { font-size: 10.5px; font-weight: 600; font-family: var(--font-mono); display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 999px; background: var(--border-soft); width: fit-content; }
-        .kpi-card .variacao.positiva { color: var(--ok); background: var(--ok-soft); border: 1px solid #C2E4CC; }
-        .kpi-card .variacao.negativa { color: var(--err); background: var(--err-soft); border: 1px solid #F9D5D5; }
-        .kpi-card .variacao.neutra { color: var(--muted); background: var(--border-soft); border: 1px solid var(--border); }
-
-        .graficos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 25px; }
-        .grafico-linha-unica { display: block; margin-bottom: 25px; }
-        .grafico-card { background: var(--surface); border-radius: 18px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); display: flex; flex-direction: column; transition: all 0.3s; }
-        .grafico-card h2 { font-family: var(--font-display); font-size: 18px; font-weight: 500; color: var(--ink); margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-soft); letter-spacing: -0.01em; }
-        .grafico-card canvas { max-height: 320px; width: 100% !important; }
-        #graficoMensal { max-height: 400px; }
-
-        /* TABELA */
-        .tabela-container { overflow-x: auto; overflow-y: auto; max-height: 600px; background: var(--surface); border-radius: 18px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; min-width: 800px; }
-        th, td { background-clip: padding-box; padding: 12px 16px; white-space: nowrap; text-align: right; }
-        th { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); }
-        td { border-bottom: 1px solid var(--border-soft); border-right: 1px solid var(--border-soft); color: var(--ink); }
-        th:last-child, td:last-child { border-right: none; }
-
-        thead th { position: sticky; top: 0; z-index: 20; background-color: var(--surface-soft); color: var(--muted); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid var(--border); }
-        tr:nth-child(2) th { top: 41px; z-index: 20; }
-        th:nth-child(1), th:nth-child(2), th:nth-child(3), th:nth-child(4) { text-align: left; }
-        td:nth-child(1), td:nth-child(2), td:nth-child(3), td:nth-child(4) { text-align: left; font-weight: 600; color: var(--muted); }
-
-        thead th:nth-child(1), thead th:nth-child(2), thead th:nth-child(3), thead th:nth-child(4) { z-index: 50 !important; left: 0; }
-        tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(3), tbody td:nth-child(4) { position: sticky; left: 0; z-index: 15; background-color: var(--surface); }
-        
-        th:nth-child(1), td:nth-child(1) { min-width: 100px; left: 0; }
-        th:nth-child(2), td:nth-child(2) { min-width: 130px; left: 100px; }
-        th:nth-child(3), td:nth-child(3) { min-width: 120px; left: 230px; } 
-        th:nth-child(4), td:nth-child(4) { min-width: 100px; left: 350px; border-right: 1px solid var(--border); box-shadow: 4px 0 6px -4px rgba(0,0,0,0.05); } 
-        
-        tbody tr:hover td { background: rgba(255,110,0,0.035); }
-        tbody td.grupo-mes-par { background-color: #FAFAFA; font-family: var(--font-mono); font-size: 12.5px; }
-        tbody td.grupo-mes-impar { background-color: #FFFFFF; font-family: var(--font-mono); font-size: 12.5px; }
-        
-        th.subcol.sortable { cursor: pointer; transition: color 0.2s; }
-        th.subcol.sortable:hover { color: var(--ink); background: var(--border-soft); }
-        th.mes-header { text-align: center; background-color: var(--plum); color: white; border-bottom: none; }
-
-        footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 30px; padding-bottom: 20px; font-family: var(--font-mono); }
-
-        /* EXPORTAÇÃO (PDF/PNG) E RESPONSIVIDADE */
-        body.exporting * { transition: none !important; animation: none !important; }
-        body.exporting .sidebar, body.exporting .nav-bar, body.exporting .menu-toggle { display: none !important; }
-        body.exporting .main-content { margin-left: 0 !important; padding: 0 !important; width: 100%; background: white !important; }
-        body.exporting .grafico-card, body.exporting .kpi-card { border: 1px solid #E2E8F0 !important; box-shadow: none !important; }
-        body.exporting header { display: none !important; }
-
-        @media (max-width: 1024px) {
-            .menu-toggle { display: block; }
-            .sidebar { left: -320px; transition: left 0.3s ease; }
-            .sidebar.open { left: 0; }
-            .main-content { margin-left: 0; }
-            .graficos { grid-template-columns: 1fr; }
-        }
-
-        /* MODO IMPRESSÃO (Nativo) */
         @media print {
-            .sidebar, .nav-bar, header, footer, .quick-links, .export-buttons, .menu-toggle { display: none !important; }
-            body, .main-content { background: white !important; margin: 0 !important; padding: 0 !important; width: 100% !important; display: block !important; }
-            #export-title-container { display: block !important; border-bottom: 3px solid #FF6E00 !important; }
-            .kpis { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 15px; page-break-inside: avoid; }
-            .kpi-card { flex: 1; margin: 0; padding: 15px; border: 1px solid #CCC !important; box-shadow: none !important; border-radius: 8px !important; }
-            .graficos { display: flex; flex-direction: row; justify-content: space-between; gap: 15px; margin-bottom: 15px; page-break-inside: avoid; }
-            .grafico-card { flex: 1; margin: 0; padding: 15px; border: 1px solid #CCC !important; box-shadow: none !important; border-radius: 8px !important; page-break-inside: avoid; }
-            canvas { max-height: 280px !important; }
-            #graficoMensal { max-height: 300px !important; }
-            @page { size: landscape; margin: 5mm; }
+            .sidebar, .nav-bar, header, footer, .quick-links, .export-buttons, .menu-toggle { display:none !important; }
+            body, .main-content { background:white !important; margin:0 !important; padding:0 !important; width:100% !important; display:block !important; }
+            #export-title-container { display:block !important; border-bottom:3px solid #FF6E00 !important; }
+            .kpis { display:flex; justify-content:space-between; gap:10px; margin-bottom:15px; page-break-inside:avoid; }
+            .kpi-card { flex:1; margin:0; padding:15px; border:1px solid #CCC !important; box-shadow:none !important; border-radius:8px !important; }
+            .graficos { display:flex; flex-direction:row; justify-content:space-between; gap:15px; margin-bottom:15px; page-break-inside:avoid; }
+            .grafico-card { flex:1; margin:0; padding:15px; border:1px solid #CCC !important; box-shadow:none !important; border-radius:8px !important; page-break-inside:avoid; }
+            canvas { max-height:280px !important; }
+            #graficoMensal { max-height:300px !important; }
+            @page { size:landscape; margin:5mm; }
         }
 
-        /* TOAST DE ERRO */
-        .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--err); color: white; padding: 12px 24px; border-radius: 10px; font-size: 13.5px; font-weight: 600; z-index: 99999; opacity: 0; transition: opacity 0.3s, transform 0.3s; pointer-events: none; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 10px; }
-        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-        .toast.success { background: var(--ok); }
-
-        .grafico-margem-container { margin-bottom: 25px; }
-        .export-buttons { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+        .toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--err); color:white; padding:12px 24px; border-radius:10px; font-size:13.5px; font-weight:600; z-index:99999; opacity:0; transition:opacity 0.3s, transform 0.3s; pointer-events:none; box-shadow:var(--shadow-md); display:flex; align-items:center; gap:10px; }
+        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+        .toast.success { background:var(--ok); }
+        .grafico-margem-container { margin-bottom:25px; }
+        .export-buttons { display:flex; gap:8px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end; }
     </style>
 </head>
 <body>
@@ -388,11 +231,12 @@
             <span>Comparativo</span>
         </div>
     </div>
-    
-    <div id="sidebar-filters" style="flex: 1;">
-        </div>
-
+    <div id="sidebar-filters" style="flex:1;"></div>
     <div class="sidebar-footer">
+        <a id="link-atualizar" class="btn-atualizar" href="./atualizar.html" rel="noopener" hidden>
+            <i class="ph ph-upload-simple"></i>
+            Atualizar
+        </a>
         <a id="btn-hub" class="btn-hub" href="../" rel="noopener" hidden>
             <i class="ph ph-arrow-left"></i>
             Voltar ao Hub
@@ -418,7 +262,6 @@
         <div class="nav-bar">
             <button class="nav-tab active" onclick="mudarPagina('dashboard')"><i class="ph-fill ph-chart-bar" style="font-size:16px;"></i> Dashboard</button>
             <button class="nav-tab" onclick="mudarPagina('relatorio')"><i class="ph-fill ph-file-text" style="font-size:16px;"></i> Relatório Mensal</button>
-       
             <div style="flex:1"></div>
             <div id="exportButtonsContainer" class="export-buttons"></div>
             <button class="btn icon-only" id="atualizarBtn" onclick="carregarDados(true)" title="Forçar Atualização">
@@ -431,10 +274,9 @@
                 <h2>Ops, não há dados!</h2>
                 <p>Nenhum dado encontrado com a combinação de filtros atuais. Tente limpar os filtros.</p>
             </div>
-            
+
             <div id="export-block-1">
                 <div class="kpis">
-              
                     <div class="kpi-card kpi-rb">
                         <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-trend-up"></i></div><h3>Receita Bruta</h3></div>
                         <div class="valor" id="rbTotal">R$ 0</div>
@@ -442,20 +284,16 @@
                     </div>
                     <div class="kpi-card kpi-custo">
                         <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-receipt"></i></div><h3>Custo Total</h3></div>
-             
-                         <div class="valor" id="custoTotal">R$ 0</div>
+                        <div class="valor" id="custoTotal">R$ 0</div>
                         <div class="variacao" id="varCusto">--</div>
                     </div>
                     <div class="kpi-card kpi-margem">
-  
                         <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-percent"></i></div><h3>Margem Bruta</h3></div>
                         <div class="valor" id="margem">0%</div>
                         <div class="variacao" id="varMargem">--</div>
-           
                     </div>
                     <div class="kpi-card kpi-ticket">
                         <div class="kpi-header"><div class="kpi-icon"><i class="ph-fill ph-users"></i></div><h3>Ticket Médio / Cliente</h3></div>
-                      
                         <div class="valor" id="ticketMedio">R$ 0</div>
                         <div class="variacao" id="varTicket">--</div>
                     </div>
@@ -466,7 +304,6 @@
             <div id="export-block-2">
                 <div class="graficos">
                     <div class="grafico-card"><h2>Total gerado por Trimestre</h2><canvas id="graficoTrimestre"></canvas></div>
-  
                     <div class="grafico-card"><h2>Soma por Cliente <span style="font-size:11px; font-weight:600; color:var(--muted); font-family:var(--font-body);">(Clique para filtrar)</span></h2><canvas id="graficoTop10Horizontal"></canvas></div>
                 </div>
                 <div class="graficos">
@@ -477,12 +314,10 @@
 
             <div id="export-block-3">
                 <div class="grafico-linha-unica">
-                  
                     <div class="grafico-card">
                         <h2 id="tituloYoY">Comparativo Anual</h2>
                         <div style="height:350px"><canvas id="graficoYoY"></canvas></div>
                     </div>
-             
                 </div>
                 <div class="grafico-linha-unica grafico-margem-container">
                     <div class="grafico-card">
@@ -491,15 +326,12 @@
                     </div>
                 </div>
             </div>
-
-       
         </div>
 
         <div id="page-relatorio" class="page">
             <div class="tabela-container">
                 <table id="tabelaRelatorioMensal">
                     <thead id="theadRelatorio"></thead>
-              
                     <tbody id="tbodyRelatorioMensal"></tbody>
                 </table>
             </div>
@@ -510,16 +342,14 @@
 
 <script>
     // ============================================================================
-    // URL DA PLANILHA — Cole aqui o link CSV publicado pelo Google Sheets
+    // FONTE DE DADOS — App Script Web App (URL /exec)
     // ============================================================================
-    // Como gerar:
-    //   1. Abra a planilha "Receita_Custo_Modelo" no Google Sheets
-    //   2. Arquivo > Compartilhar > Publicar na web
-    //   3. Aba: "Dados" • Formato: "Valores separados por vírgula (.csv)"
-    //   4. Marque "Republicar automaticamente quando alterações forem feitas"
-    //   5. Publicar > copie o link e cole abaixo, substituindo a URL atual
+    // Substitua a URL abaixo pela /exec da sua implantação do Apps Script
+    // (Code_Comparativo.gs). Esse endpoint substitui a leitura via CSV publicado.
     // ============================================================================
-    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRbGxZSZ_wfGJCzNi3fMKJbcj0uNisY3CsJxfBgPESThH8kc6-iKf3A7eea9qsz7sfaOANVl2ko2KWK/pub?output=csv";
+    const CONFIG = {
+        APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw4FT_gkFpqxhLukZqph_QiEi0jwb_Ogy2LEOFdnMZYmwVRQkELw7H8-Xt8cHKRkGAI/exec',
+    };
     
     document.getElementById('dataAtual').innerText = new Date().toLocaleDateString('pt-BR');
 
@@ -533,7 +363,9 @@
     window.sortRelatorio = { mes: null, tipo: null, asc: false };
     let graficoMensal, graficoTop10Horizontal, graficoTrimestre, graficoCentroCusto, graficoCCBarras, graficoMargemMensal;
     window.graficoYoYChart = null;
-    
+
+    // Fallback: tabela hardcoded usada quando o registro não traz cc/subnegocio.
+    // O preferido é o ccMap dinâmico construído a partir dos dados (mais abaixo).
     const auxiliar = [
         { operacao: "LM", cc: "30010101", centro: "OTX B2C", sub: "LM" },
         { operacao: "FM", cc: "30010105", centro: "OT FM", sub: "FM" },
@@ -541,15 +373,13 @@
         { operacao: "MELIONE", cc: "30010104", centro: "OTX ECO", sub: "MELIONE" },
         { operacao: "OTX_ECO", cc: "30010104", centro: "OTX ECO", sub: "Eco" },
         { operacao: "ECO", cc: "30010104", centro: "OTX ECO", sub: "Eco" },
-       
-         { operacao: "RENTALS", cc: "30010107", centro: "FLEET X", sub: "Rentals" },
+        { operacao: "RENTALS", cc: "30010107", centro: "FLEET X", sub: "Rentals" },
         { operacao: "FROTA FIXA", cc: "30010107", centro: "FLEET X", sub: "Frota Fixa" },
         { operacao: "FROTA FIXA II", cc: "30010107", centro: "FLEET X", sub: "FROTA FIXA II" },
         { operacao: "FROTA FIXA 2", cc: "30010107", centro: "FLEET X", sub: "FROTA FIXA II" },
         { operacao: "FROTA FIXA III", cc: "30010107", centro: "FLEET X", sub: "FROTA FIXA III" },
         { operacao: "FROTA FIXA IV", cc: "30010107", centro: "FLEET X", sub: "FROTA FIXA IV" },
-   
-         { operacao: "FTL", cc: "30010106", centro: "FTL", sub: "FTL" },
+        { operacao: "FTL", cc: "30010106", centro: "FTL", sub: "FTL" },
         { operacao: "LM_GT", cc: "30010102", centro: "OTX B2B", sub: "LM_GT" },
         { operacao: "LM_KA", cc: "30010102", centro: "OTX B2B", sub: "LM_KA" },
         { operacao: "LM_SW", cc: "30010102", centro: "OTX B2B", sub: "LM_SW" },
@@ -557,23 +387,29 @@
         { operacao: "ND", cc: "99999998", centro: "Ajustes", sub: "Descontos" },
         { operacao: "ISS", cc: "99999999", centro: "Impostos", sub: "ISS" }
     ];
-    window.getCCSub = (op) => auxiliar.find(a=>a.operacao===op) || { cc:"00000000", centro:"Outros", sub:op };
 
-    /* ============================================================================
-       HUB LINK — Novo botão de Voltar
-       ============================================================================ */
+    // Mapa dinâmico (preferencial) — populado em carregarDados().
+    window._ccMap = {};
+    window.getCCSub = (op) => {
+        if (window._ccMap && window._ccMap[op]) return window._ccMap[op];
+        return auxiliar.find(a => a.operacao === op) || { cc: "00000000", centro: "Outros", sub: op };
+    };
+
+    /* ========================================================================
+       HUB LINK — Voltar ao Hub + Atualizar
+       ======================================================================== */
     const HubLink = {
-      HUB_PATH_PREFIX: '/Controladoria',          
-      SELF_PATH_PREFIX: '/Controladoria/Comparativo', 
+      HUB_PATH_PREFIX: '/Controladoria',
+      SELF_PATH_PREFIX: '/Controladoria/Comparativo',
       STORAGE_KEY: 'came_from_hub_comparativo',
 
       init() {
         const btn = document.getElementById('btn-hub');
-        if (!btn) return;
-
+        const linkAtualizar = document.getElementById('link-atualizar');
         if (this._userCameFromHub()) {
-          btn.hidden = false;
-          try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { }
+          if (btn) btn.hidden = false;
+          if (linkAtualizar) linkAtualizar.hidden = false;
+          try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
         }
       },
 
@@ -587,25 +423,19 @@
             if (sameOrigin && isHubPath && !isSelfPath) return true;
           }
         } catch (e) {}
-
         try {
           const params = new URLSearchParams(location.search);
           if (params.has('from')) return true;
         } catch (e) {}
-
         try {
           if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
         } catch (e) {}
-
         return false;
       },
     };
-    
-    // INICIALIZAÇÃO
+
     document.addEventListener("DOMContentLoaded", () => {
         HubLink.init();
-        // Popula os botões de exportação (PDF/PNG/Imprimir) já no carregamento.
-        // Sem isso, eles ficavam vazios até o usuário clicar em alguma aba.
         atualizarBotoesExportacao('dashboard');
         carregarDados();
     });
@@ -614,68 +444,34 @@
         document.getElementById('sidebar-main').classList.toggle('open');
     }
 
-    // Cores fixas do Design System V8 para os gráficos
-    function getChartTextColor() { return '#1A0F1A'; } /* var(--ink) */
-    function getChartGridColor() { return '#F0EAF0'; } /* var(--border-soft) */
-    function getChartTooltipBg() { return 'rgba(26,15,26,0.95)'; } /* escuro sólido */
+    function getChartTextColor() { return '#1A0F1A'; }
+    function getChartGridColor() { return '#F0EAF0'; }
+    function getChartTooltipBg() { return 'rgba(26,15,26,0.95)'; }
     function getChartTooltipText() { return '#FFFFFF'; }
 
     function normalizarTexto(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() : str; }
     function limparTextoCsv(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s-]/g, "").trim() : ""; }
     function normalizarMes(m) { return m ? normalizarTexto(m) : m; }
 
-    /**
-     * Converte string numérica para Number, aceitando formato BR e US.
-     * Formato BR: "3.701.354,18" (ponto=milhar, vírgula=decimal) → 3701354.18
-     * Formato US: "3701354.18"   (ponto=decimal)                  → 3701354.18
-     * Detecção: se contém vírgula, é BR. Senão, é US (ou inteiro).
-     */
-    function parseNumero(s) {
-        if (s === null || s === undefined) return 0;
-        s = s.toString().trim();
-        if (s === '') return 0;
-        if (s.indexOf(',') !== -1) {
-            // Formato BR: remove TODOS os pontos (separadores de milhar) e troca vírgula por ponto
-            return parseFloat(s.replace(/\./g, '').replace(',', '.')) || 0;
-        }
-        // Formato US ou inteiro (pode ter sinal de menos): parse direto
-        return parseFloat(s) || 0;
-    }
-
-    function parseCsvLine(line) {
-        const result = [];
-        let cur = '', inQuote = false;
-        for (let i = 0; i < line.length; i++) {
-            const ch = line[i];
-            if (ch === '"') {
-                if (inQuote && line[i+1] === '"') { cur += '"'; i++; }
-                else { inQuote = !inQuote; }
-            } else if (ch === ',' && !inQuote) {
-                result.push(cur.trim()); cur = '';
-            } else { cur += ch; }
-        }
-        result.push(cur.trim());
-        return result;
-    }
-    
-    function showToast(msg, tipo = 'error') {
+    function showToast(msg, tipo) {
+        tipo = tipo || 'error';
         const el = document.getElementById('toastEl');
         const msgEl = document.getElementById('toastMsg');
         if (!el || !msgEl) return;
         msgEl.textContent = msg;
-        el.className = `toast${tipo === 'success' ? ' success' : ''} show`;
+        el.className = 'toast' + (tipo === 'success' ? ' success' : '') + ' show';
         setTimeout(() => el.classList.remove('show'), 4000);
     }
-    
+
     function formatarEixo(v) {
         if (v >= 1000000) return (v / 1000000).toFixed(1).replace('.0', '') + 'M';
         if (v >= 1000) return (v / 1000).toFixed(0) + ' mil';
         return v;
     }
-   
+
     function getCorModoBg() { return window.currentMode === 'Custo' ? 'rgba(255, 110, 0, 0.85)' : 'rgba(60, 0, 60, 0.85)'; }
     function getCorModoBorder() { return window.currentMode === 'Custo' ? '#D25500' : '#2A0028'; }
-    
+
     function getAnosDisponiveis() {
         let dados = window.dadosCompletos;
         if(window.filtroMeses.size) dados = dados.filter(d => window.filtroMeses.has(d.mes.split('/')[0].replace('.', '').trim()));
@@ -713,72 +509,88 @@
         if (selecionar) mesesDisp.forEach(m => window.filtroMeses.add(m)); else window.filtroMeses.clear();
         construirSidebar(); aplicarFiltrosDashboard();
     };
-    
     window.toggleAllClientes = (selecionar) => {
         const cliDisp = Array.from(getClientesDisponiveis());
         if (selecionar) cliDisp.forEach(c => window.filtroClientes.add(c)); else window.filtroClientes.clear();
         construirSidebar(); aplicarFiltrosDashboard();
     };
-    
     window.toggleAllCentros = (selecionar) => {
         const centroDisp = Array.from(getCentrosDisponiveis());
         if (selecionar) centroDisp.forEach(c => window.filtroCentros.add(c)); else window.filtroCentros.clear();
         construirSidebar(); aplicarFiltrosDashboard();
     };
-    
-    async function carregarDados(force = false) {
+
+    async function carregarDados(force) {
+        force = !!force;
         const btnIcon = document.getElementById('icone-atualizar');
         const btn = document.getElementById('atualizarBtn');
         const overlay = document.getElementById('loadingOverlay');
-        
+
         if(btnIcon) btnIcon.classList.add('spin-anim');
         if(btn) btn.disabled = true;
         overlay.classList.remove('hidden');
-        
+
         try {
-            let csvText = '';
-            const cacheTime = sessionStorage.getItem('ontime_csv_time');
-            const cacheData = sessionStorage.getItem('ontime_csv_data');
-            const agora = Date.now();
-            
-            if (!force && cacheData && cacheTime && (agora - parseInt(cacheTime)) < 300000) {
-                csvText = cacheData;
-            } else {
-                const resp = await fetch(CSV_URL);
-                if(!resp.ok) throw new Error('Erro ao carregar CSV');
-                csvText = await resp.text();
-                sessionStorage.setItem('ontime_csv_data', csvText);
-                sessionStorage.setItem('ontime_csv_time', agora.toString());
+            const url = CONFIG.APP_SCRIPT_URL;
+            if (!url || url.indexOf('COLE_A_URL') >= 0) {
+                throw new Error('URL do App Script não configurada no código.');
             }
 
-            const linhas = csvText.split('\n').filter(l=>l.trim()!=='');
-            const cabecalho = parseCsvLine(linhas[0]).map(h=>h.trim());
-            const idxCliente = cabecalho.indexOf('cliente');
-            const idxOperacao = cabecalho.indexOf('operacao');
-            const idxRb = cabecalho.indexOf('rb');
-            const idxCusto = cabecalho.indexOf('custo');
-            const idxMes = cabecalho.indexOf('mes');
-            
-            window.dadosCompletos = linhas.slice(1).map(linha=>{
-                const cols = parseCsvLine(linha);
+            // Cache local 5min; force=true bypassa o cache (?v=timestamp).
+            let jsonText = '';
+            const cacheTime = sessionStorage.getItem('ontime_comp_time');
+            const cacheData = sessionStorage.getItem('ontime_comp_data');
+            const agora = Date.now();
+            if (!force && cacheData && cacheTime && (agora - parseInt(cacheTime)) < 300000) {
+                jsonText = cacheData;
+            } else {
+                const resp = await fetch(url + '?v=' + agora);
+                if(!resp.ok) throw new Error('HTTP ' + resp.status);
+                jsonText = await resp.text();
+                sessionStorage.setItem('ontime_comp_data', jsonText);
+                sessionStorage.setItem('ontime_comp_time', agora.toString());
+            }
+
+            const registros = JSON.parse(jsonText);
+            if (!Array.isArray(registros)) {
+                throw new Error('Resposta inesperada do servidor.');
+            }
+
+            // Mapeia pro formato interno e enriquece com cc/subnegocio (vindos do Sheets).
+            window.dadosCompletos = registros.map(function(r) {
                 return {
-                    cliente: normalizarTexto(cols[idxCliente] || ''),
-                    operacao: normalizarTexto(cols[idxOperacao] || ''),
-                
-                    rb: parseNumero(cols[idxRb]),
-                    custo: parseNumero(cols[idxCusto]),
-                    mes: normalizarMes(cols[idxMes] || '')
+                    cliente:    normalizarTexto(r.cliente  || ''),
+                    operacao:   normalizarTexto(r.operacao || ''),
+                    rb:         Number(r.rb)    || 0,
+                    custo:      Number(r.custo) || 0,
+                    mes:        normalizarMes(r.mes || ''),
+                    cc:         String(r.cc || ''),
+                    subnegocio: String(r.subnegocio || ''),
+                    realizado:  !!r.realizado,
+                    ano:        r.ano,
                 };
-            }).filter(d=>d.cliente && d.operacao);
-            
+            }).filter(function(d) { return d.cliente && d.operacao && d.mes; });
+
+            // Constrói ccMap a partir dos dados (CC + Subnegócio direto da fonte).
+            window._ccMap = {};
+            window.dadosCompletos.forEach(function(d) {
+                if (!window._ccMap[d.operacao]) {
+                    window._ccMap[d.operacao] = {
+                        cc:     d.cc || '00000000',
+                        centro: d.subnegocio || 'Outros',
+                        sub:    d.operacao,
+                    };
+                }
+            });
+
             window.filtroAno = obterAnoMaisRecenteGeral();
             window.filtroMeses.clear(); window.filtroClientes.clear(); window.filtroCentros.clear();
             window.currentMode = 'RB';
             construirSidebar(); aplicarFiltrosDashboard(); atualizarRelatorioMensal();
-            
-        } catch(e){ 
+
+        } catch(e) {
             console.error(e);
-            showToast('Erro ao carregar dados. Verifique sua conexão e tente novamente.');
+            showToast('Erro ao carregar dados: ' + (e.message || e));
         } finally {
             if(btnIcon) btnIcon.classList.remove('spin-anim');
             if(btn) btn.disabled = false;
@@ -799,12 +611,12 @@
         const todosMeses = [...new Set(window.dadosCompletos.map(d=>d.mes.split('/')[0].replace('.', '').trim()))].sort((a,b)=>ordemMeses.indexOf(a)-ordemMeses.indexOf(b));
         const todosClientes = [...new Set(window.dadosCompletos.map(d=>d.cliente))].sort();
         const todosCentros = [...new Set(window.dadosCompletos.map(d=>window.getCCSub(d.operacao).centro))].sort();
-        
+
         const anosDisp = getAnosDisponiveis();
         const mesesDisp = getMesesDisponiveis();
         const clientesDisp = getClientesDisponiveis();
         const centrosDisp = getCentrosDisponiveis();
-        
+
         if(window.filtroAno && !anosDisp.includes(window.filtroAno)) window.filtroAno = anosDisp.length ? anosDisp[anosDisp.length-1] : null;
         for (let m of window.filtroMeses) { if(!mesesDisp.has(m)) window.filtroMeses.delete(m); }
         for (let c of window.filtroClientes) { if(!clientesDisp.has(c)) window.filtroClientes.delete(c); }
@@ -815,28 +627,25 @@
                 <label>Visualização</label>
                 <div class="mode-buttons">
                     <button class="mode-btn ${window.currentMode === 'RB' ? 'active' : ''}" id="modeRB">RB</button>
-  
                     <button class="mode-btn ${window.currentMode === 'Custo' ? 'active' : ''}" id="modeCusto">Custo</button>
                 </div>
             </div>
             <div class="filtro-grupo"><label>Ano</label><div class="buttons-container" id="filtroAnoContainer"></div></div>
             <div class="filtro-grupo">
-                <label>Mês 
- <span class="quick-links"><a onclick="toggleAllMeses(true)">Todos</a><a onclick="toggleAllMeses(false)">Nenhum</a></span></label>
+                <label>Mês <span class="quick-links"><a onclick="toggleAllMeses(true)">Todos</a><a onclick="toggleAllMeses(false)">Nenhum</a></span></label>
                 <div class="buttons-container" id="filtroMesContainer"></div>
             </div>
             <div class="filtro-grupo">
                 <label>Cliente <span class="quick-links"><a onclick="toggleAllClientes(true)">Todos</a><a onclick="toggleAllClientes(false)">Nenhum</a></span></label>
                 <div class="buttons-container" id="filtroClienteContainer"></div>
             </div>
-    
-         <div class="filtro-grupo">
+            <div class="filtro-grupo">
                 <label>Centro de Custo <span class="quick-links"><a onclick="toggleAllCentros(true)">Todos</a><a onclick="toggleAllCentros(false)">Nenhum</a></span></label>
                 <div class="buttons-container" id="filtroCentroContainer"></div>
             </div>
             <button class="clear-filters-btn" id="clearFiltersBtn">Limpar Filtros</button>
         `;
-        
+
         document.getElementById('modeRB').onclick = () => setMode('RB');
         document.getElementById('modeCusto').onclick = () => setMode('Custo');
 
@@ -848,43 +657,40 @@
             btn.onclick = () => { window.filtroAno = ano; construirSidebar(); aplicarFiltrosDashboard(); };
             anoContainer.appendChild(btn);
         });
-        
+
         const mesContainer = document.getElementById('filtroMesContainer');
         todosMeses.forEach(mes => {
             if(mesesDisp.has(mes)) {
                 const btn = document.createElement('button');
                 btn.textContent = mes; btn.classList.add('filter-btn');
                 if(window.filtroMeses.has(mes)) btn.classList.add('active');
-                btn.onclick = () => { if(window.filtroMeses.has(mes)) window.filtroMeses.delete(mes); else window.filtroMeses.add(mes); construirSidebar(); 
- aplicarFiltrosDashboard(); };
+                btn.onclick = () => { if(window.filtroMeses.has(mes)) window.filtroMeses.delete(mes); else window.filtroMeses.add(mes); construirSidebar(); aplicarFiltrosDashboard(); };
                 mesContainer.appendChild(btn);
             }
         });
-        
+
         const clienteContainer = document.getElementById('filtroClienteContainer');
         todosClientes.forEach(cli => {
             if(clientesDisp.has(cli)) {
                 const btn = document.createElement('button');
                 btn.textContent = cli; btn.classList.add('filter-btn');
                 if(window.filtroClientes.has(cli)) btn.classList.add('active');
-                btn.onclick = () => { if(window.filtroClientes.has(cli)) window.filtroClientes.delete(cli); else window.filtroClientes.add(cli); construirSidebar(); 
- aplicarFiltrosDashboard(); };
+                btn.onclick = () => { if(window.filtroClientes.has(cli)) window.filtroClientes.delete(cli); else window.filtroClientes.add(cli); construirSidebar(); aplicarFiltrosDashboard(); };
                 clienteContainer.appendChild(btn);
             }
         });
-        
+
         const centroContainer = document.getElementById('filtroCentroContainer');
         todosCentros.forEach(centro => {
             if(centrosDisp.has(centro)) {
                 const btn = document.createElement('button');
                 btn.textContent = centro; btn.classList.add('filter-btn');
                 if(window.filtroCentros.has(centro)) btn.classList.add('active');
-                btn.onclick = () => { if(window.filtroCentros.has(centro)) window.filtroCentros.delete(centro); else window.filtroCentros.add(centro); construirSidebar(); 
- aplicarFiltrosDashboard(); };
+                btn.onclick = () => { if(window.filtroCentros.has(centro)) window.filtroCentros.delete(centro); else window.filtroCentros.add(centro); construirSidebar(); aplicarFiltrosDashboard(); };
                 centroContainer.appendChild(btn);
             }
         });
-        
+
         document.getElementById('clearFiltersBtn').onclick = () => {
             window.filtroAno = obterAnoMaisRecenteGeral();
             window.filtroMeses.clear();
@@ -903,38 +709,36 @@
         if (custoBtn) custoBtn.classList.toggle('active', mode === 'Custo');
     }
 
-    function formatarVariacao(atual, anterior, inverteCores = false) {
+    function formatarVariacao(atual, anterior, inverteCores) {
+        inverteCores = !!inverteCores;
         if (anterior === 0) return { texto: '--', classe: 'neutra' };
         let varReal = ((atual - anterior) / Math.abs(anterior)) * 100;
         let prefix = varReal > 0 ? '+' : '';
         let classColor = varReal > 0 ? 'positiva' : (varReal < 0 ? 'negativa' : 'neutra');
         if (inverteCores) classColor = varReal > 0 ? 'negativa' : (varReal < 0 ? 'positiva' : 'neutra');
-        return { texto: `${prefix}${varReal.toFixed(1)}%`, classe: classColor };
+        return { texto: prefix + varReal.toFixed(1) + '%', classe: classColor };
     }
 
     function getPeriodoAnterior(dadosFiltrados) {
         const mesesFiltrados = [...new Set(dadosFiltrados.map(d => d.mes.split('/')[0].replace('.', '').trim()))];
         if (mesesFiltrados.length === 0) return [];
-        
         let anoAnterior = window.filtroAno ? (parseInt(window.filtroAno) - 1).toString() : null;
         if (!anoAnterior) return [];
-
         return window.dadosCompletos.filter(d => {
             const partes = d.mes.split('/');
             if(partes.length < 2) return false;
             const m = partes[0].replace('.', '').trim();
             const a = partes[1].trim();
-
             const matchMes = mesesFiltrados.includes(m);
-            const matchAno = a 
- === anoAnterior;
+            const matchAno = a === anoAnterior;
             const matchCliente = window.filtroClientes.size ? window.filtroClientes.has(d.cliente) : true;
             const matchCC = window.filtroCentros.size ? window.filtroCentros.has(window.getCCSub(d.operacao).centro) : true;
             return matchMes && matchAno && matchCliente && matchCC;
         });
     }
 
-    function aplicarFiltrosDashboard(sync = false) {
+    function aplicarFiltrosDashboard(sync) {
+        sync = !!sync;
         let dadosBase = [...window.dadosCompletos];
         if(window.filtroAno) dadosBase = dadosBase.filter(d => (d.mes.split('/')[1] || '').trim() === window.filtroAno);
         if(window.filtroMeses.size) dadosBase = dadosBase.filter(d => window.filtroMeses.has(d.mes.split('/')[0].replace('.', '').trim()));
@@ -946,7 +750,7 @@
         if(window.filtroMeses.size) dadosMensal = dadosMensal.filter(d => window.filtroMeses.has(d.mes.split('/')[0].replace('.', '').trim()));
         if(window.filtroCentros.size) dadosMensal = dadosMensal.filter(d => window.filtroCentros.has(window.getCCSub(d.operacao).centro));
         if(window.filtroClientes.size) dadosMensal = dadosMensal.filter(d => window.filtroClientes.has(d.cliente));
-        
+
         let dadosClientes = [...window.dadosCompletos];
         if(window.filtroAno) dadosClientes = dadosClientes.filter(d => (d.mes.split('/')[1] || '').trim() === window.filtroAno);
         if(window.filtroMeses.size) dadosClientes = dadosClientes.filter(d => window.filtroMeses.has(d.mes.split('/')[0].replace('.', '').trim()));
@@ -955,10 +759,9 @@
         let dadosParaYoY = [...window.dadosCompletos];
         if(window.filtroCentros.size) dadosParaYoY = dadosParaYoY.filter(d => window.filtroCentros.has(window.getCCSub(d.operacao).centro));
         if(window.filtroClientes.size) dadosParaYoY = dadosParaYoY.filter(d => window.filtroClientes.has(d.cliente));
-        
+
         let dadosFiltrados = [...dadosBase];
         const containerPainel = document.getElementById('page-dashboard');
-        
         if (dadosFiltrados.length === 0) {
             containerPainel.classList.add('is-empty');
         } else {
@@ -983,12 +786,12 @@
         const margem = totalRB > 0 ? ((resultado / totalRB) * 100) : 0;
         const clientes = new Set(dados.map(d=>d.cliente));
         const ticketMedio = clientes.size > 0 ? (totalRB / clientes.size) : 0;
-        
-        document.getElementById('rbTotal').innerText = `R$ ${formatarNumeroInteiro(totalRB)}`;
-        document.getElementById('custoTotal').innerText = `R$ ${formatarNumeroInteiro(totalCusto)}`;
-        document.getElementById('margem').innerText = `${margem.toFixed(1)}%`;
-        document.getElementById('ticketMedio').innerText = `R$ ${formatarNumeroInteiro(ticketMedio)}`;
-        
+
+        document.getElementById('rbTotal').innerText = 'R$ ' + formatarNumeroInteiro(totalRB);
+        document.getElementById('custoTotal').innerText = 'R$ ' + formatarNumeroInteiro(totalCusto);
+        document.getElementById('margem').innerText = margem.toFixed(1) + '%';
+        document.getElementById('ticketMedio').innerText = 'R$ ' + formatarNumeroInteiro(ticketMedio);
+
         const dadosAnteriores = getPeriodoAnterior(dados);
         const prevRB = dadosAnteriores.reduce((a,d)=>a+d.rb,0);
         const prevCusto = dadosAnteriores.reduce((a,d)=>a+d.custo,0);
@@ -996,34 +799,35 @@
         const prevMargem = prevRB > 0 ? ((prevResultado / prevRB) * 100) : 0;
         const prevClientes = new Set(dadosAnteriores.map(d=>d.cliente));
         const prevTicket = prevClientes.size > 0 ? (prevRB / prevClientes.size) : 0;
-        
+
         const varRb = formatarVariacao(totalRB, prevRB);
         const elVarRb = document.getElementById('varRb');
-        elVarRb.innerText = varRb.texto; elVarRb.className = `variacao ${varRb.classe}`;
-        
+        elVarRb.innerText = varRb.texto; elVarRb.className = 'variacao ' + varRb.classe;
+
         const varCusto = formatarVariacao(totalCusto, prevCusto, true);
         const elVarCusto = document.getElementById('varCusto');
-        elVarCusto.innerText = varCusto.texto; elVarCusto.className = `variacao ${varCusto.classe}`;
-        
+        elVarCusto.innerText = varCusto.texto; elVarCusto.className = 'variacao ' + varCusto.classe;
+
         let valMargemDiff = margem - prevMargem;
         const elVarMargem = document.getElementById('varMargem');
         if(prevRB === 0) {
             elVarMargem.innerText = '--';
             elVarMargem.className = 'variacao neutra';
         } else {
-            elVarMargem.innerText = `${valMargemDiff > 0 ? '+' : ''}${valMargemDiff.toFixed(1)} p.p.`;
-            elVarMargem.className = `variacao ${valMargemDiff > 0 ? 'positiva' : 'negativa'}`;
+            elVarMargem.innerText = (valMargemDiff > 0 ? '+' : '') + valMargemDiff.toFixed(1) + ' p.p.';
+            elVarMargem.className = 'variacao ' + (valMargemDiff > 0 ? 'positiva' : 'negativa');
         }
 
         const varTicket = formatarVariacao(ticketMedio, prevTicket);
         const elVarTicket = document.getElementById('varTicket');
         elVarTicket.innerText = varTicket.texto;
-        elVarTicket.className = `variacao ${varTicket.classe}`;
+        elVarTicket.className = 'variacao ' + varTicket.classe;
     }
 
     function chartHoverCursor(e, elements) { e.native.target.style.cursor = elements.length ? 'pointer' : 'default'; }
 
-    function atualizarGraficoMargemMensal(dados, sync = false) {
+    function atualizarGraficoMargemMensal(dados, sync) {
+        sync = !!sync;
         const mesesMap = {};
         const ordemMeses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
         dados.forEach(d => {
@@ -1032,90 +836,60 @@
             mesesMap[m].rb += d.rb;
             mesesMap[m].custo += d.custo;
         });
-        
         const mesesOrd = Object.keys(mesesMap).sort((a,b) => ordemMeses.indexOf(a) - ordemMeses.indexOf(b));
         const margens = mesesOrd.map(m => {
             const v = mesesMap[m];
             return v.rb > 0 ? parseFloat(((v.rb - v.custo) / v.rb * 100).toFixed(2)) : 0;
         });
-        
         const textColor = getChartTextColor();
         const gridColor = getChartGridColor();
         const tooltipBg = getChartTooltipBg();
         const tooltipText = getChartTooltipText();
-        
+
         if (graficoMargemMensal) {
             graficoMargemMensal.data.labels = mesesOrd;
             graficoMargemMensal.data.datasets[0].data = margens;
-            graficoMargemMensal.options.scales.x.ticks.color = textColor;
-            graficoMargemMensal.options.scales.y.ticks.color = textColor;
-            graficoMargemMensal.options.scales.y.grid.color = gridColor;
-            graficoMargemMensal.options.plugins.tooltip.backgroundColor = tooltipBg;
-            graficoMargemMensal.options.plugins.tooltip.titleColor = tooltipText;
-            graficoMargemMensal.options.plugins.tooltip.bodyColor = tooltipText;
-            graficoMargemMensal.options.plugins.datalabels.color = textColor;
             graficoMargemMensal.update(sync ? 'none' : undefined);
         } else {
             const ctx = document.getElementById('graficoMargem').getContext('2d');
             graficoMargemMensal = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: mesesOrd,
-                    datasets: [{
-                    
-                        label: 'Margem %',
-                        data: margens,
-                        borderColor: '#166534',
-                        backgroundColor: 'rgba(22,101,52,0.08)',
-                    
-                        borderWidth: 2.5,
-                        pointBackgroundColor: '#166534',
-                        pointRadius: 5,
-                        pointHoverRadius: 7,
-                    
-                        fill: true,
-                        tension: 0.35
-                    }]
-                },
+                data: { labels: mesesOrd, datasets: [{
+                    label: 'Margem %', data: margens,
+                    borderColor: '#166534', backgroundColor: 'rgba(22,101,52,0.08)',
+                    borderWidth: 2.5, pointBackgroundColor: '#166534',
+                    pointRadius: 5, pointHoverRadius: 7, fill: true, tension: 0.35
+                }]},
                 options: {
-                
                     responsive: true, maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
                     plugins: {
                         legend: { display: false },
-                  
-                        tooltip: {
-                            backgroundColor: tooltipBg, titleColor: tooltipText, bodyColor: tooltipText,
-                            callbacks: { label: ctx => `Margem: ${ctx.raw.toFixed(1)}%` }
-                        },
- 
-                        datalabels: { anchor: 'top', align: 'top', offset: 4, formatter: v => `${v.toFixed(1)}%`, color: textColor, font: { weight: 'bold', size: 12, family: "'JetBrains Mono', monospace" } }
+                        tooltip: { backgroundColor: tooltipBg, titleColor: tooltipText, bodyColor: tooltipText, callbacks: { label: ctx => 'Margem: ' + ctx.raw.toFixed(1) + '%' } },
+                        datalabels: { anchor:'top', align:'top', offset:4, formatter: v => v.toFixed(1)+'%', color: textColor, font: { weight:'bold', size:12, family:"'JetBrains Mono', monospace" } }
                     },
                     scales: {
-                
-                        y: { beginAtZero: false, grace: '10%', grid: { color: gridColor, borderDash: [5,5] }, border: { display: false }, ticks: { callback: v => `${v.toFixed(1)}%`, color: textColor, font: { size: 11 } } },
-                        x: { grid: { display: false }, border: { display: false }, ticks: { color: textColor, font: { weight: '600', size: 11 } } }
-            
+                        y: { beginAtZero:false, grace:'10%', grid:{ color:gridColor, borderDash:[5,5] }, border:{display:false}, ticks:{ callback: v => v.toFixed(1)+'%', color:textColor, font:{size:11} } },
+                        x: { grid:{display:false}, border:{display:false}, ticks:{ color:textColor, font:{weight:'600',size:11} } }
                     }
-                }, plugins: [ChartDataLabels]
+                }, plugins:[ChartDataLabels]
             });
         }
     }
 
-    function atualizarGraficoMensal(dados, sync = false) {
+    function atualizarGraficoMensal(dados, sync) {
+        sync = !!sync;
         const mesesMap = {};
         dados.forEach(d => {
-            const mesFormatado = d.mes.split('/')[0].replace('.', '').trim(); 
+            const mesFormatado = d.mes.split('/')[0].replace('.', '').trim();
             if(!mesesMap[mesFormatado]) mesesMap[mesFormatado] = { receita:0, custo:0 };
             mesesMap[mesFormatado].receita += d.rb;
             mesesMap[mesFormatado].custo += d.custo;
         });
-        
         const mesesOrd = Object.keys(mesesMap).sort((a,b)=>{
             const meses=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
             return meses.indexOf(a)-meses.indexOf(b);
         });
-        
         const receita = mesesOrd.map(m=>mesesMap[m].receita);
         const custo = mesesOrd.map(m=>mesesMap[m].custo);
 
@@ -1123,31 +897,22 @@
             graficoMensal.data.labels = mesesOrd;
             graficoMensal.data.datasets[0].data = receita;
             graficoMensal.data.datasets[1].data = custo;
-            graficoMensal.options.plugins.datalabels.color = getChartTextColor();
-            graficoMensal.options.scales.x.ticks.color = getChartTextColor();
-            graficoMensal.options.scales.y.ticks.color = getChartTextColor();
-            graficoMensal.options.scales.y.grid.color = getChartGridColor();
-            graficoMensal.options.plugins.tooltip.backgroundColor = getChartTooltipBg();
-            graficoMensal.options.plugins.tooltip.titleColor = getChartTooltipText();
-            graficoMensal.options.plugins.tooltip.bodyColor = getChartTooltipText();
             graficoMensal.update(sync ? 'none' : undefined);
         } else {
             const ctx = document.getElementById('graficoMensal').getContext('2d');
             graficoMensal = new Chart(ctx,{
                 type:'bar',
                 data:{ labels:mesesOrd, datasets:[
-                    { label:'Receita', data:receita, backgroundColor:'rgba(60,0,60,0.85)', borderColor: '#2A002A', borderWidth: 1, borderRadius:6 },
-                    { label:'Custo', data:custo, backgroundColor:'rgba(255,110,0,0.85)', borderColor: '#D95D00', borderWidth: 1, borderRadius:6 }
-     
-                ] },
+                    { label:'Receita', data:receita, backgroundColor:'rgba(60,0,60,0.85)', borderColor:'#2A002A', borderWidth:1, borderRadius:6 },
+                    { label:'Custo', data:custo, backgroundColor:'rgba(255,110,0,0.85)', borderColor:'#D95D00', borderWidth:1, borderRadius:6 }
+                ]},
                 options:{
                     layout: { padding: { top: 30 } },
                     responsive:true, maintainAspectRatio:false, barPercentage:0.7, categoryPercentage:0.8,
-                    interaction: { mode: 'index', intersect: false },
+                    interaction: { mode:'index', intersect:false },
                     onHover: chartHoverCursor,
                     onClick: (e, elements, chart) => {
                         if(elements.length > 0) {
-                        
                             const label = chart.data.labels[elements[0].index];
                             if(window.filtroMeses.has(label)) window.filtroMeses.delete(label);
                             else window.filtroMeses.add(label);
@@ -1156,13 +921,11 @@
                     },
                     plugins:{
                         legend:{display:false},
-                        tooltip:{ backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks:{label:ctx=>`${ctx.dataset.label}: 
-${formatarNumeroInteiro(ctx.raw)}`} },
+                        tooltip:{ backgroundColor:getChartTooltipBg(), titleColor:getChartTooltipText(), bodyColor:getChartTooltipText(), callbacks:{label:ctx => ctx.dataset.label + ': ' + formatarNumeroInteiro(ctx.raw)} },
                         datalabels:{anchor:'end',align:'top',offset:4,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:11, family:"'JetBrains Mono', monospace"}}
                     },
                     scales:{
                         y:{ beginAtZero:true, grace:'20%', grid:{color:getChartGridColor(), borderDash:[5,5]}, border:{display:false}, ticks:{callback:v=>formatarEixo(v),font:{size:11},color:getChartTextColor()} },
-    
                         x:{ grid:{display:false}, border:{display:false}, ticks:{font:{weight:'600',size:11},color:getChartTextColor()} }
                     }
                 }, plugins:[ChartDataLabels]
@@ -1170,49 +933,39 @@ ${formatarNumeroInteiro(ctx.raw)}`} },
         }
     }
 
-    function atualizarGraficoTop10Horizontal(dados, sync = false){
+    function atualizarGraficoTop10Horizontal(dados, sync) {
+        sync = !!sync;
         const clientesMap = {};
         dados.forEach(d=>{ clientesMap[d.cliente] = (clientesMap[d.cliente]||0) + (window.currentMode==='RB'?d.rb:d.custo); });
         const top10 = Object.entries(clientesMap).filter(([_,v])=>v>0).sort((a,b)=>b[1]-a[1]).slice(0,10).reverse();
-        const labels=top10.map(c=>c[0]), data=top10.map(c=>c[1]);
-        
+        const labels = top10.map(c=>c[0]), data = top10.map(c=>c[1]);
+
         if (graficoTop10Horizontal) {
             graficoTop10Horizontal.data.labels = labels;
             graficoTop10Horizontal.data.datasets[0].label = window.currentMode==='RB'?'Receita':'Custo';
             graficoTop10Horizontal.data.datasets[0].data = data;
             graficoTop10Horizontal.data.datasets[0].backgroundColor = getCorModoBg();
             graficoTop10Horizontal.data.datasets[0].borderColor = getCorModoBorder();
-            graficoTop10Horizontal.options.plugins.datalabels.color = getChartTextColor();
-            graficoTop10Horizontal.options.scales.x.ticks.color = getChartTextColor();
-            graficoTop10Horizontal.options.scales.x.grid.color = getChartGridColor();
-            graficoTop10Horizontal.options.scales.y.ticks.color = getChartTextColor();
-            graficoTop10Horizontal.options.plugins.tooltip.backgroundColor = getChartTooltipBg();
-            graficoTop10Horizontal.options.plugins.tooltip.titleColor = getChartTooltipText();
-            graficoTop10Horizontal.options.plugins.tooltip.bodyColor = getChartTooltipText();
             graficoTop10Horizontal.update(sync ? 'none' : undefined);
         } else {
             const ctx = document.getElementById('graficoTop10Horizontal').getContext('2d');
             graficoTop10Horizontal = new Chart(ctx,{
                 type:'bar', data:{labels,datasets:[{label:window.currentMode==='RB'?'Receita':'Custo',data,backgroundColor:getCorModoBg(),borderColor:getCorModoBorder(),borderWidth:1,borderRadius:6}]},
                 options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, layout:{padding:{right:80}},
-                    interaction: { mode: 'y', intersect: false },
+                    interaction: { mode:'y', intersect:false },
                     onHover: chartHoverCursor,
-             
                     onClick: (e, elements, chart) => {
                         if(elements.length > 0) {
                             const label = chart.data.labels[elements[0].index];
                             if(window.filtroClientes.has(label)) window.filtroClientes.delete(label);
- 
                             else window.filtroClientes.add(label);
                             construirSidebar(); aplicarFiltrosDashboard();
                         }
-                    
                     },
-                    plugins:{ 
-                        legend:{display:false}, 
-                        tooltip:{backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks:{label:ctx=>`${window.currentMode==='RB'?'Receita':'Custo'}: ${formatarNumeroInteiro(ctx.raw)}`}}, 
-                     
-                        datalabels:{anchor:'end',align:'right',offset:6,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:11, family:"'JetBrains Mono', monospace"}} 
+                    plugins:{
+                        legend:{display:false},
+                        tooltip:{backgroundColor:getChartTooltipBg(), titleColor:getChartTooltipText(), bodyColor:getChartTooltipText(), callbacks:{label:ctx => (window.currentMode==='RB'?'Receita':'Custo')+': '+formatarNumeroInteiro(ctx.raw)}},
+                        datalabels:{anchor:'end',align:'right',offset:6,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:11, family:"'JetBrains Mono', monospace"}}
                     },
                     scales:{ x:{ beginAtZero:true, grace:'20%', grid:{color:getChartGridColor(), borderDash:[5,5]}, border:{display:false}, ticks:{callback:v=>formatarEixo(v),font:{size:11},color:getChartTextColor()} }, y:{ grid:{display:false}, border:{display:false}, ticks:{font:{weight:'600',size:10},color:getChartTextColor()} } }
                 }, plugins:[ChartDataLabels]
@@ -1220,23 +973,20 @@ ${formatarNumeroInteiro(ctx.raw)}`} },
         }
     }
 
-    function atualizarGraficoTrimestre(dados, sync = false){
+    function atualizarGraficoTrimestre(dados, sync) {
+        sync = !!sync;
         const trimestres = { '1º Trim':0, '2º Trim':0, '3º Trim':0, '4º Trim':0 };
         dados.forEach(d=>{
             const partes = d.mes.split('/');
             const mesStr = partes[0] ? partes[0].replace('.', '').trim().toUpperCase() : '';
-            
             const mapa = {JAN:1,FEV:2,MAR:3,ABR:4,MAI:5,JUN:6,JUL:7,AGO:8,SET:9,OUT:10,NOV:11,DEZ:12};
             let num = mapa[mesStr] || 0;
-            
-         
             const valor = window.currentMode==='RB'?d.rb:d.custo;
             if(num>=1 && num<=3) trimestres['1º Trim'] += valor;
             else if(num>=4 && num<=6) trimestres['2º Trim'] += valor;
             else if(num>=7 && num<=9) trimestres['3º Trim'] += valor;
             else if(num>=10 && num<=12) trimestres['4º Trim'] += valor;
         });
-        
         const labels=Object.keys(trimestres), data=Object.values(trimestres);
 
         if (graficoTrimestre) {
@@ -1245,34 +995,26 @@ ${formatarNumeroInteiro(ctx.raw)}`} },
             graficoTrimestre.data.datasets[0].data = data;
             graficoTrimestre.data.datasets[0].backgroundColor = getCorModoBg();
             graficoTrimestre.data.datasets[0].borderColor = getCorModoBorder();
-            graficoTrimestre.options.plugins.datalabels.color = getChartTextColor();
-            graficoTrimestre.options.scales.x.ticks.color = getChartTextColor();
-            graficoTrimestre.options.scales.y.ticks.color = getChartTextColor();
-            graficoTrimestre.options.scales.y.grid.color = getChartGridColor();
-            graficoTrimestre.options.plugins.tooltip.backgroundColor = getChartTooltipBg();
-            graficoTrimestre.options.plugins.tooltip.titleColor = getChartTooltipText();
-            graficoTrimestre.options.plugins.tooltip.bodyColor = getChartTooltipText();
             graficoTrimestre.update(sync ? 'none' : undefined);
         } else {
             const ctx=document.getElementById('graficoTrimestre').getContext('2d');
             graficoTrimestre = new Chart(ctx,{
                 type:'bar', data:{labels,datasets:[{label:window.currentMode==='RB'?'Receita':'Custo',data,backgroundColor:getCorModoBg(),borderColor:getCorModoBorder(),borderWidth:1,borderRadius:6}]},
                 options:{ layout: { padding: { top: 30 } }, responsive:true, maintainAspectRatio:false, barPercentage:0.6, categoryPercentage:0.7,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins:{ 
-     
-                        legend:{display:false}, 
-                        tooltip:{backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks:{label:ctx=>`${window.currentMode==='RB'?'Receita':'Custo'}: ${formatarNumeroInteiro(ctx.raw)}`}}, 
-                        datalabels:{anchor:'end',align:'top',offset:4,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:11, family:"'JetBrains Mono', monospace"}} 
+                    interaction: { mode:'index', intersect:false },
+                    plugins:{
+                        legend:{display:false},
+                        tooltip:{backgroundColor:getChartTooltipBg(), titleColor:getChartTooltipText(), bodyColor:getChartTooltipText(), callbacks:{label:ctx=> (window.currentMode==='RB'?'Receita':'Custo')+': '+formatarNumeroInteiro(ctx.raw)}},
+                        datalabels:{anchor:'end',align:'top',offset:4,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:11, family:"'JetBrains Mono', monospace"}}
                     },
-   
                     scales:{ y:{ beginAtZero:true, grace:'20%', grid:{color:getChartGridColor(), borderDash:[5,5]}, border:{display:false}, ticks:{callback:v=>formatarEixo(v),font:{size:11},color:getChartTextColor()} }, x:{ grid:{display:false}, border:{display:false}, ticks:{font:{weight:'600',size:11},color:getChartTextColor()} } }
                 }, plugins:[ChartDataLabels]
             });
         }
     }
 
-    function atualizarGraficoCentroCusto(dados, sync = false){
+    function atualizarGraficoCentroCusto(dados, sync) {
+        sync = !!sync;
         let dadosRef = window.dadosCompletos;
         if(window.filtroAno) dadosRef = dadosRef.filter(d => (d.mes.split('/')[1] || '').trim() === window.filtroAno);
         if(window.filtroMeses.size) dadosRef = dadosRef.filter(d => window.filtroMeses.has(d.mes.split('/')[0].replace('.', '').trim()));
@@ -1282,118 +1024,97 @@ ${formatarNumeroInteiro(ctx.raw)}`} },
         const ccMap={};
         dados.forEach(d=>{ const{centro}=window.getCCSub(d.operacao); ccMap[centro] = (ccMap[centro]||0) + (window.currentMode==='RB'?d.rb:d.custo); });
         const labels=Object.keys(ccMap), data=Object.values(ccMap);
-        
-        const baseColors = window.currentMode === 'RB' 
+
+        const baseColors = window.currentMode === 'RB'
             ? ['#3C003C','#5A005A','#780078','#960096','#B400B4','#D200D2']
             : ['#FF6E00','#FF8522','#FF9C44','#FFB366','#FFCA88','#FFE1AA'];
-            
+
         if (graficoCentroCusto) {
             graficoCentroCusto.data.labels = labels;
             graficoCentroCusto.data.datasets[0].data = data;
             graficoCentroCusto.data.datasets[0].backgroundColor = baseColors;
-            graficoCentroCusto.options.plugins.tooltip.backgroundColor = getChartTooltipBg();
-            graficoCentroCusto.options.plugins.tooltip.titleColor = getChartTooltipText();
-            graficoCentroCusto.options.plugins.tooltip.bodyColor = getChartTooltipText();
             graficoCentroCusto.options.plugins.tooltip.callbacks.label = ctx => {
                 let perc = totalReferenciaAbsoluta > 0 ? (ctx.raw / totalReferenciaAbsoluta) * 100 : 0;
-                return `${ctx.label}: ${formatarNumeroInteiro(ctx.raw)} (${perc.toFixed(1)}%)`;
+                return ctx.label + ': ' + formatarNumeroInteiro(ctx.raw) + ' (' + perc.toFixed(1) + '%)';
             };
             graficoCentroCusto.options.plugins.datalabels.formatter = (v, ctx) => {
                 let perc = totalReferenciaAbsoluta > 0 ? (v / totalReferenciaAbsoluta) * 100 : 0;
-                return `${ctx.chart.data.labels[ctx.dataIndex]}\n${perc.toFixed(1)}%`;
+                return ctx.chart.data.labels[ctx.dataIndex] + '\n' + perc.toFixed(1) + '%';
             };
-            
             graficoCentroCusto.update(sync ? 'none' : undefined);
         } else {
             const ctx=document.getElementById('graficoCentroCusto').getContext('2d');
             graficoCentroCusto = new Chart(ctx,{
                 type:'doughnut', data:{labels,datasets:[{data,backgroundColor:baseColors,borderColor:'#fff',borderWidth:2}]},
-                options:{ responsive:true, maintainAspectRatio:false, cutout: '65%',
+                options:{ responsive:true, maintainAspectRatio:false, cutout:'65%',
                     onHover: chartHoverCursor,
                     onClick: (e, elements, chart) => {
-              
                         if(elements.length > 0) {
                             const label = chart.data.labels[elements[0].index];
                             if(label !== 'Outros') {
-                         
                                 if(window.filtroCentros.has(label)) window.filtroCentros.delete(label);
                                 else window.filtroCentros.add(label);
                                 construirSidebar(); aplicarFiltrosDashboard();
-                          
                             }
                         }
                     },
-                    plugins:{ 
-                        legend:{display:false}, 
-        
+                    plugins:{
+                        legend:{display:false},
                         tooltip:{
-                            backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), 
+                            backgroundColor:getChartTooltipBg(), titleColor:getChartTooltipText(), bodyColor:getChartTooltipText(),
                             callbacks:{
-                      
-                                label:ctx => {
+                                label: ctx => {
                                     let perc = totalReferenciaAbsoluta > 0 ? (ctx.raw / totalReferenciaAbsoluta) * 100 : 0;
-                                    return `${ctx.label}: ${formatarNumeroInteiro(ctx.raw)} (${perc.toFixed(1)}%)`;
+                                    return ctx.label + ': ' + formatarNumeroInteiro(ctx.raw) + ' (' + perc.toFixed(1) + '%)';
                                 }
                             }
-                        }, 
-                        datalabels:{ 
-                      
+                        },
+                        datalabels:{
                             formatter:(v,ctx)=> {
                                 let perc = totalReferenciaAbsoluta > 0 ? (v / totalReferenciaAbsoluta) * 100 : 0;
-                                return `${ctx.chart.data.labels[ctx.dataIndex]}\n${perc.toFixed(1)}%`;
-                            }, 
-                            color:'#fff', font:{weight:'bold',size:11, family:"'JetBrains Mono', monospace"}, backgroundColor:'rgba(0,0,0,0.6)', borderRadius:6, padding:4, textAlign:'center' 
-                        } 
+                                return ctx.chart.data.labels[ctx.dataIndex] + '\n' + perc.toFixed(1) + '%';
+                            },
+                            color:'#fff', font:{weight:'bold',size:11, family:"'JetBrains Mono', monospace"}, backgroundColor:'rgba(0,0,0,0.6)', borderRadius:6, padding:4, textAlign:'center'
+                        }
                     }
-            
                 }, plugins:[ChartDataLabels]
             });
         }
     }
 
-    function atualizarGraficoCCBarras(dados, sync = false){
+    function atualizarGraficoCCBarras(dados, sync) {
+        sync = !!sync;
         const ccMap={};
         dados.forEach(d=>{ const{centro}=window.getCCSub(d.operacao); ccMap[centro] = (ccMap[centro]||0) + (window.currentMode==='RB'?d.rb:d.custo); });
         const sorted=Object.entries(ccMap).sort((a,b)=>b[1]-a[1]);
         const labels=sorted.map(s=>s[0]), data=sorted.map(s=>s[1]);
-        
+
         if (graficoCCBarras) {
             graficoCCBarras.data.labels = labels;
             graficoCCBarras.data.datasets[0].label = window.currentMode==='RB'?'Receita':'Custo';
             graficoCCBarras.data.datasets[0].data = data;
             graficoCCBarras.data.datasets[0].backgroundColor = getCorModoBg();
             graficoCCBarras.data.datasets[0].borderColor = getCorModoBorder();
-            graficoCCBarras.options.plugins.datalabels.color = getChartTextColor();
-            graficoCCBarras.options.scales.x.ticks.color = getChartTextColor();
-            graficoCCBarras.options.scales.y.ticks.color = getChartTextColor();
-            graficoCCBarras.options.scales.y.grid.color = getChartGridColor();
-            graficoCCBarras.options.plugins.tooltip.backgroundColor = getChartTooltipBg();
-            graficoCCBarras.options.plugins.tooltip.titleColor = getChartTooltipText();
-            graficoCCBarras.options.plugins.tooltip.bodyColor = getChartTooltipText();
             graficoCCBarras.update(sync ? 'none' : undefined);
         } else {
             const ctx=document.getElementById('graficoCCBarras').getContext('2d');
             graficoCCBarras = new Chart(ctx,{
                 type:'bar', data:{labels,datasets:[{label:window.currentMode==='RB'?'Receita':'Custo',data,backgroundColor:getCorModoBg(),borderColor:getCorModoBorder(),borderWidth:1,borderRadius:6}]},
                 options:{ layout: { padding: { top: 30 } }, responsive:true, maintainAspectRatio:false, barPercentage:0.7, categoryPercentage:0.8,
-                    interaction: { mode: 'index', intersect: false },
+                    interaction: { mode:'index', intersect:false },
                     onHover: chartHoverCursor,
-     
                     onClick: (e, elements, chart) => {
                         if(elements.length > 0) {
                             const label = chart.data.labels[elements[0].index];
-                      
                             if(window.filtroCentros.has(label)) window.filtroCentros.delete(label);
                             else window.filtroCentros.add(label);
                             construirSidebar(); aplicarFiltrosDashboard();
                         }
-            
                     },
-                    plugins:{ 
-                        legend:{display:false}, 
-                        tooltip:{backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks:{label:ctx=>`${window.currentMode==='RB'?'Receita':'Custo'}: ${formatarNumeroInteiro(ctx.raw)}`}}, 
-             
-                        datalabels:{anchor:'end',align:'top',offset:4,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:11, family:"'JetBrains Mono', monospace"}} 
+                    plugins:{
+                        legend:{display:false},
+                        tooltip:{backgroundColor:getChartTooltipBg(), titleColor:getChartTooltipText(), bodyColor:getChartTooltipText(), callbacks:{label:ctx => (window.currentMode==='RB'?'Receita':'Custo')+': '+formatarNumeroInteiro(ctx.raw)}},
+                        datalabels:{anchor:'end',align:'top',offset:4,formatter:v=>formatarNumeroInteiro(v),color:getChartTextColor(),font:{weight:'bold',size:11, family:"'JetBrains Mono', monospace"}}
                     },
                     scales:{ y:{ beginAtZero:true, grace:'20%', grid:{color:getChartGridColor(), borderDash:[5,5]}, border:{display:false}, ticks:{callback:v=>formatarEixo(v),font:{size:11},color:getChartTextColor()} }, x:{ grid:{display:false}, border:{display:false}, ticks:{font:{weight:'600',size:11},color:getChartTextColor()} } }
                 }, plugins:[ChartDataLabels]
@@ -1401,33 +1122,29 @@ ${formatarNumeroInteiro(ctx.raw)}`} },
         }
     }
 
-    function atualizarGraficoYoY(dados, anoAtual, sync = false) {
+    function atualizarGraficoYoY(dados, anoAtual, sync) {
+        sync = !!sync;
         if (!anoAtual) return;
         const anoAnt = (parseInt(anoAtual) - 1).toString();
-        
         const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
         const valAtual = new Array(12).fill(0);
         const valAnt = new Array(12).fill(0);
-        
+
         dados.forEach(d => {
             const partes = d.mes.split('/');
             if(partes.length < 2) return;
-            const m = partes[0].replace('.', '').trim(); 
+            const m = partes[0].replace('.', '').trim();
             const a = partes[1].trim();
             const idx = meses.indexOf(m);
             if(idx === -1) return;
-      
-            
             const valor = window.currentMode === 'RB' ? d.rb : d.custo;
-            
             if (a === anoAtual) valAtual[idx] += valor;
             else if (a === anoAnt) valAnt[idx] += valor;
-   
         });
 
         const tituloEl = document.getElementById('tituloYoY');
         if(tituloEl) {
-            tituloEl.innerHTML = `Comparativo Anual (${anoAnt} vs ${anoAtual}) <span style="font-size:11px; font-weight:600; color:var(--muted); font-family:var(--font-body);">(Visão ${window.currentMode})</span>`;
+            tituloEl.innerHTML = 'Comparativo Anual (' + anoAnt + ' vs ' + anoAtual + ') <span style="font-size:11px; font-weight:600; color:var(--muted); font-family:var(--font-body);">(Visão ' + window.currentMode + ')</span>';
         }
 
         const labels = meses;
@@ -1435,66 +1152,50 @@ ${formatarNumeroInteiro(ctx.raw)}`} },
         const corBorderAtual = getCorModoBorder();
         const corAnt = 'rgba(0,0,0,0.1)';
         const corBorderAnt = 'rgba(0,0,0,0.2)';
-        
+
         if (window.graficoYoYChart) {
             window.graficoYoYChart.data.labels = labels;
             window.graficoYoYChart.data.datasets[0].label = anoAnt;
             window.graficoYoYChart.data.datasets[0].data = valAnt;
-            window.graficoYoYChart.data.datasets[0].backgroundColor = corAnt;
-            window.graficoYoYChart.data.datasets[0].borderColor = corBorderAnt;
-            
             window.graficoYoYChart.data.datasets[1].label = anoAtual;
             window.graficoYoYChart.data.datasets[1].data = valAtual;
             window.graficoYoYChart.data.datasets[1].backgroundColor = corAtual;
             window.graficoYoYChart.data.datasets[1].borderColor = corBorderAtual;
-            
-            window.graficoYoYChart.options.plugins.datalabels.color = getChartTextColor();
-            window.graficoYoYChart.options.scales.x.ticks.color = getChartTextColor();
-            window.graficoYoYChart.options.scales.y.ticks.color = getChartTextColor();
-            window.graficoYoYChart.options.scales.y.grid.color = getChartGridColor();
-            window.graficoYoYChart.options.plugins.legend.labels.color = getChartTextColor();
             window.graficoYoYChart.update(sync ? 'none' : undefined);
         } else {
             const ctx = document.getElementById('graficoYoY').getContext('2d');
             window.graficoYoYChart = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: labels,
-             
+                data: { labels: labels,
                     datasets: [
                         { label: anoAnt, data: valAnt, backgroundColor: corAnt, borderColor: corBorderAnt, borderWidth: 1, borderRadius: 6 },
                         { label: anoAtual, data: valAtual, backgroundColor: corAtual, borderColor: corBorderAtual, borderWidth: 1, borderRadius: 6 }
-                  
                     ]
                 },
                 options: {
                     layout: { padding: { top: 35 } },
                     responsive: true, maintainAspectRatio: false,
-               
-                    interaction: { mode: 'index', intersect: false },
+                    interaction: { mode:'index', intersect:false },
                     plugins: {
                         legend: { display: true, position: 'top', labels: { color: getChartTextColor(), font: { size: 12, weight: 'bold' } } },
-                        tooltip: { 
-                            backgroundColor: getChartTooltipBg(), titleColor: getChartTooltipText(), bodyColor: getChartTooltipText(), callbacks: { label: ctx => `${ctx.dataset.label}: ${formatarNumeroInteiro(ctx.raw)}` } },
-                        datalabels: { anchor: 'end', align: 'top', offset: 2, formatter: v => v > 0 ? formatarEixo(v) : '', color: getChartTextColor(), font: { weight: 'bold', size: 11, family:"'JetBrains Mono', monospace" } }
+                        tooltip: { backgroundColor:getChartTooltipBg(), titleColor:getChartTooltipText(), bodyColor:getChartTooltipText(), callbacks: { label: ctx => ctx.dataset.label + ': ' + formatarNumeroInteiro(ctx.raw) } },
+                        datalabels: { anchor:'end', align:'top', offset:2, formatter: v => v > 0 ? formatarEixo(v) : '', color: getChartTextColor(), font: { weight: 'bold', size: 11, family:"'JetBrains Mono', monospace" } }
                     },
                     scales: {
-                        y: { beginAtZero: true, grace: '20%', grid: { color: getChartGridColor(), borderDash: [5,5] }, border: { display: false }, ticks: { callback: v => formatarEixo(v), color: getChartTextColor() } },
-                        x: { grid: { display: false }, border: { display: false }, ticks: { font: { weight: '600' }, color: getChartTextColor() } }
+                        y: { beginAtZero:true, grace:'20%', grid:{ color:getChartGridColor(), borderDash:[5,5] }, border:{display:false}, ticks:{ callback: v => formatarEixo(v), color: getChartTextColor() } },
+                        x: { grid:{display:false}, border:{display:false}, ticks:{ font:{weight:'600'}, color: getChartTextColor() } }
                     }
                 }, plugins: [ChartDataLabels]
-            
             });
         }
     }
 
-    // --- RELATÓRIO MENSAL ---
     window.ordenarTabelaRelatorio = (mes, tipo) => {
         if(window.sortRelatorio.mes === mes && window.sortRelatorio.tipo === tipo) window.sortRelatorio.asc = !window.sortRelatorio.asc;
         else { window.sortRelatorio.mes = mes; window.sortRelatorio.tipo = tipo; window.sortRelatorio.asc = false; }
         atualizarRelatorioMensal();
     };
-    
+
     function atualizarRelatorioMensal() {
         let dados = window.dadosCompletos;
         if(window.filtroAnoRelatorio) dados = dados.filter(d=>(d.mes.split('/')[1] || '').trim()===window.filtroAnoRelatorio);
@@ -1503,50 +1204,47 @@ ${formatarNumeroInteiro(ctx.raw)}`} },
             const meses=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
             return meses.indexOf(a)-meses.indexOf(b);
         });
-        
+
         let thead = '<tr><th>Código C.C.</th><th>Centro de Custo</th><th>Cliente</th><th>Subnegócio</th>';
-        mesesLista.forEach(m=>thead+=`<th colspan="2" class="mes-header">${m}</th>`);
-        thead+=`</tr><tr><th></th><th></th><th></th><th></th>`;
-        
+        mesesLista.forEach(m=>thead += '<th colspan="2" class="mes-header">'+m+'</th>');
+        thead += '</tr><tr><th></th><th></th><th></th><th></th>';
         mesesLista.forEach(m => {
             let setaRB = (window.sortRelatorio.mes === m && window.sortRelatorio.tipo === 'rb') ? (window.sortRelatorio.asc ? ' ▴' : ' ▾') : '';
             let setaCusto = (window.sortRelatorio.mes === m && window.sortRelatorio.tipo === 'custo') ? (window.sortRelatorio.asc ? ' ▴' : ' ▾') : '';
-            thead+=`<th class="subcol sortable" onclick="ordenarTabelaRelatorio('${m}', 'rb')" title="Clique para ordenar">RB${setaRB}</th>`;
-            thead+=`<th class="subcol sortable" onclick="ordenarTabelaRelatorio('${m}', 'custo')" 
-title="Clique para ordenar">Custo${setaCusto}</th>`;
+            thead += '<th class="subcol sortable" onclick="ordenarTabelaRelatorio(\''+m+'\', \'rb\')" title="Clique para ordenar">RB'+setaRB+'</th>';
+            thead += '<th class="subcol sortable" onclick="ordenarTabelaRelatorio(\''+m+'\', \'custo\')" title="Clique para ordenar">Custo'+setaCusto+'</th>';
         });
-        thead+=`</tr>`;
+        thead += '</tr>';
 
-        const grupos={};
+        const grupos = {};
         dados.forEach(d=>{
             const mBase = d.mes.split('/')[0].replace('.', '').trim();
             const{cc,centro,sub}=window.getCCSub(d.operacao);
-            const chave=`${d.cliente}|${cc}|${centro}|${sub}`;
-            if(!grupos[chave]) grupos[chave]={cliente:d.cliente,cc,centro,sub,meses:{}};
-            if(!grupos[chave].meses[mBase]) grupos[chave].meses[mBase]={rb:0,custo:0};
-            grupos[chave].meses[mBase].rb+=d.rb; grupos[chave].meses[mBase].custo+=d.custo;
+            const chave = d.cliente+'|'+cc+'|'+centro+'|'+sub;
+            if(!grupos[chave]) grupos[chave] = {cliente:d.cliente,cc:cc,centro:centro,sub:sub,meses:{}};
+            if(!grupos[chave].meses[mBase]) grupos[chave].meses[mBase] = {rb:0,custo:0};
+            grupos[chave].meses[mBase].rb += d.rb;
+            grupos[chave].meses[mBase].custo += d.custo;
         });
-        
+
         let linhasOrdenadas = Object.values(grupos);
         if(window.sortRelatorio.mes && window.sortRelatorio.tipo) {
             linhasOrdenadas.sort((a, b) => {
                 const valA = a.meses[window.sortRelatorio.mes] ? a.meses[window.sortRelatorio.mes][window.sortRelatorio.tipo] : 0;
                 const valB = b.meses[window.sortRelatorio.mes] ? b.meses[window.sortRelatorio.mes][window.sortRelatorio.tipo] : 0;
                 return window.sortRelatorio.asc ? (valA - valB) : (valB - valA);
-       
             });
         }
 
-        let tbody='';
+        let tbody = '';
         linhasOrdenadas.forEach(g=>{
-            let linha=`<tr><td>${g.cc}</td><td>${g.centro}</td><td>${g.cliente}</td><td>${g.sub}</td>`;
+            let linha = '<tr><td>'+g.cc+'</td><td>'+g.centro+'</td><td>'+g.cliente+'</td><td>'+g.sub+'</td>';
             mesesLista.forEach((m,idx)=>{
-                const vals=g.meses[m]||{rb:0,custo:0};
-                const classe=idx%2===0?'grupo-mes-par':'grupo-mes-impar';
-                linha+=`<td class="${classe}">${formatarNumeroInteiro(vals.rb)}</td><td class="${classe}">${formatarNumeroInteiro(vals.custo)}</td>`;
+                const vals = g.meses[m] || {rb:0,custo:0};
+                const classe = idx%2===0 ? 'grupo-mes-par' : 'grupo-mes-impar';
+                linha += '<td class="'+classe+'">'+formatarNumeroInteiro(vals.rb)+'</td><td class="'+classe+'">'+formatarNumeroInteiro(vals.custo)+'</td>';
             });
-            
-            linha+=`</tr>`; tbody+=linha;
+            linha += '</tr>'; tbody += linha;
         });
         document.getElementById('theadRelatorio').innerHTML = thead;
         document.getElementById('tbodyRelatorioMensal').innerHTML = tbody;
@@ -1560,60 +1258,57 @@ title="Clique para ordenar">Custo${setaCusto}</th>`;
             const meses=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
             return meses.indexOf(a)-meses.indexOf(b);
         });
-        
+
         const grupos={};
         dados.forEach(d=>{
             const mBase = d.mes.split('/')[0].replace('.', '').trim();
             const{cc,centro,sub}=window.getCCSub(d.operacao);
-            const chave=`${d.cliente}|${cc}|${centro}|${sub}`;
-            if(!grupos[chave]) grupos[chave]={cliente:d.cliente,cc,centro,sub,meses:{}};
+            const chave = d.cliente+'|'+cc+'|'+centro+'|'+sub;
+            if(!grupos[chave]) grupos[chave]={cliente:d.cliente,cc:cc,centro:centro,sub:sub,meses:{}};
             if(!grupos[chave].meses[mBase]) grupos[chave].meses[mBase]={rb:0,custo:0};
-            grupos[chave].meses[mBase].rb+=d.rb; grupos[chave].meses[mBase].custo+=d.custo;
+            grupos[chave].meses[mBase].rb+=d.rb;
+            grupos[chave].meses[mBase].custo+=d.custo;
         });
-        
+
         let cabecalho = ['Código C.C.','Centro de Custo','Cliente','Subnegócio'];
-        mesesLista.forEach(m=>{ cabecalho.push(`${m} RB`); cabecalho.push(`${m} Custo`); });
-        
+        mesesLista.forEach(m=>{ cabecalho.push(m + ' RB'); cabecalho.push(m + ' Custo'); });
+
         const linhas = [];
         Object.values(grupos).forEach(g=>{
             const linha = [ limparTextoCsv(g.cc), limparTextoCsv(g.centro), limparTextoCsv(g.cliente), limparTextoCsv(g.sub) ];
             mesesLista.forEach(m=>{
                 const vals = g.meses[m] || {rb:0,custo:0};
-                linha.push(vals.rb.toFixed(2).replace('.',','));
-                linha.push(vals.custo.toFixed(2).replace('.',','));
+                linha.push(vals.rb.toFixed(2).replace('.', ','));
+                linha.push(vals.custo.toFixed(2).replace('.', ','));
             });
-   
             linhas.push(linha);
         });
-        
+
         const csv = [cabecalho, ...linhas].map(row=>row.join(';')).join('\n');
-        const blob = new Blob(["\uFEFF" + csv], {type:'text/csv;charset=utf-8;'});
+        const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url;
-        a.download = `relatorio_${new Date().toISOString().slice(0,10)}.csv`;
+        a.download = 'relatorio_' + new Date().toISOString().slice(0,10) + '.csv';
         a.click(); URL.revokeObjectURL(url);
     }
 
     function atualizarTituloExportacao() {
         const titleEl = document.getElementById('export-title-text');
         const subEl = document.getElementById('export-subtitle');
-        
         const modoStr = window.currentMode === 'RB' ? 'Receita Bruta (RB)' : 'Custos Operacionais';
-        titleEl.innerText = `ONTIME | Análise de ${modoStr}`;
-        
+        titleEl.innerText = 'ONTIME | Análise de ' + modoStr;
+
         let filtros = [];
-        if (window.filtroAno) filtros.push(`Ano: ${window.filtroAno}`);
-        if (window.filtroMeses.size) filtros.push(`Mês: ${Array.from(window.filtroMeses).join(', ')}`);
-        if (window.filtroClientes.size) filtros.push(`Cliente: ${Array.from(window.filtroClientes).join(', ')}`);
-        if (window.filtroCentros.size) filtros.push(`C.C.: ${Array.from(window.filtroCentros).join(', ')}`);
-        
+        if (window.filtroAno) filtros.push('Ano: ' + window.filtroAno);
+        if (window.filtroMeses.size) filtros.push('Mês: ' + Array.from(window.filtroMeses).join(', '));
+        if (window.filtroClientes.size) filtros.push('Cliente: ' + Array.from(window.filtroClientes).join(', '));
+        if (window.filtroCentros.size) filtros.push('C.C.: ' + Array.from(window.filtroCentros).join(', '));
+
         let filtroStr = filtros.length > 0 ? filtros.join(' | ') : 'Visão Geral (Sem filtros aplicados)';
-        
         const agora = new Date();
         const dataFmt = agora.toLocaleDateString('pt-BR');
         const horaFmt = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        
-        subEl.innerText = `Filtros: ${filtroStr} • Gerado em: ${dataFmt} às ${horaFmt}`;
+        subEl.innerText = 'Filtros: ' + filtroStr + ' • Gerado em: ' + dataFmt + ' às ' + horaFmt;
     }
 
     function prepararExportacao(acaoExportacao) {
@@ -1624,7 +1319,7 @@ title="Clique para ordenar">Custo${setaCusto}</th>`;
         document.body.classList.add('exporting');
         atualizarTituloExportacao();
         aplicarFiltrosDashboard(true);
-        
+
         setTimeout(async () => {
             await acaoExportacao();
             document.body.classList.remove('exporting');
@@ -1636,56 +1331,48 @@ title="Clique para ordenar">Custo${setaCusto}</th>`;
     function exportarPDF() {
         prepararExportacao(async () => {
             try {
-                const printArea = document.querySelector('.content-body'); 
+                const printArea = document.querySelector('.content-body');
                 const block1 = document.getElementById('export-block-1');
                 const block2 = document.getElementById('export-block-2');
-            
                 const block3 = document.getElementById('export-block-3');
                 const exportTitleContainer = document.getElementById('export-title-container');
-                
+
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('landscape', 'mm', 'a4');
-                
-                const pdfWidth = 297; 
-                const pdfHeight = 210; 
+                const pdfWidth = 297, pdfHeight = 210;
 
                 exportTitleContainer.style.display = 'block';
 
-                // PÁGINA 1
-                block2.style.display = 'none'; 
-                block3.style.display = 'none'; 
- 
+                block2.style.display = 'none';
+                block3.style.display = 'none';
                 const canvas1 = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
                 let ratio1 = canvas1.width / canvas1.height;
                 let h1 = pdfWidth / ratio1;
                 let y1 = h1 < pdfHeight ? (pdfHeight - h1) / 2 : 0;
                 pdf.addImage(canvas1.toDataURL('image/png'), 'PNG', 0, y1, pdfWidth, h1, undefined, 'FAST');
-                
-                // PÁGINA 2
+
                 block1.style.display = 'none';
-                block2.style.display = '';     
+                block2.style.display = '';
                 const canvas2 = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
                 pdf.addPage();
                 let ratio2 = canvas2.width / canvas2.height;
                 let h2 = pdfWidth / ratio2;
                 let y2 = h2 < pdfHeight ? (pdfHeight - h2) / 2 : 0;
                 pdf.addImage(canvas2.toDataURL('image/png'), 'PNG', 0, y2, pdfWidth, h2, undefined, 'FAST');
-                
-                // PÁGINA 3 (Gráfico YoY)
+
                 block2.style.display = 'none';
-                block3.style.display = '';     
+                block3.style.display = '';
                 const canvas3 = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
                 pdf.addPage();
                 let ratio3 = canvas3.width / canvas3.height;
                 let h3 = pdfWidth / ratio3;
                 let y3 = h3 < pdfHeight ? (pdfHeight - h3) / 2 : 0;
                 pdf.addImage(canvas3.toDataURL('image/png'), 'PNG', 0, y3, pdfWidth, h3, undefined, 'FAST');
-                
-                // RESTAURA
+
                 block1.style.display = '';
                 block2.style.display = '';
                 exportTitleContainer.style.display = '';
-                
+
                 pdf.save('Dashboard_Comparativo_Ontime.pdf');
             } catch(err) {
                 console.error('Erro na exportação de PDF:', err);
@@ -1698,17 +1385,12 @@ title="Clique para ordenar">Custo${setaCusto}</th>`;
             try {
                 const exportTitleContainer = document.getElementById('export-title-container');
                 exportTitleContainer.style.display = 'block';
-
                 const printArea = document.querySelector('.content-body');
-     
                 const canvas = await html2canvas(printArea, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
-                
                 const link = document.createElement('a');
                 link.download = 'Dashboard_Comparativo_Ontime.png';
                 link.href = canvas.toDataURL('image/png');
-      
                 link.click();
-
                 exportTitleContainer.style.display = '';
             } catch(err) {
                 console.error('Erro na exportação de PNG:', err);
@@ -1722,19 +1404,18 @@ title="Clique para ordenar">Custo${setaCusto}</th>`;
         const container = document.getElementById('exportButtonsContainer');
         if (!container) return;
         if (pagina === 'dashboard') {
-            container.innerHTML = `
-                <button class="btn" onclick="exportarPDF()"><i class="ph-fill ph-file-pdf"></i> PDF</button>
-                <button class="btn" onclick="exportarPNG()"><i class="ph-fill ph-image"></i> PNG</button>
-                <button class="btn primary" onclick="imprimir()"><i class="ph-fill ph-printer"></i> Imprimir</button>
-            `;
+            container.innerHTML = ''
+                + '<button class="btn" onclick="exportarPDF()"><i class="ph-fill ph-file-pdf"></i> PDF</button>'
+                + '<button class="btn" onclick="exportarPNG()"><i class="ph-fill ph-image"></i> PNG</button>'
+                + '<button class="btn primary" onclick="imprimir()"><i class="ph-fill ph-printer"></i> Imprimir</button>';
         } else {
-            container.innerHTML = `<button class="btn primary" onclick="exportarCSV()"><i class="ph-fill ph-download-simple"></i> Exportar Excel (CSV)</button>`;
+            container.innerHTML = '<button class="btn primary" onclick="exportarCSV()"><i class="ph-fill ph-download-simple"></i> Exportar Excel (CSV)</button>';
         }
     }
 
     function mudarPagina(pagina) {
         document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-        document.getElementById(`page-${pagina}`).classList.add('active');
+        document.getElementById('page-'+pagina).classList.add('active');
         document.querySelectorAll('.nav-tab').forEach((t,i)=>{
             t.classList.remove('active');
             if((pagina==='dashboard'&&i===0)||(pagina==='relatorio'&&i===1)) t.classList.add('active');
@@ -1744,12 +1425,10 @@ title="Clique para ordenar">Custo${setaCusto}</th>`;
             const anos = [...new Set(window.dadosCompletos.map(d=>{
                 const p = d.mes.split('/'); return p.length > 1 ? p[1].trim() : '';
             }).filter(a=>a!==''))].sort();
-            if(!window.filtroAnoRelatorio) window.filtroAnoRelatorio = anos.length?anos[anos.length-1]:null;
-            
+            if(!window.filtroAnoRelatorio) window.filtroAnoRelatorio = anos.length ? anos[anos.length-1] : null;
+
             const sidebarFilters = document.getElementById('sidebar-filters');
-            sidebarFilters.innerHTML = `
-                <div class="filtro-grupo"><label>Ano (Relatório)</label><div class="buttons-container" id="filtroAnoRelatorioContainer"></div></div>
-            `;
+            sidebarFilters.innerHTML = '<div class="filtro-grupo"><label>Ano (Relatório)</label><div class="buttons-container" id="filtroAnoRelatorioContainer"></div></div>';
             const container = document.getElementById('filtroAnoRelatorioContainer');
             anos.forEach(ano=>{
                 const btn = document.createElement('button');
