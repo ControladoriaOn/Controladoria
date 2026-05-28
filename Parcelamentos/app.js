@@ -521,6 +521,24 @@ const TableRenderer = (() => {
             }
             tr.appendChild(td);
         });
+
+        // Coluna Comprovante: link clicável da parcela (ou "—" se não tiver)
+        const tdComprov = document.createElement('td');
+        const comprovUrl = r['Comprovante'];
+        if (comprovUrl) {
+            const a = document.createElement('a');
+            a.href = comprovUrl;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.style.cssText = 'display:inline-flex;align-items:center;gap:5px;color:#FF6E00;text-decoration:none;font-weight:600;font-size:12.5px;white-space:nowrap;';
+            a.innerHTML = '<i class="ph ph-paperclip"></i> Ver';
+            tdComprov.appendChild(a);
+        } else {
+            tdComprov.textContent = '—';
+            tdComprov.style.color = 'var(--muted)';
+        }
+        tr.appendChild(tdComprov);
+
         return tr;
     };
 
