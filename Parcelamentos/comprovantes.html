@@ -385,6 +385,31 @@ function get(reg, ...keys) {
 }
 function getNum(reg) { return get(reg, 'Número', 'Numero', 'numero'); }
 function getOrgao(reg) { return get(reg, 'Órgão', 'Orgão', 'Orgao'); }
+function getData(reg) { return get(reg, 'Data', 'data', 'Vencimento', 'vencimento'); }
+function fmtData(v) {                              // -> DD/MM/AAAA (sem fuso)
+  const s = String(v == null ? '' : v).trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);     // ISO: 2025-05-05[...]
+  if (m) return m[3] + '/' + m[2] + '/' + m[1];
+  m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);        // já em BR
+  if (m) return m[1] + '/' + m[2] + '/' + m[3];
+  return '';
+}
+function competenciaDe(v) {                        // -> 'YYYY-MM' p/ o input "mês"
+  const s = String(v == null ? '' : v).trim();
+  let m = s.match(/^(\d{4})-(\d{2})/);
+  if (m) return m[1] + '-' + m[2];
+  m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return m[3] + '-' + m[2];
+  return '';
+}
+function dataKey(reg) {                            // chave de ordenação YYYYMMDD
+  const s = String(getData(reg) || '').trim();
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + m[2] + m[3];
+  m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return m[3] + m[2] + m[1];
+  return '99999999';                               // sem data vai pro fim
+}
 
 function toast(msg) {
   const el = $('toast');
@@ -423,27 +448,39 @@ function renderResultados(termo) {
   const ul = $('results');
   ul.innerHTML = '';
   const t = norm(termo).trim();
-  if (!t) { ul.innerHTML = '<li class="results-hint">Digite algo para buscar.</li>'; return; }
+  if (!t) { ul.innerHTML = '<li class="results-hint">Digite número, órgão, natureza ou data (ex.: 05/2025).</li>'; return; }
 
-  const achados = [];
+  let achados = [];
   for (const reg of state.parcelamentos) {
-    const hay = norm([getNum(reg), getOrgao(reg), get(reg,'Natureza'), get(reg,'Negociação','Negociacao'), get(reg,'Tributo'), get(reg,'Status')].join(' '));
+    const hay = norm([
+      getNum(reg), getOrgao(reg), get(reg, 'Natureza'),
+      get(reg, 'Negociação', 'Negociacao'), get(reg, 'Tributo'),
+      get(reg, 'Status', 'status'), fmtData(getData(reg))
+    ].join(' '));
     if (hay.indexOf(t) >= 0) achados.push(reg);
-    if (achados.length >= 60) break;
   }
-  if (!achados.length) { ul.innerHTML = '<li class="results-empty">Nenhum parcelamento encontrado.</li>'; return; }
+  if (!achados.length) { ul.innerHTML = '<li class="results-empty">Nenhuma parcela encontrada.</li>'; return; }
 
-  achados.forEach((reg, i) => {
+  achados.sort((a, b) => dataKey(a).localeCompare(dataKey(b))); // por vencimento
+  achados = achados.slice(0, 60);
+
+  achados.forEach(reg => {
     const li = document.createElement('li');
     li.className = 'result-row';
     li.dataset.idx = state.parcelamentos.indexOf(reg);
     const num = getNum(reg) || '—';
-    const orgao = getOrgao(reg) || '—';
-    const nat = get(reg, 'Natureza') || '—';
+    const venc = fmtData(getData(reg));
+    const status = get(reg, 'Status', 'status');
+    const orgao = getOrgao(reg), nat = get(reg, 'Natureza');
+    const parts = [];
+    if (venc) parts.push('<i class="ph ph-calendar-blank"></i> ' + venc);
+    if (status) parts.push(status);
+    if (orgao) parts.push(orgao);
+    if (nat) parts.push(nat);
     li.innerHTML =
       '<span class="num">' + num + '</span>' +
-      '<span class="valor">' + fmtBRL(get(reg,'Saldo Devedor')) + '</span>' +
-      '<span class="meta">' + orgao + ' · ' + nat + '</span>';
+      '<span class="valor">' + fmtBRL(get(reg, 'Saldo Devedor')) + '</span>' +
+      '<span class="meta">' + parts.join(' · ') + '</span>';
     ul.appendChild(li);
   });
 }
@@ -452,14 +489,21 @@ function selecionar(reg) {
   state.selected = reg;
   $('sel-num').textContent = getNum(reg) || '—';
   const orgao = getOrgao(reg), nat = get(reg, 'Natureza'), saldo = get(reg, 'Saldo Devedor');
+  const venc = fmtData(getData(reg));
   if (reg._manual) {
     $('sel-meta').innerHTML = '<b>Número informado manualmente</b>';
   } else {
-    $('sel-meta').innerHTML =
-      (orgao ? 'Órgão: <b>' + orgao + '</b> · ' : '') +
-      (nat ? 'Natureza: <b>' + nat + '</b> · ' : '') +
-      'Saldo: <b>' + fmtBRL(saldo) + '</b>';
+    const parts = [];
+    if (venc)  parts.push('Vencimento: <b>' + venc + '</b>');
+    if (orgao) parts.push('Órgão: <b>' + orgao + '</b>');
+    if (nat)   parts.push('Natureza: <b>' + nat + '</b>');
+    parts.push('Saldo: <b>' + fmtBRL(saldo) + '</b>');
+    $('sel-meta').innerHTML = parts.join(' · ');
   }
+  // preenche o "mês da parcela" com o vencimento escolhido (evita digitar de novo)
+  const comp = competenciaDe(getData(reg));
+  if (comp) $('competencia').value = comp;
+
   $('sel-wrap').hidden = false;
   $('upload-card').hidden = false;
   $('results').innerHTML = '';
