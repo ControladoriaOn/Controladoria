@@ -9,10 +9,12 @@ const HubLink = {
     init() {
         const btn = document.getElementById('btn-hub');
         const linkAtualizar = document.getElementById('link-atualizar');
+        const linkComprovantes = document.getElementById('link-comprovantes');
 
         if (this._userCameFromHub()) {
             if (btn) btn.hidden = false;
             if (linkAtualizar) linkAtualizar.hidden = false;
+            if (linkComprovantes) linkComprovantes.hidden = false;
             try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { }
         }
     },
