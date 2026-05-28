@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atualizar Parcelamentos | ONTIME</title>
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ControladoriaOn/Controladoria/main/favicon.png">
+
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --plum-deep:#2D1B2D; --plum:#4A2C4A; --plum-soft:#6B5E6B;
+      --bg:#FBF9FA; --surface:#FFFFFF; --surface-soft:#F6F2F6;
+      --border:#E8E2E8; --border-soft:#F0EBF0;
+      --orange:#FF6E00; --orange-deep:#E55B00; --orange-soft:#FFF1E0;
+      --danger:#DC2626; --danger-soft:#FEE2E2;
+      --success:#16A34A;
+      --radius:14px; --radius-sm:10px;
+      --font-display:'Fraunces',serif; --font-body:'Manrope',sans-serif;
+      --font-mono:'JetBrains Mono',monospace;
+      --shadow-card:0 1px 2px rgba(45,27,45,0.04), 0 8px 24px -12px rgba(45,27,45,0.12);
+    }
+    *,*::before,*::after { box-sizing:border-box; }
+    html,body { margin:0; padding:0; }
+    body {
+      font-family:var(--font-body); background:var(--bg); color:var(--plum-deep);
+      min-height:100vh; -webkit-font-smoothing:antialiased; font-size:14px;
+    }
+
+    /* ------------ Header --------------- */
+    .page-header {
+      background:linear-gradient(135deg,#1A0F1A 0%,var(--plum-deep) 100%);
+      color:#fff; padding:28px 32px;
+      display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    }
+    .page-header .head-text { flex:1; min-width:240px; }
+    .page-header h1 {
+      font-family:var(--font-display); font-weight:500;
+      font-size:26px; margin:0 0 4px;
+    }
+    .page-header p { margin:0; opacity:0.7; font-size:13.5px; }
+    .head-right { display:flex; align-items:center; gap:14px; }
+    .status-pill {
+      display:flex; align-items:center; gap:8px;
+      padding:8px 14px;
+      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1);
+      border-radius:999px; font-size:12.5px;
+    }
+    .status-pill .dot { width:7px; height:7px; border-radius:50%; background:#22C55E; }
+    .status-pill .dot.warn { background:#F59E0B; }
+    .status-pill .dot.off  { background:#9CA3AF; }
+    .btn-back {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 16px; background:var(--orange); color:#fff;
+      border-radius:10px; text-decoration:none; font-weight:600; font-size:13px;
+      border:1px solid var(--orange);
+      box-shadow:0 6px 18px -8px rgba(255,110,0,0.55);
+      transition:all .15s;
+    }
+    .btn-back:hover { background:var(--orange-deep); transform:translateY(-1px); }
+
+    /* ------------ Main --------------- */
+    main { max-width:1100px; margin:0 auto; padding:28px 24px 80px; }
+    section { margin-bottom:24px; }
+
+    /* ------------ Dropzone --------------- */
+    .dropzone {
+      background:var(--surface); border:2px dashed var(--border);
+      border-radius:var(--radius); padding:48px 24px;
+      text-align:center; transition:all .2s; cursor:pointer;
+      box-shadow:var(--shadow-card);
+    }
+    .dropzone:hover, .dropzone.drag {
+      border-color:var(--orange); background:var(--orange-soft);
+    }
+    .dropzone i.icon-up {
+      font-size:46px; color:var(--orange);
+      margin-bottom:14px; display:block;
+    }
+    .dropzone .dz-title {
+      font-family:var(--font-display); font-weight:500;
+      font-size:20px; margin:0 0 6px;
+    }
+    .dropzone .dz-sub { margin:0 0 18px; font-size:13.5px; color:var(--plum-soft); }
+    .dropzone .dz-extensions {
+      display:inline-flex; gap:6px; margin-top:8px; font-size:11.5px;
+      color:var(--plum-soft); letter-spacing:.05em; text-transform:uppercase;
+    }
+    .btn-pick {
+      padding:10px 22px; background:var(--surface); color:var(--plum);
+      border:1px solid var(--border); border-radius:10px;
+      font-family:inherit; font-weight:600; font-size:13px;
+      cursor:pointer; transition:all .15s;
+    }
+    .btn-pick:hover { background:var(--orange-soft); border-color:var(--orange); color:var(--orange-deep); }
+
+    /* ------------ Files processed --------------- */
+    .files-card {
+      background:var(--surface); border:1px solid var(--border-soft);
+      border-radius:var(--radius); padding:16px 18px;
+      box-shadow:var(--shadow-card);
+    }
+    .file-row {
+      display:flex; align-items:center; gap:12px;
+      padding:8px 0; border-bottom:1px solid var(--border-soft); font-size:13px;
+    }
+    .file-row:last-child { border-bottom:none; }
+    .file-row i { font-size:18px; }
+    .file-row .ok i  { color:var(--success); }
+    .file-row .err i { color:var(--danger); }
+    .file-row .name { flex:1; font-weight:600; color:var(--plum); }
+    .file-row .meta { color:var(--plum-soft); font-size:12px; }
+
+    /* ------------ Preview --------------- */
+    .preview-card {
+      background:var(--surface); border-radius:var(--radius);
+      box-shadow:var(--shadow-card); overflow:hidden;
+    }
+    .preview-head {
+      display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+      padding:18px 20px; border-bottom:1px solid var(--border-soft);
+    }
+    .preview-head h3 {
+      margin:0; font-family:var(--font-display); font-weight:500;
+      font-size:18px; display:flex; align-items:center; gap:9px;
+    }
+    .preview-head h3 i { color:var(--orange); font-size:17px; }
+    .preview-head .sub { color:var(--plum-soft); font-size:12.5px; margin:0; }
+    .preview-search {
+      position:relative; margin-left:auto; flex:1 1 220px; max-width:340px;
+    }
+    .preview-search i {
+      position:absolute; left:12px; top:50%; transform:translateY(-50%);
+      color:var(--plum-soft); font-size:14px;
+    }
+    .preview-search input {
+      width:100%; padding:9px 12px 9px 34px;
+      background:var(--surface-soft); border:1px solid var(--border);
+      border-radius:10px; font-family:inherit; font-size:13px; color:var(--plum-deep);
+      transition:all .15s;
+    }
+    .preview-search input:focus {
+      outline:none; border-color:var(--orange); background:var(--surface);
+    }
+
+    .preview-warn {
+      padding:12px 20px; background:#FEF3C7; border-bottom:1px solid #FDE68A;
+      font-size:12.5px; color:#92400E;
+      display:flex; align-items:flex-start; gap:9px;
+    }
+    .preview-warn i { font-size:16px; flex-shrink:0; }
+    .preview-warn strong { font-weight:700; }
+
+    .preview-list {
+      list-style:none; margin:0; padding:0;
+      max-height:480px; overflow-y:auto;
+    }
+    .preview-row {
+      display:grid; grid-template-columns: 24px 1fr 1.4fr 0.9fr 1.1fr 28px;
+      gap:12px; align-items:center;
+      padding:11px 20px; border-bottom:1px solid var(--border-soft);
+      font-size:12.5px; transition:background .12s;
+    }
+    .preview-row:hover { background:var(--surface-soft); }
+    .preview-row .num { font-family:var(--font-mono); font-weight:600; color:var(--plum); }
+    .preview-row .orgao { color:var(--plum-soft); }
+    .preview-row .status {
+      display:inline-block; padding:2px 8px; border-radius:999px;
+      background:var(--orange-soft); color:var(--orange-deep);
+      font-size:11px; font-weight:700; text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+    .preview-row .status.quit  { background:#D1FAE5; color:#065F46; }
+    .preview-row .status.atras { background:#FEE2E2; color:#991B1B; }
+    .preview-row .status.enc   { background:#E5E7EB; color:#374151; }
+    .preview-row .valor {
+      font-family:var(--font-mono); font-weight:700; text-align:right;
+      color:var(--plum-deep);
+    }
+    .preview-row input[type="checkbox"] { width:16px; height:16px; cursor:pointer; accent-color:var(--orange); }
+    .preview-row .trash {
+      background:none; border:none; cursor:pointer; padding:4px;
+      color:var(--plum-soft); transition:color .15s; font-size:15px;
+    }
+    .preview-row .trash:hover { color:var(--danger); }
+    .preview-empty {
+      padding:36px 20px; text-align:center; color:var(--plum-soft);
+      font-size:13px;
+    }
+
+    .preview-foot {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 20px; border-top:1px solid var(--border-soft);
+      background:var(--surface-soft); font-size:13px;
+    }
+    .preview-foot .count { color:var(--plum-soft); }
+    .preview-foot .total {
+      font-family:var(--font-mono); font-weight:800;
+      font-size:15px; color:var(--plum-deep);
+    }
+
+    /* ------------ Actions --------------- */
+    .actions {
+      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+      padding:18px 20px; background:var(--surface);
+      border:1px solid var(--border-soft); border-radius:var(--radius);
+      box-shadow:var(--shadow-card);
+    }
+    .btn {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 18px; border-radius:10px;
+      font-family:inherit; font-weight:600; font-size:13px;
+      border:1px solid transparent; cursor:pointer; transition:all .15s;
+    }
+    .btn:disabled { opacity:0.45; cursor:not-allowed; }
+    .btn-primary {
+      background:var(--orange); color:#fff; border-color:var(--orange);
+      box-shadow:0 6px 18px -8px rgba(255,110,0,0.55);
+    }
+    .btn-primary:hover:not(:disabled) { background:var(--orange-deep); border-color:var(--orange-deep); transform:translateY(-1px); }
+    .btn-ghost {
+      background:var(--surface); color:var(--plum); border-color:var(--border);
+    }
+    .btn-ghost:hover:not(:disabled) { background:var(--surface-soft); }
+    .btn-danger {
+      background:var(--surface); color:var(--danger); border-color:var(--danger-soft);
+    }
+    .btn-danger:hover:not(:disabled) { background:var(--danger-soft); border-color:var(--danger); }
+    .btn-link {
+      background:none; color:var(--plum-soft); border:none; padding:8px 4px;
+    }
+    .btn-link:hover { color:var(--plum-deep); }
+    .actions .hint {
+      margin-left:auto; color:var(--plum-soft); font-size:12.5px;
+    }
+
+    /* ------------ Steps (help) --------------- */
+    .steps {
+      background:var(--surface); border:1px solid var(--border-soft);
+      border-radius:var(--radius); padding:20px 22px;
+      box-shadow:var(--shadow-card);
+    }
+    .steps h3 {
+      font-family:var(--font-display); font-weight:500;
+      font-size:17px; margin:0 0 12px;
+      display:flex; align-items:center; gap:8px;
+    }
+    .steps h3 i { color:var(--orange); }
+    .steps ol { margin:0; padding-left:22px; font-size:13px; line-height:1.6; color:var(--plum); }
+    .steps li { margin-bottom:6px; }
+    .steps strong { color:var(--plum-deep); }
+    .steps code {
+      font-family:var(--font-mono); font-size:12px;
+      background:var(--surface-soft); padding:1px 6px; border-radius:4px;
+      color:var(--plum-deep);
+    }
+
+    /* ------------ Toast --------------- */
+    .toast {
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+      background:var(--plum-deep); color:#fff;
+      padding:13px 22px; border-radius:10px; font-size:13px; font-weight:600;
+      box-shadow:0 12px 32px -8px rgba(45,27,45,0.4);
+      opacity:0; pointer-events:none; transition:all .25s;
+      z-index:2000;
+    }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    /* ------------ Overlay (loading) --------------- */
+    .overlay {
+      position:fixed; inset:0; background:rgba(26,15,26,0.65);
+      backdrop-filter:blur(4px);
+      display:flex; align-items:center; justify-content:center;
+      z-index:1500;
+      opacity:0; pointer-events:none; transition:opacity .15s;
+    }
+    .overlay.show { opacity:1; pointer-events:auto; }
+    .overlay-box {
+      background:var(--surface); padding:24px 30px; border-radius:14px;
+      display:flex; align-items:center; gap:14px;
+      box-shadow:0 20px 60px -20px rgba(0,0,0,0.5);
+    }
+    .spinner {
+      width:22px; height:22px; border:3px solid var(--border);
+      border-top-color:var(--orange); border-radius:50%;
+      animation:spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ------------ Confirm modal --------------- */
+    .cf-overlay {
+      position:fixed; inset:0; background:rgba(26,15,26,0.55);
+      backdrop-filter:blur(4px);
+      display:none; align-items:center; justify-content:center;
+      padding:20px; z-index:1800;
+    }
+    .cf-overlay.show { display:flex; }
+    .cf-modal {
+      background:var(--surface); border-radius:16px; width:100%; max-width:440px;
+      box-shadow:0 24px 60px rgba(26,15,26,0.4); overflow:hidden;
+      animation:in .2s ease-out;
+    }
+    @keyframes in { from { opacity:0; transform:translateY(10px) scale(.97); } to { opacity:1; transform:none; } }
+    .cf-body { padding:22px 24px 18px; }
+    .cf-title {
+      font-family:var(--font-display); font-weight:500; font-size:19px;
+      margin:0 0 8px; display:flex; align-items:center; gap:10px; color:var(--plum-deep);
+    }
+    .cf-title i { color:var(--orange); }
+    .cf-text { margin:0 0 12px; font-size:13.5px; color:var(--plum-soft); line-height:1.5; }
+    .cf-opts { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .cf-opt {
+      display:flex; align-items:flex-start; gap:10px;
+      padding:11px 14px; background:var(--surface-soft);
+      border:1px solid var(--border); border-radius:10px;
+      cursor:pointer; transition:all .12s;
+    }
+    .cf-opt:hover { border-color:var(--orange); background:var(--orange-soft); }
+    .cf-opt input { margin-top:3px; accent-color:var(--orange); }
+    .cf-opt .opt-title { font-weight:700; color:var(--plum-deep); font-size:13px; }
+    .cf-opt .opt-sub { color:var(--plum-soft); font-size:12px; }
+    .cf-foot {
+      padding:14px 20px; background:var(--surface-soft);
+      border-top:1px solid var(--border-soft);
+      display:flex; justify-content:flex-end; gap:10px;
+    }
+
+    /* ------------ Responsive --------------- */
+    @media (max-width:720px) {
+      .page-header { padding:20px 18px; }
+      .page-header h1 { font-size:21px; }
+      main { padding:18px 14px 60px; }
+      .dropzone { padding:32px 18px; }
+      .preview-row {
+        grid-template-columns: 22px 1fr 1fr 24px;
+        font-size:11.5px;
+      }
+      .preview-row .orgao, .preview-row .status { display:none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="head-text">
+    <h1><i class="ph-fill ph-cloud-arrow-up" style="margin-right:8px;color:var(--orange)"></i>Atualizar Parcelamentos</h1>
+    <p>Suba a planilha do Excel — os dados do dashboard são substituídos pelo conteúdo do arquivo.</p>
+  </div>
+  <div class="head-right">
+    <div class="status-pill" id="status-pill" title="Status do Sheets">
+      <span class="dot off" id="status-dot"></span>
+      <span id="status-text">verificando…</span>
+    </div>
+    <a href="./comprovantes.html" style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.18);border-radius:10px;text-decoration:none;font-weight:600;font-size:13px;">
+      <i class="ph-bold ph-paperclip"></i> Comprovantes
+    </a>
+    <a class="btn-back" href="./"><i class="ph-bold ph-arrow-left"></i> Dashboard</a>
+  </div>
+</header>
+
+<main>
+
+  <section class="dropzone" id="dz" tabindex="0" role="button" aria-label="Arraste o arquivo ou clique para escolher">
+    <i class="ph-bold ph-cloud-arrow-up icon-up"></i>
+    <h3 class="dz-title">Arraste a planilha aqui</h3>
+    <p class="dz-sub">ou clique pra escolher o arquivo no computador</p>
+    <button class="btn-pick" id="btn-pick" type="button">
+      <i class="ph-bold ph-folder-open" style="margin-right:6px"></i>Escolher arquivo
+    </button>
+    <input type="file" id="file-input" hidden accept=".xlsx,.xls">
+    <div class="dz-extensions">aceita .xlsx · .xls</div>
+  </section>
+
+  <section class="files-card" id="files-wrap" hidden></section>
+
+  <section class="preview-card" id="preview-wrap" hidden>
+    <div class="preview-head">
+      <div>
+        <h3><i class="ph-fill ph-list-checks"></i> Conferir registros</h3>
+        <p class="sub">Desmarque para excluir do envio · lixeira remove da lista.</p>
+      </div>
+      <div class="preview-search">
+        <i class="ph ph-magnifying-glass"></i>
+        <input id="preview-search" type="text" placeholder="Buscar número, órgão, natureza…" autocomplete="off">
+      </div>
+    </div>
+    <div class="preview-warn" id="preview-warn" hidden></div>
+    <ul class="preview-list" id="preview-list"></ul>
+    <div class="preview-foot">
+      <span class="count" id="preview-count">0 de 0 selecionados</span>
+      <span class="total" id="preview-total">R$ 0,00</span>
+    </div>
+  </section>
+
+  <section class="actions" id="actions-wrap" hidden>
+    <button class="btn btn-primary" id="btn-enviar">
+      <i class="ph-bold ph-cloud-arrow-up"></i> Enviar (substitui tudo)
+    </button>
+    <button class="btn btn-ghost" id="btn-anexar">
+      <i class="ph ph-plus"></i> Anexar
+    </button>
+    <button class="btn btn-danger" id="btn-limpar">
+      <i class="ph ph-eraser"></i> Limpar dados
+    </button>
+    <button class="btn btn-link" id="btn-reset">
+      <i class="ph ph-arrow-counter-clockwise"></i> Recomeçar
+    </button>
+    <span class="hint" id="hint"></span>
+  </section>
+
+  <section class="steps">
+    <h3><i class="ph-fill ph-list-numbers"></i> Como usar</h3>
+    <ol>
+      <li><strong>Arraste a planilha</strong> com as colunas esperadas (<code>Data</code>, <code>Negociação</code>, <code>Órgão</code>, <code>Natureza</code>, <code>Tributo</code>, <code>Número</code>, <code>Valor Original</code>, <code>Principal</code>, <code>Multa</code>, <code>Juros</code>, <code>Encargos Honorários</code>, <code>Saldo Devedor</code>, <code>Status</code>, <code>ATIVO</code>, <code>QTD</code>).</li>
+      <li><strong>Confira a lista</strong> — desmarque ou remova linhas que não devem ir.</li>
+      <li><strong>Enviar (substitui tudo)</strong>: zera a aba do Sheets e regrava com os registros desta planilha. <strong>Anexar</strong>: mantém os atuais e adiciona estes ao final.</li>
+      <li>Volte ao <a href="./">dashboard</a> — os números atualizam (cache de 5min).</li>
+    </ol>
+  </section>
+
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <div class="spinner"></div>
+    <div id="overlay-text">Enviando…</div>
+  </div>
+</div>
+
+<div class="cf-overlay" id="modal-limpar">
+  <div class="cf-modal" role="dialog" aria-modal="true">
+    <div class="cf-body">
+      <h3 class="cf-title"><i class="ph-fill ph-eraser"></i> Limpar dados do Sheets</h3>
+      <p class="cf-text">Essa ação apaga TODOS os registros da aba Parcelamentos. Não tem desfazer.</p>
+      <div class="cf-opts">
+        <label class="cf-opt">
+          <input type="checkbox" id="ml-confirm-check">
+          <div>
+            <div class="opt-title">Entendi que isso apaga tudo</div>
+            <div class="opt-sub">Vou perder os {{N}} registros que estão no Sheets agora.</div>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div class="cf-foot">
+      <button class="btn btn-ghost" id="ml-cancel">Cancelar</button>
+      <button class="btn btn-danger" id="ml-do" disabled>
+        <i class="ph ph-trash"></i> Limpar tudo
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIG — cole aqui a URL /exec do seu App Script de Parcelamentos.
+   ============================================================ */
+const CONFIG = {
+  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwpOVWCs2Fad2a5B8E5UaVrpJweHEtL7uSB9AfBfQKWZmZgKz_kYgsHmPIB-pPuWVPksw/exec',
+};
+
+/* ============================================================
+   Constantes
+   ============================================================ */
+const COLUNAS = [
+  'Data','Negociação','Órgão','Natureza','Tributo','Número',
+  'Valor Original','Principal','Multa','Juros','Encargos Honorários',
+  'Saldo Devedor','Status','ATIVO','QTD',
+];
+const COLUNAS_NUM  = ['Valor Original','Principal','Multa','Juros','Encargos Honorários','Saldo Devedor','QTD'];
+const COLUNAS_DATA = ['Data'];
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function normHdr(s) {
+  return String(s || '').toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+}
+
+function safeStr(x) { return x === null || x === undefined ? '' : String(x).trim(); }
+
+function parseBRNumber(x) {
+  if (x === null || x === undefined || x === '') return 0;
+  if (typeof x === 'number') return x;
+  let s = String(x).trim().replace(/R\$\s*/i, '').replace(/\s/g, '');
+  if (!s) return 0;
+  if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function parseBRDate(x) {
+  if (x === null || x === undefined || x === '') return null;
+  if (x instanceof Date && !isNaN(x)) {
+    const y = x.getFullYear();
+    const m = String(x.getMonth()+1).padStart(2,'0');
+    const d = String(x.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  const s = String(x).trim();
+  if (!s) return null;
+  let m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return s.slice(0,10);
+  const n = Number(s);
+  if (!isNaN(n) && n > 20000 && n < 80000) {
+    const dt = new Date((n - 25569) * 86400 * 1000);
+    return parseBRDate(dt);
+  }
+  return null;
+}
+
+function fmtBR(n) {
+  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
+}
+function fmtDataPt(iso) {
+  if (!iso) return '';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso);
+}
+function statusClass(s) {
+  const n = normHdr(s);
+  if (n.indexOf('quit') >= 0) return 'quit';
+  if (n.indexOf('atras') >= 0) return 'atras';
+  if (n.indexOf('encerr') >= 0 || n.indexOf('cancel') >= 0) return 'enc';
+  return '';
+}
+
+/* ============================================================
+   Estado
+   ============================================================ */
+const state = {
+  file: null,
+  sheetName: null,
+  headerMap: {},
+  faltando: [],
+  registros: [],            // [{...}]
+  removidos: new Set(),     // índices removidos da lista
+  selecionados: new Set(),  // por padrão, TODOS selecionados (índices)
+  filter: '',
+  sheetCount: 0,            // quantos registros já estão no Sheets
+};
+
+/* ============================================================
+   Parsing
+   ============================================================ */
+function findHeaderIdx(headers, target) {
+  const t = normHdr(target);
+  for (let i = 0; i < headers.length; i++) {
+    if (normHdr(headers[i]) === t) return i;
+  }
+  // matches parciais (target curto) — só pra colunas com 5+ chars
+  if (t.length >= 5) {
+    for (let i = 0; i < headers.length; i++) {
+      const h = normHdr(headers[i]);
+      if (h && (h.indexOf(t) >= 0 || t.indexOf(h) >= 0)) return i;
+    }
+  }
+  return -1;
+}
+
+function tryParseSheet(rows) {
+  for (let i = 0; i < Math.min(15, rows.length); i++) {
+    const row = rows[i] || [];
+    const headers = row.map(safeStr);
+    const headerMap = {};
+    let achados = 0;
+    COLUNAS.forEach(col => {
+      const idx = findHeaderIdx(headers, col);
+      if (idx >= 0) { headerMap[col] = idx; achados++; }
+    });
+    if (achados < 6) continue; // precisa achar pelo menos 6 das 15 pra ser uma planilha válida
+
+    const faltando = COLUNAS.filter(c => !(c in headerMap));
+    const registros = [];
+    for (let r = i + 1; r < rows.length; r++) {
+      const row2 = rows[r] || [];
+      const reg = {};
+      let temConteudo = false;
+      COLUNAS.forEach(col => {
+        const idx = headerMap[col];
+        if (idx == null) { reg[col] = ''; return; }
+        const raw = row2[idx];
+        let v;
+        if (COLUNAS_NUM.indexOf(col) >= 0) v = parseBRNumber(raw);
+        else if (COLUNAS_DATA.indexOf(col) >= 0) v = parseBRDate(raw) || '';
+        else v = safeStr(raw);
+        reg[col] = v;
+        if (v !== '' && v !== 0) temConteudo = true;
+      });
+      if (temConteudo) registros.push(reg);
+    }
+    return { registros, headerMap, faltando, headerRow: i + 1 };
+  }
+  return null;
+}
+
+async function parseFile(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+    const parsed = tryParseSheet(rows);
+    if (parsed && parsed.registros.length > 0) {
+      return { sheetName, ...parsed };
+    }
+  }
+  return null;
+}
+
+/* ============================================================
+   UI: arquivos
+   ============================================================ */
+function renderFiles(file, parsed) {
+  const wrap = $('files-wrap');
+  wrap.innerHTML = '';
+  wrap.hidden = false;
+  const row = document.createElement('div');
+  row.className = 'file-row';
+  if (parsed) {
+    row.classList.add('ok');
+    const sizeKb = (file.size / 1024).toFixed(1);
+    row.innerHTML = `
+      <i class="ph-fill ph-check-circle"></i>
+      <div class="name">${file.name}</div>
+      <div class="meta">${sizeKb} KB · aba "${parsed.sheetName}" · ${parsed.registros.length} registro(s)</div>
+    `;
+  } else {
+    row.classList.add('err');
+    row.innerHTML = `
+      <i class="ph-fill ph-x-circle"></i>
+      <div class="name">${file.name}</div>
+      <div class="meta" style="color:var(--danger)">Nenhuma aba parece ser da Parcelamentos. Verifique se as colunas estão lá.</div>
+    `;
+  }
+  wrap.appendChild(row);
+}
+
+/* ============================================================
+   UI: preview
+   ============================================================ */
+function selectedRegistros() {
+  return state.registros.filter((_, i) => !state.removidos.has(i) && state.selecionados.has(i));
+}
+
+function visibleRegistros() {
+  const f = normHdr(state.filter);
+  return state.registros.map((r, i) => ({ r, i }))
+    .filter(({ r, i }) => {
+      if (state.removidos.has(i)) return false;
+      if (!f) return true;
+      const probe = [r['Número'], r['Órgão'], r['Natureza'], r['Tributo'], r['Negociação']]
+        .map(v => normHdr(v)).join('|');
+      return probe.indexOf(f) >= 0;
+    });
+}
+
+function renderPreview() {
+  const wrap = $('preview-wrap');
+  if (state.registros.length === 0) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+
+  // warning sobre colunas faltando
+  const warn = $('preview-warn');
+  if (state.faltando.length > 0) {
+    warn.hidden = false;
+    warn.innerHTML = `
+      <i class="ph-fill ph-warning"></i>
+      <div><strong>Atenção:</strong> não encontrei as colunas <strong>${state.faltando.join(', ')}</strong> na sua planilha. Os registros serão gravados com essas colunas em branco.</div>
+    `;
+  } else {
+    warn.hidden = true;
+  }
+
+  // lista
+  const list = $('preview-list');
+  list.innerHTML = '';
+  const vis = visibleRegistros();
+
+  if (state.registros.length === 0) {
+    list.innerHTML = `<div class="preview-empty">Nenhum registro encontrado.</div>`;
+  } else if (vis.length === 0) {
+    list.innerHTML = `<div class="preview-empty">Nenhum resultado para "${state.filter}".</div>`;
+  } else {
+    vis.forEach(({ r, i }) => {
+      const li = document.createElement('li');
+      li.className = 'preview-row';
+      const sel = state.selecionados.has(i);
+      const stCls = statusClass(r['Status']);
+      li.innerHTML = `
+        <input type="checkbox" ${sel ? 'checked' : ''} data-idx="${i}">
+        <div class="num">${r['Número'] || '—'}</div>
+        <div class="orgao">${r['Órgão'] || '—'}<br><span style="font-size:11px;color:var(--plum-soft)">${r['Natureza'] || ''}</span></div>
+        <div>${r['Status'] ? `<span class="status ${stCls}">${r['Status']}</span>` : '—'}</div>
+        <div class="valor">R$ ${fmtBR(r['Saldo Devedor'])}</div>
+        <button class="trash" data-trash="${i}" title="Remover da lista"><i class="ph ph-trash"></i></button>
+      `;
+      list.appendChild(li);
+    });
+  }
+
+  // contador + total
+  let totalSel = 0, totalAll = 0, qtdSel = 0;
+  state.registros.forEach((r, i) => {
+    if (state.removidos.has(i)) return;
+    const v = Number(r['Saldo Devedor']) || 0;
+    totalAll++;
+    if (state.selecionados.has(i)) { totalSel += v; qtdSel++; }
+  });
+  let countTxt = `${qtdSel} de ${totalAll} selecionados`;
+  if (state.filter) countTxt += ` · mostrando ${vis.length}`;
+  $('preview-count').textContent = countTxt;
+  $('preview-total').textContent = `R$ ${fmtBR(totalSel)}`;
+
+  // actions visibility + hint
+  $('actions-wrap').hidden = false;
+  const hasSel = qtdSel > 0;
+  $('btn-enviar').disabled = !hasSel;
+  $('btn-anexar').disabled = !hasSel;
+  const hint = $('hint');
+  if (hasSel) {
+    hint.textContent = state.faltando.length
+      ? `${state.faltando.length} coluna(s) sem mapping — vai gravar vazio.`
+      : 'Tudo pronto pra enviar.';
+  } else {
+    hint.textContent = 'Selecione pelo menos um registro pra enviar.';
+  }
+}
+
+/* ============================================================
+   Network — status + enviar + limpar
+   ============================================================ */
+async function fetchStatus() {
+  const dot = $('status-dot'); const txt = $('status-text');
+  const url = CONFIG.APP_SCRIPT_URL;
+  if (!url || url.includes('COLE_A_URL')) {
+    dot.className = 'dot warn'; txt.textContent = 'URL não configurada';
+    return;
+  }
+  try {
+    const r = await fetch(url + '?check=1&v=' + Date.now());
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    state.sheetCount = j.count || 0;
+    if (j.last_update) {
+      const dt = new Date(j.last_update);
+      const dia = String(dt.getDate()).padStart(2,'0');
+      const mes = String(dt.getMonth()+1).padStart(2,'0');
+      const hh  = String(dt.getHours()).padStart(2,'0');
+      const mm  = String(dt.getMinutes()).padStart(2,'0');
+      dot.className = 'dot';
+      txt.textContent = `${j.count} registros · atualizado ${dia}/${mes} às ${hh}:${mm}`;
+    } else {
+      dot.className = 'dot off';
+      txt.textContent = `${j.count} registros · nunca atualizado`;
+    }
+  } catch (err) {
+    dot.className = 'dot warn';
+    txt.textContent = 'falha ao consultar';
+    console.error('[status] erro:', err);
+  }
+}
+
+async function enviarRegistros(acao /* 'substituir' | 'anexar' */) {
+  const url = CONFIG.APP_SCRIPT_URL;
+  if (!url || url.includes('COLE_A_URL')) {
+    toast('⚠️ URL do App Script não configurada no código!');
+    return;
+  }
+  const registros = selectedRegistros();
+  if (registros.length === 0) { toast('Nenhum registro selecionado.'); return; }
+
+  showOverlay(true, acao === 'anexar' ? 'Anexando…' : 'Substituindo…');
+  try {
+    const body = acao === 'anexar' ? { acao:'anexar', registros } : { registros };
+    await fetch(url, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    toast(`✅ ${registros.length} registro(s) enviado(s)`);
+    setTimeout(fetchStatus, 1500);
+  } catch (err) {
+    toast('❌ Erro ao enviar: ' + (err.message || err));
+  } finally {
+    showOverlay(false);
+  }
+}
+
+async function limparTudo() {
+  const url = CONFIG.APP_SCRIPT_URL;
+  if (!url || url.includes('COLE_A_URL')) {
+    toast('⚠️ URL do App Script não configurada no código!');
+    return;
+  }
+  fecharLimpar();
+  showOverlay(true, 'Limpando…');
+  try {
+    await fetch(url, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'limpar' }),
+    });
+    toast('🧹 Aba zerada');
+    setTimeout(fetchStatus, 1500);
+  } catch (err) {
+    toast('❌ Erro ao limpar: ' + (err.message || err));
+  } finally {
+    showOverlay(false);
+  }
+}
+
+/* ============================================================
+   UI utils
+   ============================================================ */
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function showOverlay(on, text) {
+  const el = $('overlay');
+  if (text) $('overlay-text').textContent = text;
+  el.classList.toggle('show', !!on);
+}
+
+function abrirLimpar() {
+  const m = $('modal-limpar');
+  const optSub = m.querySelector('.opt-sub');
+  optSub.textContent = `Vou perder os ${state.sheetCount} registro(s) que estão no Sheets agora.`;
+  $('ml-confirm-check').checked = false;
+  $('ml-do').disabled = true;
+  m.classList.add('show');
+}
+function fecharLimpar() { $('modal-limpar').classList.remove('show'); }
+
+/* ============================================================
+   Fluxo principal
+   ============================================================ */
+async function processFile(file) {
+  if (!file) return;
+  state.file = file;
+  state.registros = [];
+  state.removidos = new Set();
+  state.selecionados = new Set();
+  showOverlay(true, 'Lendo planilha…');
+  try {
+    const parsed = await parseFile(file);
+    renderFiles(file, parsed);
+    if (parsed) {
+      state.sheetName = parsed.sheetName;
+      state.headerMap = parsed.headerMap;
+      state.faltando  = parsed.faltando;
+      state.registros = parsed.registros;
+      // por padrão, todos selecionados
+      parsed.registros.forEach((_, i) => state.selecionados.add(i));
+    } else {
+      toast('Não achei nenhuma aba com colunas de Parcelamentos.');
+    }
+  } catch (err) {
+    console.error('[parse] erro:', err);
+    toast('Erro ao ler: ' + (err.message || err));
+    renderFiles(file, null);
+  } finally {
+    showOverlay(false);
+    renderPreview();
+  }
+}
+
+function resetTudo() {
+  state.file = null;
+  state.registros = [];
+  state.removidos = new Set();
+  state.selecionados = new Set();
+  state.filter = '';
+  $('files-wrap').hidden = true;
+  $('preview-wrap').hidden = true;
+  $('actions-wrap').hidden = true;
+  $('file-input').value = '';
+  const ps = $('preview-search'); if (ps) ps.value = '';
+  toast('Recomeçando');
+}
+
+/* ============================================================
+   Event wiring
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  const dz = $('dz');
+  const input = $('file-input');
+
+  $('btn-pick').addEventListener('click', e => { e.stopPropagation(); input.click(); });
+  dz.addEventListener('click', () => input.click());
+  dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
+  input.addEventListener('change', e => processFile(e.target.files[0]));
+  ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag'); }));
+  dz.addEventListener('drop', e => processFile(e.dataTransfer.files[0]));
+
+  $('preview-search').addEventListener('input', e => {
+    state.filter = e.target.value;
+    renderPreview();
+  });
+
+  // delegação: checkboxes + lixeiras
+  $('preview-list').addEventListener('change', e => {
+    if (e.target.matches('input[type="checkbox"][data-idx]')) {
+      const i = parseInt(e.target.dataset.idx, 10);
+      if (e.target.checked) state.selecionados.add(i);
+      else state.selecionados.delete(i);
+      renderPreview();
+    }
+  });
+  $('preview-list').addEventListener('click', e => {
+    const trash = e.target.closest('[data-trash]');
+    if (trash) {
+      const i = parseInt(trash.dataset.trash, 10);
+      state.removidos.add(i);
+      state.selecionados.delete(i);
+      renderPreview();
+    }
+  });
+
+  $('btn-enviar').addEventListener('click', () => enviarRegistros('substituir'));
+  $('btn-anexar').addEventListener('click', () => enviarRegistros('anexar'));
+  $('btn-limpar').addEventListener('click', abrirLimpar);
+  $('btn-reset').addEventListener('click', resetTudo);
+
+  // confirm modal
+  $('ml-cancel').addEventListener('click', fecharLimpar);
+  $('modal-limpar').addEventListener('click', e => { if (e.target === $('modal-limpar')) fecharLimpar(); });
+  $('ml-confirm-check').addEventListener('change', e => { $('ml-do').disabled = !e.target.checked; });
+  $('ml-do').addEventListener('click', limparTudo);
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharLimpar(); });
+
+  fetchStatus();
+});
+</script>
+</body>
+</html>
