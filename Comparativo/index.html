@@ -348,7 +348,7 @@
     // (Code_Comparativo.gs). Esse endpoint substitui a leitura via CSV publicado.
     // ============================================================================
     const CONFIG = {
-        APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw4FT_gkFpqxhLukZqph_QiEi0jwb_Ogy2LEOFdnMZYmwVRQkELw7H8-Xt8cHKRkGAI/exec',
+        APP_SCRIPT_URL: 'COLE_A_URL_AQUI',
     };
     
     document.getElementById('dataAtual').innerText = new Date().toLocaleDateString('pt-BR');
@@ -451,7 +451,18 @@
 
     function normalizarTexto(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim() : str; }
     function limparTextoCsv(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s-]/g, "").trim() : ""; }
-    function normalizarMes(m) { return m ? normalizarTexto(m) : m; }
+    function normalizarMes(m) {
+        if (!m) return m;
+        let s = String(m).trim();
+        // Se vier como data ISO (ex: "2026-01-01T03:00:00.000Z"), reconverte p/ "JAN/2026"
+        const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (iso) {
+            const meses = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+            const mi = parseInt(iso[2], 10) - 1;
+            if (mi >= 0 && mi < 12) return meses[mi] + '/' + iso[1];
+        }
+        return normalizarTexto(s);
+    }
 
     function showToast(msg, tipo) {
         tipo = tipo || 'error';

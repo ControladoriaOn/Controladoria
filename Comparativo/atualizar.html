@@ -388,8 +388,11 @@
   </section>
 
   <section class="actions" id="actions-wrap" hidden>
-    <button class="btn btn-primary" id="btn-enviar">
-      <i class="ph-bold ph-cloud-arrow-up"></i> Enviar (substitui tudo)
+    <button class="btn btn-primary" id="btn-ano">
+      <i class="ph-bold ph-calendar-check"></i> Atualizar ano
+    </button>
+    <button class="btn btn-ghost" id="btn-enviar">
+      <i class="ph ph-cloud-arrow-up"></i> Substituir tudo
     </button>
     <button class="btn btn-ghost" id="btn-anexar">
       <i class="ph ph-plus"></i> Anexar
@@ -451,7 +454,7 @@
    CONFIG — cole aqui a URL /exec do App Script de Receita/Custo.
    ============================================================ */
 const CONFIG = {
-  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw4FT_gkFpqxhLukZqph_QiEi0jwb_Ogy2LEOFdnMZYmwVRQkELw7H8-Xt8cHKRkGAI/exec',
+  APP_SCRIPT_URL: 'COLE_A_URL_AQUI',
 };
 
 /* ============================================================
@@ -512,6 +515,7 @@ function mesLabel(v, anoFallback) {
 const state = {
   file: null,
   registros: [],
+  ano: null,
   sumRb: 0, sumCusto: 0,
   filter: '',
   sheetCount: 0,
@@ -768,7 +772,14 @@ function renderPreview(parsed) {
   $('preview-count').textContent = countTxt;
 
   // Hint
-  $('hint').textContent = 'Pronto pra enviar.';
+  // Atualiza label do botão de ano + dica
+  const btnAno = $('btn-ano');
+  if (btnAno) {
+    btnAno.innerHTML = '<i class="ph-bold ph-calendar-check"></i> Atualizar ano ' + (state.ano || '');
+  }
+  $('hint').textContent = state.ano
+    ? ('"Atualizar ano ' + state.ano + '" troca só ' + state.ano + ' e preserva os outros anos.')
+    : 'Pronto pra enviar.';
 }
 
 /* ============================================================
@@ -805,14 +816,20 @@ async function fetchStatus() {
   }
 }
 
-async function enviarRegistros(acao /* 'substituir' | 'anexar' */) {
+async function enviarRegistros(acao /* 'substituir' | 'anexar' | 'substituir_ano' */) {
   const url = CONFIG.APP_SCRIPT_URL;
   if (!url || url.includes('COLE_A_URL')) { toast('⚠️ URL do App Script não configurada!', 'error'); return; }
   if (state.registros.length === 0) { toast('Nada pra enviar.', 'error'); return; }
 
-  showOverlay(true, acao === 'anexar' ? 'Anexando…' : 'Substituindo…');
+  const msgOverlay = acao === 'anexar' ? 'Anexando…'
+    : acao === 'substituir_ano' ? ('Atualizando ' + (state.ano || 'ano') + '…')
+    : 'Substituindo…';
+  showOverlay(true, msgOverlay);
   try {
-    const body = acao === 'anexar' ? { acao:'anexar', registros: state.registros } : { registros: state.registros };
+    let body;
+    if (acao === 'anexar') body = { acao:'anexar', registros: state.registros };
+    else if (acao === 'substituir_ano') body = { acao:'substituir_ano', registros: state.registros };
+    else body = { registros: state.registros };
     await fetch(url, {
       method:'POST', mode:'no-cors',
       headers:{ 'Content-Type':'application/json' },
@@ -885,6 +902,7 @@ async function processFile(file) {
     renderFiles(file, parsed);
     if (parsed) {
       state.registros = parsed.registros;
+      state.ano = parsed.ano;
     } else {
       toast('Não consegui despivotar. Confira o formato.', 'error');
     }
@@ -929,6 +947,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPreview(_lastParsed);
   });
 
+  $('btn-ano').addEventListener('click', () => enviarRegistros('substituir_ano'));
   $('btn-enviar').addEventListener('click', () => enviarRegistros('substituir'));
   $('btn-anexar').addEventListener('click', () => enviarRegistros('anexar'));
   $('btn-limpar').addEventListener('click', abrirLimpar);
