@@ -320,6 +320,7 @@ const DataService = (() => {
                     atraso: 0,
                     totalDivida: 0,
                     parcelaUnit: 0,
+                    comprovante: '',
                 };
             }
 
@@ -329,6 +330,7 @@ const DataService = (() => {
             if (mesAnoBase < inativo) {
                 if (mesAnoP === mesAnoBase && !originalStatus.includes('encerrado')) {
                     map[id].parcelaUnit += saldoDevedor;
+                    if (row['Comprovante']) map[id].comprovante = row['Comprovante'];
                 }
                 if (mesAnoP > mesAnoBase || originalStatus === 'a vencer' || originalStatus.includes('atraso')) {
                     map[id].totalDivida += saldoDevedor;
@@ -485,6 +487,24 @@ const TableRenderer = (() => {
             }
             tr.appendChild(td);
         });
+
+        // Coluna Comprovante: link do pagamento do mês (ou "—" se não tiver)
+        const tdComprov = document.createElement('td');
+        const comprovUrl = c.comprovante;
+        if (comprovUrl) {
+            const a = document.createElement('a');
+            a.href = comprovUrl;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            a.style.cssText = 'display:inline-flex;align-items:center;gap:5px;color:#FF6E00;text-decoration:none;font-weight:600;font-size:12.5px;white-space:nowrap;';
+            a.innerHTML = '<i class="ph ph-paperclip"></i> Ver';
+            tdComprov.appendChild(a);
+        } else {
+            tdComprov.textContent = '—';
+            tdComprov.style.color = 'var(--muted)';
+        }
+        tr.appendChild(tdComprov);
+
         return tr;
     };
 
@@ -574,6 +594,8 @@ const TableRenderer = (() => {
         const tdParcela = document.createElement('td');
         tdParcela.textContent = Utils.fmt(sumParcela);
         tr.appendChild(tdParcela);
+
+        tr.appendChild(document.createElement('td')); // coluna Comprovante (sem total)
 
         tfoot.appendChild(tr);
     };
