@@ -160,6 +160,17 @@ const Utils = (() => {
         return o;
     };
 
+    // ✅ NOVO: valida se é uma URL HTTP/HTTPS absoluta
+    const isValidHttpUrl = (string) => {
+        let url;
+        try {
+            url = new URL(string);
+        } catch (_) {
+            return false;
+        }
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    };
+
     return Object.freeze({
         fmt: fmtCurrency,
         fmtD: fmtCurrencyShort,
@@ -173,6 +184,7 @@ const Utils = (() => {
         mesAno,
         el,
         option,
+        isValidHttpUrl, // ✅ exportado
     });
 })();
 
@@ -207,6 +219,7 @@ const DataService = (() => {
         'valor original': 'Valor Original',
         'saldo devedor':  'Saldo Devedor',
         'ativo':       'Ativo',
+        'comprovante': 'Comprovante', // ✅ NOVO: garante normalização do campo Comprovante
     };
 
     const normalizeKeys = (row) => {
@@ -330,7 +343,6 @@ const DataService = (() => {
             if (mesAnoBase < inativo) {
                 if (mesAnoP === mesAnoBase && !originalStatus.includes('encerrado')) {
                     map[id].parcelaUnit += saldoDevedor;
-                    if (row['Comprovante']) map[id].comprovante = row['Comprovante'];
                 }
                 if (mesAnoP > mesAnoBase || originalStatus === 'a vencer' || originalStatus.includes('atraso')) {
                     map[id].totalDivida += saldoDevedor;
@@ -338,6 +350,12 @@ const DataService = (() => {
                         map[id].atraso++;
                     }
                 }
+            }
+
+            // ✅ NOVO: captura o comprovante de QUALQUER parcela válida do contrato
+            const url = row['Comprovante'];
+            if (url && Utils.isValidHttpUrl(url)) {
+                map[id].comprovante = url;
             }
         });
         consolidatedData = Object.values(map).filter(c => c.totalDivida > 0 || c.parcelaUnit > 0);
@@ -488,10 +506,10 @@ const TableRenderer = (() => {
             tr.appendChild(td);
         });
 
-        // Coluna Comprovante: link do pagamento do mês (ou "—" se não tiver)
+        // ✅ CORRIGIDO: valida URL antes de criar link
         const tdComprov = document.createElement('td');
         const comprovUrl = c.comprovante;
-        if (comprovUrl) {
+        if (comprovUrl && Utils.isValidHttpUrl(comprovUrl)) {
             const a = document.createElement('a');
             a.href = comprovUrl;
             a.target = '_blank';
@@ -542,10 +560,10 @@ const TableRenderer = (() => {
             tr.appendChild(td);
         });
 
-        // Coluna Comprovante: link clicável da parcela (ou "—" se não tiver)
+        // ✅ CORRIGIDO: valida URL antes de criar link
         const tdComprov = document.createElement('td');
         const comprovUrl = r['Comprovante'];
-        if (comprovUrl) {
+        if (comprovUrl && Utils.isValidHttpUrl(comprovUrl)) {
             const a = document.createElement('a');
             a.href = comprovUrl;
             a.target = '_blank';
