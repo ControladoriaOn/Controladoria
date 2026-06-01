@@ -18,6 +18,69 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Estilos próprios dos controles do cabeçalho (não dependem do styles.css) -->
+    <style id="dctl-style">
+      #main-header .header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+      /* Base (mês / ano) */
+      #main-header .header-right .dctl-base {
+        display:inline-flex; align-items:center; gap:4px; height:38px;
+        padding:0 10px; background:#fff; border:1px solid #E8E2E8; border-radius:10px;
+      }
+      #main-header .header-right .dctl-base > i { color:#FF6E00; font-size:15px; }
+      #main-header .header-right .dctl-base select {
+        appearance:auto; border:none; background:transparent; cursor:pointer;
+        font:600 13px 'Manrope',sans-serif; color:#2D1B2D; padding:2px; outline:none;
+      }
+
+      /* Sincronização */
+      #main-header .header-right .dctl-sync {
+        display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
+        font:500 12px 'Manrope',sans-serif; color:#6B5E6B; padding:0 4px;
+      }
+      #main-header .header-right .dctl-sync .dctl-dot {
+        width:7px; height:7px; border-radius:50%; background:#16A34A;
+        box-shadow:0 0 0 3px rgba(22,163,74,0.14);
+      }
+
+      /* Exportar (menu) */
+      #main-header .header-right .dctl-export { position:relative; }
+      #main-header .header-right .dctl-export-btn {
+        display:inline-flex; align-items:center; gap:8px; height:38px; padding:0 16px;
+        background:#FF6E00; color:#fff; border:1px solid #FF6E00; border-radius:10px;
+        font:700 13px 'Manrope',sans-serif; cursor:pointer;
+        box-shadow:0 6px 16px -8px rgba(255,110,0,0.5); transition:all .15s;
+      }
+      #main-header .header-right .dctl-export-btn:hover { background:#E55B00; border-color:#E55B00; }
+      #main-header .header-right .dctl-export-btn .dctl-caret { font-size:13px; transition:transform .15s; }
+      #main-header .header-right .dctl-export-btn[aria-expanded="true"] .dctl-caret { transform:rotate(180deg); }
+
+      #main-header .header-right .dctl-menu {
+        position:absolute; top:calc(100% + 8px); right:0; z-index:1200; min-width:218px;
+        background:#fff; border:1px solid #E8E2E8; border-radius:12px; padding:6px;
+        box-shadow:0 14px 34px -12px rgba(45,27,45,0.3);
+      }
+      #main-header .header-right .dctl-menu[hidden] { display:none; }
+      #main-header .header-right .dctl-menu-item {
+        display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+        padding:10px 12px; background:none; border:none; border-radius:8px; cursor:pointer;
+        font:600 13px 'Manrope',sans-serif; color:#2D1B2D;
+      }
+      #main-header .header-right .dctl-menu-item:hover { background:#FFF1E0; }
+      #main-header .header-right .dctl-menu-item i { font-size:17px; color:#16794A; }
+      #main-header .header-right .dctl-menu-item:last-child i { color:#DC2626; }
+      #main-header .header-right .dctl-menu-item span {
+        margin-left:auto; font:700 10.5px 'Manrope',sans-serif; letter-spacing:.04em;
+        text-transform:uppercase; color:#9B8F9B; background:#F6F2F6; padding:2px 7px; border-radius:6px;
+      }
+
+      @media (max-width:720px) {
+        #main-header .header-right { gap:8px; }
+        #main-header .header-right .dctl-sync { display:none; }
+        #main-header .header-right .dctl-menu { right:auto; left:0; }
+      }
+    </style>
 </head>
 <body>
 
@@ -68,23 +131,34 @@
             <div class="page-title"><i class="ph-fill ph-chart-polar"></i> Gestão de Parcelamentos</div>
         </div>
         <div class="header-right">
-            <div class="data-base-selector" role="group" aria-label="Selecionar data-base">
-                <label id="labelBase"><i class="ph ph-calendar-blank" style="font-size:14px;vertical-align:middle"></i> Base:</label>
-                <select id="dataBaseMes" aria-labelledby="labelBase"></select>
-                <span style="color:var(--muted)" aria-hidden="true">/</span>
-                <select id="dataBaseAno" aria-labelledby="labelBase"></select>
+            <div class="dctl-base" role="group" aria-label="Selecionar data-base">
+                <i class="ph ph-calendar-blank" aria-hidden="true"></i>
+                <select id="dataBaseMes" aria-label="Mês base"></select>
+                <select id="dataBaseAno" aria-label="Ano base"></select>
             </div>
 
-            <div class="header-pill"><span class="dot" aria-hidden="true"></span> <span id="lastSync">—</span></div>
-            <button class="btn-export excel" id="btnExcelSint" aria-label="Exportar sintético em Excel">
-                <i class="ph-bold ph-microsoft-excel-logo"></i> <span>Sintético</span>
-            </button>
-            <button class="btn-export excel" id="btnExcelDet" aria-label="Exportar detalhado em Excel">
-                <i class="ph-bold ph-microsoft-excel-logo"></i> <span>Detalhado</span>
-            </button>
-            <button class="btn-export pdf" id="btnExportPDF" aria-label="Exportar relatório em PDF">
-                <i class="ph-bold ph-file-pdf"></i> <span>Relatório PDF</span>
-            </button>
+            <div class="dctl-sync" title="Última sincronização">
+                <span class="dctl-dot" aria-hidden="true"></span>
+                <span id="lastSync">—</span>
+            </div>
+
+            <div class="dctl-export" id="dctlExport">
+                <button class="dctl-export-btn" id="dctlExportBtn" type="button" aria-haspopup="true" aria-expanded="false">
+                    <i class="ph-bold ph-download-simple" aria-hidden="true"></i> Exportar
+                    <i class="ph ph-caret-down dctl-caret" aria-hidden="true"></i>
+                </button>
+                <div class="dctl-menu" id="dctlMenu" role="menu" hidden>
+                    <button class="dctl-menu-item" id="btnExcelSint" role="menuitem" type="button">
+                        <i class="ph-bold ph-microsoft-excel-logo" aria-hidden="true"></i> Sintético <span>Excel</span>
+                    </button>
+                    <button class="dctl-menu-item" id="btnExcelDet" role="menuitem" type="button">
+                        <i class="ph-bold ph-microsoft-excel-logo" aria-hidden="true"></i> Detalhado <span>Excel</span>
+                    </button>
+                    <button class="dctl-menu-item" id="btnExportPDF" role="menuitem" type="button">
+                        <i class="ph-bold ph-file-pdf" aria-hidden="true"></i> Relatório <span>PDF</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -261,5 +335,25 @@
 </main>
 
 <script src="app.js"></script>
+<script>
+  /* Menu "Exportar": só abre/fecha. Os botões mantêm os IDs originais, então
+     os exports continuam ligados pelo app.js. */
+  (function () {
+    const wrap = document.getElementById('dctlExport');
+    const btn  = document.getElementById('dctlExportBtn');
+    const menu = document.getElementById('dctlMenu');
+    if (!wrap || !btn || !menu) return;
+    const close = () => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const willOpen = menu.hidden;
+      menu.hidden = !willOpen;
+      btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+    document.addEventListener('click', (e) => { if (!wrap.contains(e.target)) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+    menu.querySelectorAll('.dctl-menu-item').forEach((it) => it.addEventListener('click', close));
+  })();
+</script>
 </body>
 </html>

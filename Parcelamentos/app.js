@@ -345,7 +345,8 @@ const DataService = (() => {
     };
 
     const load = async () => {
-        const json = await fetchWithRetry(Config.API_URL);
+        const url = Config.API_URL + (Config.API_URL.includes('?') ? '&' : '?') + 'v=' + Date.now();
+        const json = await fetchWithRetry(url);
         rawData = json
             .map(normalizeKeys)
             .filter(r => r['Número'] || r['Negociação']);
