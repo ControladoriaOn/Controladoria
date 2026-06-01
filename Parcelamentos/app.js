@@ -491,7 +491,7 @@ const TableRenderer = (() => {
         // Coluna Comprovante: link do pagamento do mês (ou "—" se não tiver)
         const tdComprov = document.createElement('td');
         const comprovUrl = c.comprovante;
-        if (comprovUrl) {
+        if (comprovUrl && /^https?:\/\//i.test(comprovUrl)) {
             const a = document.createElement('a');
             a.href = comprovUrl;
             a.target = '_blank';
@@ -545,7 +545,7 @@ const TableRenderer = (() => {
         // Coluna Comprovante: link clicável da parcela (ou "—" se não tiver)
         const tdComprov = document.createElement('td');
         const comprovUrl = r['Comprovante'];
-        if (comprovUrl) {
+        if (comprovUrl && /^https?:\/\//i.test(comprovUrl)) {
             const a = document.createElement('a');
             a.href = comprovUrl;
             a.target = '_blank';
