@@ -80,6 +80,68 @@
         #main-header .header-right .dctl-sync { display:none; }
         #main-header .header-right .dctl-menu { right:auto; left:0; }
       }
+
+      /* ---- Comprovantes no Detalhamento ---- */
+      .cmp-cell { display:inline-flex; align-items:center; gap:6px; }
+      .cmp-ver {
+        display:inline-flex; align-items:center; gap:5px; color:#FF6E00;
+        text-decoration:none; font:600 12.5px 'Manrope',sans-serif; white-space:nowrap;
+      }
+      .cmp-ver:hover { text-decoration:underline; }
+      .cmp-anexar {
+        display:inline-flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;
+        padding:5px 10px; border:1px solid #E8E2E8; border-radius:8px; background:#fff;
+        color:#6B5E6B; font:600 12px 'Manrope',sans-serif; transition:all .15s;
+      }
+      .cmp-anexar:hover { border-color:#FF6E00; color:#E55B00; background:#FFF1E0; }
+      .cmp-del {
+        display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px;
+        border:none; background:none; border-radius:6px; cursor:pointer; color:#b9a9b9; font-size:14px;
+      }
+      .cmp-del:hover { background:#FEE2E2; color:#DC2626; }
+      .cmp-dash { color:#9B8F9B; }
+
+      .cmp-overlay {
+        position:fixed; inset:0; z-index:3000; display:flex; align-items:center; justify-content:center;
+        background:rgba(26,15,26,0.55); backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity .15s;
+      }
+      .cmp-overlay.show { opacity:1; pointer-events:auto; }
+      .cmp-overlay-box {
+        display:flex; align-items:center; gap:14px; background:#fff; padding:20px 28px; border-radius:14px;
+        font:600 14px 'Manrope',sans-serif; color:#2D1B2D; box-shadow:0 20px 60px -20px rgba(0,0,0,0.5);
+      }
+      .cmp-spinner { width:22px; height:22px; border:3px solid #E8E2E8; border-top-color:#FF6E00; border-radius:50%; animation:cmpspin .7s linear infinite; }
+      @keyframes cmpspin { to { transform:rotate(360deg); } }
+
+      .cmp-toast {
+        position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); z-index:3100;
+        background:#2D1B2D; color:#fff; padding:13px 22px; border-radius:10px; max-width:90vw; text-align:center;
+        font:600 13px 'Manrope',sans-serif; box-shadow:0 12px 32px -8px rgba(45,27,45,0.4);
+        opacity:0; pointer-events:none; transition:all .25s;
+      }
+      .cmp-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+      .cmp-modal {
+        position:fixed; inset:0; z-index:3200; display:flex; align-items:center; justify-content:center; padding:20px;
+        background:rgba(26,15,26,0.55); backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity .15s;
+      }
+      .cmp-modal.show { opacity:1; pointer-events:auto; }
+      .cmp-modal-box {
+        background:#fff; border-radius:16px; padding:26px 24px; max-width:380px; width:100%; text-align:center;
+        box-shadow:0 24px 60px -20px rgba(0,0,0,0.5);
+      }
+      .cmp-modal-icon {
+        width:52px; height:52px; border-radius:50%; background:#FEE2E2; color:#DC2626;
+        display:flex; align-items:center; justify-content:center; font-size:26px; margin:0 auto 14px;
+      }
+      .cmp-modal-box h3 { margin:0 0 8px; font:600 18px 'Manrope',sans-serif; color:#2D1B2D; }
+      .cmp-modal-box p { margin:0 0 20px; font:400 13px 'Manrope',sans-serif; color:#6B5E6B; line-height:1.5; }
+      .cmp-modal-actions { display:flex; gap:10px; }
+      .cmp-modal-actions button { flex:1; padding:11px; border-radius:10px; font:700 13px 'Manrope',sans-serif; cursor:pointer; border:1px solid transparent; }
+      .cmp-btn-cancel { background:#F6F2F6; color:#2D1B2D; border-color:#E8E2E8; }
+      .cmp-btn-cancel:hover { background:#ECE6EC; }
+      .cmp-btn-danger { background:#DC2626; color:#fff; }
+      .cmp-btn-danger:hover { background:#B91C1C; }
     </style>
 </head>
 <body>
@@ -109,9 +171,6 @@
         </button>
         <a id="link-atualizar" class="nav-item nav-item-link" href="./atualizar.html" hidden>
             <i class="ph ph-upload-simple"></i> Atualizar
-        </a>
-        <a id="link-comprovantes" class="nav-item nav-item-link" href="./comprovantes.html" hidden>
-            <i class="ph ph-paperclip"></i> Comprovantes
         </a>
     </nav>
     <div class="sidebar-footer">

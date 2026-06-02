@@ -9,12 +9,10 @@ const HubLink = {
     init() {
         const btn = document.getElementById('btn-hub');
         const linkAtualizar = document.getElementById('link-atualizar');
-        const linkComprovantes = document.getElementById('link-comprovantes');
 
         if (this._userCameFromHub()) {
             if (btn) btn.hidden = false;
             if (linkAtualizar) linkAtualizar.hidden = false;
-            if (linkComprovantes) linkComprovantes.hidden = false;
             try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) { }
         }
     },
@@ -48,6 +46,7 @@ const HubLink = {
    ================================================================= */
 const Config = Object.freeze({
     API_URL: 'https://calm-queen-1204.controladoriaontimegestao.workers.dev',
+    APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwpOVWCs2Fad2a5B8E5UaVrpJweHEtL7uSB9AfBfQKWZmZgKz_kYgsHmPIB-pPuWVPksw/exec',
     CAIXA_JAN_2023: 421634,
     ROWS_PER_PAGE_SINT: 20,
     ROWS_PER_PAGE_DET: 50,
@@ -78,6 +77,183 @@ const Config = Object.freeze({
         purpleHex:   '#3C003C',
     }),
 });
+
+/* =================================================================
+   Comprovantes — anexar / ver / excluir por parcela (Detalhamento)
+   Só habilita anexar/excluir se o usuário veio pelo hub (mesma regra
+   do botão "voltar ao hub"). Upload/exclusão via Apps Script (no-cors).
+   ================================================================= */
+const Comprov = (() => {
+    let canEdit = false;
+    let onChanged = null;
+    let pending = null;          // {numero, comp} aguardando o arquivo
+    let pendingDelete = null;    // {numero, comp} aguardando confirmação
+    let ui = null;
+
+    const competenciaDe = (v) => {
+        const s = String(v == null ? '' : v).trim();
+        let m = s.match(/^(\d{4})-(\d{2})/);          // ISO ou YYYY-MM
+        if (m) return m[1] + '-' + m[2];
+        m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);     // DD/MM/AAAA
+        if (m) return m[3] + '-' + m[2];
+        return '';
+    };
+
+    const fileToBase64 = (file) => new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => { const s = String(r.result); const i = s.indexOf(','); res(i >= 0 ? s.slice(i + 1) : s); };
+        r.onerror = () => rej(new Error('Falha ao ler o arquivo'));
+        r.readAsDataURL(file);
+    });
+
+    const ensureUI = () => {
+        if (ui) return ui;
+
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*,application/pdf,.pdf';
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+        fileInput.addEventListener('change', () => {
+            const f = fileInput.files && fileInput.files[0];
+            fileInput.value = '';
+            const p = pending; pending = null;
+            if (f && p) doUpload(p.numero, p.comp, f);
+        });
+
+        const overlay = document.createElement('div');
+        overlay.className = 'cmp-overlay';
+        const box = document.createElement('div'); box.className = 'cmp-overlay-box';
+        const sp = document.createElement('div'); sp.className = 'cmp-spinner';
+        const overlayText = document.createElement('div'); overlayText.textContent = 'Processando…';
+        box.appendChild(sp); box.appendChild(overlayText); overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        const toastEl = document.createElement('div');
+        toastEl.className = 'cmp-toast';
+        document.body.appendChild(toastEl);
+
+        const modal = document.createElement('div');
+        modal.className = 'cmp-modal';
+        modal.innerHTML =
+            '<div class="cmp-modal-box">' +
+              '<div class="cmp-modal-icon"><i class="ph-bold ph-trash"></i></div>' +
+              '<h3>Excluir comprovante?</h3>' +
+              '<p>O arquivo vai para a Lixeira do Drive (recuperável por 30 dias). Esta parcela ficará sem comprovante.</p>' +
+              '<div class="cmp-modal-actions">' +
+                '<button type="button" class="cmp-btn-cancel">Cancelar</button>' +
+                '<button type="button" class="cmp-btn-danger">Excluir</button>' +
+              '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+        const closeModal = () => { modal.classList.remove('show'); pendingDelete = null; };
+        modal.querySelector('.cmp-btn-cancel').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        modal.querySelector('.cmp-btn-danger').addEventListener('click', () => {
+            const p = pendingDelete; modal.classList.remove('show'); pendingDelete = null;
+            if (p) doDelete(p.numero, p.comp);
+        });
+
+        ui = { fileInput, overlay, overlayText, toast: toastEl, modal };
+        return ui;
+    };
+
+    const showOverlay = (on, text) => {
+        const u = ensureUI();
+        if (text) u.overlayText.textContent = text;
+        u.overlay.classList.toggle('show', !!on);
+    };
+    const toast = (msg) => {
+        const u = ensureUI();
+        u.toast.textContent = msg;
+        u.toast.classList.add('show');
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => u.toast.classList.remove('show'), 3800);
+    };
+
+    const post = (payload) => fetch(Config.APP_SCRIPT_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+
+    const afterChange = async (msg) => {
+        // dá um tempo pro Apps Script salvar + reescrever o link, depois recarrega
+        await new Promise(r => setTimeout(r, 2800));
+        try { if (onChanged) await onChanged(); } catch (e) { console.error('[comprov] reload:', e); }
+        showOverlay(false);
+        toast(msg);
+    };
+
+    const doUpload = async (numero, comp, file) => {
+        const okType = (file.type && (file.type.indexOf('image/') === 0 || file.type.indexOf('pdf') >= 0)) || /\.(png|jpe?g|gif|webp|heic|pdf)$/i.test(file.name);
+        if (!okType) { toast('Tipo não aceito. Use imagem ou PDF.'); return; }
+        if (file.size > 15 * 1024 * 1024) { toast('Arquivo grande demais (máx. 15 MB).'); return; }
+        showOverlay(true, 'Enviando comprovante…');
+        try {
+            const dataBase64 = await fileToBase64(file);
+            await post({ acao: 'comprovante', numero, competencia: comp, filename: file.name, mimeType: file.type || 'application/octet-stream', dataBase64 });
+            await afterChange('Comprovante anexado.');
+        } catch (e) {
+            showOverlay(false);
+            toast('Erro ao enviar: ' + (e.message || e));
+        }
+    };
+
+    const doDelete = async (numero, comp) => {
+        showOverlay(true, 'Excluindo comprovante…');
+        try {
+            await post({ acao: 'excluir_comprovante', numero, competencia: comp });
+            await afterChange('Comprovante excluído.');
+        } catch (e) {
+            showOverlay(false);
+            toast('Erro ao excluir: ' + (e.message || e));
+        }
+    };
+
+    const requestAttach = (numero, comp) => { ensureUI(); pending = { numero, comp }; ui.fileInput.click(); };
+    const requestRemove = (numero, comp) => { ensureUI(); pendingDelete = { numero, comp }; ui.modal.classList.add('show'); };
+
+    // monta o conteúdo da célula "Comprovante" de uma parcela
+    const buildCell = (r) => {
+        const url = r['Comprovante'];
+        const numero = r['Número'] || r['Negociação'] || '';
+        const comp = competenciaDe(r['Data']);
+        const wrap = document.createElement('div');
+        wrap.className = 'cmp-cell';
+        const hasUrl = url && /^https?:\/\//i.test(url);
+
+        if (hasUrl) {
+            const a = document.createElement('a');
+            a.href = url; a.target = '_blank'; a.rel = 'noopener';
+            a.className = 'cmp-ver';
+            a.innerHTML = '<i class="ph ph-paperclip"></i> Ver';
+            wrap.appendChild(a);
+            if (canEdit && numero && comp) {
+                const del = document.createElement('button');
+                del.type = 'button'; del.className = 'cmp-del'; del.title = 'Excluir comprovante';
+                del.innerHTML = '<i class="ph ph-x"></i>';
+                del.addEventListener('click', () => requestRemove(numero, comp));
+                wrap.appendChild(del);
+            }
+        } else if (canEdit && numero && comp) {
+            const btn = document.createElement('button');
+            btn.type = 'button'; btn.className = 'cmp-anexar';
+            btn.innerHTML = '<i class="ph ph-paperclip"></i> Anexar';
+            btn.addEventListener('click', () => requestAttach(numero, comp));
+            wrap.appendChild(btn);
+        } else {
+            const dash = document.createElement('span');
+            dash.className = 'cmp-dash'; dash.textContent = '—';
+            wrap.appendChild(dash);
+        }
+        return wrap;
+    };
+
+    const configure = (opts) => { canEdit = !!opts.canEdit; onChanged = opts.onChanged || null; };
+
+    return { buildCell, configure };
+})();
 
 /* =================================================================
    Funções utilitárias puras
@@ -543,21 +719,9 @@ const TableRenderer = (() => {
             tr.appendChild(td);
         });
 
-        // Coluna Comprovante: link clicável da parcela (ou "—" se não tiver)
+        // Coluna Comprovante: Ver / Anexar / Excluir por parcela
         const tdComprov = document.createElement('td');
-        const comprovUrl = r['Comprovante'];
-        if (comprovUrl && /^https?:\/\//i.test(comprovUrl)) {
-            const a = document.createElement('a');
-            a.href = comprovUrl;
-            a.target = '_blank';
-            a.rel = 'noopener';
-            a.style.cssText = 'display:inline-flex;align-items:center;gap:5px;color:#FF6E00;text-decoration:none;font-weight:600;font-size:12.5px;white-space:nowrap;';
-            a.innerHTML = '<i class="ph ph-paperclip"></i> Ver';
-            tdComprov.appendChild(a);
-        } else {
-            tdComprov.textContent = '—';
-            tdComprov.style.color = 'var(--muted)';
-        }
+        tdComprov.appendChild(Comprov.buildCell(r));
         tr.appendChild(tdComprov);
 
         return tr;
@@ -826,12 +990,12 @@ const App = (() => {
         renderSintetico(currentFilteredSintetico);
     });
 
-    const filterDetalhado = Utils.debounce(() => {
+    const getFilteredDetData = () => {
         const t = $('searchDetalhado').value.toLowerCase(), fO = $('filterDetalhadoOrgao').value.toLowerCase(),
               fN = $('filterDetalhadoNatureza').value.toLowerCase(), fS = $('filterDetalhadoStatus').value.toLowerCase(),
               fM = $('filterDetalhadoMes').value, fA = $('filterDetalhadoAno').value;
 
-        let f = DataService.getRawData().filter(r => {
+        return DataService.getRawData().filter(r => {
             if (t && !(String(r['Número'] || '').toLowerCase().includes(t) || String(r['Orgão'] || '').toLowerCase().includes(t) ||
                 String(r['Natureza'] || '').toLowerCase().includes(t) || String(r['Status'] || '').toLowerCase().includes(t))) return false;
             if (fO && String(r['Orgão'] || '').toLowerCase() !== fO) return false;
@@ -844,6 +1008,10 @@ const App = (() => {
             }
             return true;
         });
+    };
+
+    const filterDetalhado = Utils.debounce(() => {
+        const f = getFilteredDetData();
         lastDetalhadoFiltered = f;
         renderDetalhado(applySort(f, 'detalhado'));
     });
@@ -860,6 +1028,30 @@ const App = (() => {
         TableRenderer.renderDetRows(getSlice('detalhado'));
         renderPagination('detalhado', 'paginationDetalhado');
         TableRenderer.renderDetFooter(data.length);
+    };
+
+    // re-renderiza as duas tabelas preservando a página atual (usado após anexar/excluir)
+    const reRenderTables = () => {
+        currentFilteredSintetico = applySort(getFilteredSint(), 'sintetico');
+        pagination.sintetico.data = currentFilteredSintetico;
+        pagination.sintetico.page = Math.min(pagination.sintetico.page, totPages('sintetico'));
+        TableRenderer.renderSintRows(getSlice('sintetico'));
+        renderPagination('sintetico', 'paginationSintetico');
+        TableRenderer.renderTotals(currentFilteredSintetico);
+
+        const f = applySort(getFilteredDetData(), 'detalhado');
+        lastDetalhadoFiltered = f;
+        pagination.detalhado.data = f;
+        pagination.detalhado.page = Math.min(pagination.detalhado.page, totPages('detalhado'));
+        TableRenderer.renderDetRows(getSlice('detalhado'));
+        renderPagination('detalhado', 'paginationDetalhado');
+        TableRenderer.renderDetFooter(f.length);
+    };
+
+    const reloadData = async () => {
+        await DataService.load();
+        DataService.processConsolidation(currYear, currMonth);
+        reRenderTables();
     };
 
     const setOrgaoFilter = (orgao) => {
@@ -1153,6 +1345,7 @@ const App = (() => {
 
     document.addEventListener('DOMContentLoaded', () => {
         HubLink.init(); // Inicia a validação da Origem (Sessão / Hub)
+        Comprov.configure({ canEdit: HubLink._userCameFromHub(), onChanged: reloadData });
         bindEvents();
         init();
     });
