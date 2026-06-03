@@ -88,6 +88,7 @@ const Comprov = (() => {
     let onChanged = null;
     let pending = null;          // {numero, comp} aguardando o arquivo
     let pendingDelete = null;    // {numero, comp} aguardando confirmação
+    let getData = null;          // () => registros atuais (pra conferir se a gravação pegou)
     let ui = null;
 
     const competenciaDe = (v) => {
@@ -105,6 +106,37 @@ const Comprov = (() => {
         r.onerror = () => rej(new Error('Falha ao ler o arquivo'));
         r.readAsDataURL(file);
     });
+
+    /* Senha de edição (segredo nas gravações). Fica só na sessão, nunca no
+       código. Vai junto em cada gravação; o servidor recusa sem ela. */
+    const TOKEN_KEY = 'parcel_edit_token';
+    const getToken = () => { try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } };
+    const clearToken = () => { try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} };
+    const ensureToken = () => {
+        let t = getToken();
+        if (!t) {
+            t = window.prompt('Senha de edição (para anexar ou excluir comprovantes):');
+            if (t == null || t.trim() === '') return ''; // cancelou
+            t = t.trim();
+            try { sessionStorage.setItem(TOKEN_KEY, t); } catch (e) {}
+        }
+        return t;
+    };
+
+    // Após recarregar, confere se a parcela tem (ou não) o comprovante — pra dar
+    // retorno honesto caso a senha esteja errada (a gravação no-cors não responde).
+    const checkHas = (numero, comp) => {
+        try {
+            const rows = (getData && getData()) || [];
+            return rows.some(r => {
+                const n = r['Número'] || r['Negociação'] || '';
+                if (String(n) !== String(numero)) return false;
+                if (competenciaDe(r['Data']) !== comp) return false;
+                const u = r['Comprovante'];
+                return u && /^https?:\/\//i.test(u);
+            });
+        } catch (e) { return false; }
+    };
 
     const ensureUI = () => {
         if (ui) return ui;
@@ -177,12 +209,11 @@ const Comprov = (() => {
         body: JSON.stringify(payload),
     });
 
-    const afterChange = async (msg) => {
+    const reloadNow = async () => {
         // dá um tempo pro Apps Script salvar + reescrever o link, depois recarrega
         await new Promise(r => setTimeout(r, 2800));
         try { if (onChanged) await onChanged(); } catch (e) { console.error('[comprov] reload:', e); }
         showOverlay(false);
-        toast(msg);
     };
 
     const doUpload = async (numero, comp, file) => {
@@ -192,8 +223,14 @@ const Comprov = (() => {
         showOverlay(true, 'Enviando comprovante…');
         try {
             const dataBase64 = await fileToBase64(file);
-            await post({ acao: 'comprovante', numero, competencia: comp, filename: file.name, mimeType: file.type || 'application/octet-stream', dataBase64 });
-            await afterChange('Comprovante anexado.');
+            await post({ acao: 'comprovante', numero, competencia: comp, filename: file.name, mimeType: file.type || 'application/octet-stream', dataBase64, token: getToken() });
+            await reloadNow();
+            if (getData && !checkHas(numero, comp)) {
+                clearToken(); // provável senha errada → pede de novo na próxima
+                toast('Não foi gravado. Confira a senha de edição e tente de novo.');
+            } else {
+                toast('Comprovante anexado.');
+            }
         } catch (e) {
             showOverlay(false);
             toast('Erro ao enviar: ' + (e.message || e));
@@ -203,16 +240,28 @@ const Comprov = (() => {
     const doDelete = async (numero, comp) => {
         showOverlay(true, 'Excluindo comprovante…');
         try {
-            await post({ acao: 'excluir_comprovante', numero, competencia: comp });
-            await afterChange('Comprovante excluído.');
+            await post({ acao: 'excluir_comprovante', numero, competencia: comp, token: getToken() });
+            await reloadNow();
+            if (getData && checkHas(numero, comp)) {
+                clearToken(); // ainda está lá → provável senha errada
+                toast('Não foi excluído. Confira a senha de edição e tente de novo.');
+            } else {
+                toast('Comprovante excluído.');
+            }
         } catch (e) {
             showOverlay(false);
             toast('Erro ao excluir: ' + (e.message || e));
         }
     };
 
-    const requestAttach = (numero, comp) => { ensureUI(); pending = { numero, comp }; ui.fileInput.click(); };
-    const requestRemove = (numero, comp) => { ensureUI(); pendingDelete = { numero, comp }; ui.modal.classList.add('show'); };
+    const requestAttach = (numero, comp) => {
+        if (!ensureToken()) { toast('Ação cancelada (sem senha de edição).'); return; }
+        ensureUI(); pending = { numero, comp }; ui.fileInput.click();
+    };
+    const requestRemove = (numero, comp) => {
+        if (!ensureToken()) { toast('Ação cancelada (sem senha de edição).'); return; }
+        ensureUI(); pendingDelete = { numero, comp }; ui.modal.classList.add('show');
+    };
 
     // monta o conteúdo da célula "Comprovante" de uma parcela
     const buildCell = (r) => {
@@ -250,7 +299,11 @@ const Comprov = (() => {
         return wrap;
     };
 
-    const configure = (opts) => { canEdit = !!opts.canEdit; onChanged = opts.onChanged || null; };
+    const configure = (opts) => {
+        canEdit = !!opts.canEdit;
+        onChanged = opts.onChanged || null;
+        getData = opts.getData || null;
+    };
 
     return { buildCell, configure };
 })();
@@ -1345,7 +1398,7 @@ const App = (() => {
 
     document.addEventListener('DOMContentLoaded', () => {
         HubLink.init(); // Inicia a validação da Origem (Sessão / Hub)
-        Comprov.configure({ canEdit: HubLink._userCameFromHub(), onChanged: reloadData });
+        Comprov.configure({ canEdit: HubLink._userCameFromHub(), onChanged: reloadData, getData: () => DataService.getRawData() });
         bindEvents();
         init();
     });

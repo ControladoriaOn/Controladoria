@@ -771,6 +771,21 @@ async function fetchStatus() {
   }
 }
 
+/* ====== senha de edição (segredo nas gravações) ======
+   Mesma chave de sessão do dashboard; some quando a aba fecha. */
+function getEditToken(){ try { return sessionStorage.getItem('parcel_edit_token') || ''; } catch(e){ return ''; } }
+function ensureEditToken(){
+  let t = getEditToken();
+  if (!t) {
+    t = window.prompt('Senha de edição (para atualizar a base):');
+    if (t == null || t.trim() === '') return '';
+    t = t.trim();
+    try { sessionStorage.setItem('parcel_edit_token', t); } catch(e){}
+  }
+  return t;
+}
+function clearEditToken(){ try { sessionStorage.removeItem('parcel_edit_token'); } catch(e){} }
+
 async function enviarRegistros(acao /* 'substituir' | 'anexar' */) {
   const url = CONFIG.APP_SCRIPT_URL;
   if (!url || url.includes('COLE_A_URL')) {
@@ -780,15 +795,18 @@ async function enviarRegistros(acao /* 'substituir' | 'anexar' */) {
   const registros = selectedRegistros();
   if (registros.length === 0) { toast('Nenhum registro selecionado.'); return; }
 
+  const token = ensureEditToken();
+  if (!token) { toast('Ação cancelada (sem senha de edição).'); return; }
+
   showOverlay(true, acao === 'anexar' ? 'Anexando…' : 'Substituindo…');
   try {
-    const body = acao === 'anexar' ? { acao:'anexar', registros } : { registros };
+    const body = acao === 'anexar' ? { acao:'anexar', registros, token } : { registros, token };
     await fetch(url, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    toast(`✅ ${registros.length} registro(s) enviado(s)`);
+    toast(`✅ ${registros.length} enviado(s) — confira o contador acima.`);
     setTimeout(fetchStatus, 1500);
   } catch (err) {
     toast('❌ Erro ao enviar: ' + (err.message || err));
@@ -803,15 +821,17 @@ async function limparTudo() {
     toast('⚠️ URL do App Script não configurada no código!');
     return;
   }
+  const token = ensureEditToken();
+  if (!token) { toast('Ação cancelada (sem senha de edição).'); return; }
   fecharLimpar();
   showOverlay(true, 'Limpando…');
   try {
     await fetch(url, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'limpar' }),
+      body: JSON.stringify({ acao: 'limpar', token }),
     });
-    toast('🧹 Aba zerada');
+    toast('🧹 Enviado — confira o contador acima.');
     setTimeout(fetchStatus, 1500);
   } catch (err) {
     toast('❌ Erro ao limpar: ' + (err.message || err));
