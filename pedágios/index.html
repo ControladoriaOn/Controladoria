@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Comprovantes de Pedágio</title>
+  <script>try{var _t=localStorage.getItem('tema_pedagios')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');if(_t==='dark')document.documentElement.classList.add('dark');}catch(e){}</script>
   <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +21,7 @@
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;line-height:1.5}
     .wrap{max-width:960px;margin:0 auto;padding:24px 18px 60px}
-    header{margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--ink);color:#fff;border-radius:16px;padding:18px 22px;box-shadow:0 10px 30px rgba(60,0,60,.20)}
+    header{margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--plum);color:#fff;border-radius:16px;padding:18px 22px;box-shadow:0 10px 30px rgba(60,0,60,.20)}
     .head-title{min-width:0}
     .head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     a.btn{text-decoration:none}
@@ -36,7 +37,7 @@
     .row{display:flex;flex-wrap:wrap;gap:12px}
     .fld{flex:1;min-width:130px}
     label.lbl{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
-    select,input[type=text]{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;font:600 14px 'Manrope',sans-serif;color:var(--ink)}
+    select,input[type=text]{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font:600 14px 'Manrope',sans-serif;color:var(--ink)}
     select:focus,input:focus{outline:none;border-color:var(--orange)}
     .filebtn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:10px 16px;border-radius:10px;background:var(--orange-soft);border:1px solid #F3D9BC;color:var(--orange-dark);font-weight:700;font-size:13.5px}
     .filebtn:hover{background:#ffe6c9}
@@ -59,7 +60,7 @@
     .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:11px;border:none;cursor:pointer;font:700 14.5px 'Manrope',sans-serif}
     .btn.primary{background:var(--orange);color:#fff}
     .btn.primary:hover{background:var(--orange-dark)}
-    .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+    .btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
     .btn.ghost:hover{border-color:var(--orange);color:var(--orange-dark)}
     .btn:disabled{opacity:.45;cursor:not-allowed}
     .btn.sm{padding:8px 14px;border-radius:9px;font-size:13px}
@@ -74,7 +75,7 @@
     .pastezone:focus,.pastezone.drag{border-color:var(--orange);background:#ffe6c9}
     .pastezone .sub{display:block;margin-top:4px;font-weight:500;color:var(--muted);font-size:12.5px}
     .orphans{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
-    .ocard{width:152px;border:1px solid var(--line);border-radius:11px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:7px}
+    .ocard{width:152px;border:1px solid var(--line);border-radius:11px;background:var(--surface);padding:8px;display:flex;flex-direction:column;gap:7px}
     .ocard .thumb{width:100%;height:104px;object-fit:cover;border-radius:8px;cursor:zoom-in;background:var(--gray-bg);border:none}
     .pdfth{display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);cursor:default!important}
     .ocard .oname{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -87,7 +88,7 @@
     .chip.on b{color:var(--green)}
     /* modal de associação */
     .overlay{position:fixed;inset:0;background:rgba(60,0,60,.55);display:flex;align-items:center;justify-content:center;padding:14px;z-index:50}
-    .modal{background:#fff;border-radius:16px;max-width:780px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+    .modal{background:var(--surface);border-radius:16px;max-width:780px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
     .modal .mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
     .modal .mhead h2{margin:0;font-size:17px;font-weight:700;font-family:'Fraunces',serif}
     .modal .mbody{padding:14px 18px;overflow:auto;display:flex;gap:16px;flex-wrap:wrap}
@@ -106,7 +107,7 @@
     .toggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);font-weight:700;cursor:pointer;user-select:none;margin:2px 0 8px}
     .btn.onband{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.55);color:#fff}
     .btn.onband:hover{background:rgba(255,255,255,.26);border-color:#fff;color:#fff}
-    .loadbox{background:#fff;border-radius:18px;padding:28px 30px;width:min(430px,92vw);text-align:center;box-shadow:0 20px 55px rgba(60,0,60,.30)}
+    .loadbox{background:var(--surface);border-radius:18px;padding:28px 30px;width:min(430px,92vw);text-align:center;box-shadow:0 20px 55px rgba(60,0,60,.30)}
     .spinner{width:46px;height:46px;border-radius:50%;border:4px solid var(--orange-soft);border-top-color:var(--orange);margin:0 auto 16px;animation:spin .8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .loadtitle{margin:0 0 14px;font-weight:700;font-size:17px;color:var(--ink);font-family:'Fraunces',serif}
@@ -125,15 +126,15 @@
     /* ====== abas principais ====== */
     /* abas principais (Enviar / Consultar) */
     .maintabs{display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap}
-    .maintab{flex:1;min-width:170px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-family:'Manrope',sans-serif;font-weight:700;font-size:14.5px;padding:13px 18px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    .maintab{flex:1;min-width:170px;border:1.5px solid var(--line);background:var(--surface);color:var(--muted);font-family:'Manrope',sans-serif;font-weight:700;font-size:14.5px;padding:13px 18px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
     .maintab:hover{border-color:var(--orange);color:var(--orange-dark)}
-    .maintab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .maintab.active{background:var(--plum);color:#fff;border-color:var(--plum)}
 
     /* ====== consulta (global) ====== */
     .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px}
     .vmodal{position:fixed;inset:0;background:rgba(42,0,40,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:60}
-    .vmodal-card{background:#fff;border-radius:14px;max-width:780px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)}
-    .vmodal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 15px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff}
+    .vmodal-card{background:var(--surface);border-radius:14px;max-width:780px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    .vmodal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 15px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface)}
     .vmodal-title{font-weight:700;font-size:13.5px;color:var(--ink);font-family:'JetBrains Mono',monospace;word-break:break-all}
     .vmodal-acts{display:flex;gap:8px;flex-shrink:0}
     .vmodal-body{padding:16px;min-height:140px;display:flex;align-items:center;justify-content:center}
@@ -145,11 +146,11 @@
     #sec-consultar .searchrow input:focus{outline:none;border-color:var(--orange)}
     #sec-consultar .sep{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     #sec-consultar .sep label{font-size:13px;color:var(--muted);font-weight:600}
-    #sec-consultar select{padding:10px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;background:#fff;min-width:220px;width:auto}
+    #sec-consultar select{padding:10px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;background:var(--surface);min-width:220px;width:auto}
     #sec-consultar .status{font-size:14px;color:var(--muted);margin:2px 2px 14px}
     #sec-consultar .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
     #sec-consultar .item{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:hidden;box-shadow:0 2px 8px rgba(60,0,60,.05);display:flex;flex-direction:column}
-    #sec-consultar .vthumb{aspect-ratio:4/3;background:#F2EEF2;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative}
+    #sec-consultar .vthumb{aspect-ratio:4/3;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative}
     #sec-consultar .vthumb img{width:100%;height:100%;object-fit:cover}
     #sec-consultar .vthumb .ico{font-size:36px}
     #sec-consultar .meta{padding:11px 13px}
@@ -158,7 +159,7 @@
     #sec-consultar .meta a.open{display:inline-block;margin-top:9px;font-size:12.5px;font-weight:700;color:var(--orange-deep);text-decoration:none}
     #sec-consultar .meta a.open:hover{text-decoration:underline}
     #sec-consultar .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-    #sec-consultar .tab{border:1.5px solid var(--border);background:#fff;color:var(--muted);font-family:inherit;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer}
+    #sec-consultar .tab{border:1.5px solid var(--border);background:var(--surface);color:var(--muted);font-family:inherit;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer}
     #sec-consultar .tab.active{background:var(--plum);color:#fff;border-color:var(--plum)}
     #sec-consultar textarea{width:100%;padding:13px 15px;font-size:14px;border:1.5px solid var(--border);border-radius:11px;font-family:'JetBrains Mono',monospace;resize:vertical;line-height:1.6}
     #sec-consultar textarea:focus{outline:none;border-color:var(--orange)}
@@ -180,9 +181,40 @@
     #sec-consultar .linkver{background:none;border:none;padding:0;font:700 12.5px 'Manrope',sans-serif;color:var(--orange-deep);cursor:pointer}
     #sec-consultar .linkver:hover{text-decoration:underline}
     #sec-consultar .meta .linkver{display:inline-block;margin-top:9px}
+
+    /* ====== modo noturno ====== */
+    html.dark{
+      --ink:#F1E8F1; --bg:#15101A; --surface:#241C2B; --card:#241C2B;
+      --line:#3A2F44; --border:#3A2F44; --muted:#AE9BB8; --gray-bg:#2E2536;
+      --orange-soft:#3A2A1C; --orange-dark:#FF9248; --orange-deep:#FF9248;
+      --green:#6FD897; --ok:#6FD897; --green-bg:#193A26;
+      --red:#F0A3A3; --red-bg:#3A1E1E; --plum:#3C003C;
+    }
+    html.dark .badge.up{background:#3A2E15;color:#E8C77A}
+    html.dark .summary.warn,html.dark .donewarn{background:#3A2E15;color:#E8C77A;border-color:#5A4A20}
+    html.dark .mchip{background:#3A1E1E;color:#F0A3A3}
+    html.dark .pastezone{border-color:#5A4327}
+    html.dark .pastezone:focus,html.dark .pastezone.drag{background:#43301C}
+    html.dark .filebtn{border-color:#5A4327}
+    html.dark .filebtn:hover{background:#43301C}
+
+    /* ====== fundo animado sutil ====== */
+    .orbs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+    .orb{position:absolute;border-radius:50%;filter:blur(72px);will-change:transform}
+    .orb.a{width:46vmax;height:46vmax;top:-14vmax;left:-10vmax;background:radial-gradient(circle,rgba(255,160,90,.50),transparent 68%);animation:drift1 28s ease-in-out infinite}
+    .orb.b{width:40vmax;height:40vmax;bottom:-16vmax;right:-12vmax;background:radial-gradient(circle,rgba(150,70,150,.38),transparent 68%);animation:drift2 34s ease-in-out infinite}
+    .orb.c{width:30vmax;height:30vmax;top:38vh;right:16vw;background:radial-gradient(circle,rgba(255,200,150,.38),transparent 70%);animation:drift3 40s ease-in-out infinite}
+    @keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(7vw,9vh)}}
+    @keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-8vw,-7vh)}}
+    @keyframes drift3{0%,100%{transform:translate(0,0)}50%{transform:translate(-6vw,8vh)}}
+    html.dark .orb.a{background:radial-gradient(circle,rgba(180,90,40,.32),transparent 68%)}
+    html.dark .orb.b{background:radial-gradient(circle,rgba(120,50,130,.38),transparent 68%)}
+    html.dark .orb.c{background:radial-gradient(circle,rgba(90,40,120,.32),transparent 70%)}
+    @media (prefers-reduced-motion: reduce){ .orb{animation:none} }
   </style>
 </head>
 <body>
+  <div class="orbs"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
   <div class="wrap">
     <header>
       <div class="head-title">
@@ -191,6 +223,7 @@
       </div>
       <div class="head-actions">
         <a class="btn onband sm" id="btnVoltarHub" href="../index.html" style="display:none">← Voltar ao hub</a>
+        <button class="btn onband sm" id="btnTema" type="button" title="Alternar tema claro/escuro">🌙</button>
         <button class="btn onband sm" id="btnLimpar" type="button" title="Limpar tudo (planilha + comprovantes)">🧹 Limpar tudo</button>
       </div>
     </header>
@@ -316,10 +349,6 @@
     <div class="searchrow">
       <input id="q" type="text" placeholder="Digite o ID (ex.: 347222331)" autocomplete="off" inputmode="search">
       <button class="btn primary" id="btnBuscar" type="button">Buscar</button>
-    </div>
-    <div class="sep">
-      <label for="periodo">ou veja tudo de uma quinzena:</label>
-      <select id="periodo"><option value="">Carregando quinzenas…</option></select>
     </div>
   </section>
 
@@ -897,7 +926,7 @@
       const alvo = rows.filter(r => imagesById[r.id] || manualById[r.id]);
       if(!alvo.length){ alert('Nenhum comprovante pronto pra enviar.'); return; }
 
-      if(!confirm('Enviar ' + alvo.length + ' comprovante(s) para a pasta "' + periodo + '"?\n\nTem certeza?')){ return; }
+      if(!confirm('⚠️ CONFIRME A QUINZENA\n\nVocê vai enviar ' + alvo.length + ' comprovante(s) para:\n\n📁  ' + periodo + '\n\nSe a quinzena estiver errada, clique em Cancelar e ajuste o Período (passo 1).')){ return; }
 
       $('btnEnviar').disabled = true;
       $('btnBaixar').disabled = true;
@@ -1018,9 +1047,16 @@
     $('btnBaixarOverlay').addEventListener('click', baixarPlanilha);
     $('btnFecharOverlay').addEventListener('click', () => { $('sendOverlay').hidden = true; });
 
-    // rede de segurança: avisa se a pessoa tentar sair sem ter baixado a planilha
+    // rede de segurança: avisa se tentar atualizar/sair com trabalho em andamento
+    function temTrabalho(){
+      return (rows && rows.length > 0)
+          || (imagesById && Object.keys(imagesById).length > 0)
+          || (orphans && orphans.length > 0)
+          || (manualById && Object.keys(manualById).length > 0)
+          || (pendenteBaixar && !baixou);
+    }
     window.addEventListener('beforeunload', (e) => {
-      if(pendenteBaixar && !baixou && wb){ e.preventDefault(); e.returnValue = ''; }
+      if(temTrabalho()){ e.preventDefault(); e.returnValue = ''; }
     });
 
     function setPlanInfo(kind, msg){ const el = $('planInfo'); el.hidden = false; el.className = 'info ' + kind; el.textContent = msg; }
@@ -1260,7 +1296,6 @@
   function buscar(){
     const q = $('q').value.trim();
     if(!q){ $('q').focus(); return; }
-    $('periodo').value = '';
     setStatus('Procurando "' + q + '" em todas as quinzenas…');
     loading();
     google.script.run
@@ -1271,18 +1306,6 @@
 
   $('btnBuscar').addEventListener('click', buscar);
   $('q').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); buscar(); } });
-
-  $('periodo').addEventListener('change', () => {
-    const id = $('periodo').value; if(!id) return;
-    $('q').value = '';
-    const nome = $('periodo').options[$('periodo').selectedIndex].text;
-    setStatus('Carregando comprovantes de ' + nome + '…');
-    loading();
-    google.script.run
-      .withSuccessHandler(r => { setStatus(r.length + ' comprovante(s) em ' + nome + '.'); render(r); })
-      .withFailureHandler(() => { setStatus('Erro ao listar a quinzena.'); $('results').innerHTML = ''; })
-      .listarPorPeriodo(id);
-  });
 
   // ----- abas -----
   function setMode(mode){
@@ -1357,18 +1380,20 @@
   $('btnConferir').addEventListener('click', conferir);
   $('btnLimparConf').addEventListener('click', () => { $('idsInput').value = ''; $('results').innerHTML = ''; setStatus(''); $('idsInput').focus(); });
 
-  // carrega as quinzenas no seletor
-  google.script.run
-    .withSuccessHandler(ps => {
-      const sel = $('periodo');
-      if(!ps || !ps.length){ sel.innerHTML = '<option value="">(nenhuma quinzena ainda)</option>'; return; }
-      sel.innerHTML = '<option value="">Escolha uma quinzena…</option>' +
-        ps.map(p => '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>').join('');
-    })
-    .withFailureHandler(() => { $('periodo').innerHTML = '<option value="">(erro ao carregar)</option>'; })
-    .listarPeriodos();
-
   window.verArquivo = verArquivo;
+  })();
+  </script>
+  <script>
+  (function(){
+    var KEY='tema_pedagios', root=document.documentElement, b=document.getElementById('btnTema');
+    function icone(){ if(b) b.textContent = root.classList.contains('dark') ? '☀️' : '🌙'; }
+    icone();
+    if(b) b.addEventListener('click', function(){
+      var dark = !root.classList.contains('dark');
+      root.classList.toggle('dark', dark);
+      try{ localStorage.setItem(KEY, dark ? 'dark' : 'light'); }catch(e){}
+      icone();
+    });
   })();
   </script>
   <!-- ===== Voltar ao hub: aparece se a ferramenta foi aberta pelo portal ===== -->
