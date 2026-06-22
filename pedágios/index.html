@@ -169,9 +169,9 @@
     #sec-consultar .summary.warn{background:#FEF3C7;color:#7A4B00}
     #sec-consultar .block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
     #sec-consultar .block-head .t{font-family:'Fraunces',serif;font-size:16px;font-weight:600}
-    #sec-consultar .chips{display:flex;flex-wrap:wrap;gap:7px}
+    #sec-consultar .chips{display:flex;flex-wrap:wrap;gap:7px;max-height:180px;overflow-y:auto}
     #sec-consultar .mchip{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:#FEE2E2;color:#B91C1C;border-radius:8px;padding:5px 10px}
-    #sec-consultar .frows{display:flex;flex-direction:column}
+    #sec-consultar .frows{display:flex;flex-direction:column;max-height:360px;overflow-y:auto;padding-right:4px}
     #sec-consultar .frow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
     #sec-consultar .frow:last-child{border-bottom:none}
     #sec-consultar .frow .fid{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13.5px;min-width:110px}
@@ -201,15 +201,15 @@
     /* ====== fundo animado sutil ====== */
     .orbs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
     .orb{position:absolute;border-radius:50%;filter:blur(72px);will-change:transform}
-    .orb.a{width:46vmax;height:46vmax;top:-14vmax;left:-10vmax;background:radial-gradient(circle,rgba(255,160,90,.50),transparent 68%);animation:drift1 28s ease-in-out infinite}
-    .orb.b{width:40vmax;height:40vmax;bottom:-16vmax;right:-12vmax;background:radial-gradient(circle,rgba(150,70,150,.38),transparent 68%);animation:drift2 34s ease-in-out infinite}
-    .orb.c{width:30vmax;height:30vmax;top:38vh;right:16vw;background:radial-gradient(circle,rgba(255,200,150,.38),transparent 70%);animation:drift3 40s ease-in-out infinite}
-    @keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(7vw,9vh)}}
-    @keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-8vw,-7vh)}}
-    @keyframes drift3{0%,100%{transform:translate(0,0)}50%{transform:translate(-6vw,8vh)}}
-    html.dark .orb.a{background:radial-gradient(circle,rgba(180,90,40,.32),transparent 68%)}
-    html.dark .orb.b{background:radial-gradient(circle,rgba(120,50,130,.38),transparent 68%)}
-    html.dark .orb.c{background:radial-gradient(circle,rgba(90,40,120,.32),transparent 70%)}
+    .orb.a{width:48vmax;height:48vmax;top:-14vmax;left:-10vmax;background:radial-gradient(circle,rgba(255,150,70,.72),transparent 66%);animation:drift1 20s ease-in-out infinite}
+    .orb.b{width:42vmax;height:42vmax;bottom:-16vmax;right:-12vmax;background:radial-gradient(circle,rgba(150,60,150,.58),transparent 66%);animation:drift2 24s ease-in-out infinite}
+    .orb.c{width:34vmax;height:34vmax;top:34vh;right:14vw;background:radial-gradient(circle,rgba(255,185,120,.58),transparent 68%);animation:drift3 28s ease-in-out infinite}
+    @keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(13vw,15vh)}}
+    @keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-14vw,-12vh)}}
+    @keyframes drift3{0%,100%{transform:translate(0,0)}33%{transform:translate(-11vw,9vh)}66%{transform:translate(6vw,-10vh)}}
+    html.dark .orb.a{background:radial-gradient(circle,rgba(200,100,45,.50),transparent 66%)}
+    html.dark .orb.b{background:radial-gradient(circle,rgba(135,55,145,.56),transparent 66%)}
+    html.dark .orb.c{background:radial-gradient(circle,rgba(110,50,140,.48),transparent 68%)}
     @media (prefers-reduced-motion: reduce){ .orb{animation:none} }
   </style>
 </head>
@@ -1056,7 +1056,11 @@
           || (pendenteBaixar && !baixou);
     }
     window.addEventListener('beforeunload', (e) => {
-      if(temTrabalho()){ e.preventDefault(); e.returnValue = ''; }
+      if(temTrabalho()){
+        e.preventDefault();
+        e.returnValue = 'Você tem comprovantes não enviados ou não baixados. Quer mesmo sair desta página?';
+        return e.returnValue;
+      }
     });
 
     function setPlanInfo(kind, msg){ const el = $('planInfo'); el.hidden = false; el.className = 'info ' + kind; el.textContent = msg; }
