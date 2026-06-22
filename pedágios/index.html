@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comprovantes de Pedágio</title>
+  <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+
+    :root{
+      --orange:#FF6E00; --orange-dark:#D25500; --orange-deep:#D25500; --orange-soft:#FFF1E4;
+      --ink:#3C003C; --plum:#3C003C; --plum-deep:#2A0028; --muted:#745E74;
+      --line:#E8E0E8; --border:#E8E0E8; --bg:#FAF7F5; --card:#fff; --surface:#fff;
+      --green:#1F7A3D; --ok:#1F7A3D; --green-bg:#DCFCE7; --red:#B91C1C; --red-bg:#FEE2E2; --gray-bg:#F2EEF2;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;line-height:1.5}
+    .wrap{max-width:960px;margin:0 auto;padding:24px 18px 60px}
+    header{margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:var(--ink);color:#fff;border-radius:16px;padding:18px 22px;box-shadow:0 10px 30px rgba(60,0,60,.20)}
+    .head-title{min-width:0}
+    .head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    a.btn{text-decoration:none}
+    header h1{margin:0;font-size:25px;font-weight:700;display:flex;align-items:center;gap:11px;font-family:'Fraunces',serif;color:#fff}
+    .mascote{width:42px;height:42px;border-radius:9px;object-fit:cover;flex:0 0 auto;border:2px solid rgba(255,255,255,.35)}
+    header p{margin:6px 0 0;color:#EAD9EA;font-size:14px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px;margin-top:14px;box-shadow:0 2px 10px rgba(60,0,60,.05)}
+    .card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+    .card-head .step{margin:0}
+    .clearbtn{background:none;border:none;color:var(--muted);font:700 12px 'Manrope',sans-serif;cursor:pointer;padding:5px 9px;border-radius:7px}
+    .clearbtn:hover{color:var(--red);background:var(--gray-bg)}
+    .step{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--orange);margin:0 0 10px}
+    .row{display:flex;flex-wrap:wrap;gap:12px}
+    .fld{flex:1;min-width:130px}
+    label.lbl{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
+    select,input[type=text]{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;font:600 14px 'Manrope',sans-serif;color:var(--ink)}
+    select:focus,input:focus{outline:none;border-color:var(--orange)}
+    .filebtn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:10px 16px;border-radius:10px;background:var(--orange-soft);border:1px solid #F3D9BC;color:var(--orange-dark);font-weight:700;font-size:13.5px}
+    .filebtn:hover{background:#ffe6c9}
+    .filebtn input{display:none}
+    .hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+    .info{margin-top:10px;font-size:13px;padding:8px 11px;border-radius:8px}
+    .info.ok{background:var(--green-bg);color:var(--green)}
+    .info.erro{background:var(--red-bg);color:var(--red)}
+    #resumo{margin-top:10px;font-size:13.5px;background:var(--gray-bg);padding:10px 12px;border-radius:9px}
+    table{width:100%;border-collapse:collapse;margin-top:4px;font-size:13px}
+    th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+    th{font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700}
+    .tablewrap{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:6px}
+    .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700}
+    .badge.none{background:var(--gray-bg);color:var(--muted)}
+    .badge.ok{background:var(--orange-soft);color:var(--orange-dark)}
+    .badge.up{background:#FEF3C7;color:#92400E}
+    .badge.done{background:var(--green-bg);color:var(--green)}
+    .badge.err{background:var(--red-bg);color:var(--red)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:11px;border:none;cursor:pointer;font:700 14.5px 'Manrope',sans-serif}
+    .btn.primary{background:var(--orange);color:#fff}
+    .btn.primary:hover{background:var(--orange-dark)}
+    .btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+    .btn.ghost:hover{border-color:var(--orange);color:var(--orange-dark)}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .btn.sm{padding:8px 14px;border-radius:9px;font-size:13px}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+    #progressWrap{margin-top:14px}
+    .bar-bg{height:9px;background:var(--gray-bg);border-radius:20px;overflow:hidden}
+    #bar{height:100%;width:0;background:var(--orange);transition:width .25s}
+    #progTxt{font-size:12.5px;color:var(--muted);margin-top:6px}
+    #doneMsg{margin-top:12px;font-size:13.5px;background:var(--green-bg);color:var(--green);padding:10px 12px;border-radius:9px}
+    /* --- comprovante sem ID --- */
+    .pastezone{border:2px dashed #E8C9A8;border-radius:12px;background:var(--orange-soft);padding:18px;text-align:center;color:var(--orange-dark);font-weight:700;font-size:13.5px;cursor:pointer;outline:none}
+    .pastezone:focus,.pastezone.drag{border-color:var(--orange);background:#ffe6c9}
+    .pastezone .sub{display:block;margin-top:4px;font-weight:500;color:var(--muted);font-size:12.5px}
+    .orphans{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+    .ocard{width:152px;border:1px solid var(--line);border-radius:11px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:7px}
+    .ocard .thumb{width:100%;height:104px;object-fit:cover;border-radius:8px;cursor:zoom-in;background:var(--gray-bg);border:none}
+    .pdfth{display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);cursor:default!important}
+    .ocard .oname{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ocard .obtns{display:flex;gap:6px}
+    .btn.mini{padding:7px 10px;font-size:12px;border-radius:8px;flex:1}
+    .btn.mini.x{flex:0 0 auto;color:var(--red)}
+    .chip{display:inline-flex;align-items:center;gap:5px;background:var(--gray-bg);border-radius:16px;padding:2px 9px;font-size:11px;font-weight:700;color:var(--muted)}
+    .chip b{color:var(--ink)}
+    .chip.on{background:var(--green-bg);color:var(--green)}
+    .chip.on b{color:var(--green)}
+    /* modal de associação */
+    .overlay{position:fixed;inset:0;background:rgba(60,0,60,.55);display:flex;align-items:center;justify-content:center;padding:14px;z-index:50}
+    .modal{background:#fff;border-radius:16px;max-width:780px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+    .modal .mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)}
+    .modal .mhead h2{margin:0;font-size:17px;font-weight:700;font-family:'Fraunces',serif}
+    .modal .mbody{padding:14px 18px;overflow:auto;display:flex;gap:16px;flex-wrap:wrap}
+    .modal .mimg{flex:1 1 230px;min-width:210px}
+    .modal .mimg img{width:100%;max-height:46vh;object-fit:contain;border:1px solid var(--line);border-radius:10px;cursor:zoom-in;background:var(--gray-bg)}
+    .modal .mlist{flex:1.5 1 320px;min-width:270px}
+    .modal .mfoot{display:flex;gap:10px;justify-content:flex-end;align-items:center;padding:12px 18px;border-top:1px solid var(--line)}
+    .modal .mcount{margin-right:auto;font-size:13px;color:var(--muted);font-weight:700}
+    .rowsel{cursor:pointer}
+    .rowsel.on{background:var(--orange-soft)}
+    .xbtn{border:none;background:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;padding:2px 6px}
+    .xbtn:hover{color:var(--ink)}
+    /* lightbox */
+    .lightbox{position:fixed;inset:0;background:rgba(42,0,40,.92);display:flex;align-items:center;justify-content:center;z-index:60;cursor:zoom-out;padding:18px}
+    .lightbox img{max-width:100%;max-height:100%;border-radius:8px}
+    .toggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);font-weight:700;cursor:pointer;user-select:none;margin:2px 0 8px}
+    .btn.onband{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.55);color:#fff}
+    .btn.onband:hover{background:rgba(255,255,255,.26);border-color:#fff;color:#fff}
+    .loadbox{background:#fff;border-radius:18px;padding:28px 30px;width:min(430px,92vw);text-align:center;box-shadow:0 20px 55px rgba(60,0,60,.30)}
+    .spinner{width:46px;height:46px;border-radius:50%;border:4px solid var(--orange-soft);border-top-color:var(--orange);margin:0 auto 16px;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loadtitle{margin:0 0 14px;font-weight:700;font-size:17px;color:var(--ink);font-family:'Fraunces',serif}
+    #sendBar{height:100%;width:0;background:var(--orange);transition:width .25s}
+    .loadtxt{margin:11px 0 0;font-size:13.5px;font-weight:700;color:var(--ink)}
+    .loadhint{margin:5px 0 0;font-size:12px;color:var(--muted)}
+    .okcheck{width:54px;height:54px;border-radius:50%;background:var(--green-bg);color:var(--green);font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+    .donewarn{margin:0 0 16px;font-size:13.5px;color:#7A4B00;background:#FEF3C7;border:1px solid #F4D58A;border-radius:10px;padding:11px 13px;line-height:1.45;text-align:left}
+    .doneok{margin:0 0 16px;font-size:13.5px;color:var(--green);background:var(--green-bg);border-radius:10px;padding:11px 13px;line-height:1.45}
+    .btn.big{font-size:16px;padding:14px 22px}
+    #doneState .btn{width:100%}
+    #doneState .btn + .btn{margin-top:9px}
+    /* SEMPRE POR ÚLTIMO: garante que hidden vença qualquer display definido acima */
+    [hidden]{display:none!important}
+
+    /* ====== abas principais ====== */
+    /* abas principais (Enviar / Consultar) */
+    .maintabs{display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap}
+    .maintab{flex:1;min-width:170px;border:1.5px solid var(--line);background:#fff;color:var(--muted);font-family:'Manrope',sans-serif;font-weight:700;font-size:14.5px;padding:13px 18px;border-radius:12px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    .maintab:hover{border-color:var(--orange);color:var(--orange-dark)}
+    .maintab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+    /* ====== consulta (global) ====== */
+    .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px}
+    .vmodal{position:fixed;inset:0;background:rgba(42,0,40,.55);display:flex;align-items:center;justify-content:center;padding:18px;z-index:60}
+    .vmodal-card{background:#fff;border-radius:14px;max-width:780px;width:100%;max-height:92vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    .vmodal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 15px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff}
+    .vmodal-title{font-weight:700;font-size:13.5px;color:var(--ink);font-family:'JetBrains Mono',monospace;word-break:break-all}
+    .vmodal-acts{display:flex;gap:8px;flex-shrink:0}
+    .vmodal-body{padding:16px;min-height:140px;display:flex;align-items:center;justify-content:center}
+
+    /* ====== consulta (escopada em #sec-consultar) ====== */
+    #sec-consultar .lbl{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;display:block;margin-bottom:8px}
+    #sec-consultar .searchrow{display:flex;gap:10px;flex-wrap:wrap}
+    #sec-consultar .searchrow input{flex:1;min-width:200px;padding:13px 15px;font-size:15px;border:1.5px solid var(--border);border-radius:11px;font-family:inherit}
+    #sec-consultar .searchrow input:focus{outline:none;border-color:var(--orange)}
+    #sec-consultar .sep{margin:14px 0 0;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    #sec-consultar .sep label{font-size:13px;color:var(--muted);font-weight:600}
+    #sec-consultar select{padding:10px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;background:#fff;min-width:220px;width:auto}
+    #sec-consultar .status{font-size:14px;color:var(--muted);margin:2px 2px 14px}
+    #sec-consultar .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    #sec-consultar .item{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:hidden;box-shadow:0 2px 8px rgba(60,0,60,.05);display:flex;flex-direction:column}
+    #sec-consultar .vthumb{aspect-ratio:4/3;background:#F2EEF2;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative}
+    #sec-consultar .vthumb img{width:100%;height:100%;object-fit:cover}
+    #sec-consultar .vthumb .ico{font-size:36px}
+    #sec-consultar .meta{padding:11px 13px}
+    #sec-consultar .meta .id{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--ink);word-break:break-all}
+    #sec-consultar .meta .qz{font-size:11.5px;color:var(--muted);margin-top:3px}
+    #sec-consultar .meta a.open{display:inline-block;margin-top:9px;font-size:12.5px;font-weight:700;color:var(--orange-deep);text-decoration:none}
+    #sec-consultar .meta a.open:hover{text-decoration:underline}
+    #sec-consultar .tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+    #sec-consultar .tab{border:1.5px solid var(--border);background:#fff;color:var(--muted);font-family:inherit;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer}
+    #sec-consultar .tab.active{background:var(--plum);color:#fff;border-color:var(--plum)}
+    #sec-consultar textarea{width:100%;padding:13px 15px;font-size:14px;border:1.5px solid var(--border);border-radius:11px;font-family:'JetBrains Mono',monospace;resize:vertical;line-height:1.6}
+    #sec-consultar textarea:focus{outline:none;border-color:var(--orange)}
+    #sec-consultar .confrow{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+    #sec-consultar .summary{border-radius:11px;padding:12px 15px;font-weight:700;font-size:14.5px;margin-bottom:14px}
+    #sec-consultar .summary.ok{background:var(--green-bg);color:var(--ok)}
+    #sec-consultar .summary.warn{background:#FEF3C7;color:#7A4B00}
+    #sec-consultar .block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+    #sec-consultar .block-head .t{font-family:'Fraunces',serif;font-size:16px;font-weight:600}
+    #sec-consultar .chips{display:flex;flex-wrap:wrap;gap:7px}
+    #sec-consultar .mchip{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:#FEE2E2;color:#B91C1C;border-radius:8px;padding:5px 10px}
+    #sec-consultar .frows{display:flex;flex-direction:column}
+    #sec-consultar .frow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    #sec-consultar .frow:last-child{border-bottom:none}
+    #sec-consultar .frow .fid{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13.5px;min-width:110px}
+    #sec-consultar .frow .fqz{font-size:12.5px;color:var(--muted);flex:1}
+    #sec-consultar .frow a{font-size:12.5px;font-weight:700;color:var(--orange-deep);text-decoration:none}
+    #sec-consultar .frow a:hover{text-decoration:underline}
+    #sec-consultar .linkver{background:none;border:none;padding:0;font:700 12.5px 'Manrope',sans-serif;color:var(--orange-deep);cursor:pointer}
+    #sec-consultar .linkver:hover{text-decoration:underline}
+    #sec-consultar .meta .linkver{display:inline-block;margin-top:9px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="head-title">
+        <h1><img class="mascote" src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote On Time"> Comprovantes de Pedágio</h1>
+        <p>Envie os comprovantes do período e consulte os que já estão no Drive.</p>
+      </div>
+      <div class="head-actions">
+        <a class="btn onband sm" id="btnVoltarHub" href="../index.html" style="display:none">← Voltar ao hub</a>
+        <button class="btn onband sm" id="btnLimpar" type="button" title="Limpar tudo (planilha + comprovantes)">🧹 Limpar tudo</button>
+      </div>
+    </header>
+
+    <div class="maintabs">
+      <button class="maintab active" type="button" data-sec="enviar">📤 Enviar comprovantes</button>
+      <button class="maintab" type="button" data-sec="consultar">🔎 Consultar no Drive</button>
+    </div>
+
+    <section id="sec-enviar">
+
+
+    <!-- 1. Período -->
+    <section class="card">
+      <p class="step">1 · Período (quinzena)</p>
+      <div class="row">
+        <div class="fld">
+          <label class="lbl" for="ano">Ano</label>
+          <select id="ano"></select>
+        </div>
+        <div class="fld">
+          <label class="lbl" for="mes">Mês</label>
+          <select id="mes">
+            <option value="01">Janeiro</option><option value="02">Fevereiro</option>
+            <option value="03">Março</option><option value="04">Abril</option>
+            <option value="05">Maio</option><option value="06">Junho</option>
+            <option value="07">Julho</option><option value="08">Agosto</option>
+            <option value="09">Setembro</option><option value="10">Outubro</option>
+            <option value="11">Novembro</option><option value="12">Dezembro</option>
+          </select>
+        </div>
+        <div class="fld">
+          <label class="lbl" for="quinzena">Quinzena</label>
+          <select id="quinzena">
+            <option value="1">1ª quinzena</option>
+            <option value="2">2ª quinzena</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint">Os comprovantes vão pra uma subpasta com esse nome (ex.: <b id="folderEx">2026-03 - 1ª quinzena</b>).</p>
+    </section>
+
+    <!-- 2. Planilha -->
+    <section class="card">
+      <div class="card-head">
+        <p class="step">2 · Planilha preenchida</p>
+        <button class="clearbtn" id="limpaPlan" type="button" title="Limpar só a planilha (mantém os comprovantes)">🧹 Limpar</button>
+      </div>
+      <div class="pastezone" id="planZone" tabindex="0">
+        📄 Arraste a planilha aqui ou clique pra escolher (.xlsx)
+        <span class="sub">No celular, toque pra escolher do arquivo.</span>
+        <input type="file" id="inPlan" accept=".xlsx,.xls" hidden>
+      </div>
+      <div id="planInfo" class="info" hidden></div>
+      <p class="hint">Pode subir o <b>modelo pronto</b> (com as colunas ID ROTA e LINK) ou a <b>planilha de custos</b> que tenha a aba "Validação" — nesse caso o modelo é gerado sozinho, só com as rotas que têm pedágio.</p>
+    </section>
+
+    <!-- 3. Imagens -->
+    <section class="card">
+      <div class="card-head">
+        <p class="step">3 · Comprovantes com ID no nome do arquivo</p>
+        <button class="clearbtn" id="limpaImgs" type="button" title="Limpar só as imagens deste passo">🧹 Limpar</button>
+      </div>
+      <div class="pastezone" id="imgsZone" tabindex="0">
+        🖼️ Arraste as imagens aqui ou clique pra escolher (em lote)
+        <span class="sub">Aceita várias de uma vez — imagens ou PDF.</span>
+        <input type="file" id="inImgs" accept="image/*,application/pdf" multiple hidden>
+      </div>
+      <p class="hint">Cada arquivo nomeado com o <b>ID da rota</b> (ex.: <b>347222331.jpg</b>). Pode juntar vários pedágios numa imagem só.</p>
+      <div id="resumo" hidden></div>
+    </section>
+
+    <!-- 4. Sem ID -->
+    <section class="card">
+      <div class="card-head">
+        <p class="step">4 · Comprovante sem ID? Associe aqui</p>
+        <button class="clearbtn" id="limpaOrf" type="button" title="Limpar as imagens coladas/arrastadas aqui">🧹 Limpar</button>
+      </div>
+      <div class="pastezone" id="pasteZone" tabindex="0">
+        📋 Clique aqui e cole (Ctrl+V) a imagem copiada do WhatsApp
+        <span class="sub">…ou arraste arquivos pra cá. No celular, toque pra escolher da galeria.</span>
+        <input type="file" id="inOrphan" accept="image/*,application/pdf" multiple hidden>
+      </div>
+      <p class="hint">Cada imagem vira um cartão abaixo. Clique em <b>Associar</b>, filtre pelo motorista e marque a(s) rota(s) dela — o mesmo comprovante pode valer pra mais de uma rota. Imagens do passo 3 que não casarem com nenhum ID também caem aqui.</p>
+      <div class="orphans" id="orphans"></div>
+    </section>
+
+    <!-- Preview -->
+    <section class="card" id="previewCard" hidden>
+      <p class="step">Conferência</p>
+      <label class="toggle"><input type="checkbox" id="soPend"> Mostrar só as rotas sem comprovante</label>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Data</th><th>ID rota</th><th>Motorista</th><th>Valor</th><th>Status</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Enviar / baixar -->
+    <section class="card">
+      <p class="step">5 · Enviar e baixar</p>
+      <div class="actions">
+        <button class="btn primary" id="btnEnviar" disabled>Enviar comprovantes</button>
+        <button class="btn ghost" id="btnBaixar" disabled>Baixar planilha preenchida</button>
+      </div>
+      <div id="progressWrap" hidden>
+        <div class="bar-bg"><div id="bar"></div></div>
+        <div id="progTxt"></div>
+      </div>
+      <div id="doneMsg" hidden></div>
+    </section>
+    </section>
+
+    <section id="sec-consultar" hidden>
+      <div class="tabs">
+    <button class="tab active" id="tabBuscar" type="button">Buscar por ID</button>
+    <button class="tab" id="tabConferir" type="button">Conferir vários IDs</button>
+  </div>
+
+  <section class="card" id="cardBuscar">
+    <span class="lbl">Buscar pelo ID da rota</span>
+    <div class="searchrow">
+      <input id="q" type="text" placeholder="Digite o ID (ex.: 347222331)" autocomplete="off" inputmode="search">
+      <button class="btn primary" id="btnBuscar" type="button">Buscar</button>
+    </div>
+    <div class="sep">
+      <label for="periodo">ou veja tudo de uma quinzena:</label>
+      <select id="periodo"><option value="">Carregando quinzenas…</option></select>
+    </div>
+  </section>
+
+  <section class="card" id="cardConferir" hidden>
+    <span class="lbl">Cole os IDs (um por linha, vírgula ou espaço)</span>
+    <textarea id="idsInput" rows="6" placeholder="347222331
+347222418
+347223005"></textarea>
+    <div class="confrow">
+      <button class="btn primary" id="btnConferir" type="button">Conferir</button>
+      <button class="btn ghost" id="btnLimparConf" type="button">Limpar</button>
+    </div>
+  </section>
+
+  <div id="status" class="status" hidden></div>
+  <div id="results"></div>
+    </section>
+  </div>
+
+  <!-- ===== overlays do envio ===== -->
+  <!-- Modal: associar comprovante às rotas -->
+  <div class="overlay" id="assocOverlay" hidden>
+    <div class="modal">
+      <div class="mhead">
+        <h2>Associar comprovante às rotas</h2>
+        <button class="xbtn" id="assocClose" title="Fechar">×</button>
+      </div>
+      <div class="mbody">
+        <div class="mimg">
+          <img id="assocImg" alt="comprovante">
+          <div id="assocPdf" class="thumb pdfth" style="height:180px;border:1px solid var(--line);border-radius:10px" hidden>📄 PDF</div>
+          <p class="hint">Clique na imagem pra ampliar. Compare a <b>data</b> e o <b>valor</b> do comprovante com as rotas ao lado.</p>
+        </div>
+        <div class="mlist">
+          <div class="row">
+            <div class="fld">
+              <label class="lbl" for="fMot">Motorista</label>
+              <input type="text" id="fMot" list="motList" placeholder="Digite pra filtrar…" autocomplete="off">
+              <datalist id="motList"></datalist>
+            </div>
+            <div class="fld">
+              <label class="lbl" for="fSvc">Base</label>
+              <select id="fSvc"></select>
+            </div>
+          </div>
+          <div class="tablewrap" style="max-height:300px">
+            <table>
+              <thead><tr><th></th><th>Data</th><th>ID rota</th><th>Valor</th></tr></thead>
+              <tbody id="assocBody"></tbody>
+            </table>
+          </div>
+          <p class="hint">Pode marcar mais de uma rota — o mesmo comprovante vale pra todas as marcadas.</p>
+        </div>
+      </div>
+      <div class="mfoot">
+        <span class="mcount" id="assocCount"></span>
+        <button class="btn ghost" id="assocCancel">Cancelar</button>
+        <button class="btn primary" id="assocOk">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" hidden><img id="lightboxImg" alt=""></div>
+
+  <!-- Tela de carregamento / conclusão do envio -->
+  <div class="overlay" id="sendOverlay" hidden>
+    <div class="loadbox">
+      <!-- estado: enviando -->
+      <div id="sendingState">
+        <div class="spinner"></div>
+        <p class="loadtitle">Enviando comprovantes…</p>
+        <div class="bar-bg"><div id="sendBar"></div></div>
+        <p class="loadtxt" id="sendTxt">Preparando…</p>
+        <p class="loadhint">Não feche esta aba até terminar.</p>
+      </div>
+      <!-- estado: enviado (precisa baixar) -->
+      <div id="doneState" hidden>
+        <div class="okcheck">✓</div>
+        <p class="loadtitle" id="doneTitle">Comprovantes enviados!</p>
+        <p class="donewarn" id="doneWarn">Agora baixe a planilha — é nela que ficam todos os links. Os comprovantes vão pra uma pasta que você não acessa, então sem a planilha você perde os links.</p>
+        <button class="btn primary big" id="btnBaixarOverlay" type="button">Baixar planilha</button>
+        <button class="btn ghost" id="btnFecharOverlay" type="button" hidden>Fechar</button>
+        <p class="loadhint" id="doneHint">Esta tela fica aqui até você baixar a planilha.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== visualizador da consulta ===== -->
+  <div class="vmodal" id="modal" hidden>
+    <div class="vmodal-card">
+      <div class="vmodal-head">
+        <span class="vmodal-title" id="modalTitle">Comprovante</span>
+        <div class="vmodal-acts">
+          <a class="btn ghost sm" id="modalBaixar" style="display:none">Baixar</a>
+          <button class="btn ghost sm" id="modalFechar" type="button">Fechar</button>
+        </div>
+      </div>
+      <div class="vmodal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+  // ---- troca entre as abas principais ----
+  (function(){
+    var tabs = document.querySelectorAll('.maintab');
+    function show(sec){
+      document.getElementById('sec-enviar').hidden    = (sec !== 'enviar');
+      document.getElementById('sec-consultar').hidden = (sec !== 'consultar');
+      for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle('active', tabs[i].dataset.sec === sec);
+    }
+    for(var i=0;i<tabs.length;i++){
+      tabs[i].addEventListener('click', (function(t){ return function(){ show(t.dataset.sec); }; })(tabs[i]));
+    }
+  })();
+  </script>
+
+  <!-- ===== ponte com a API do Drive (Apps Script) via fetch ===== -->
+  <script>
+  var API_URL = 'https://script.google.com/macros/s/AKfycbz0oEfvSev744cn4mJgxQxpYkFTXmGwLiv99lBdKStiK8ANudQAwgqq7tyZoFU1FnDCJQ/exec';
+  function api(acao, dados){
+    var corpo = JSON.stringify(Object.assign({ acao: acao }, dados || {}));
+    return fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // requisição "simples": sem preflight CORS
+      body: corpo
+    }).then(function(r){ return r.json(); }).then(function(res){
+      if (res && res.__erro) throw new Error(res.__erro);
+      return res;
+    });
+  }
+  // Emula google.script.run apontando pra api() — o código existente continua igual.
+  (function(){
+    var ACOES = { uploadComprovante:'upload', listarPeriodos:'listarPeriodos', buscarPorId:'buscar',
+                  listarPorPeriodo:'listarPorPeriodo', conferirIds:'conferir', getThumb:'thumb', getArquivo:'arquivo' };
+    var ARGS = {
+      uploadComprovante: function(a){ return a[0]; },
+      listarPeriodos:    function(){ return {}; },
+      buscarPorId:       function(a){ return { texto: a[0] }; },
+      listarPorPeriodo:  function(a){ return { folderId: a[0] }; },
+      conferirIds:       function(a){ return { ids: a[0] }; },
+      getThumb:          function(a){ return { fileId: a[0] }; },
+      getArquivo:        function(a){ return { fileId: a[0] }; }
+    };
+    function makeRunner(){
+      var onOk = function(){}, onErr = function(){};
+      var runner = {
+        withSuccessHandler: function(fn){ if (fn) onOk = fn; return runner; },
+        withFailureHandler: function(fn){ if (fn) onErr = fn; return runner; }
+      };
+      Object.keys(ACOES).forEach(function(fname){
+        runner[fname] = function(){ api(ACOES[fname], ARGS[fname](arguments)).then(onOk).catch(onErr); };
+      });
+      return runner;
+    }
+    window.google = window.google || {};
+    window.google.script = window.google.script || {};
+    Object.defineProperty(window.google.script, 'run', { get: makeRunner, configurable: true });
+  })();
+  </script>
+
+  <!-- ===== app: enviar ===== -->
+  <script>
+  (function(){
+
+    const $ = (id) => document.getElementById(id);
+    let wb = null, ws = null, sheetName = '';
+    let colId = -1, colLink = -1, colMot = -1, colValor = -1, colData = -1, colSvc = -1;
+    let rows = [];          // { r, id, mot, svc, dataRaw, valor, temLink, enviado }
+    let imagesById = {};    // id -> File (casamento automático pelo nome do arquivo)
+    let orphans = [];       // imagens sem ID: { key, name, file, url, origem, ids:Set }
+    let manualById = {};    // id da rota -> órfã associada à mão
+    let orphSeq = 1, assocAlvo = null, selTemp = new Set();
+    let originalName = 'pedagios.xlsx';
+    let pendenteBaixar = false;   // virou true ao terminar o envio; trava saída até baixar
+    let baixou = false;           // virou true quando a planilha é baixada
+    let validadorPredominante = ''; // validador que mais aparece (modelo gerado da validação)
+    let nomeGerado = false;         // true quando o modelo foi gerado a partir da aba "Validação"
+
+    // ---- período ----
+    function anosOptions(){
+      const y = new Date().getFullYear();
+      [y-1, y, y+1].forEach(a => { const o = document.createElement('option'); o.value = String(a); o.textContent = a; if(a===y) o.selected = true; $('ano').appendChild(o); });
+    }
+    function periodoFolder(){
+      const ano = $('ano').value, mes = $('mes').value, q = $('quinzena').value;
+      if(!ano || !mes || !q) return '';
+      return ano + '-' + mes + ' - ' + q + 'ª quinzena';
+    }
+    function atualizaExemplo(){ $('folderEx').textContent = periodoFolder() || '—'; }
+    ['ano','mes','quinzena'].forEach(id => $(id).addEventListener('change', atualizaExemplo));
+
+    // ---- util ----
+    function extDe(name){ const m = String(name).match(/\.([^.]+)$/); return m ? m[1].toLowerCase() : ''; }
+    function baseDe(name){ return String(name).replace(/\.[^.]+$/, '').trim(); }
+    function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+    function formatValor(v){ const n = Number(v); return isNaN(n) || v==='' ? escapeHtml(v) : 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function lerBase64(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(file); }); }
+
+    // Data da planilha pode vir como número serial do Excel — converte pra dd/mm/aaaa.
+    function fmtData(v){
+      if(v === '' || v == null) return '';
+      const n = Number(v);
+      if(!isNaN(n) && n > 20000){ try{ return XLSX.SSF.format('dd/mm/yyyy', n); }catch(e){} }
+      return String(v);
+    }
+
+    // Comprime uma vez só, mesmo que a órfã esteja associada a várias rotas.
+    function comprimirFonte(fonte){
+      if(fonte && fonte.file){            // órfã (associada à mão)
+        if(!fonte._comp) fonte._comp = comprimir(fonte.file);
+        return fonte._comp;
+      }
+      return comprimir(fonte);            // File casado pelo nome
+    }
+
+    function comprimir(file){
+      return new Promise((resolve) => {
+        if(!/^image\//.test(file.type || '')){ lerBase64(file).then(b => resolve({ base64:b, mime:file.type||'application/octet-stream', ext:extDe(file.name)||'bin' })); return; }
+        const img = new Image(); const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const max = 1600; let w = img.width, h = img.height;
+          if(w > max || h > max){ const r = Math.min(max/w, max/h); w = Math.round(w*r); h = Math.round(h*r); }
+          const c = document.createElement('canvas'); c.width = w; c.height = h;
+          c.getContext('2d').drawImage(img, 0, 0, w, h);
+          const durl = c.toDataURL('image/jpeg', 0.72);
+          resolve({ base64: durl.split(',')[1], mime: 'image/jpeg', ext: 'jpg' });
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); lerBase64(file).then(b => resolve({ base64:b, mime:file.type||'application/octet-stream', ext:extDe(file.name)||'bin' })); };
+        img.src = url;
+      });
+    }
+
+    function ensureRef(sheet, r, c){
+      const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+      if(r > range.e.r) range.e.r = r;
+      if(c > range.e.c) range.e.c = c;
+      sheet['!ref'] = XLSX.utils.encode_range(range);
+    }
+
+    // ============================================================
+    // Gerar o modelo de pedágios a partir da aba "Validação"
+    // (rotas com Pedágios (+) > 0; veículo vem da aba "Base de Custo")
+    // ============================================================
+    function norm(s){ return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase(); }
+    function acharCabecalho(aoa, obrig){
+      for(let i = 0; i < Math.min(aoa.length, 8); i++){
+        const h = (aoa[i] || []).map(norm);
+        if(obrig.every(nomes => nomes.some(n => h.indexOf(norm(n)) >= 0))) return i;
+      }
+      return -1;
+    }
+    function idxCol(hN, nomes){ for(const nome of nomes){ const k = hN.indexOf(norm(nome)); if(k >= 0) return k; } return -1; }
+
+    function quinzenaCurta(){
+      const ano = $('ano').value, mes = $('mes').value, q = $('quinzena').value;
+      return q + 'Q' + mes + ' ' + ano;            // ex.: 1Q05 2026
+    }
+    function nomeModeloGerado(){
+      return 'Pedágios - ' + (validadorPredominante ? validadorPredominante + ' - ' : '') + quinzenaCurta();
+    }
+
+    function gerarModeloDaValidacao(workbook){
+      const nomeVal = workbook.SheetNames.find(n => norm(n) === 'validacao');
+      if(!nomeVal) return { erro: 'Não achei a aba "Validação" no arquivo.' };
+      const aoaV = XLSX.utils.sheet_to_json(workbook.Sheets[nomeVal], { header:1, defval:'' });
+      const hrV = acharCabecalho(aoaV, [['ID Rota'], ['Pedágios (+)','Pedagios (+)']]);
+      if(hrV < 0) return { erro: 'Não achei o cabeçalho (ID Rota / Pedágios (+)) na aba "Validação".' };
+      const hV = (aoaV[hrV] || []).map(norm);
+      const cId  = idxCol(hV, ['ID Rota']);
+      const cPed = idxCol(hV, ['Pedágios (+)','Pedagios (+)']);
+      const cVal = idxCol(hV, ['Validador']);
+      const cSvc = idxCol(hV, ['Service Center']);
+      const cPla = idxCol(hV, ['Placa']);
+      const cMot = idxCol(hV, ['Motorista']);
+      const cDat = idxCol(hV, ['Data']);
+
+      // mapa ID Rota -> tipo de veículo (coluna "Perfil" da aba "Base de Custo")
+      const veic = {};
+      const nomeBC = workbook.SheetNames.find(n => norm(n) === 'base de custo');
+      if(nomeBC){
+        const aoaB = XLSX.utils.sheet_to_json(workbook.Sheets[nomeBC], { header:1, defval:'' });
+        const hrB = acharCabecalho(aoaB, [['ID Rota'], ['Perfil']]);
+        if(hrB >= 0){
+          const hB = (aoaB[hrB] || []).map(norm);
+          const bId = idxCol(hB, ['ID Rota']), bPer = idxCol(hB, ['Perfil']);
+          for(let i = hrB + 1; i < aoaB.length; i++){
+            const id = String(aoaB[i][bId] == null ? '' : aoaB[i][bId]).trim();
+            if(id && veic[id] === undefined) veic[id] = String(aoaB[i][bPer] == null ? '' : aoaB[i][bPer]).trim();
+          }
+        }
+      }
+
+      const head = ['Validador','DATA','ID ROTA','SVC','PLACA','VEICULO','MOTORISTA','LINK','VALOR'];
+      const linhas = [head];
+      const cont = {};
+      for(let i = hrV + 1; i < aoaV.length; i++){
+        const row = aoaV[i]; if(!row) continue;
+        const id = String(row[cId] == null ? '' : row[cId]).trim(); if(!id) continue;
+        let ped = row[cPed]; ped = (ped === '' || ped == null) ? 0 : Number(ped);
+        if(!(ped > 0)) continue;                       // só rotas com pedágio
+        const validador = cVal >= 0 ? String(row[cVal] == null ? '' : row[cVal]).trim() : '';
+        if(validador) cont[validador] = (cont[validador] || 0) + 1;
+        linhas.push([
+          validador,
+          cDat >= 0 ? row[cDat] : '',                  // serial de data (numérico)
+          id,
+          cSvc >= 0 ? String(row[cSvc] == null ? '' : row[cSvc]).trim() : '',
+          cPla >= 0 ? String(row[cPla] == null ? '' : row[cPla]).trim() : '',
+          veic[id] || '',                              // tipo de veículo
+          cMot >= 0 ? String(row[cMot] == null ? '' : row[cMot]).trim() : '',
+          '',                                          // LINK vazio (preenchido ao enviar)
+          ped                                          // VALOR = valor do pedágio
+        ]);
+      }
+      if(linhas.length <= 1) return { erro: 'Nenhuma rota com pedágio (Pedágios (+) > 0) na aba "Validação".' };
+
+      let validador = '', max = -1;                    // validador predominante
+      Object.keys(cont).forEach(k => { if(cont[k] > max){ max = cont[k]; validador = k; } });
+
+      const wsGen = XLSX.utils.aoa_to_sheet(linhas);
+      const nwb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(nwb, wsGen, 'Pedágios');
+      return { wb: nwb, validador: validador, count: linhas.length - 1 };
+    }
+
+    // ---- 2. ler planilha (clique ou arrastar) ----
+    function lerPlanilha(file){
+      if(!file) return;
+      if(!/\.(xlsx|xls)$/i.test(file.name || '')){ setPlanInfo('erro', 'O arquivo precisa ser .xlsx ou .xls.'); return; }
+      originalName = file.name;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try{
+          wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
+
+          // Detecta a planilha de validação e gera o modelo de pedágios automaticamente;
+          // se não tiver a aba "Validação", trata o arquivo como modelo pronto (igual antes).
+          nomeGerado = false; validadorPredominante = '';
+          if(wb.SheetNames.some(n => norm(n) === 'validacao')){
+            const g = gerarModeloDaValidacao(wb);
+            if(g.erro){ setPlanInfo('erro', g.erro); rows = []; return; }
+            wb = g.wb;
+            nomeGerado = true;
+            validadorPredominante = g.validador || '';
+            originalName = nomeModeloGerado();
+          }
+
+          sheetName = escolherAba();
+          ws = wb.Sheets[sheetName];
+          const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+          const header = (aoa[0] || []).map(c => String(c).trim().toUpperCase());
+          colId = header.indexOf('ID ROTA'); colLink = header.indexOf('LINK');
+          colMot = header.indexOf('MOTORISTA'); colValor = header.indexOf('VALOR');
+          colData = header.indexOf('DATA'); colSvc = header.indexOf('SVC');
+          if(colId < 0 || colLink < 0){ setPlanInfo('erro', 'Não encontrei as colunas "ID ROTA" e "LINK" na planilha.'); rows = []; return; }
+          rows = [];
+          for(let i = 1; i < aoa.length; i++){
+            const id = String(aoa[i][colId] == null ? '' : aoa[i][colId]).trim();
+            if(!id) continue;
+            rows.push({
+              r:i, id:id,
+              mot:   colMot   >= 0 ? String(aoa[i][colMot]).trim()  : '',
+              svc:   colSvc   >= 0 ? String(aoa[i][colSvc]).trim()  : '',
+              dataRaw: colData >= 0 ? aoa[i][colData] : '',
+              valor: colValor >= 0 ? aoa[i][colValor] : '',
+              temLink: String(colLink >= 0 ? aoa[i][colLink] : '').trim() !== '',
+              enviado: false
+            });
+          }
+          if(nomeGerado){
+            setPlanInfo('ok', 'Modelo gerado da validação: ' + rows.length + ' rota(s) com pedágio' +
+              (validadorPredominante ? ' · validador: ' + validadorPredominante : '') + '.');
+          } else {
+            setPlanInfo('ok', rows.length + ' linha(s) lida(s) da aba "' + sheetName + '".');
+          }
+          populaFiltros();
+          limpaAssociacoesInvalidas();
+          triarImagensSemId();
+          renderOrphans();
+          casar();
+        }catch(err){ setPlanInfo('erro', 'Erro ao ler a planilha: ' + err.message); }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // entrada da planilha: clicar pra escolher, ou arrastar o arquivo pra cima da área
+    const planZone = $('planZone');
+    planZone.addEventListener('click', () => $('inPlan').click());
+    planZone.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('inPlan').click(); } });
+    ['dragover','dragenter'].forEach(ev => planZone.addEventListener(ev, (e) => { e.preventDefault(); planZone.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev => planZone.addEventListener(ev, (e) => { e.preventDefault(); planZone.classList.remove('drag'); }));
+    planZone.addEventListener('drop', (e) => { lerPlanilha([...(e.dataTransfer.files || [])][0]); });
+    $('inPlan').addEventListener('click', (e) => e.stopPropagation());
+    $('inPlan').addEventListener('change', (e) => { lerPlanilha(e.target.files[0]); e.target.value = ''; });
+
+    function escolherAba(){
+      for(const nome of wb.SheetNames){
+        const aoa = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header:1, defval:'' });
+        const h = (aoa[0] || []).map(c => String(c).trim().toUpperCase());
+        if(h.indexOf('ID ROTA') >= 0 && h.indexOf('LINK') >= 0) return nome;
+      }
+      return wb.SheetNames[0];
+    }
+
+    // ---- 3. imagens com ID no nome ----
+    // ---- 3. imagens com ID (clique ou arrastar) ----
+    function ehImagemOuPdf(f){
+      return /^image\//.test(f.type) || f.type === 'application/pdf' || /\.(png|jpe?g|gif|webp|bmp|heic|heif|pdf)$/i.test(f.name || '');
+    }
+    function processarImagens(files){
+      const lista = [...(files || [])];
+      if(!lista.length) return;
+      imagesById = {};
+      descartaOrfasDoLote();
+      lista.forEach(f => { imagesById[baseDe(f.name)] = f; });
+      triarImagensSemId();
+      renderOrphans();
+      casar();
+    }
+
+    // entrada das imagens: clicar pra escolher, ou arrastar os arquivos pra cima da área
+    const imgsZone = $('imgsZone');
+    imgsZone.addEventListener('click', () => $('inImgs').click());
+    imgsZone.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('inImgs').click(); } });
+    ['dragover','dragenter'].forEach(ev => imgsZone.addEventListener(ev, (e) => { e.preventDefault(); imgsZone.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev => imgsZone.addEventListener(ev, (e) => { e.preventDefault(); imgsZone.classList.remove('drag'); }));
+    imgsZone.addEventListener('drop', (e) => { processarImagens([...(e.dataTransfer.files || [])].filter(ehImagemOuPdf)); });
+    $('inImgs').addEventListener('click', (e) => e.stopPropagation());
+    $('inImgs').addEventListener('change', (e) => { processarImagens(e.target.files); e.target.value = ''; });
+
+    // Imagens do lote cujo nome não bate com nenhum ID viram cartões no passo 4.
+    function triarImagensSemId(){
+      if(!rows.length) return;
+      const idsLinhas = new Set(rows.map(r => r.id));
+      Object.keys(imagesById).forEach(k => {
+        if(!idsLinhas.has(k)){ addOrphan(imagesById[k], 'lote'); delete imagesById[k]; }
+      });
+    }
+    function descartaOrfasDoLote(){
+      orphans.filter(o => o.origem === 'lote').forEach(o => {
+        o.ids.forEach(id => { if(manualById[id] === o) delete manualById[id]; });
+        URL.revokeObjectURL(o.url);
+      });
+      orphans = orphans.filter(o => o.origem !== 'lote');
+    }
+    function limpaAssociacoesInvalidas(){
+      const idsLinhas = new Set(rows.map(r => r.id));
+      Object.keys(manualById).forEach(id => {
+        if(!idsLinhas.has(id)){ const o = manualById[id]; if(o) o.ids.delete(id); delete manualById[id]; }
+      });
+    }
+
+    // ---- casar ----
+    function casar(){
+      if(!rows.length) return;
+      let comImg = 0, manuais = 0, jaLink = 0;
+      rows.forEach(r => {
+        if(imagesById[r.id]) comImg++;
+        else if(manualById[r.id]) manuais++;
+        else if(r.temLink) jaLink++;
+      });
+      const pend = rows.length - comImg - manuais - jaLink;
+      const orfSem = orphans.filter(o => !o.ids.size).length;
+      $('resumo').hidden = false;
+      $('resumo').innerHTML =
+        '<b>' + (comImg + manuais) + '</b> com comprovante' + (manuais ? ' (' + manuais + ' associado(s) à mão)' : '') +
+        ' &nbsp;·&nbsp; <b>' + pend + '</b> pendente(s)' +
+        (jaLink ? ' &nbsp;·&nbsp; <b>' + jaLink + '</b> já tinha(m) link' : '') +
+        (orfSem ? ' &nbsp;·&nbsp; <b>' + orfSem + '</b> imagem(ns) no passo 4 aguardando associação' : '');
+      renderTabela();
+      $('btnEnviar').disabled = (comImg + manuais) === 0;
+    }
+
+    function renderTabela(){
+      $('previewCard').hidden = false;
+      const soP = $('soPend').checked;
+      const tb = $('tbody'); tb.innerHTML = '';
+      rows.forEach(r => {
+        const temImg = !!imagesById[r.id];
+        const temMan = !temImg && !!manualById[r.id];
+        const pend = !temImg && !temMan && !r.temLink && !r.enviado;
+        if(soP && !pend) return;
+        const tr = document.createElement('tr'); tr.id = 'row-' + r.id;
+        let st;
+        if(r.enviado)      st = '<span class="badge done">enviado ✓</span>';
+        else if(temImg)    st = '<span class="badge ok">imagem pronta</span>';
+        else if(temMan)    st = '<span class="badge ok">associada à mão</span>';
+        else if(r.temLink) st = '<span class="badge done">já tem link</span>';
+        else               st = '<span class="badge none">sem comprovante</span>';
+        tr.innerHTML =
+          '<td>' + escapeHtml(fmtData(r.dataRaw)) + '</td>' +
+          '<td>' + escapeHtml(r.id) + '</td>' +
+          '<td>' + escapeHtml(r.mot || '') + '</td>' +
+          '<td style="text-align:right">' + formatValor(r.valor) + '</td>' +
+          '<td class="st">' + st + '</td>';
+        tb.appendChild(tr);
+      });
+    }
+    $('soPend').addEventListener('change', renderTabela);
+    function setStatus(id, html){ const tr = $('row-' + id); if(tr){ const c = tr.querySelector('.st'); if(c) c.innerHTML = html; } }
+
+    // ---- enviar ----
+    // ---- limpar tudo (sem precisar atualizar a página) ----
+    function limpar(){
+      const temAlgo = rows.length || Object.keys(imagesById).length || orphans.length;
+      if(temAlgo && !confirm('Limpar a planilha e os comprovantes carregados?\n\nO período (ano/mês/quinzena) continua como está.')) return;
+      orphans.forEach(o => { try{ URL.revokeObjectURL(o.url); }catch(e){} });
+      wb = ws = null; sheetName = '';
+      colId = colLink = colMot = colValor = colData = colSvc = -1;
+      rows = []; imagesById = {}; orphans = []; manualById = {};
+      orphSeq = 1; assocAlvo = null; selTemp = new Set();
+      originalName = 'pedagios.xlsx';
+      ['inPlan','inImgs','inOrphan'].forEach(id => { if($(id)) $(id).value = ''; });
+      $('planInfo').hidden = true; $('planInfo').textContent = ''; $('planInfo').className = 'info';
+      $('resumo').hidden = true; $('resumo').innerHTML = '';
+      $('previewCard').hidden = true; $('tbody').innerHTML = '';
+      $('orphans').innerHTML = '';
+      $('progressWrap').hidden = true; $('bar').style.width = '0';
+      $('doneMsg').hidden = true; $('doneMsg').textContent = '';
+      $('btnEnviar').disabled = true; $('btnBaixar').disabled = true;
+    }
+    $('btnLimpar').addEventListener('click', limpar);
+
+    // limpar só a planilha (mantém os comprovantes já carregados)
+    function limparPlanilha(){
+      if(rows.length && !confirm('Limpar só a planilha? Os comprovantes carregados continuam.')) return;
+      wb = ws = null; sheetName = '';
+      colId = colLink = colMot = colValor = colData = colSvc = -1;
+      rows = []; manualById = {};
+      // devolve as imagens do passo 3 (lote) pro pool, pra re-casarem com a próxima planilha
+      orphans.filter(o => o.origem === 'lote').forEach(o => { imagesById[baseDe(o.name)] = o.file; URL.revokeObjectURL(o.url); });
+      orphans = orphans.filter(o => o.origem !== 'lote');
+      // as coladas/arrastadas (passo 4) ficam, mas perdem a associação (as rotas mudaram)
+      orphans.forEach(o => { o.ids = new Set(); });
+      $('inPlan').value = '';
+      $('planInfo').hidden = true; $('planInfo').textContent = ''; $('planInfo').className = 'info';
+      $('previewCard').hidden = true; $('tbody').innerHTML = '';
+      $('btnEnviar').disabled = true; $('btnBaixar').disabled = true;
+      renderOrphans();
+    }
+    // limpar só as imagens do passo 3 (auto pelo nome + as que sobraram do lote)
+    function limparImagens(){
+      const temLote = Object.keys(imagesById).length || orphans.some(o => o.origem === 'lote');
+      if(temLote && !confirm('Limpar só as imagens do passo 3?')) return;
+      imagesById = {};
+      descartaOrfasDoLote();
+      $('inImgs').value = '';
+      $('resumo').hidden = true; $('resumo').innerHTML = '';
+      renderOrphans();
+      casar();
+    }
+    // limpar só as imagens coladas/arrastadas no passo 4
+    function limparOrfas(){
+      const alvos = orphans.filter(o => o.origem !== 'lote');
+      if(alvos.length && !confirm('Limpar as imagens coladas/arrastadas no passo 4?')) return;
+      alvos.forEach(o => {
+        o.ids.forEach(id => { if(manualById[id] === o) delete manualById[id]; });
+        URL.revokeObjectURL(o.url);
+      });
+      orphans = orphans.filter(o => o.origem === 'lote');
+      $('inOrphan').value = '';
+      renderOrphans();
+      casar();
+    }
+    $('limpaPlan').addEventListener('click', limparPlanilha);
+    $('limpaImgs').addEventListener('click', limparImagens);
+    $('limpaOrf').addEventListener('click', limparOrfas);
+    $('btnEnviar').addEventListener('click', enviar);
+    async function enviar(){
+      const periodo = periodoFolder();
+      if(!periodo){ alert('Escolha o período (Ano, Mês e Quinzena) antes de enviar.'); return; }
+
+      const alvo = rows.filter(r => imagesById[r.id] || manualById[r.id]);
+      if(!alvo.length){ alert('Nenhum comprovante pronto pra enviar.'); return; }
+
+      if(!confirm('Enviar ' + alvo.length + ' comprovante(s) para a pasta "' + periodo + '"?\n\nTem certeza?')){ return; }
+
+      $('btnEnviar').disabled = true;
+      $('btnBaixar').disabled = true;
+      $('progressWrap').hidden = false;
+      $('doneMsg').hidden = true;
+      $('sendBar').style.width = '0';
+      $('sendTxt').textContent = 'Preparando… (0 / ' + alvo.length + ')';
+      $('sendOverlay').hidden = false;
+
+      let ok = 0, erros = 0;
+      for(let i = 0; i < alvo.length; i++){
+        const r = alvo[i];
+        setStatus(r.id, '<span class="badge up">enviando…</span>');
+        try{
+          const fonte = imagesById[r.id] || manualById[r.id];
+          const c = await comprimirFonte(fonte);
+          const filename = r.id + '.' + (c.ext || 'jpg');
+          const resp = await runUpload({ id:r.id, periodo, filename, mimeType:c.mime, dataBase64:c.base64 });
+          if(resp && resp.ok){
+            ensureRef(ws, r.r, colLink);
+            ws[XLSX.utils.encode_cell({ r:r.r, c:colLink })] = { t:'s', v:resp.url, l:{ Target:resp.url } };
+            r.temLink = true; r.enviado = true;
+            ok++; setStatus(r.id, '<span class="badge done">enviado ✓</span>');
+          }else{
+            erros++;
+            setStatus(r.id, '<span class="badge err">erro</span>');
+          }
+        }catch(err){
+          erros++; setStatus(r.id, '<span class="badge err">erro</span>');
+        }
+        const pct = Math.round(((i+1)/alvo.length)*100);
+        $('bar').style.width = pct + '%';
+        $('progTxt').textContent = (i+1) + ' / ' + alvo.length + ' processado(s)';
+        $('sendBar').style.width = pct + '%';
+        $('sendTxt').textContent = 'Enviando ' + (i+1) + ' de ' + alvo.length + '…';
+      }
+
+      $('btnEnviar').disabled = false;
+      if(ok > 0) $('btnBaixar').disabled = false;
+      $('doneMsg').hidden = false;
+      $('doneMsg').textContent = ok + ' enviado(s)' + (erros ? ' · ' + erros + ' com erro (clique em Enviar de novo pra retentar)' : '') + '. Baixe a planilha preenchida ao lado.';
+
+      // Tela de "enviando" vira "enviado": fica na frente até a pessoa baixar a planilha.
+      if(ok > 0){
+        baixou = false; pendenteBaixar = true;
+        $('doneTitle').textContent = ok + ' comprovante(s) enviado(s)!';
+        $('doneWarn').textContent = 'Agora baixe a planilha — é nela que ficam todos os links. Os comprovantes vão pra uma pasta que você não acessa, então sem a planilha você perde os links.';
+        $('doneWarn').className = 'donewarn';
+        $('btnBaixarOverlay').textContent = 'Baixar planilha';
+        $('btnBaixarOverlay').className = 'btn primary big';
+        $('btnFecharOverlay').hidden = true;
+        $('doneHint').hidden = false;
+        $('sendingState').hidden = true;
+        $('doneState').hidden = false;
+        // o overlay continua aberto de propósito (não esconde)
+      } else {
+        $('sendOverlay').hidden = true;   // nada enviado: só fecha a tela
+      }
+    }
+
+    function runUpload(payload){
+      return new Promise((resolve, reject) => {
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).uploadComprovante(payload);
+      });
+    }
+
+    // Reaplica os formatos que se perdem ao gerar o arquivo:
+    // DATA -> dd/mm/aaaa, VALOR -> R$, e todo LINK (novo ou já existente) vira clicável.
+    function reaplicarFormatos(){
+      if(!ws || !rows.length) return;
+      rows.forEach(r => {
+        if(colData >= 0){
+          const a = ws[XLSX.utils.encode_cell({ r:r.r, c:colData })];
+          if(a && a.t === 'n') a.z = 'dd/mm/yyyy';
+        }
+        if(colValor >= 0){
+          const h = ws[XLSX.utils.encode_cell({ r:r.r, c:colValor })];
+          if(h && h.t === 'n') h.z = '"R$" #,##0.00';
+        }
+        if(colLink >= 0){
+          const addr = XLSX.utils.encode_cell({ r:r.r, c:colLink });
+          const g = ws[addr];
+          if(g && typeof g.v === 'string' && /^https?:\/\//i.test(g.v)){
+            ws[addr] = { t:'s', v:g.v, l:{ Target:g.v } };
+          }
+        }
+      });
+    }
+
+    // ---- baixar ----
+    function baixarPlanilha(){
+      if(!wb) return;
+      reaplicarFormatos();
+      const out = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+      const blob = new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (nomeGerado ? nomeModeloGerado() : (originalName.replace(/\.(xlsx|xls)$/i, '') + ' - com links')) + '.xlsx';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      marcarBaixado();
+    }
+    // marca como baixada: libera a saída e, se a tela de conclusão estiver aberta, mostra o "ok"
+    function marcarBaixado(){
+      pendenteBaixar = false; baixou = true;
+      if(!$('sendOverlay').hidden && !$('doneState').hidden){
+        $('doneTitle').textContent = 'Planilha baixada!';
+        $('doneWarn').textContent = 'Tudo certo. Você já pode fechar a aba com segurança.';
+        $('doneWarn').className = 'doneok';
+        $('btnBaixarOverlay').textContent = 'Baixar de novo';
+        $('btnBaixarOverlay').className = 'btn ghost';
+        $('btnFecharOverlay').className = 'btn primary big';
+        $('btnFecharOverlay').hidden = false;
+        $('doneHint').hidden = true;
+      }
+    }
+    $('btnBaixar').addEventListener('click', baixarPlanilha);
+    $('btnBaixarOverlay').addEventListener('click', baixarPlanilha);
+    $('btnFecharOverlay').addEventListener('click', () => { $('sendOverlay').hidden = true; });
+
+    // rede de segurança: avisa se a pessoa tentar sair sem ter baixado a planilha
+    window.addEventListener('beforeunload', (e) => {
+      if(pendenteBaixar && !baixou && wb){ e.preventDefault(); e.returnValue = ''; }
+    });
+
+    function setPlanInfo(kind, msg){ const el = $('planInfo'); el.hidden = false; el.className = 'info ' + kind; el.textContent = msg; }
+
+    // ============================================================
+    // 4 · Comprovante sem ID — cartões, associação manual e zoom
+    // ============================================================
+    function addOrphan(file, origem){
+      const o = {
+        key: 'o' + (orphSeq++),
+        name: file.name || ('colada ' + new Date().toLocaleTimeString('pt-BR')),
+        file: file,
+        url: URL.createObjectURL(file),
+        origem: origem || 'manual',
+        ids: new Set()
+      };
+      orphans.push(o);
+      return o;
+    }
+    function removeOrphan(o){
+      o.ids.forEach(id => { if(manualById[id] === o) delete manualById[id]; });
+      URL.revokeObjectURL(o.url);
+      orphans = orphans.filter(x => x !== o);
+      renderOrphans();
+      casar();
+    }
+    function ehPdf(o){ return ((o.file && o.file.type) || '').indexOf('pdf') >= 0; }
+
+    function renderOrphans(){
+      const box = $('orphans'); box.innerHTML = '';
+      orphans.forEach(o => {
+        const card = document.createElement('div'); card.className = 'ocard';
+        let visual;
+        if(ehPdf(o)){
+          visual = document.createElement('div'); visual.className = 'thumb pdfth'; visual.textContent = '📄 PDF';
+        }else{
+          visual = document.createElement('img'); visual.className = 'thumb'; visual.src = o.url; visual.alt = o.name;
+          visual.addEventListener('click', () => abrirLightbox(o.url));
+        }
+        const nm = document.createElement('div'); nm.className = 'oname'; nm.textContent = o.name; nm.title = o.name;
+        const chip = document.createElement('div');
+        chip.innerHTML = o.ids.size
+          ? '<span class="chip on">✓ <b>' + o.ids.size + '</b> rota(s)</span>'
+          : '<span class="chip">sem rota</span>';
+        const btns = document.createElement('div'); btns.className = 'obtns';
+        const bA = document.createElement('button'); bA.className = 'btn mini primary';
+        bA.textContent = o.ids.size ? 'Editar' : 'Associar';
+        bA.addEventListener('click', () => abrirAssoc(o));
+        const bX = document.createElement('button'); bX.className = 'btn mini ghost x'; bX.textContent = '✕'; bX.title = 'Remover imagem';
+        bX.addEventListener('click', () => removeOrphan(o));
+        btns.appendChild(bA); btns.appendChild(bX);
+        card.appendChild(visual); card.appendChild(nm); card.appendChild(chip); card.appendChild(btns);
+        box.appendChild(card);
+      });
+    }
+
+    // --- entrada: colar, arrastar ou escolher da galeria ---
+    document.addEventListener('paste', (e) => {
+      const files = [...((e.clipboardData && e.clipboardData.files) || [])]
+        .filter(f => /^image\//.test(f.type) || f.type === 'application/pdf');
+      if(!files.length) return;
+      e.preventDefault();
+      files.forEach(f => addOrphan(f, 'colada'));
+      renderOrphans(); casar();
+      const ultimo = document.querySelector('.ocard:last-child');
+      if(ultimo && ultimo.scrollIntoView) ultimo.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    });
+    const pz = $('pasteZone');
+    pz.addEventListener('click', () => $('inOrphan').click());
+    pz.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('inOrphan').click(); } });
+    ['dragover','dragenter'].forEach(ev => pz.addEventListener(ev, (e) => { e.preventDefault(); pz.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev => pz.addEventListener(ev, (e) => { e.preventDefault(); pz.classList.remove('drag'); }));
+    pz.addEventListener('drop', (e) => { [...e.dataTransfer.files].forEach(f => addOrphan(f, 'arrastada')); renderOrphans(); casar(); });
+    $('inOrphan').addEventListener('click', (e) => e.stopPropagation());
+    $('inOrphan').addEventListener('change', (e) => {
+      [...e.target.files].forEach(f => addOrphan(f, 'galeria'));
+      e.target.value = '';
+      renderOrphans(); casar();
+    });
+
+    // --- filtros do modal (montados quando a planilha é lida) ---
+    function populaFiltros(){
+      const mots = [...new Set(rows.map(r => r.mot).filter(Boolean))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+      const svcs = [...new Set(rows.map(r => r.svc).filter(Boolean))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+      $('motList').innerHTML = mots.map(v => '<option value="' + escapeHtml(v) + '">').join('');
+      $('fSvc').innerHTML = '<option value="">Todas as bases</option>' + svcs.map(v => '<option>' + escapeHtml(v) + '</option>').join('');
+    }
+
+    // --- modal de associação ---
+    function rotaPendente(r){
+      return !r.temLink && !imagesById[r.id] && (!manualById[r.id] || manualById[r.id] === assocAlvo);
+    }
+    function abrirAssoc(o){
+      if(!rows.length){ alert('Carregue a planilha primeiro (passo 2) pra eu listar as rotas.'); return; }
+      assocAlvo = o;
+      selTemp = new Set(o.ids);
+      const pdf = ehPdf(o);
+      $('assocImg').hidden = pdf; $('assocPdf').hidden = !pdf;
+      if(!pdf) $('assocImg').src = o.url;
+      $('fMot').value = ''; $('fSvc').value = '';
+      renderAssocLista();
+      $('assocOverlay').hidden = false;
+    }
+    function fecharAssoc(){ $('assocOverlay').hidden = true; assocAlvo = null; }
+    function atualizaCount(){ $('assocCount').textContent = selTemp.size + ' rota(s) marcada(s)'; }
+    function renderAssocLista(){
+      const fm = $('fMot').value.trim().toLowerCase(), fs = $('fSvc').value;
+      const tb = $('assocBody'); tb.innerHTML = '';
+      const lista = rows.filter(r => rotaPendente(r) && (!fm || (r.mot || '').toLowerCase().includes(fm)) && (!fs || r.svc === fs));
+      if(!lista.length){
+        tb.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Nenhuma rota pendente com esses filtros.</td></tr>';
+      }
+      lista.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className = 'rowsel' + (selTemp.has(r.id) ? ' on' : '');
+        tr.innerHTML =
+          '<td><input type="checkbox"' + (selTemp.has(r.id) ? ' checked' : '') + '></td>' +
+          '<td>' + escapeHtml(fmtData(r.dataRaw)) + '</td>' +
+          '<td>' + escapeHtml(r.id) + '</td>' +
+          '<td style="text-align:right">' + formatValor(r.valor) + '</td>';
+        tr.addEventListener('click', () => {
+          if(selTemp.has(r.id)) selTemp.delete(r.id); else selTemp.add(r.id);
+          tr.querySelector('input').checked = selTemp.has(r.id);
+          tr.classList.toggle('on', selTemp.has(r.id));
+          atualizaCount();
+        });
+        tb.appendChild(tr);
+      });
+      atualizaCount();
+    }
+    function confirmaAssoc(){
+      if(!assocAlvo) return;
+      assocAlvo.ids.forEach(id => { if(manualById[id] === assocAlvo) delete manualById[id]; });
+      assocAlvo.ids = new Set(selTemp);
+      assocAlvo.ids.forEach(id => { manualById[id] = assocAlvo; });
+      fecharAssoc();
+      renderOrphans();
+      casar();
+    }
+    $('assocOk').addEventListener('click', confirmaAssoc);
+    $('assocCancel').addEventListener('click', fecharAssoc);
+    $('assocClose').addEventListener('click', fecharAssoc);
+    $('assocOverlay').addEventListener('click', (e) => { if(e.target === $('assocOverlay')) fecharAssoc(); });
+    $('fMot').addEventListener('input', renderAssocLista);
+    $('fSvc').addEventListener('change', renderAssocLista);
+    $('assocImg').addEventListener('click', () => abrirLightbox($('assocImg').src));
+
+    // --- lightbox (zoom da imagem) ---
+    function abrirLightbox(url){ $('lightboxImg').src = url; $('lightbox').hidden = false; }
+    $('lightbox').addEventListener('click', () => { $('lightbox').hidden = true; });
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape'){
+        if(!$('lightbox').hidden) $('lightbox').hidden = true;
+        else if(!$('assocOverlay').hidden) fecharAssoc();
+      }
+    });
+
+    anosOptions();
+    atualizaExemplo();
+  })();
+  </script>
+
+  <!-- ===== app: consultar ===== -->
+  <script>
+  (function(){
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function setStatus(txt){ const s = $('status'); if(txt){ s.textContent = txt; s.hidden = false; } else { s.hidden = true; } }
+  function loading(){ $('results').innerHTML = '<div class="spinner"></div>'; }
+
+  function render(lista){
+    if(!lista || !lista.length){ $('results').innerHTML = '<div class="empty">Nenhum comprovante encontrado.</div>'; return; }
+    const html = lista.map(c => {
+      const id = esc(c.id), base = esc(c.base), qz = esc(c.quinzena);
+      const icone = /pdf/i.test(c.mime) ? '📄' : '🖼️';
+      return '<div class="item">' +
+        '<div class="vthumb" data-fileid="' + id + '" data-nome="' + base + '" onclick="verArquivo(this.dataset.fileid, this.dataset.nome)">' +
+          '<img class="tmb" alt="" style="display:none">' +
+          '<span class="ico" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center">' + icone + '</span>' +
+        '</div>' +
+        '<div class="meta"><div class="id">' + base + '</div><div class="qz">' + qz + '</div>' +
+        '<button class="linkver" type="button" data-fileid="' + id + '" data-nome="' + base + '" onclick="verArquivo(this.dataset.fileid, this.dataset.nome)">Ver ›</button></div>' +
+        '</div>';
+    }).join('');
+    $('results').innerHTML = '<div class="grid">' + html + '</div>';
+    carregarThumbs([].slice.call($('results').querySelectorAll('.vthumb')).map(t => ({
+      fileId: t.dataset.fileid, imgEl: t.querySelector('.tmb'), iconEl: t.querySelector('.ico')
+    })));
+  }
+
+  // miniaturas servidas pela própria ferramenta (com concorrência limitada)
+  function carregarThumbs(items){
+    let i = 0; const CONC = 4;
+    function um(){
+      if(i >= items.length) return;
+      const it = items[i++];
+      if(!it || !it.fileId){ um(); return; }
+      google.script.run
+        .withSuccessHandler(uri => {
+          if(uri && it.imgEl){ it.imgEl.src = uri; it.imgEl.style.display = 'block'; if(it.iconEl) it.iconEl.style.display = 'none'; }
+          um();
+        })
+        .withFailureHandler(() => um())
+        .getThumb(it.fileId);
+    }
+    for(let k = 0; k < Math.min(CONC, items.length); k++) um();
+  }
+
+  // ver o comprovante DENTRO da ferramenta (sem ir pro Drive)
+  function verArquivo(fileId, nome){
+    $('modal').hidden = false;
+    $('modalTitle').textContent = nome || 'Comprovante';
+    $('modalBody').innerHTML = '<div class="spinner"></div>';
+    $('modalBaixar').style.display = 'none';
+    google.script.run
+      .withSuccessHandler(res => {
+        if(!res || !res.dataBase64){ $('modalBody').innerHTML = '<div class="empty">Não foi possível carregar este comprovante.</div>'; return; }
+        const uri = 'data:' + res.mime + ';base64,' + res.dataBase64;
+        if(/pdf/i.test(res.mime)){
+          $('modalBody').innerHTML = '<embed src="' + uri + '" type="application/pdf" style="width:100%;height:72vh">';
+        } else {
+          $('modalBody').innerHTML = '<img src="' + uri + '" alt="" style="max-width:100%;max-height:72vh;display:block;margin:0 auto;border-radius:8px">';
+        }
+        const b = $('modalBaixar');
+        b.href = uri; b.setAttribute('download', res.nome || nome || 'comprovante'); b.style.display = '';
+      })
+      .withFailureHandler(e => { $('modalBody').innerHTML = '<div class="empty">Erro ao carregar: ' + esc(e) + '</div>'; })
+      .getArquivo(fileId);
+  }
+  function fecharModal(){ $('modal').hidden = true; $('modalBody').innerHTML = ''; }
+  $('modalFechar').addEventListener('click', fecharModal);
+  $('modal').addEventListener('click', e => { if(e.target === $('modal')) fecharModal(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('modal').hidden) fecharModal(); });
+
+  function buscar(){
+    const q = $('q').value.trim();
+    if(!q){ $('q').focus(); return; }
+    $('periodo').value = '';
+    setStatus('Procurando "' + q + '" em todas as quinzenas…');
+    loading();
+    google.script.run
+      .withSuccessHandler(r => { setStatus(r.length + ' resultado(s) para "' + q + '".'); render(r); })
+      .withFailureHandler(e => { setStatus('Erro na busca.'); $('results').innerHTML = '<div class="empty">' + esc(e) + '</div>'; })
+      .buscarPorId(q);
+  }
+
+  $('btnBuscar').addEventListener('click', buscar);
+  $('q').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); buscar(); } });
+
+  $('periodo').addEventListener('change', () => {
+    const id = $('periodo').value; if(!id) return;
+    $('q').value = '';
+    const nome = $('periodo').options[$('periodo').selectedIndex].text;
+    setStatus('Carregando comprovantes de ' + nome + '…');
+    loading();
+    google.script.run
+      .withSuccessHandler(r => { setStatus(r.length + ' comprovante(s) em ' + nome + '.'); render(r); })
+      .withFailureHandler(() => { setStatus('Erro ao listar a quinzena.'); $('results').innerHTML = ''; })
+      .listarPorPeriodo(id);
+  });
+
+  // ----- abas -----
+  function setMode(mode){
+    const b = mode === 'buscar';
+    $('tabBuscar').classList.toggle('active', b);
+    $('tabConferir').classList.toggle('active', !b);
+    $('cardBuscar').hidden = !b;
+    $('cardConferir').hidden = b;
+    $('results').innerHTML = ''; setStatus('');
+  }
+  $('tabBuscar').addEventListener('click', () => setMode('buscar'));
+  $('tabConferir').addEventListener('click', () => setMode('conferir'));
+
+  // ----- conferir vários IDs -----
+  function parseIds(txt){
+    const seen = {}, out = [];
+    String(txt || '').split(/[\s,;]+/).forEach(x => {
+      const s = x.trim(); if(!s) return;
+      const k = s.toLowerCase(); if(seen[k]) return; seen[k] = true; out.push(s);
+    });
+    return out;
+  }
+  function conferir(){
+    const ids = parseIds($('idsInput').value);
+    if(!ids.length){ $('idsInput').focus(); return; }
+    setStatus('Conferindo ' + ids.length + ' ID(s) em todas as quinzenas…');
+    loading();
+    google.script.run
+      .withSuccessHandler(renderConferir)
+      .withFailureHandler(e => { setStatus('Erro na conferência.'); $('results').innerHTML = '<div class="empty">' + esc(e) + '</div>'; })
+      .conferirIds(ids);
+  }
+  function renderConferir(res){
+    const enc = res.encontrados || [], falt = res.faltando || [], tot = res.total || 0;
+    setStatus('');
+    let html = '<div class="summary ' + (falt.length ? 'warn' : 'ok') + '">' +
+      enc.length + ' de ' + tot + ' encontrados · ' + falt.length + ' faltando</div>';
+
+    if(falt.length){
+      html += '<div class="card"><div class="block-head"><span class="t">Faltando no Drive (' + falt.length + ')</span>' +
+        '<button class="btn ghost sm" id="btnCopiarFalt" type="button">Copiar faltantes</button></div>' +
+        '<div class="chips">' + falt.map(id => '<span class="mchip">' + esc(id) + '</span>').join('') + '</div></div>';
+    }
+    if(enc.length){
+      const rows = enc.map(item => {
+        const h = item.hits[0];
+        const extra = item.hits.length > 1 ? ' (em ' + item.hits.length + ' quinzenas)' : '';
+        return '<div class="frow"><span class="fid">' + esc(item.id) + '</span>' +
+          '<span class="fqz">' + esc(h.quinzena) + extra + '</span>' +
+          '<button class="linkver" type="button" data-fileid="' + esc(h.fileId) + '" data-nome="' + esc(item.id) + '" onclick="verArquivo(this.dataset.fileid, this.dataset.nome)">Ver ›</button></div>';
+      }).join('');
+      html += '<div class="card"><div class="block-head"><span class="t">Encontrados (' + enc.length + ')</span></div>' +
+        '<div class="frows">' + rows + '</div></div>';
+    }
+    $('results').innerHTML = html;
+
+    const cb = $('btnCopiarFalt');
+    if(cb) cb.addEventListener('click', () => copiar(falt.join('\n'), cb));
+  }
+  function copiar(txt, btn){
+    const ok = () => { const o = btn.textContent; btn.textContent = 'Copiado!'; setTimeout(() => btn.textContent = o, 1500); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok).catch(() => fbCopy(txt, ok));
+    } else fbCopy(txt, ok);
+  }
+  function fbCopy(txt, ok){
+    const ta = document.createElement('textarea'); ta.value = txt;
+    ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); ok(); } catch(e){}
+    ta.remove();
+  }
+  $('btnConferir').addEventListener('click', conferir);
+  $('btnLimparConf').addEventListener('click', () => { $('idsInput').value = ''; $('results').innerHTML = ''; setStatus(''); $('idsInput').focus(); });
+
+  // carrega as quinzenas no seletor
+  google.script.run
+    .withSuccessHandler(ps => {
+      const sel = $('periodo');
+      if(!ps || !ps.length){ sel.innerHTML = '<option value="">(nenhuma quinzena ainda)</option>'; return; }
+      sel.innerHTML = '<option value="">Escolha uma quinzena…</option>' +
+        ps.map(p => '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>').join('');
+    })
+    .withFailureHandler(() => { $('periodo').innerHTML = '<option value="">(erro ao carregar)</option>'; })
+    .listarPeriodos();
+
+  window.verArquivo = verArquivo;
+  })();
+  </script>
+  <!-- ===== Voltar ao hub: aparece se a ferramenta foi aberta pelo portal ===== -->
+  <script>
+  (function () {
+    var HubLink = {
+      HUB_PATH_PREFIX: '/Controladoria',
+      STORAGE_KEY: 'came_from_hub_pedagios',
+      init: function () {
+        var btn = document.getElementById('btnVoltarHub');
+        if (!btn) return;
+        if (this.veioDoHub()) {
+          btn.style.display = 'inline-flex';
+          try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
+        }
+      },
+      veioDoHub: function () {
+        try {
+          if (document.referrer) {
+            var ref = new URL(document.referrer);
+            var refPath = decodeURIComponent(ref.pathname);
+            var selfPath = decodeURIComponent(location.pathname);
+            var selfDir = selfPath.slice(0, selfPath.lastIndexOf('/') + 1);
+            var mesmaOrigem = ref.origin === location.origin;
+            var dentroDoPortal = refPath.indexOf(this.HUB_PATH_PREFIX) === 0;
+            var mesmaFerramenta = refPath.indexOf(selfDir) === 0;
+            if (mesmaOrigem && dentroDoPortal && !mesmaFerramenta) return true;
+          }
+        } catch (e) {}
+        try { if (new URLSearchParams(location.search).has('from')) return true; } catch (e) {}
+        try { if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true; } catch (e) {}
+        return false;
+      }
+    };
+    HubLink.init();
+  })();
+  </script>
+</body>
+</html>
