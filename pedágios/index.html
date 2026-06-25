@@ -1,684 +1,336 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
+<html lang="pt-BR"><head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Comprovantes de Pedágio</title>
   <script>try{var _t=localStorage.getItem('tema_pedagios')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');if(_t==='dark')document.documentElement.classList.add('dark');}catch(e){}</script>
   <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600..800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
   <style>
-
     :root{
-      --orange:#FF6E00; --orange-dark:#D25500; --orange-deep:#D25500; --orange-soft:#FFF1E4;
-      --ink:#3C003C; --plum:#3C003C; --plum-deep:#2A0028; --muted:#745E74;
-      --line:#E8E0E8; --border:#E8E0E8; --bg:#FAF7F5; --card:#fff; --surface:#fff;
-      --green:#1F7A3D; --ok:#1F7A3D; --green-bg:#DCFCE7; --red:#B91C1C; --red-bg:#FEE2E2; --gray-bg:#F2EEF2;
-      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-      --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
-      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --orange:#FF6E00; --orange-dark:#C75200; --orange-deep:#C75200;
+      --orange-soft:#FFF0E4; --orange-line:#F4D6B9;
+      --ink:#3C003C; --plum:#3C003C; --plum-deep:#280026; --plum-2:#5A0F55;
+      --muted:#7C667B; --line:#ECE2EC; --border:#ECE2EC; --field:#FBF7FA;
+      --bg:#F4EFEE; --card:#FFFFFF; --surface:#FFFFFF;
+      --green:#15803D; --ok:#15803D; --green-bg:#E4F6E9;
+      --red:#B42318; --red-bg:#FBE9E7; --gray-bg:#F1EAF1;
+      --r-card:18px; --r-ctl:12px; --r-field:11px;
+      --sh-sm:0 1px 2px rgba(52,0,46,.05), 0 1px 3px rgba(52,0,46,.04);
+      --sh-md:0 2px 6px rgba(52,0,46,.05), 0 16px 36px -16px rgba(52,0,46,.18);
+      --sh-lg:0 30px 70px -20px rgba(40,0,36,.45);
+      --sh-orange:0 8px 22px -8px rgba(255,110,0,.5);
     }
     *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;line-height:1.5}
-    .wrap{max-width:960px;margin:0 auto;padding:24px 18px 60px}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    .wrap{max-width:920px;margin:0 auto;padding:28px 20px 76px}
 
-    /* ====== ANIMAÇÕES GLOBAIS ====== */
-    @keyframes fadeSlideUp{
-      from{opacity:0;transform:translateY(24px)}
-      to{opacity:1;transform:translateY(0)}
-    }
-    @keyframes fadeSlideDown{
-      from{opacity:0;transform:translateY(-20px)}
-      to{opacity:1;transform:translateY(0)}
-    }
-    @keyframes scaleIn{
-      from{opacity:0;transform:scale(0.88)}
-      to{opacity:1;transform:scale(1)}
-    }
-    @keyframes scaleInSoft{
-      from{opacity:0;transform:scale(0.95)}
-      to{opacity:1;transform:scale(1)}
-    }
-    @keyframes fadeIn{
-      from{opacity:0}
-      to{opacity:1}
-    }
-    @keyframes shimmer{
-      0%{background-position:-200% 0}
-      100%{background-position:200% 0}
-    }
-    @keyframes pulseGlow{
-      0%,100%{box-shadow:0 0 0 0 rgba(255,110,0,0)}
-      50%{box-shadow:0 0 16px 3px rgba(255,110,0,.18)}
-    }
-    @keyframes borderPulse{
-      0%,100%{border-color:var(--line)}
-      50%{border-color:var(--orange)}
-    }
-    @keyframes shake{
-      0%,100%{transform:translateX(0)}
-      20%{transform:translateX(-5px)}
-      40%{transform:translateX(5px)}
-      60%{transform:translateX(-3px)}
-      80%{transform:translateX(3px)}
-    }
-    @keyframes popIn{
-      0%{opacity:0;transform:scale(0.6)}
-      70%{transform:scale(1.05)}
-      100%{opacity:1;transform:scale(1)}
-    }
-    @keyframes slideInLeft{
-      from{opacity:0;transform:translateX(-30px)}
-      to{opacity:1;transform:translateX(0)}
-    }
-    @keyframes slideInRight{
-      from{opacity:0;transform:translateX(30px)}
-      to{opacity:1;transform:translateX(0)}
-    }
-    @keyframes ripple{
-      to{transform:scale(4);opacity:0}
-    }
-    @keyframes countUp{
-      from{opacity:0;transform:translateY(8px)}
-      to{opacity:1;transform:translateY(0)}
-    }
-    @keyframes spin{to{transform:rotate(360deg)}}
-    @keyframes floatBadge{
-      0%,100%{transform:translateY(0)}
-      50%{transform:translateY(-3px)}
-    }
-
-    /* ====== HEADER ====== */
-    header{
-      margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
-      background:var(--plum);color:#fff;border-radius:16px;padding:18px 22px;
-      box-shadow:0 10px 30px rgba(60,0,60,.20);
-      animation:fadeSlideDown .55s var(--ease-out-expo) both;
-    }
+    /* ===== header ===== */
+    header{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(135deg,var(--plum-deep),var(--plum) 50%,var(--plum-2));color:#fff;border-radius:22px;padding:22px 24px;box-shadow:var(--sh-md);border:1px solid rgba(255,255,255,.06)}
+    header::after{content:"";position:absolute;top:-45%;right:-4%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,110,0,.34),transparent 62%);pointer-events:none}
+    .head-brand{display:flex;align-items:center;gap:15px;min-width:0;position:relative;z-index:1}
+    .mascwrap{flex:0 0 auto;display:inline-flex;padding:3px;border-radius:14px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22)}
+    .mascote{width:46px;height:46px;border-radius:11px;object-fit:cover;display:block}
     .head-title{min-width:0}
-    .head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .head-eyebrow{margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    header h1{margin:0;font-size:26px;font-weight:700;font-family:'Fraunces',serif;color:#fff;line-height:1.05;letter-spacing:-.01em}
+    .head-sub{margin:7px 0 0;color:#E7D3E7;font-size:13.5px;max-width:48ch;line-height:1.45}
+    .head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
     a.btn{text-decoration:none}
-    header h1{
-      margin:0;font-size:25px;font-weight:700;display:flex;align-items:center;gap:11px;
-      font-family:'Fraunces',serif;color:#fff;
-      animation:fadeSlideUp .5s var(--ease-out-expo) .15s both;
-    }
-    .mascote{
-      width:42px;height:42px;border-radius:9px;object-fit:cover;flex:0 0 auto;border:2px solid rgba(255,255,255,.35);
-      transition:transform .3s var(--ease-spring),box-shadow .3s var(--ease-spring);
-    }
-    .mascote:hover{transform:scale(1.12) rotate(-4deg);box-shadow:0 4px 14px rgba(255,110,0,.35)}
-    header p{
-      margin:6px 0 0;color:#EAD9EA;font-size:14px;
-      animation:fadeSlideUp .5s var(--ease-out-expo) .25s both;
-    }
 
-    /* ====== BOTÕES COM RIPPLE + ANIMAÇÃO ====== */
-    .btn{
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;
-      padding:12px 20px;border-radius:11px;border:none;cursor:pointer;
-      font:700 14.5px 'Manrope',sans-serif;
-      position:relative;overflow:hidden;
-      transition:transform .2s var(--ease-spring),box-shadow .2s var(--ease-smooth),background .2s var(--ease-smooth);
-    }
-    .btn::after{
-      content:'';position:absolute;border-radius:50%;background:rgba(255,255,255,.35);
-      width:20px;height:20px;margin-left:-10px;margin-top:-10px;
-      opacity:0;pointer-events:none;
-    }
-    .btn:active{transform:scale(0.96)}
-    .btn.primary{background:var(--orange);color:#fff}
-    .btn.primary:hover{background:var(--orange-dark);box-shadow:0 6px 24px rgba(255,110,0,.35);transform:translateY(-2px)}
-    .btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
-    .btn.ghost:hover{border-color:var(--orange);color:var(--orange-dark);box-shadow:0 4px 16px rgba(60,0,60,.08);transform:translateY(-2px)}
-    .btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important;box-shadow:none!important}
-    .btn.sm{padding:8px 14px;border-radius:9px;font-size:13px}
-    .btn.onband{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.55);color:#fff}
-    .btn.onband:hover{background:rgba(255,255,255,.26);border-color:#fff;color:#fff;transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
-    .btn.mini{padding:7px 10px;font-size:12px;border-radius:8px;flex:1}
-    .btn.mini.x{flex:0 0 auto;color:var(--red)}
-    .btn.big{font-size:16px;padding:14px 22px}
+    /* ===== main tabs ===== */
+    .maintabs{display:flex;gap:10px;margin:18px 0 4px;flex-wrap:wrap}
+    .maintab{flex:1;min-width:180px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-family:'Manrope',sans-serif;font-weight:700;font-size:14.5px;padding:14px 18px;border-radius:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;box-shadow:var(--sh-sm);transition:transform .14s,border-color .14s,color .14s}
+    .maintab .mt-ico{font-size:16px}
+    .maintab:hover{border-color:var(--orange);color:var(--orange-deep)}
+    .maintab.active{background:linear-gradient(135deg,var(--plum-deep),var(--plum-2));color:#fff;border-color:transparent;box-shadow:var(--sh-md)}
 
-    /* ====== CARDS COM ENTRADA ANIMADA ====== */
-    .card{
-      background:var(--card);border:1px solid var(--line);border-radius:14px;
-      padding:18px 18px;margin-top:14px;box-shadow:0 2px 10px rgba(60,0,60,.05);
-      animation:fadeSlideUp .5s var(--ease-out-expo) both;
-      transition:border-color .25s var(--ease-smooth),box-shadow .25s var(--ease-smooth),transform .25s var(--ease-smooth);
-    }
-    .card:hover{box-shadow:0 6px 24px rgba(60,0,60,.1)}
-    .card:nth-child(1){animation-delay:.1s}
-    .card:nth-child(2){animation-delay:.18s}
-    .card:nth-child(3){animation-delay:.26s}
-    .card:nth-child(4){animation-delay:.34s}
-    .card:nth-child(5){animation-delay:.42s}
-    .card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-    .card-head .step{margin:0}
+    /* ===== cards & steps ===== */
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:20px;margin-top:14px;box-shadow:var(--sh-sm)}
+    .step-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .step-no{flex:0 0 auto;width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--plum);color:#fff;font-family:'Fraunces',serif;font-weight:700;font-size:17px;box-shadow:0 5px 14px -5px rgba(60,0,60,.55)}
+    .step-no-soft{background:var(--orange-soft);color:var(--orange-deep);box-shadow:none}
+    .step{margin:0;flex:1;min-width:0;font-family:'Manrope',sans-serif;font-weight:700;font-size:15.5px;letter-spacing:0;text-transform:none;color:var(--ink)}
+    .clearbtn{flex:0 0 auto;background:var(--gray-bg);border:none;color:var(--muted);font:600 12px 'Manrope',sans-serif;cursor:pointer;padding:7px 13px;border-radius:9px;transition:color .14s,background .14s}
+    .clearbtn:hover{color:var(--red);background:var(--red-bg)}
 
-    /* ====== STEPS ====== */
-    .step{
-      font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
-      color:var(--orange);margin:0 0 10px;
-      animation:fadeSlideUp .4s var(--ease-out-expo) both;
-    }
-
-    /* ====== ABAS PRINCIPAIS ====== */
-    .maintabs{
-      display:flex;gap:8px;margin:0 0 16px;flex-wrap:wrap;
-      animation:fadeSlideUp .45s var(--ease-out-expo) .08s both;
-    }
-    .maintab{
-      flex:1;min-width:170px;border:1.5px solid var(--line);background:var(--surface);
-      color:var(--muted);font-family:'Manrope',sans-serif;font-weight:700;font-size:14.5px;
-      padding:13px 18px;border-radius:12px;cursor:pointer;
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;
-      transition:all .3s var(--ease-spring);
-      position:relative;overflow:hidden;
-    }
-    .maintab:hover{border-color:var(--orange);color:var(--orange-dark);transform:translateY(-2px);box-shadow:0 4px 14px rgba(255,110,0,.15)}
-    .maintab.active{
-      background:var(--plum);color:#fff;border-color:var(--plum);
-      box-shadow:0 6px 20px rgba(60,0,60,.25);
-      animation:scaleInSoft .35s var(--ease-spring);
-    }
-    .maintab.active:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(60,0,60,.35)}
-
-    /* ====== TABS DA CONSULTA ====== */
-    #sec-consultar .tabs{
-      display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;
-      animation:fadeSlideUp .4s var(--ease-out-expo) both;
-    }
-    #sec-consultar .tab{
-      border:1.5px solid var(--border);background:var(--surface);color:var(--muted);
-      font-family:inherit;font-weight:700;font-size:13.5px;padding:9px 16px;border-radius:10px;cursor:pointer;
-      transition:all .25s var(--ease-spring);
-    }
-    #sec-consultar .tab:hover{border-color:var(--orange);color:var(--orange-dark);transform:translateY(-1px)}
-    #sec-consultar .tab.active{
-      background:var(--plum);color:#fff;border-color:var(--plum);
-      box-shadow:0 4px 14px rgba(60,0,60,.2);
-      animation:scaleInSoft .25s var(--ease-spring);
-    }
-
-    /* ====== CAMPOS DE ENTRADA ====== */
     .row{display:flex;flex-wrap:wrap;gap:12px}
     .fld{flex:1;min-width:130px}
-    label.lbl{display:block;font-size:12.5px;color:var(--muted);margin-bottom:5px;font-weight:600}
-    select,input[type=text]{
-      width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:9px;
-      background:var(--surface);font:600 14px 'Manrope',sans-serif;color:var(--ink);
-      transition:border-color .25s var(--ease-smooth),box-shadow .25s var(--ease-smooth),transform .2s var(--ease-smooth);
-    }
-    select:focus,input:focus{
-      outline:none;border-color:var(--orange);
-      box-shadow:0 0 0 3px rgba(255,110,0,.12),0 4px 12px rgba(255,110,0,.08);
-      transform:translateY(-1px);
-    }
-    select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23745E74' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:34px}
+    label.lbl{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600}
+    select,input[type=text]{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-field);background:var(--field);font:600 14px 'Manrope',sans-serif;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+    select:focus,input:focus,textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,110,0,.16)}
 
-    /* ====== ZONA DE UPLOAD ====== */
-    .pastezone{
-      border:2px dashed #E8C9A8;border-radius:12px;background:var(--orange-soft);
-      padding:18px;text-align:center;color:var(--orange-dark);font-weight:700;font-size:13.5px;
-      cursor:pointer;outline:none;
-      transition:all .35s var(--ease-spring);
-      animation:borderPulse 3s ease-in-out infinite;
-    }
-    .pastezone:hover{
-      border-color:var(--orange);background:#ffe6c9;
-      transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,110,0,.12);
-      animation:none;
-    }
-    .pastezone:focus,.pastezone.drag{
-      border-color:var(--orange);background:#ffe6c9;
-      box-shadow:0 0 0 4px rgba(255,110,0,.15),0 8px 24px rgba(255,110,0,.12);
-      transform:scale(1.01);
-      animation:none;
-    }
-    .pastezone .sub{display:block;margin-top:4px;font-weight:500;color:var(--muted);font-size:12.5px}
-    .pastezone input{display:none}
-
-    /* ====== HINT / INFO ====== */
-    .hint{font-size:12.5px;color:var(--muted);margin-top:8px}
-    .info{
-      margin-top:10px;font-size:13px;padding:8px 11px;border-radius:8px;
-      animation:fadeSlideUp .4s var(--ease-out-expo) both;
-    }
+    .hint{font-size:12.5px;color:var(--muted);margin:13px 0 0;line-height:1.55}
+    .hint b{color:var(--ink);font-weight:700}
+    .info{margin-top:12px;font-size:13px;padding:10px 13px;border-radius:10px;font-weight:600}
     .info.ok{background:var(--green-bg);color:var(--green)}
-    .info.erro{background:var(--red-bg);color:var(--red);animation:shake .5s var(--ease-smooth),fadeSlideUp .4s var(--ease-out-expo) both}
+    .info.erro{background:var(--red-bg);color:var(--red)}
+    #resumo{margin-top:14px;font-size:13.5px;background:var(--gray-bg);padding:12px 14px;border-radius:11px;line-height:1.7}
+    #resumo b{color:var(--ink)}
 
-    /* ====== CLEAR BTN ====== */
-    .clearbtn{
-      background:none;border:none;color:var(--muted);font:700 12px 'Manrope',sans-serif;
-      cursor:pointer;padding:5px 9px;border-radius:7px;
-      transition:all .2s var(--ease-smooth);
-    }
-    .clearbtn:hover{color:var(--red);background:var(--gray-bg);transform:scale(1.05)}
+    /* ===== dropzones ===== */
+    .pastezone{display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px dashed var(--orange-line);border-radius:14px;background:var(--orange-soft);padding:22px 18px;text-align:center;color:var(--orange-deep);font-weight:700;font-size:14px;cursor:pointer;outline:none;transition:border-color .15s,background .15s,transform .1s}
+    .pastezone:hover{border-color:var(--orange)}
+    .pastezone:focus,.pastezone.drag{border-color:var(--orange);background:#FFE6D2;transform:scale(1.004)}
+    .pastezone .pz-ico{font-size:26px;line-height:1}
+    .pastezone .pz-main{font-weight:700}
+    .pastezone .sub{display:block;margin-top:2px;font-weight:500;color:var(--muted);font-size:12.5px}
 
-    /* ====== RESUMO ====== */
-    #resumo{
-      margin-top:10px;font-size:13.5px;background:var(--gray-bg);padding:10px 12px;border-radius:9px;
-      animation:fadeSlideUp .35s var(--ease-out-expo) both;
-    }
+    /* ===== table ===== */
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left}
+    th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;position:sticky;top:0;background:var(--surface)}
+    tbody tr:last-child td{border-bottom:none}
+    .tablewrap{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:8px}
+    .toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;cursor:pointer;user-select:none;margin:0 0 12px}
+    .toggle input{accent-color:var(--orange);width:16px;height:16px}
 
-    /* ====== TABELA ====== */
-    table{width:100%;border-collapse:collapse;margin-top:4px;font-size:13px}
-    th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
-    th{
-      font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;
-      animation:fadeIn .4s var(--ease-smooth) both;
-    }
-    tbody tr{
-      animation:fadeSlideUp .35s var(--ease-out-expo) both;
-      transition:background .2s var(--ease-smooth);
-    }
-    tbody tr:hover{background:rgba(255,110,0,.04)}
-    .tablewrap{
-      max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:6px;
-      animation:fadeSlideUp .4s var(--ease-out-expo) both;
-    }
-
-    /* ====== BADGES ====== */
-    .badge{
-      display:inline-block;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:700;
-      transition:transform .2s var(--ease-spring),box-shadow .2s var(--ease-smooth);
-    }
-    .badge:hover{transform:scale(1.08)}
+    /* ===== badges & chips ===== */
+    .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700}
     .badge.none{background:var(--gray-bg);color:var(--muted)}
-    .badge.ok{background:var(--orange-soft);color:var(--orange-dark)}
-    .badge.up{background:#FEF3C7;color:#92400E}
+    .badge.ok{background:var(--orange-soft);color:var(--orange-deep)}
+    .badge.up{background:#FEF1D6;color:#A8650C}
     .badge.done{background:var(--green-bg);color:var(--green)}
     .badge.err{background:var(--red-bg);color:var(--red)}
-    .badge.up{animation:floatBadge 2s ease-in-out infinite}
-
-    /* ====== AÇÕES ====== */
-    .actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-
-    /* ====== PROGRESSO ====== */
-    #progressWrap{margin-top:14px;animation:fadeSlideUp .35s var(--ease-out-expo) both}
-    .bar-bg{height:9px;background:var(--gray-bg);border-radius:20px;overflow:hidden}
-    #bar{
-      height:100%;width:0;background:var(--orange);transition:width .25s;
-      box-shadow:0 0 10px rgba(255,110,0,.4);
-    }
-    #progTxt{font-size:12.5px;color:var(--muted);margin-top:6px}
-
-    /* ====== MENSAGEM DE CONCLUÍDO ====== */
-    #doneMsg{
-      margin-top:12px;font-size:13.5px;background:var(--green-bg);color:var(--green);
-      padding:10px 12px;border-radius:9px;
-      animation:fadeSlideUp .4s var(--ease-out-expo),pulseGlow 3s ease-in-out infinite;
-    }
-
-    /* ====== CARTÕES DE ÓRFÃOS ====== */
-    .orphans{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
-    .ocard{
-      width:152px;border:1px solid var(--line);border-radius:11px;background:var(--surface);
-      padding:8px;display:flex;flex-direction:column;gap:7px;
-      animation:popIn .45s var(--ease-spring) both;
-      transition:all .3s var(--ease-spring);
-      cursor:default;
-    }
-    .ocard:hover{
-      transform:translateY(-4px) scale(1.02);
-      box-shadow:0 8px 24px rgba(60,0,60,.12);
-      border-color:var(--orange);
-    }
-    .ocard .thumb{
-      width:100%;height:104px;object-fit:cover;border-radius:8px;cursor:zoom-in;
-      background:var(--gray-bg);border:none;
-      transition:transform .3s var(--ease-spring);
-    }
-    .ocard .thumb:hover{transform:scale(1.04)}
-    .pdfth{
-      display:flex;align-items:center;justify-content:center;font-weight:800;
-      color:var(--muted);cursor:default!important;
-    }
-    .ocard .oname{
-      font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    .ocard .obtns{display:flex;gap:6px}
-
-    /* ====== CHIPS ====== */
-    .chip{
-      display:inline-flex;align-items:center;gap:5px;background:var(--gray-bg);
-      border-radius:16px;padding:2px 9px;font-size:11px;font-weight:700;color:var(--muted);
-      transition:all .25s var(--ease-spring);
-    }
+    .chip{display:inline-flex;align-items:center;gap:5px;background:var(--gray-bg);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--muted)}
     .chip b{color:var(--ink)}
-    .chip.on{background:var(--green-bg);color:var(--green);animation:popIn .35s var(--ease-spring)}
+    .chip.on{background:var(--green-bg);color:var(--green)}
     .chip.on b{color:var(--green)}
 
-    /* ====== MODAL ====== */
-    .overlay{
-      position:fixed;inset:0;background:rgba(60,0,60,.55);
-      display:flex;align-items:center;justify-content:center;padding:14px;z-index:50;
-      animation:fadeIn .3s var(--ease-smooth);
-    }
-    .modal{
-      background:var(--surface);border-radius:16px;max-width:780px;width:100%;max-height:92vh;
-      display:flex;flex-direction:column;overflow:hidden;
-      animation:scaleIn .4s var(--ease-spring);
-      box-shadow:0 24px 60px rgba(60,0,60,.25);
-    }
-    .modal .mhead{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:14px 18px;border-bottom:1px solid var(--line);
-    }
-    .modal .mhead h2{margin:0;font-size:17px;font-weight:700;font-family:'Fraunces',serif}
-    .modal .mbody{
-      padding:14px 18px;overflow:auto;display:flex;gap:16px;flex-wrap:wrap;
-    }
+    /* ===== buttons ===== */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:var(--r-ctl);border:none;cursor:pointer;font:700 14px 'Manrope',sans-serif;transition:transform .12s ease,filter .15s ease,background .15s,border-color .15s,color .15s;text-decoration:none}
+    .btn.primary{background:linear-gradient(180deg,#FF7F1F,#FF6E00);color:#fff;box-shadow:var(--sh-orange)}
+    .btn.primary:hover{filter:brightness(1.05);transform:translateY(-1px)}
+    .btn.primary:active{transform:translateY(0)}
+    .btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+    .btn.ghost:hover{border-color:var(--orange);color:var(--orange-deep)}
+    .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none;filter:none}
+    .btn.sm{padding:9px 14px;border-radius:10px;font-size:13px}
+    .btn.big{font-size:16px;padding:15px 22px}
+    .btn.onband{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.28);color:#fff;backdrop-filter:blur(4px)}
+    .btn.onband:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.55);color:#fff}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+    /* ===== progress ===== */
+    #progressWrap{margin-top:16px}
+    .bar-bg{height:10px;background:var(--gray-bg);border-radius:999px;overflow:hidden}
+    #bar{height:100%;width:0;background:linear-gradient(90deg,#FF8A2B,#FF6E00);border-radius:999px;transition:width .25s}
+    #progTxt{font-size:12.5px;color:var(--muted);margin-top:8px;font-weight:600}
+    #doneMsg{margin-top:14px;font-size:13.5px;background:var(--green-bg);color:var(--green);padding:12px 14px;border-radius:11px;font-weight:600}
+
+    /* ===== orfaos ===== */
+    .orphans{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+    .ocard{width:156px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:9px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--sh-sm)}
+    .ocard .thumb{width:100%;height:106px;object-fit:cover;border-radius:9px;cursor:zoom-in;background:var(--gray-bg);border:none}
+    .pdfth{display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);cursor:default!important}
+    .ocard .oname{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ocard .obtns{display:flex;gap:6px}
+    .btn.mini{padding:7px 10px;font-size:12px;border-radius:9px;flex:1}
+    .btn.mini.x{flex:0 0 auto;color:var(--red);padding:7px 11px}
+
+    /* ===== overlays ===== */
+    .overlay{position:fixed;inset:0;background:rgba(40,0,38,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+    .modal{background:var(--surface);border-radius:20px;max-width:780px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--sh-lg);border:1px solid var(--line)}
+    .modal .mhead{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+    .modal .mhead h2{margin:0;font-size:18px;font-weight:700;font-family:'Fraunces',serif;color:var(--ink)}
+    .modal .mbody{padding:18px 20px;overflow:auto;display:flex;gap:18px;flex-wrap:wrap}
     .modal .mimg{flex:1 1 230px;min-width:210px}
-    .modal .mimg img{
-      width:100%;max-height:46vh;object-fit:contain;border:1px solid var(--line);
-      border-radius:10px;cursor:zoom-in;background:var(--gray-bg);
-      transition:transform .3s var(--ease-spring);
-    }
-    .modal .mimg img:hover{transform:scale(1.02)}
+    .modal .mimg img{width:100%;max-height:46vh;object-fit:contain;border:1px solid var(--line);border-radius:12px;cursor:zoom-in;background:var(--gray-bg)}
     .modal .mlist{flex:1.5 1 320px;min-width:270px}
-    .modal .mfoot{
-      display:flex;gap:10px;justify-content:flex-end;align-items:center;
-      padding:12px 18px;border-top:1px solid var(--line);
-    }
+    .modal .mfoot{display:flex;gap:10px;justify-content:flex-end;align-items:center;padding:14px 20px;border-top:1px solid var(--line)}
     .modal .mcount{margin-right:auto;font-size:13px;color:var(--muted);font-weight:700}
+    .rowsel{cursor:pointer}
+    .rowsel.on{background:var(--orange-soft)}
+    .xbtn{border:none;background:none;font-size:24px;cursor:pointer;color:var(--muted);line-height:1;padding:2px 8px;border-radius:8px}
+    .xbtn:hover{color:var(--ink);background:var(--gray-bg)}
+    .lightbox{position:fixed;inset:0;background:rgba(30,0,28,.93);display:flex;align-items:center;justify-content:center;z-index:60;cursor:zoom-out;padding:20px}
+    .lightbox img{max-width:100%;max-height:100%;border-radius:10px}
 
-    /* ====== SELEÇÃO DE LINHA ====== */
-    .rowsel{
-      cursor:pointer;
-      transition:background .2s var(--ease-smooth),transform .15s var(--ease-spring);
-    }
-    .rowsel:hover{transform:translateX(3px)}
-    .rowsel.on{background:var(--orange-soft);animation:fadeSlideUp .2s var(--ease-smooth)}
-
-    /* ====== BOTÃO FECHAR MODAL ====== */
-    .xbtn{
-      border:none;background:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;padding:2px 6px;
-      transition:all .2s var(--ease-spring);border-radius:6px;
-    }
-    .xbtn:hover{color:var(--ink);background:var(--gray-bg);transform:rotate(90deg) scale(1.1)}
-
-    /* ====== LIGHTBOX ====== */
-    .lightbox{
-      position:fixed;inset:0;background:rgba(42,0,40,.92);
-      display:flex;align-items:center;justify-content:center;z-index:60;
-      cursor:zoom-out;padding:18px;
-      animation:fadeIn .25s var(--ease-smooth);
-    }
-    .lightbox img{
-      max-width:100%;max-height:100%;border-radius:8px;
-      animation:scaleInSoft .35s var(--ease-spring);
-    }
-
-    /* ====== TOGGLE ====== */
-    .toggle{
-      display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);
-      font-weight:700;cursor:pointer;user-select:none;margin:2px 0 8px;
-      transition:color .2s var(--ease-smooth);
-    }
-    .toggle:hover{color:var(--ink)}
-    .toggle input[type=checkbox]{
-      appearance:none;width:18px;height:18px;border:2px solid var(--line);border-radius:5px;
-      background:var(--surface);cursor:pointer;position:relative;
-      transition:all .2s var(--ease-spring);
-    }
-    .toggle input[type=checkbox]:checked{
-      background:var(--orange);border-color:var(--orange);
-    }
-    .toggle input[type=checkbox]:checked::after{
-      content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-      color:#fff;font-size:12px;font-weight:800;
-      animation:popIn .2s var(--ease-spring);
-    }
-
-    /* ====== LOADING / SPINNER ====== */
-    .spinner{
-      width:46px;height:46px;border-radius:50%;border:4px solid var(--orange-soft);
-      border-top-color:var(--orange);margin:0 auto 16px;animation:spin .8s linear infinite;
-    }
-    .loadbox{
-      background:var(--surface);border-radius:18px;padding:28px 30px;
-      width:min(430px,92vw);text-align:center;
-      box-shadow:0 20px 55px rgba(60,0,60,.30);
-      animation:scaleIn .45s var(--ease-spring);
-    }
-    .loadtitle{margin:0 0 14px;font-weight:700;font-size:17px;color:var(--ink);font-family:'Fraunces',serif}
-    #sendBar{height:100%;width:0;background:var(--orange);transition:width .25s;box-shadow:0 0 10px rgba(255,110,0,.4)}
-    .loadtxt{margin:11px 0 0;font-size:13.5px;font-weight:700;color:var(--ink)}
-    .loadhint{margin:5px 0 0;font-size:12px;color:var(--muted)}
-    .okcheck{
-      width:54px;height:54px;border-radius:50%;background:var(--green-bg);color:var(--green);
-      font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;
-      margin:0 auto 14px;
-      animation:popIn .5s var(--ease-spring),pulseGlow 2s ease-in-out 1s infinite;
-    }
-    .donewarn{
-      margin:0 0 16px;font-size:13.5px;color:#7A4B00;background:#FEF3C7;
-      border:1px solid #F4D58A;border-radius:10px;padding:11px 13px;
-      line-height:1.45;text-align:left;
-      animation:fadeSlideUp .4s var(--ease-out-expo);
-    }
-    .doneok{
-      margin:0 0 16px;font-size:13.5px;color:var(--green);background:var(--green-bg);
-      border-radius:10px;padding:11px 13px;line-height:1.45;
-      animation:fadeSlideUp .4s var(--ease-out-expo);
-    }
+    /* ===== tela de envio ===== */
+    .loadbox{background:var(--surface);border-radius:22px;padding:30px 32px;width:min(440px,92vw);text-align:center;box-shadow:var(--sh-lg);border:1px solid var(--line)}
+    .spinner{width:46px;height:46px;border-radius:50%;border:4px solid var(--orange-soft);border-top-color:var(--orange);margin:0 auto 16px;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loadtitle{margin:0 0 14px;font-weight:700;font-size:18px;color:var(--ink);font-family:'Fraunces',serif}
+    #sendBar{height:100%;width:0;background:linear-gradient(90deg,#FF8A2B,#FF6E00);border-radius:999px;transition:width .25s}
+    .loadtxt{margin:12px 0 0;font-size:13.5px;font-weight:700;color:var(--ink)}
+    .loadhint{margin:6px 0 0;font-size:12px;color:var(--muted)}
+    .okcheck{width:56px;height:56px;border-radius:50%;background:var(--green-bg);color:var(--green);font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+    .donewarn{margin:0 0 16px;font-size:13.5px;color:#8A5300;background:#FEF3DC;border:1px solid #F4DCA6;border-radius:12px;padding:12px 14px;line-height:1.5;text-align:left}
+    .doneok{margin:0 0 16px;font-size:13.5px;color:var(--green);background:var(--green-bg);border-radius:12px;padding:12px 14px;line-height:1.5}
     #doneState .btn{width:100%}
-    #doneState .btn + .btn{margin-top:9px}
+    #doneState .btn + .btn{margin-top:10px}
 
-    /* ====== CONSULTA ====== */
-    .empty{text-align:center;color:var(--muted);padding:30px 10px;font-size:14px;animation:fadeSlideUp .4s var(--ease-out-expo)}
-    .vmodal{
-      position:fixed;inset:0;background:rgba(42,0,40,.55);
-      display:flex;align-items:center;justify-content:center;padding:18px;z-index:60;
-      animation:fadeIn .3s var(--ease-smooth);
-    }
-    .vmodal-card{
-      background:var(--surface);border-radius:14px;max-width:780px;width:100%;max-height:92vh;
-      overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);
-      animation:scaleIn .4s var(--ease-spring);
-    }
-    .vmodal-head{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      padding:12px 15px;border-bottom:1px solid var(--border);
-      position:sticky;top:0;background:var(--surface);
-      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-    }
+    /* ===== consulta (global) ===== */
+    .empty{text-align:center;color:var(--muted);padding:34px 12px;font-size:14px;font-weight:500}
+    .vmodal{position:fixed;inset:0;background:rgba(40,0,38,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:18px;z-index:60}
+    .vmodal-card{background:var(--surface);border-radius:18px;max-width:780px;width:100%;max-height:92vh;overflow:auto;box-shadow:var(--sh-lg);border:1px solid var(--line)}
+    .vmodal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
     .vmodal-title{font-weight:700;font-size:13.5px;color:var(--ink);font-family:'JetBrains Mono',monospace;word-break:break-all}
     .vmodal-acts{display:flex;gap:8px;flex-shrink:0}
     .vmodal-body{padding:16px;min-height:140px;display:flex;align-items:center;justify-content:center}
 
-    /* ====== GRID DE RESULTADOS ====== */
-    #sec-consultar .grid{
-      display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;
-    }
-    #sec-consultar .item{
-      background:var(--surface);border:1px solid var(--border);border-radius:13px;
-      overflow:hidden;box-shadow:0 2px 8px rgba(60,0,60,.05);
-      display:flex;flex-direction:column;
-      animation:fadeSlideUp .45s var(--ease-out-expo) both;
-      transition:all .3s var(--ease-spring);
-    }
-    #sec-consultar .item:hover{
-      transform:translateY(-5px);
-      box-shadow:0 12px 32px rgba(60,0,60,.14);
-      border-color:var(--orange);
-    }
-    #sec-consultar .item:nth-child(1){animation-delay:.05s}
-    #sec-consultar .item:nth-child(2){animation-delay:.1s}
-    #sec-consultar .item:nth-child(3){animation-delay:.15s}
-    #sec-consultar .item:nth-child(4){animation-delay:.2s}
-    #sec-consultar .item:nth-child(5){animation-delay:.25s}
-    #sec-consultar .item:nth-child(6){animation-delay:.3s}
-    #sec-consultar .vthumb{
-      aspect-ratio:4/3;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;
-      overflow:hidden;cursor:pointer;position:relative;
-    }
-    #sec-consultar .vthumb img{
-      width:100%;height:100%;object-fit:cover;
-      transition:transform .4s var(--ease-spring);
-    }
-    #sec-consultar .vthumb:hover img{transform:scale(1.08)}
-    #sec-consultar .vthumb .ico{font-size:36px}
-    #sec-consultar .vthumb::after{
-      content:'';position:absolute;inset:0;background:rgba(60,0,60,.0);
-      transition:background .3s var(--ease-smooth);
-      pointer-events:none;
-    }
-    #sec-consultar .vthumb:hover::after{background:rgba(60,0,60,.08)}
-    #sec-consultar .meta{padding:11px 13px}
-    #sec-consultar .meta .id{
-      font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;
-      color:var(--ink);word-break:break-all;
-    }
-    #sec-consultar .meta .qz{font-size:11.5px;color:var(--muted);margin-top:3px}
-    #sec-consultar .meta a.open,#sec-consultar .meta .linkver{
-      display:inline-block;margin-top:9px;font-size:12.5px;font-weight:700;
-      color:var(--orange-deep);text-decoration:none;
-      transition:all .2s var(--ease-smooth);
-    }
-    #sec-consultar .meta a.open:hover,#sec-consultar .meta .linkver:hover{
-      text-decoration:underline;transform:translateX(3px);
-    }
-
-    /* ====== BUSCA / INPUTS DA CONSULTA ====== */
-    #sec-consultar .lbl{
-      font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;
-      display:block;margin-bottom:8px;
-    }
+    /* ===== consulta (escopada) ===== */
+    #sec-consultar{margin-top:4px}
+    #sec-consultar .lbl{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:10px}
     #sec-consultar .searchrow{display:flex;gap:10px;flex-wrap:wrap}
-    #sec-consultar .searchrow input{
-      flex:1;min-width:200px;padding:13px 15px;font-size:15px;
-      border:1.5px solid var(--border);border-radius:11px;font-family:inherit;
-      transition:border-color .25s var(--ease-smooth),box-shadow .25s var(--ease-smooth),transform .2s var(--ease-smooth);
-    }
-    #sec-consultar .searchrow input:focus{
-      outline:none;border-color:var(--orange);
-      box-shadow:0 0 0 3px rgba(255,110,0,.12),0 4px 12px rgba(255,110,0,.08);
-      transform:translateY(-1px);
-    }
-    #sec-consultar .sep{
-      margin:14px 0 0;padding-top:14px;border-top:1px solid var(--border);
-      display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-    }
-    #sec-consultar .sep label{font-size:13px;color:var(--muted);font-weight:600}
-    #sec-consultar select{
-      padding:10px 12px;font-size:14px;border:1.5px solid var(--border);border-radius:10px;
-      font-family:inherit;background:var(--surface);min-width:220px;width:auto;
-      transition:border-color .25s var(--ease-smooth),box-shadow .25s var(--ease-smooth);
-    }
-    #sec-consultar select:focus{
-      outline:none;border-color:var(--orange);
-      box-shadow:0 0 0 3px rgba(255,110,0,.12);
-    }
-    #sec-consultar .status{font-size:14px;color:var(--muted);margin:2px 2px 14px}
-    #sec-consultar textarea{
-      width:100%;padding:13px 15px;font-size:14px;border:1.5px solid var(--border);
-      border-radius:11px;font-family:'JetBrains Mono',monospace;resize:vertical;line-height:1.6;
-      transition:border-color .25s var(--ease-smooth),box-shadow .25s var(--ease-smooth),transform .2s var(--ease-smooth);
-    }
-    #sec-consultar textarea:focus{
-      outline:none;border-color:var(--orange);
-      box-shadow:0 0 0 3px rgba(255,110,0,.12),0 4px 12px rgba(255,110,0,.08);
-      transform:translateY(-1px);
-    }
-    #sec-consultar .confrow{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-    #sec-consultar .summary{
-      border-radius:11px;padding:12px 15px;font-weight:700;font-size:14.5px;margin-bottom:14px;
-      animation:fadeSlideUp .4s var(--ease-out-expo);
-    }
+    #sec-consultar .searchrow input{flex:1;min-width:200px;padding:13px 15px;font-size:15px;border:1px solid var(--border);border-radius:12px;font-family:inherit;background:var(--field);color:var(--ink)}
+    #sec-consultar select{padding:10px 12px;font-size:14px;border:1px solid var(--border);border-radius:11px;font-family:inherit;background:var(--field);min-width:220px;width:auto;color:var(--ink)}
+    #sec-consultar .status{font-size:14px;color:var(--muted);margin:4px 2px 16px;font-weight:600}
+    #sec-consultar .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    #sec-consultar .item{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--sh-sm);display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s}
+    #sec-consultar .item:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+    #sec-consultar .vthumb{aspect-ratio:4/3;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative}
+    #sec-consultar .vthumb img{width:100%;height:100%;object-fit:cover}
+    #sec-consultar .vthumb .ico{font-size:36px}
+    #sec-consultar .meta{padding:12px 14px}
+    #sec-consultar .meta .id{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--ink);word-break:break-all}
+    #sec-consultar .meta .qz{font-size:11.5px;color:var(--muted);margin-top:4px}
+    #sec-consultar .meta a.open,#sec-consultar .meta .linkver{display:inline-block;margin-top:10px;font-size:12.5px;font-weight:700;color:var(--orange-deep);text-decoration:none}
+    #sec-consultar .meta a.open:hover{text-decoration:underline}
+    #sec-consultar .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+    #sec-consultar .tab{border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:inherit;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:11px;cursor:pointer;box-shadow:var(--sh-sm);transition:transform .14s,border-color .14s,color .14s}
+    #sec-consultar .tab:hover{border-color:var(--orange);color:var(--orange-deep)}
+    #sec-consultar .tab.active{background:linear-gradient(135deg,var(--plum-deep),var(--plum-2));color:#fff;border-color:transparent;box-shadow:var(--sh-md)}
+    #sec-consultar textarea{width:100%;padding:14px 15px;font-size:14px;border:1px solid var(--border);border-radius:12px;font-family:'JetBrains Mono',monospace;resize:vertical;line-height:1.7;background:var(--field);color:var(--ink)}
+    #sec-consultar .confrow{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+    #sec-consultar .summary{border-radius:12px;padding:13px 16px;font-weight:700;font-size:14.5px;margin-bottom:16px}
     #sec-consultar .summary.ok{background:var(--green-bg);color:var(--ok)}
-    #sec-consultar .summary.warn{background:#FEF3C7;color:#7A4B00}
-    #sec-consultar .block-head{
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-      margin-bottom:10px;flex-wrap:wrap;
-    }
-    #sec-consultar .block-head .t{font-family:'Fraunces',serif;font-size:16px;font-weight:600}
+    #sec-consultar .summary.warn{background:#FEF3DC;color:#8A5300}
+    #sec-consultar .block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+    #sec-consultar .block-head .t{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)}
     #sec-consultar .chips{display:flex;flex-wrap:wrap;gap:7px;max-height:180px;overflow-y:auto}
-    #sec-consultar .mchip{
-      font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;
-      background:#FEE2E2;color:#B91C1C;border-radius:8px;padding:5px 10px;
-      transition:all .2s var(--ease-spring);
-      animation:popIn .3s var(--ease-spring) both;
-    }
-    #sec-consultar .mchip:hover{transform:scale(1.08);box-shadow:0 2px 8px rgba(185,28,28,.2)}
-    #sec-consultar .frows{
-      display:flex;flex-direction:column;max-height:360px;overflow-y:auto;padding-right:4px;
-    }
-    #sec-consultar .frow{
-      display:flex;align-items:center;gap:10px;padding:9px 4px;
-      border-bottom:1px solid var(--border);flex-wrap:wrap;
-      animation:fadeSlideUp .3s var(--ease-out-expo) both;
-      transition:background .15s var(--ease-smooth);
-    }
+    #sec-consultar .mchip{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:var(--red-bg);color:var(--red);border-radius:9px;padding:6px 11px}
+    #sec-consultar .frows{display:flex;flex-direction:column;max-height:360px;overflow-y:auto;padding-right:4px}
+    #sec-consultar .frow{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
     #sec-consultar .frow:last-child{border-bottom:none}
-    #sec-consultar .frow:hover{background:rgba(255,110,0,.04);border-radius:6px}
-    #sec-consultar .frow .fid{
-      font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13.5px;min-width:110px;
-    }
+    #sec-consultar .frow .fid{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13.5px;min-width:110px;color:var(--ink)}
     #sec-consultar .frow .fqz{font-size:12.5px;color:var(--muted);flex:1}
-    #sec-consultar .frow a{
-      font-size:12.5px;font-weight:700;color:var(--orange-deep);text-decoration:none;
-      transition:all .2s var(--ease-smooth);
-    }
-    #sec-consultar .frow a:hover{text-decoration:underline;transform:translateX(2px)}
-    #sec-consultar .linkver{
-      background:none;border:none;padding:0;font:700 12.5px 'Manrope',sans-serif;
-      color:var(--orange-deep);cursor:pointer;transition:all .2s var(--ease-smooth);
-    }
-    #sec-consultar .linkver:hover{text-decoration:underline;transform:translateX(2px)}
+    #sec-consultar .linkver{background:none;border:none;padding:0;font:700 12.5px 'Manrope',sans-serif;color:var(--orange-deep);cursor:pointer}
+    #sec-consultar .linkver:hover{text-decoration:underline}
 
-    /* ====== MODO NOTURNO ====== */
+    /* ===== modo noturno ===== */
     html.dark{
-      --ink:#F1E8F1; --bg:#15101A; --surface:#241C2B; --card:#241C2B;
-      --line:#3A2F44; --border:#3A2F44; --muted:#AE9BB8; --gray-bg:#2E2536;
-      --orange-soft:#3A2A1C; --orange-dark:#FF9248; --orange-deep:#FF9248;
-      --green:#6FD897; --ok:#6FD897; --green-bg:#193A26;
-      --red:#F0A3A3; --red-bg:#3A1E1E; --plum:#3C003C;
+      --ink:#F0E7F0; --bg:#141018; --surface:#221A29; --card:#221A29;
+      --line:#352B3F; --border:#352B3F; --muted:#A593AE; --gray-bg:#2C2335; --field:#1C1622;
+      --orange-soft:#3A2718; --orange-dark:#FF9A52; --orange-deep:#FF9A52; --orange-line:#5A3D22;
+      --green:#5FD18C; --ok:#5FD18C; --green-bg:#16321F;
+      --red:#F0A0A0; --red-bg:#3A1C1C; --plum:#3C003C; --plum-deep:#2A0028; --plum-2:#5A1457;
     }
     html.dark .badge.up{background:#3A2E15;color:#E8C77A}
-    html.dark .summary.warn,html.dark .donewarn{background:#3A2E15;color:#E8C77A;border-color:#5A4A20}
-    html.dark .mchip{background:#3A1E1E;color:#F0A3A3}
-    html.dark .mchip:hover{box-shadow:0 2px 8px rgba(240,163,163,.15)}
-    html.dark .pastezone{border-color:#5A4327}
-    html.dark .pastezone:focus,html.dark .pastezone.drag{background:#43301C}
-    html.dark .filebtn{border-color:#5A4327}
-    html.dark .filebtn:hover{background:#43301C}
+    html.dark .summary.warn,html.dark #sec-consultar .summary.warn,html.dark .donewarn{background:#3A2E15;color:#E8C77A;border-color:#5A4A20}
+    html.dark .mchip,html.dark #sec-consultar .mchip{background:#3A1C1C;color:#F0A0A0}
+    html.dark .pastezone{border-color:#5A3D22}
+    html.dark .pastezone:focus,html.dark .pastezone.drag{background:#43301C;border-color:var(--orange)}
+    html.dark .step-no{background:linear-gradient(180deg,#5A1457,#3C003C);border:1px solid #5A1457;box-shadow:none}
+    html.dark .maintab.active,html.dark #sec-consultar .tab.active{background:linear-gradient(135deg,#3C003C,#5A1457)}
 
-    /* ====== FUNDO ANIMADO ====== */
+    /* ===== fundo animado ===== */
     .orbs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
-    .orb{position:absolute;border-radius:50%;filter:blur(72px);will-change:transform}
-    .orb.a{width:48vmax;height:48vmax;top:-14vmax;left:-10vmax;background:radial-gradient(circle,rgba(255,150,70,.72),transparent 66%);animation:drift1 20s ease-in-out infinite}
-    .orb.b{width:42vmax;height:42vmax;bottom:-16vmax;right:-12vmax;background:radial-gradient(circle,rgba(150,60,150,.58),transparent 66%);animation:drift2 24s ease-in-out infinite}
-    .orb.c{width:34vmax;height:34vmax;top:34vh;right:14vw;background:radial-gradient(circle,rgba(255,185,120,.58),transparent 68%);animation:drift3 28s ease-in-out infinite}
+    .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;will-change:transform}
+    .orb.a{width:46vmax;height:46vmax;top:-16vmax;left:-12vmax;background:radial-gradient(circle,rgba(255,110,0,.30),transparent 64%);animation:drift1 26s ease-in-out infinite}
+    .orb.b{width:42vmax;height:42vmax;bottom:-18vmax;right:-14vmax;background:radial-gradient(circle,rgba(60,0,60,.30),transparent 64%);animation:drift2 32s ease-in-out infinite}
+    .orb.c{width:30vmax;height:30vmax;top:38vh;right:16vw;background:radial-gradient(circle,rgba(255,150,70,.22),transparent 66%);animation:drift3 38s ease-in-out infinite}
     @keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(13vw,15vh)}}
     @keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-14vw,-12vh)}}
     @keyframes drift3{0%,100%{transform:translate(0,0)}33%{transform:translate(-11vw,9vh)}66%{transform:translate(6vw,-10vh)}}
-    html.dark .orb.a{background:radial-gradient(circle,rgba(200,100,45,.50),transparent 66%)}
-    html.dark .orb.b{background:radial-gradient(circle,rgba(135,55,145,.56),transparent 66%)}
-    html.dark .orb.c{background:radial-gradient(circle,rgba(110,50,140,.48),transparent 68%)}
+    html.dark .orb{opacity:.5}
+    html.dark .orb.a{background:radial-gradient(circle,rgba(255,120,40,.20),transparent 64%)}
+    html.dark .orb.b{background:radial-gradient(circle,rgba(120,40,120,.34),transparent 64%)}
+    html.dark .orb.c{background:radial-gradient(circle,rgba(150,60,150,.20),transparent 66%)}
     @media (prefers-reduced-motion: reduce){ .orb{animation:none} }
 
-    /* ====== TRANSITIONS GLOBAIS DE TEMA ====== */
-    html,html *,body,body *{
-      transition:background-color .35s var(--ease-smooth),color .25s var(--ease-smooth),border-color .35s var(--ease-smooth);
+    /* SEMPRE POR ULTIMO */
+    /* ====== ANIMAÇÕES (importadas) ====== */
+    :root{--ease-spring:cubic-bezier(.34,1.56,.64,1);--ease-smooth:cubic-bezier(.4,0,.2,1);--ease-out-expo:cubic-bezier(.16,1,.3,1)}
+    @keyframes fadeSlideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeSlideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes scaleIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+    @keyframes scaleInSoft{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,110,0,0)}50%{box-shadow:0 0 16px 3px rgba(255,110,0,.18)}}
+    @keyframes borderPulse{0%,100%{border-color:var(--orange-line,#E8C9A8)}50%{border-color:var(--orange)}}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+    @keyframes popIn{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+    @keyframes floatBadge{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+    /* entradas (backwards: não sobrescreve os hovers depois de terminar) */
+    header{animation:fadeSlideDown .55s var(--ease-out-expo) backwards}
+    header h1{animation:fadeSlideUp .5s var(--ease-out-expo) .15s backwards}
+    .head-sub{animation:fadeSlideUp .5s var(--ease-out-expo) .25s backwards}
+    .maintabs{animation:fadeSlideUp .45s var(--ease-out-expo) .08s backwards}
+    .card{animation:fadeSlideUp .42s var(--ease-out-expo) backwards}
+    #sec-enviar > .card:nth-child(1){animation-delay:.05s}
+    #sec-enviar > .card:nth-child(2){animation-delay:.10s}
+    #sec-enviar > .card:nth-child(3){animation-delay:.15s}
+    #sec-enviar > .card:nth-child(4){animation-delay:.20s}
+    #sec-enviar > .card:nth-child(5){animation-delay:.25s}
+    #sec-enviar > .card:nth-child(6){animation-delay:.30s}
+    .maintab.active{animation:scaleInSoft .35s var(--ease-spring) backwards}
+    #sec-consultar .tab.active{animation:scaleInSoft .25s var(--ease-spring) backwards}
+    .tablewrap,#resumo,#progressWrap{animation:fadeSlideUp .4s var(--ease-out-expo) backwards}
+    #doneMsg{animation:fadeSlideUp .4s var(--ease-out-expo) backwards,pulseGlow 2.2s ease-in-out 2}
+    tbody tr{animation:fadeSlideUp .35s var(--ease-out-expo) backwards}
+    #sec-consultar .item{animation:fadeSlideUp .45s var(--ease-out-expo) backwards}
+    #sec-consultar .summary{animation:fadeSlideUp .4s var(--ease-out-expo) backwards}
+    #sec-consultar .frow{animation:fadeSlideUp .3s var(--ease-out-expo) backwards}
+    .empty,.rowsel.on{animation:fadeSlideUp .3s var(--ease-out-expo) backwards}
+
+    /* overlays / modais */
+    .overlay,.vmodal,.lightbox{animation:fadeIn .3s var(--ease-smooth)}
+    .modal,.vmodal-card,.loadbox{animation:scaleIn .4s var(--ease-spring)}
+    .lightbox img{animation:scaleInSoft .35s var(--ease-spring)}
+
+    /* cartões / chips */
+    .ocard{animation:popIn .45s var(--ease-spring) backwards}
+    .chip.on,#sec-consultar .mchip{animation:popIn .35s var(--ease-spring) backwards}
+    .okcheck{animation:popIn .5s var(--ease-spring),pulseGlow 2s ease-in-out 1s 2}
+
+    /* micro-interações */
+    .pastezone{animation:borderPulse 2.4s var(--ease-smooth) .5s 1 backwards}
+    .pastezone:hover,.pastezone:focus,.pastezone.drag{animation:none}
+    .info.erro{animation:shake .5s var(--ease-smooth),fadeSlideUp .4s var(--ease-out-expo) backwards}
+    .badge.up{animation:floatBadge 2s ease-in-out infinite}
+    .badge{transition:transform .2s var(--ease-spring),box-shadow .2s var(--ease-smooth)}
+    .badge:hover{transform:scale(1.08)}
+    .xbtn{transition:transform .2s var(--ease-spring),color .2s,background .2s}
+    .xbtn:hover{transform:rotate(90deg) scale(1.1)}
+
+    /* troca de tema suave (só onde não há transição própria) */
+    *{transition:background-color .35s var(--ease-smooth),color .25s var(--ease-smooth),border-color .35s var(--ease-smooth)}
+
+    @media (prefers-reduced-motion: reduce){
+      *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;animation-delay:0!important}
     }
 
-    /* ====== HIDDEN SEMPRE POR ÚLTIMO ====== */
+    /* ripple nos botões (feedback tátil) */
+    .btn{position:relative;overflow:hidden}
+    .btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);transform:scale(0);animation:ripple .6s var(--ease-smooth);pointer-events:none}
+    .btn.ghost .ripple,.btn.onband .ripple{background:rgba(255,110,0,.22)}
+    @keyframes ripple{to{transform:scale(2.6);opacity:0}}
+    /* crossfade ao trocar de aba */
+    @keyframes tabSwap{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    /* check de conclusão que se desenha */
+    .okcheck-svg{width:32px;height:32px;display:block}
+    .okcheck-path{fill:none;stroke:currentColor;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:drawCheck .5s var(--ease-out-expo) .3s forwards}
+    @keyframes drawCheck{to{stroke-dashoffset:0}}
     [hidden]{display:none!important}
   </style>
-<base target="_blank">
 </head>
 <body>
-  <div class="orbs"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
+  
+  <div class="orbs" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
   <div class="wrap">
     <header>
-      <div class="head-title">
-        <h1><img class="mascote" src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote On Time"> Comprovantes de Pedágio</h1>
-        <p>Envie os comprovantes do período e consulte os que já estão no Drive.</p>
+      <div class="head-brand">
+        <span class="mascwrap"><img class="mascote" src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote On Time"></span>
+        <div class="head-title">
+          <p class="head-eyebrow">Controladoria On Time</p>
+          <h1>Comprovantes de Pedágio</h1>
+          <p class="head-sub">Envie os comprovantes do período e consulte os que já estão no Drive.</p>
+        </div>
       </div>
       <div class="head-actions">
         <a class="btn onband sm" id="btnVoltarHub" href="../index.html" style="display:none">← Voltar ao hub</a>
@@ -688,24 +340,25 @@
     </header>
 
     <div class="maintabs">
-      <button class="maintab active" type="button" data-sec="enviar">📤 Enviar comprovantes</button>
-      <button class="maintab" type="button" data-sec="consultar">🔎 Consultar no Drive</button>
+      <button class="maintab active" type="button" data-sec="enviar"><span class="mt-ico">📤</span> Enviar comprovantes</button>
+      <button class="maintab" type="button" data-sec="consultar"><span class="mt-ico">🔎</span> Consultar no Drive</button>
     </div>
 
     <section id="sec-enviar">
 
-
-    <!-- 1. Período -->
-    <section class="card">
-      <p class="step">1 · Período (quinzena)</p>
-      <div class="row">
-        <div class="fld">
-          <label class="lbl" for="ano">Ano</label>
-          <select id="ano"></select>
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">1</span>
+          <p class="step">Período · quinzena</p>
         </div>
-        <div class="fld">
-          <label class="lbl" for="mes">Mês</label>
-          <select id="mes">
+        <div class="row">
+          <div class="fld">
+            <label class="lbl" for="ano">Ano</label>
+            <select id="ano"></select>
+          </div>
+          <div class="fld">
+            <label class="lbl" for="mes">Mês</label>
+            <select id="mes">
             <option value="01">Janeiro</option><option value="02">Fevereiro</option>
             <option value="03">Março</option><option value="04">Abril</option>
             <option value="05">Maio</option><option value="06">Junho</option>
@@ -713,123 +366,130 @@
             <option value="09">Setembro</option><option value="10">Outubro</option>
             <option value="11">Novembro</option><option value="12">Dezembro</option>
           </select>
+          </div>
+          <div class="fld">
+            <label class="lbl" for="quinzena">Quinzena</label>
+            <select id="quinzena">
+              <option value="1">1ª quinzena</option>
+              <option value="2">2ª quinzena</option>
+            </select>
+          </div>
         </div>
-        <div class="fld">
-          <label class="lbl" for="quinzena">Quinzena</label>
-          <select id="quinzena">
-            <option value="1">1ª quinzena</option>
-            <option value="2">2ª quinzena</option>
-          </select>
+        <p class="hint">Os comprovantes vão pra uma subpasta com esse nome (ex.: <b id="folderEx">2026-03 - 1ª quinzena</b>).</p>
+      </section>
+
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">2</span>
+          <p class="step">Planilha preenchida</p>
+          <button class="clearbtn" id="limpaPlan" type="button" title="Limpar só a planilha (mantém os comprovantes)">Limpar</button>
         </div>
-      </div>
-      <p class="hint">Os comprovantes vão pra uma subpasta com esse nome (ex.: <b id="folderEx">2026-03 - 1ª quinzena</b>).</p>
+        <div class="pastezone" id="planZone" tabindex="0">
+          <span class="pz-ico">📄</span>
+          <span class="pz-main">Arraste a planilha aqui ou clique pra escolher (.xlsx)</span>
+          <span class="sub">No celular, toque pra escolher do arquivo.</span>
+          <input type="file" id="inPlan" accept=".xlsx,.xls" hidden="">
+        </div>
+        <div id="planInfo" class="info" hidden=""></div>
+        <p class="hint">Pode subir o <b>modelo pronto</b> (com as colunas ID ROTA e LINK) ou a <b>planilha de custos</b> que tenha a aba "Validação" — nesse caso o modelo é gerado sozinho, só com as rotas que têm pedágio.</p>
+      </section>
+
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">3</span>
+          <p class="step">Comprovantes com ID no nome do arquivo</p>
+          <button class="clearbtn" id="limpaImgs" type="button" title="Limpar só as imagens deste passo">Limpar</button>
+        </div>
+        <div class="pastezone" id="imgsZone" tabindex="0">
+          <span class="pz-ico">🖼️</span>
+          <span class="pz-main">Arraste as imagens aqui ou clique pra escolher (em lote)</span>
+          <span class="sub">Aceita várias de uma vez — imagens ou PDF.</span>
+          <input type="file" id="inImgs" accept="image/*,application/pdf" multiple="" hidden="">
+        </div>
+        <p class="hint">Cada arquivo nomeado com o <b>ID da rota</b> (ex.: <b>347222331.jpg</b>). Pode juntar vários pedágios numa imagem só.</p>
+        <div id="resumo" hidden=""></div>
+      </section>
+
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">4</span>
+          <p class="step">Comprovante sem ID? Associe aqui</p>
+          <button class="clearbtn" id="limpaOrf" type="button" title="Limpar as imagens coladas/arrastadas aqui">Limpar</button>
+        </div>
+        <div class="pastezone" id="pasteZone" tabindex="0">
+          <span class="pz-ico">📋</span>
+          <span class="pz-main">Clique aqui e cole (Ctrl+V) a imagem copiada do WhatsApp</span>
+          <span class="sub">…ou arraste arquivos pra cá. No celular, toque pra escolher da galeria.</span>
+          <input type="file" id="inOrphan" accept="image/*,application/pdf" multiple="" hidden="">
+        </div>
+        <p class="hint">Cada imagem vira um cartão abaixo. Clique em <b>Associar</b>, filtre pelo motorista e marque a(s) rota(s) dela — o mesmo comprovante pode valer pra mais de uma rota. Imagens do passo 3 que não casarem com nenhum ID também caem aqui.</p>
+        <div class="orphans" id="orphans"></div>
+      </section>
+
+      <section class="card" id="previewCard" hidden="">
+        <div class="step-head">
+          <span class="step-no step-no-soft">✓</span>
+          <p class="step">Conferência</p>
+        </div>
+        <label class="toggle"><input type="checkbox" id="soPend"> Mostrar só as rotas sem comprovante</label>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Data</th><th>ID rota</th><th>Motorista</th><th>Valor</th><th>Status</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">5</span>
+          <p class="step">Enviar e baixar</p>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="btnEnviar" disabled="">Enviar comprovantes</button>
+          <button class="btn ghost" id="btnBaixar" disabled="">Baixar planilha preenchida</button>
+        </div>
+        <div id="progressWrap" hidden="">
+          <div class="bar-bg"><div id="bar"></div></div>
+          <div id="progTxt"></div>
+        </div>
+        <div id="doneMsg" hidden=""></div>
+      </section>
     </section>
 
-    <!-- 2. Planilha -->
-    <section class="card">
-      <div class="card-head">
-        <p class="step">2 · Planilha preenchida</p>
-        <button class="clearbtn" id="limpaPlan" type="button" title="Limpar só a planilha (mantém os comprovantes)">🧹 Limpar</button>
-      </div>
-      <div class="pastezone" id="planZone" tabindex="0">
-        📄 Arraste a planilha aqui ou clique pra escolher (.xlsx)
-        <span class="sub">No celular, toque pra escolher do arquivo.</span>
-        <input type="file" id="inPlan" accept=".xlsx,.xls" hidden>
-      </div>
-      <div id="planInfo" class="info" hidden></div>
-      <p class="hint">Pode subir o <b>modelo pronto</b> (com as colunas ID ROTA e LINK) ou a <b>planilha de custos</b> que tenha a aba "Validação" — nesse caso o modelo é gerado sozinho, só com as rotas que têm pedágio.</p>
-    </section>
-
-    <!-- 3. Imagens -->
-    <section class="card">
-      <div class="card-head">
-        <p class="step">3 · Comprovantes com ID no nome do arquivo</p>
-        <button class="clearbtn" id="limpaImgs" type="button" title="Limpar só as imagens deste passo">🧹 Limpar</button>
-      </div>
-      <div class="pastezone" id="imgsZone" tabindex="0">
-        🖼️ Arraste as imagens aqui ou clique pra escolher (em lote)
-        <span class="sub">Aceita várias de uma vez — imagens ou PDF.</span>
-        <input type="file" id="inImgs" accept="image/*,application/pdf" multiple hidden>
-      </div>
-      <p class="hint">Cada arquivo nomeado com o <b>ID da rota</b> (ex.: <b>347222331.jpg</b>). Pode juntar vários pedágios numa imagem só.</p>
-      <div id="resumo" hidden></div>
-    </section>
-
-    <!-- 4. Sem ID -->
-    <section class="card">
-      <div class="card-head">
-        <p class="step">4 · Comprovante sem ID? Associe aqui</p>
-        <button class="clearbtn" id="limpaOrf" type="button" title="Limpar as imagens coladas/arrastadas aqui">🧹 Limpar</button>
-      </div>
-      <div class="pastezone" id="pasteZone" tabindex="0">
-        📋 Clique aqui e cole (Ctrl+V) a imagem copiada do WhatsApp
-        <span class="sub">…ou arraste arquivos pra cá. No celular, toque pra escolher da galeria.</span>
-        <input type="file" id="inOrphan" accept="image/*,application/pdf" multiple hidden>
-      </div>
-      <p class="hint">Cada imagem vira um cartão abaixo. Clique em <b>Associar</b>, filtre pelo motorista e marque a(s) rota(s) dela — o mesmo comprovante pode valer pra mais de uma rota. Imagens do passo 3 que não casarem com nenhum ID também caem aqui.</p>
-      <div class="orphans" id="orphans"></div>
-    </section>
-
-    <!-- Preview -->
-    <section class="card" id="previewCard" hidden>
-      <p class="step">Conferência</p>
-      <label class="toggle"><input type="checkbox" id="soPend"> Mostrar só as rotas sem comprovante</label>
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th>Data</th><th>ID rota</th><th>Motorista</th><th>Valor</th><th>Status</th></tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Enviar / baixar -->
-    <section class="card">
-      <p class="step">5 · Enviar e baixar</p>
-      <div class="actions">
-        <button class="btn primary" id="btnEnviar" disabled>Enviar comprovantes</button>
-        <button class="btn ghost" id="btnBaixar" disabled>Baixar planilha preenchida</button>
-      </div>
-      <div id="progressWrap" hidden>
-        <div class="bar-bg"><div id="bar"></div></div>
-        <div id="progTxt"></div>
-      </div>
-      <div id="doneMsg" hidden></div>
-    </section>
-    </section>
-
-    <section id="sec-consultar" hidden>
+    <section id="sec-consultar" hidden="">
       <div class="tabs">
-    <button class="tab active" id="tabBuscar" type="button">Buscar por ID</button>
-    <button class="tab" id="tabConferir" type="button">Conferir vários IDs</button>
-  </div>
+        <button class="tab active" id="tabBuscar" type="button">Buscar por ID</button>
+        <button class="tab" id="tabConferir" type="button">Conferir vários IDs</button>
+      </div>
 
-  <section class="card" id="cardBuscar">
-    <span class="lbl">Buscar pelo ID da rota</span>
-    <div class="searchrow">
-      <input id="q" type="text" placeholder="Digite o ID (ex.: 347222331)" autocomplete="off" inputmode="search">
-      <button class="btn primary" id="btnBuscar" type="button">Buscar</button>
-    </div>
-  </section>
+      <section class="card" id="cardBuscar">
+        <span class="lbl">Buscar pelo ID da rota</span>
+        <div class="searchrow">
+          <input id="q" type="text" placeholder="Digite o ID (ex.: 347222331)" autocomplete="off" inputmode="search">
+          <button class="btn primary" id="btnBuscar" type="button">Buscar</button>
+        </div>
+      </section>
 
-  <section class="card" id="cardConferir" hidden>
-    <span class="lbl">Cole os IDs (um por linha, vírgula ou espaço)</span>
-    <textarea id="idsInput" rows="6" placeholder="347222331
+      <section class="card" id="cardConferir" hidden="">
+        <span class="lbl">Cole os IDs (um por linha, vírgula ou espaço)</span>
+        <textarea id="idsInput" rows="6" placeholder="347222331
 347222418
 347223005"></textarea>
-    <div class="confrow">
-      <button class="btn primary" id="btnConferir" type="button">Conferir</button>
-      <button class="btn ghost" id="btnLimparConf" type="button">Limpar</button>
-    </div>
-  </section>
+        <div class="confrow">
+          <button class="btn primary" id="btnConferir" type="button">Conferir</button>
+          <button class="btn ghost" id="btnLimparConf" type="button">Limpar</button>
+        </div>
+      </section>
 
-  <div id="status" class="status" hidden></div>
-  <div id="results"></div>
+      <div id="status" class="status" hidden=""></div>
+      <div id="results"></div>
     </section>
   </div>
 
   <!-- ===== overlays do envio ===== -->
   <!-- Modal: associar comprovante às rotas -->
-  <div class="overlay" id="assocOverlay" hidden>
+  <div class="overlay" id="assocOverlay" hidden="">
     <div class="modal">
       <div class="mhead">
         <h2>Associar comprovante às rotas</h2>
@@ -838,7 +498,7 @@
       <div class="mbody">
         <div class="mimg">
           <img id="assocImg" alt="comprovante">
-          <div id="assocPdf" class="thumb pdfth" style="height:180px;border:1px solid var(--line);border-radius:10px" hidden>📄 PDF</div>
+          <div id="assocPdf" class="thumb pdfth" style="height:180px;border:1px solid var(--line);border-radius:10px" hidden="">📄 PDF</div>
           <p class="hint">Clique na imagem pra ampliar. Compare a <b>data</b> e o <b>valor</b> do comprovante com as rotas ao lado.</p>
         </div>
         <div class="mlist">
@@ -871,10 +531,10 @@
   </div>
 
   <!-- Lightbox -->
-  <div class="lightbox" id="lightbox" hidden><img id="lightboxImg" alt=""></div>
+  <div class="lightbox" id="lightbox" hidden=""><img id="lightboxImg" alt=""></div>
 
   <!-- Tela de carregamento / conclusão do envio -->
-  <div class="overlay" id="sendOverlay" hidden>
+  <div class="overlay" id="sendOverlay" hidden="">
     <div class="loadbox">
       <!-- estado: enviando -->
       <div id="sendingState">
@@ -885,19 +545,19 @@
         <p class="loadhint">Não feche esta aba até terminar.</p>
       </div>
       <!-- estado: enviado (precisa baixar) -->
-      <div id="doneState" hidden>
-        <div class="okcheck">✓</div>
+      <div id="doneState" hidden="">
+        <div class="okcheck"><svg class="okcheck-svg" viewBox="0 0 52 52" aria-hidden="true"><path class="okcheck-path" d="M14 27l8 8 16-18"/></svg></div>
         <p class="loadtitle" id="doneTitle">Comprovantes enviados!</p>
         <p class="donewarn" id="doneWarn">Agora baixe a planilha — é nela que ficam todos os links. Os comprovantes vão pra uma pasta que você não acessa, então sem a planilha você perde os links.</p>
         <button class="btn primary big" id="btnBaixarOverlay" type="button">Baixar planilha</button>
-        <button class="btn ghost" id="btnFecharOverlay" type="button" hidden>Fechar</button>
+        <button class="btn ghost" id="btnFecharOverlay" type="button" hidden="">Fechar</button>
         <p class="loadhint" id="doneHint">Esta tela fica aqui até você baixar a planilha.</p>
       </div>
     </div>
   </div>
 
   <!-- ===== visualizador da consulta ===== -->
-  <div class="vmodal" id="modal" hidden>
+  <div class="vmodal" id="modal" hidden="">
     <div class="vmodal-card">
       <div class="vmodal-head">
         <span class="vmodal-title" id="modalTitle">Comprovante</span>
@@ -915,13 +575,37 @@
   (function(){
     var tabs = document.querySelectorAll('.maintab');
     function show(sec){
-      document.getElementById('sec-enviar').hidden    = (sec !== 'enviar');
-      document.getElementById('sec-consultar').hidden = (sec !== 'consultar');
+      var enviar = document.getElementById('sec-enviar');
+      var consultar = document.getElementById('sec-consultar');
+      enviar.hidden    = (sec !== 'enviar');
+      consultar.hidden = (sec !== 'consultar');
+      var alvo = (sec === 'consultar') ? consultar : enviar;   // crossfade da seção que entra
+      alvo.style.animation = 'none'; void alvo.offsetWidth;
+      alvo.style.animation = 'tabSwap .34s var(--ease-out-expo)';
       for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle('active', tabs[i].dataset.sec === sec);
     }
     for(var i=0;i<tabs.length;i++){
       tabs[i].addEventListener('click', (function(t){ return function(){ show(t.dataset.sec); }; })(tabs[i]));
     }
+    // a cascata de entrada dos cards roda só uma vez (não repete ao trocar de aba)
+    window.addEventListener('load', function(){
+      setTimeout(function(){
+        var cs = document.querySelectorAll('.card');
+        for(var i=0;i<cs.length;i++) cs[i].style.animation = 'none';
+      }, 1300);
+    });
+    // ripple ao clicar em qualquer botão
+    document.addEventListener('click', function(e){
+      var t = e.target, b = (t && t.closest) ? t.closest('.btn') : null;
+      if(!b) return;
+      var rect = b.getBoundingClientRect(), d = Math.max(rect.width, rect.height);
+      var s = document.createElement('span'); s.className = 'ripple';
+      s.style.width = s.style.height = d + 'px';
+      s.style.left = (e.clientX - rect.left - d/2) + 'px';
+      s.style.top  = (e.clientY - rect.top  - d/2) + 'px';
+      b.appendChild(s);
+      setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); }, 650);
+    }, true);
   })();
   </script>
 
@@ -1088,7 +772,7 @@
 
       // mapa ID Rota -> tipo de veículo (coluna "Perfil" da aba "Base de Custo")
       const veic = {};
-           const nomeBC = workbook.SheetNames.find(n => norm(n) === 'base de custo');
+      const nomeBC = workbook.SheetNames.find(n => norm(n) === 'base de custo');
       if(nomeBC){
         const aoaB = XLSX.utils.sheet_to_json(workbook.Sheets[nomeBC], { header:1, defval:'' });
         const hrB = acharCabecalho(aoaB, [['ID Rota'], ['Perfil']]);
@@ -1102,7 +786,7 @@
         }
       }
 
-      const head = ['ID ROTA','DATA','SVC','PLACA','VEICULO','MOTORISTA','LINK','VALOR'];
+      const head = ['DATA','ID ROTA','SVC','PLACA','VEICULO','MOTORISTA','LINK','VALOR'];
       const linhas = [head];
       const cont = {};
       for(let i = hrV + 1; i < aoaV.length; i++){
@@ -1113,8 +797,8 @@
         const validador = cVal >= 0 ? String(row[cVal] == null ? '' : row[cVal]).trim() : '';
         if(validador) cont[validador] = (cont[validador] || 0) + 1;
         linhas.push([
-          id,
           cDat >= 0 ? row[cDat] : '',                  // serial de data (numérico)
+          id,
           cSvc >= 0 ? String(row[cSvc] == null ? '' : row[cSvc]).trim() : '',
           cPla >= 0 ? String(row[cPla] == null ? '' : row[cPla]).trim() : '',
           veic[id] || '',                              // tipo de veículo
@@ -1129,20 +813,6 @@
       Object.keys(cont).forEach(k => { if(cont[k] > max){ max = cont[k]; validador = k; } });
 
       const wsGen = XLSX.utils.aoa_to_sheet(linhas);
-      wsGen['!cols'] = [
-        { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
-        { wch: 14 }, { wch: 22 }, { wch: 50 }, { wch: 12 }
-      ];
-      const headerStyle = {
-        fill: { fgColor: { rgb: '3C003C' }, patternType: 'solid' },
-        font: { color: { rgb: 'FFFFFF' }, bold: true },
-        alignment: { horizontal: 'center', vertical: 'center' }
-      };
-      for(let c = 0; c < head.length; c++){
-        const addr = XLSX.utils.encode_cell({ r: 0, c: c });
-        if(!wsGen[addr]) wsGen[addr] = { t: 's', v: head[c] };
-        wsGen[addr].s = headerStyle;
-      }
       const nwb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(nwb, wsGen, 'Pedágios');
       return { wb: nwb, validador: validador, count: linhas.length - 1 };
@@ -1156,7 +826,7 @@
       const reader = new FileReader();
       reader.onload = (ev) => {
         try{
-          wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array', cellStyles: true });
+          wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
 
           // Detecta a planilha de validação e gera o modelo de pedágios automaticamente;
           // se não tiver a aba "Validação", trata o arquivo como modelo pronto (igual antes).
@@ -1177,6 +847,7 @@
           colId = header.indexOf('ID ROTA'); colLink = header.indexOf('LINK');
           colMot = header.indexOf('MOTORISTA'); colValor = header.indexOf('VALOR');
           colData = header.indexOf('DATA'); colSvc = header.indexOf('SVC');
+          const colPlaca = header.indexOf('PLACA'), colVeiculo = header.indexOf('VEICULO');
           if(colId < 0 || colLink < 0){ setPlanInfo('erro', 'Não encontrei as colunas "ID ROTA" e "LINK" na planilha.'); rows = []; return; }
           rows = [];
           for(let i = 1; i < aoa.length; i++){
@@ -1187,7 +858,10 @@
               mot:   colMot   >= 0 ? String(aoa[i][colMot]).trim()  : '',
               svc:   colSvc   >= 0 ? String(aoa[i][colSvc]).trim()  : '',
               dataRaw: colData >= 0 ? aoa[i][colData] : '',
+              placa:   colPlaca   >= 0 ? String(aoa[i][colPlaca]).trim()   : '',
+              veiculo: colVeiculo >= 0 ? String(aoa[i][colVeiculo]).trim() : '',
               valor: colValor >= 0 ? aoa[i][colValor] : '',
+              link:    String(colLink >= 0 && aoa[i][colLink] != null ? aoa[i][colLink] : '').trim(),
               temLink: String(colLink >= 0 ? aoa[i][colLink] : '').trim() !== '',
               enviado: false
             });
@@ -1306,7 +980,7 @@
         const pend = !temImg && !temMan && !r.temLink && !r.enviado;
         if(soP && !pend) return;
         const tr = document.createElement('tr'); tr.id = 'row-' + r.id;
-        tr.style.animationDelay = (idx * 0.03) + 's';
+        tr.style.animationDelay = (Math.min(idx,14) * 0.03) + 's';
         let st;
         if(r.enviado)      st = '<span class="badge done">enviado ✓</span>';
         else if(temImg)    st = '<span class="badge ok">imagem pronta</span>';
@@ -1421,7 +1095,7 @@
           if(resp && resp.ok){
             ensureRef(ws, r.r, colLink);
             ws[XLSX.utils.encode_cell({ r:r.r, c:colLink })] = { t:'s', v:resp.url, l:{ Target:resp.url } };
-            r.temLink = true; r.enviado = true;
+            r.temLink = true; r.enviado = true; r.link = resp.url;
             ok++; setStatus(r.id, '<span class="badge done">enviado ✓</span>');
           }else{
             erros++;
@@ -1466,59 +1140,62 @@
       });
     }
 
-    // Reaplica os formatos que se perdem ao gerar o arquivo:
-    // DATA -> dd/mm/aaaa, VALOR -> R$, e todo LINK (novo ou já existente) vira clicável.
-    function reaplicarFormatos(){
-      if(!ws || !rows.length) return;
-      rows.forEach(r => {
-        if(colData >= 0){
-          const a = ws[XLSX.utils.encode_cell({ r:r.r, c:colData })];
-          if(a && a.t === 'n') a.z = 'dd/mm/yyyy';
+    // ---- baixar: monta a planilha final SEMPRE com a mesma ordem de colunas e o cabeçalho azul ----
+    const COLS_SAIDA = ['ID ROTA','DATA','SVC','PLACA','VEICULO','MOTORISTA','LINK','VALOR'];
+    function borda(){ const l = { style:'thin', color:{ rgb:'D9D9D9' } }; return { top:l, bottom:l, left:l, right:l }; }
+    function largurasSaida(aoa){
+      return COLS_SAIDA.map((_, c) => {
+        let max = String(COLS_SAIDA[c]).length;
+        for(let i = 1; i < aoa.length; i++){
+          let v = aoa[i][c];
+          if(c === 1 && typeof v === 'number') v = '00/00/0000';
+          if(c === 7 && typeof v === 'number') v = 'R$ ' + Number(v).toFixed(2);
+          const len = String(v == null ? '' : v).length;
+          if(len > max) max = len;
         }
-        if(colValor >= 0){
-          const h = ws[XLSX.utils.encode_cell({ r:r.r, c:colValor })];
-          if(h && h.t === 'n') h.z = '"R$" #,##0.00';
-        }
-        if(colLink >= 0){
-          const addr = XLSX.utils.encode_cell({ r:r.r, c:colLink });
-          const g = ws[addr];
-          if(g && typeof g.v === 'string' && /^https?:\/\//i.test(g.v)){
-            ws[addr] = { t:'s', v:g.v, l:{ Target:g.v } };
-          }
-        }
+        let w = max + 2;
+        if(c === 6) w = Math.min(w, 46);              // LINK não fica largo demais
+        return { wch: Math.min(Math.max(w, 8), 46) };
       });
     }
+    function montarPlanilhaSaida(){
+      const aoa = [COLS_SAIDA.slice()];
+      rows.forEach(r => {
+        aoa.push([ r.id, r.dataRaw, r.svc || '', r.placa || '', r.veiculo || '', r.mot || '',
+                   r.link || '', (r.valor === '' || r.valor == null) ? '' : r.valor ]);
+      });
+      const ws2 = XLSX.utils.aoa_to_sheet(aoa);
 
-    // ---- baixar ----
+      // cabeçalho azul com letra branca
+      const azul = { fill:{ patternType:'solid', fgColor:{ rgb:'1F4E79' } },
+                     font:{ color:{ rgb:'FFFFFF' }, bold:true, sz:11 },
+                     alignment:{ horizontal:'center', vertical:'center', wrapText:true }, border:borda() };
+      for(let c = 0; c < COLS_SAIDA.length; c++){
+        const a = XLSX.utils.encode_cell({ r:0, c }); if(ws2[a]) ws2[a].s = azul;
+      }
+      // corpo: alinhamento, bordas, formatos de data/valor e link clicável
+      const alinha = ['left','center','center','center','center','left','left','right'];
+      for(let i = 0; i < rows.length; i++){
+        for(let c = 0; c < COLS_SAIDA.length; c++){
+          const a = XLSX.utils.encode_cell({ r:i+1, c }); const cel = ws2[a]; if(!cel) continue;
+          cel.s = { alignment:{ horizontal:alinha[c], vertical:'center' }, border:borda() };
+          if(c === 1 && cel.t === 'n') cel.z = 'dd/mm/yyyy';
+          if(c === 7 && cel.t === 'n') cel.z = '"R$" #,##0.00';
+          if(c === 6 && typeof cel.v === 'string' && /^https?:\/\//i.test(cel.v)){
+            cel.l = { Target: cel.v };
+            cel.s.font = { color:{ rgb:'0563C1' }, underline:true };
+          }
+        }
+      }
+      ws2['!cols'] = largurasSaida(aoa);
+      ws2['!rows'] = aoa.map((_, i) => ({ hpt: i === 0 ? 24 : 18 }));
+      const wb2 = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb2, ws2, 'Pedágios');
+      return wb2;
+    }
     function baixarPlanilha(){
-      if(!wb) return;
-      reaplicarFormatos();
-
-      // Manter apenas a aba de Pedágios (remove abas extras da planilha de custos)
-      wb.SheetNames = [sheetName];
-      wb.Sheets = { [sheetName]: ws };
-
-      // Larguras das colunas
-      if(!ws['!cols']){
-        ws['!cols'] = [
-          { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
-          { wch: 14 }, { wch: 22 }, { wch: 50 }, { wch: 12 }
-        ];
-      }
-
-      // Estilo roxo no cabeçalho (linha 0)
-      const headerStyle = {
-        fill: { fgColor: { rgb: '3C003C' }, patternType: 'solid' },
-        font: { color: { rgb: 'FFFFFF' }, bold: true },
-        alignment: { horizontal: 'center', vertical: 'center' }
-      };
-      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-      for(let c = range.s.c; c <= range.e.c; c++){
-        const addr = XLSX.utils.encode_cell({ r: 0, c: c });
-        if(ws[addr]) ws[addr].s = headerStyle;
-      }
-
-      const out = XLSX.write(wb, { bookType:'xlsx', type:'array', cellStyles: true });
+      if(!rows.length) return;
+      const out = XLSX.write(montarPlanilhaSaida(), { bookType:'xlsx', type:'array' });
       const blob = new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -1591,7 +1268,7 @@
       const box = $('orphans'); box.innerHTML = '';
       orphans.forEach((o, idx) => {
         const card = document.createElement('div'); card.className = 'ocard';
-        card.style.animationDelay = (idx * 0.06) + 's';
+        card.style.animationDelay = (Math.min(idx,10) * 0.05) + 's';
         let visual;
         if(ehPdf(o)){
           visual = document.createElement('div'); visual.className = 'thumb pdfth'; visual.textContent = '📄 PDF';
@@ -1731,13 +1408,23 @@
 
   function setStatus(txt){ const s = $('status'); if(txt){ s.textContent = txt; s.hidden = false; } else { s.hidden = true; } }
   function loading(){ $('results').innerHTML = '<div class="spinner"></div>'; }
+  function countUp(el, to, dur){
+    to = Number(to) || 0; dur = dur || 650;
+    if(to <= 0){ el.textContent = '0'; return; }
+    var t0 = performance.now();
+    (function tick(now){
+      var p = Math.min((now - t0) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(e * to);
+      if(p < 1) requestAnimationFrame(tick); else el.textContent = to;
+    })(t0);
+  }
 
   function render(lista){
     if(!lista || !lista.length){ $('results').innerHTML = '<div class="empty">Nenhum comprovante encontrado.</div>'; return; }
     const html = lista.map((c, idx) => {
       const id = esc(c.id), base = esc(c.base), qz = esc(c.quinzena);
       const icone = /pdf/i.test(c.mime) ? '📄' : '🖼️';
-      return '<div class="item" style="animation-delay:' + (idx * 0.05) + 's">' +
+      return '<div class="item" style="animation-delay:' + (Math.min(idx,14) * 0.04) + 's">' +
         '<div class="vthumb" data-fileid="' + id + '" data-nome="' + base + '" onclick="verArquivo(this.dataset.fileid, this.dataset.nome)">' +
           '<img class="tmb" alt="" style="display:none">' +
           '<span class="ico" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center">' + icone + '</span>' +
@@ -1845,18 +1532,18 @@
     const enc = res.encontrados || [], falt = res.faltando || [], tot = res.total || 0;
     setStatus('');
     let html = '<div class="summary ' + (falt.length ? 'warn' : 'ok') + '">' +
-      enc.length + ' de ' + tot + ' encontrados · ' + falt.length + ' faltando</div>';
+      '<span class="cu" data-to="' + enc.length + '">0</span> de <span class="cu" data-to="' + tot + '">0</span> encontrados · <span class="cu" data-to="' + falt.length + '">0</span> faltando</div>';
 
     if(falt.length){
       html += '<div class="card"><div class="block-head"><span class="t">Faltando no Drive (' + falt.length + ')</span>' +
         '<button class="btn ghost sm" id="btnCopiarFalt" type="button">Copiar faltantes</button></div>' +
-        '<div class="chips">' + falt.map((id, idx) => '<span class="mchip" style="animation-delay:' + (idx * 0.03) + 's">' + esc(id) + '</span>').join('') + '</div></div>';
+        '<div class="chips">' + falt.map((id, idx) => '<span class="mchip" style="animation-delay:' + (Math.min(idx,20) * 0.02) + 's">' + esc(id) + '</span>').join('') + '</div></div>';
     }
     if(enc.length){
       const rows = enc.map((item, idx) => {
         const h = item.hits[0];
         const extra = item.hits.length > 1 ? ' (em ' + item.hits.length + ' quinzenas)' : '';
-        return '<div class="frow" style="animation-delay:' + (idx * 0.04) + 's"><span class="fid">' + esc(item.id) + '</span>' +
+        return '<div class="frow" style="animation-delay:' + (Math.min(idx,14) * 0.03) + 's"><span class="fid">' + esc(item.id) + '</span>' +
           '<span class="fqz">' + esc(h.quinzena) + extra + '</span>' +
           '<button class="linkver" type="button" data-fileid="' + esc(h.fileId) + '" data-nome="' + esc(item.id) + '" onclick="verArquivo(this.dataset.fileid, this.dataset.nome)">Ver ›</button></div>';
       }).join('');
@@ -1864,6 +1551,7 @@
         '<div class="frows">' + rows + '</div></div>';
     }
     $('results').innerHTML = html;
+    $('results').querySelectorAll('.cu').forEach(function(el){ countUp(el, el.dataset.to); });
 
     const cb = $('btnCopiarFalt');
     if(cb) cb.addEventListener('click', () => copiar(falt.join('\n'), cb));
@@ -1878,7 +1566,7 @@
     const ta = document.createElement('textarea'); ta.value = txt;
     ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.focus(); ta.select();
     try { document.execCommand('copy'); ok(); } catch(e){}
-n    ta.remove();
+    ta.remove();
   }
   $('btnConferir').addEventListener('click', conferir);
   $('btnLimparConf').addEventListener('click', () => { $('idsInput').value = ''; $('results').innerHTML = ''; setStatus(''); $('idsInput').focus(); });
@@ -1934,5 +1622,5 @@ n    ta.remove();
     HubLink.init();
   })();
   </script>
-</body>
-</html>
+
+</body></html>
