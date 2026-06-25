@@ -1102,7 +1102,7 @@
         }
       }
 
-      const head = ['Validador','DATA','ID ROTA','SVC','PLACA','VEICULO','MOTORISTA','LINK','VALOR'];
+      const head = ['ID ROTA','DATA','SVC','PLACA','VEICULO','MOTORISTA','LINK','VALOR'];
       const linhas = [head];
       const cont = {};
       for(let i = hrV + 1; i < aoaV.length; i++){
@@ -1113,9 +1113,8 @@
         const validador = cVal >= 0 ? String(row[cVal] == null ? '' : row[cVal]).trim() : '';
         if(validador) cont[validador] = (cont[validador] || 0) + 1;
         linhas.push([
-          validador,
-          cDat >= 0 ? row[cDat] : '',                  // serial de data (numérico)
           id,
+          cDat >= 0 ? row[cDat] : '',                  // serial de data (numérico)
           cSvc >= 0 ? String(row[cSvc] == null ? '' : row[cSvc]).trim() : '',
           cPla >= 0 ? String(row[cPla] == null ? '' : row[cPla]).trim() : '',
           veic[id] || '',                              // tipo de veículo
