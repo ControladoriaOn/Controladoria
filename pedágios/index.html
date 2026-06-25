@@ -1088,7 +1088,7 @@
 
       // mapa ID Rota -> tipo de veículo (coluna "Perfil" da aba "Base de Custo")
       const veic = {};
-      const nomeBC = workbook.SheetNames.find(n => norm(n) === 'base de custo');
+           const nomeBC = workbook.SheetNames.find(n => norm(n) === 'base de custo');
       if(nomeBC){
         const aoaB = XLSX.utils.sheet_to_json(workbook.Sheets[nomeBC], { header:1, defval:'' });
         const hrB = acharCabecalho(aoaB, [['ID Rota'], ['Perfil']]);
@@ -1129,6 +1129,20 @@
       Object.keys(cont).forEach(k => { if(cont[k] > max){ max = cont[k]; validador = k; } });
 
       const wsGen = XLSX.utils.aoa_to_sheet(linhas);
+      wsGen['!cols'] = [
+        { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+        { wch: 14 }, { wch: 22 }, { wch: 50 }, { wch: 12 }
+      ];
+      const headerStyle = {
+        fill: { fgColor: { rgb: '3C003C' }, patternType: 'solid' },
+        font: { color: { rgb: 'FFFFFF' }, bold: true },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
+      for(let c = 0; c < head.length; c++){
+        const addr = XLSX.utils.encode_cell({ r: 0, c: c });
+        if(!wsGen[addr]) wsGen[addr] = { t: 's', v: head[c] };
+        wsGen[addr].s = headerStyle;
+      }
       const nwb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(nwb, wsGen, 'Pedágios');
       return { wb: nwb, validador: validador, count: linhas.length - 1 };
@@ -1142,7 +1156,7 @@
       const reader = new FileReader();
       reader.onload = (ev) => {
         try{
-          wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
+          wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array', cellStyles: true });
 
           // Detecta a planilha de validação e gera o modelo de pedágios automaticamente;
           // se não tiver a aba "Validação", trata o arquivo como modelo pronto (igual antes).
@@ -1479,7 +1493,32 @@
     function baixarPlanilha(){
       if(!wb) return;
       reaplicarFormatos();
-      const out = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+
+      // Manter apenas a aba de Pedágios (remove abas extras da planilha de custos)
+      wb.SheetNames = [sheetName];
+      wb.Sheets = { [sheetName]: ws };
+
+      // Larguras das colunas
+      if(!ws['!cols']){
+        ws['!cols'] = [
+          { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+          { wch: 14 }, { wch: 22 }, { wch: 50 }, { wch: 12 }
+        ];
+      }
+
+      // Estilo roxo no cabeçalho (linha 0)
+      const headerStyle = {
+        fill: { fgColor: { rgb: '3C003C' }, patternType: 'solid' },
+        font: { color: { rgb: 'FFFFFF' }, bold: true },
+        alignment: { horizontal: 'center', vertical: 'center' }
+      };
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for(let c = range.s.c; c <= range.e.c; c++){
+        const addr = XLSX.utils.encode_cell({ r: 0, c: c });
+        if(ws[addr]) ws[addr].s = headerStyle;
+      }
+
+      const out = XLSX.write(wb, { bookType:'xlsx', type:'array', cellStyles: true });
       const blob = new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -1839,7 +1878,7 @@
     const ta = document.createElement('textarea'); ta.value = txt;
     ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.focus(); ta.select();
     try { document.execCommand('copy'); ok(); } catch(e){}
-    ta.remove();
+n    ta.remove();
   }
   $('btnConferir').addEventListener('click', conferir);
   $('btnLimparConf').addEventListener('click', () => { $('idsInput').value = ''; $('results').innerHTML = ''; setStatus(''); $('idsInput').focus(); });
