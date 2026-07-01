@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerador de Ajustes — MODELO 1 & CT2T60</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#eceef1; --bg2:#e3e6ea; --panel:#ffffff; --panel2:#f4f6f8; --line:#d6dbe1;
+    --txt:#1f2733; --mut:#6b7785; --soft:#94a1b0;
+    --acc:#ff6a00; --acc2:#ff8a33; --accd:#e85d00; --acc-bg:#fff1e6;
+    --ok:#1f9d63; --ok-bg:#e6f6ee; --bad:#d93a3a; --bad-bg:#fdecec;
+    --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px}
+  header{padding:20px 28px;background:linear-gradient(100deg,#ffffff 0%,#fbfcfd 60%,#fff5ee 100%);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
+  header h1{margin:0;font-size:19px;font-weight:700;letter-spacing:-.2px}
+  header h1 .o{color:var(--acc)}
+  header p{margin:6px 0 0;color:var(--mut);font-size:13px;max-width:1000px}
+  header .brandbar{height:4px;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:4px;width:64px;margin-bottom:12px}
+  .wrap{padding:24px 28px;max-width:1500px;margin:0 auto}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
+  .card h2{margin:0 0 14px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);display:flex;align-items:center;gap:8px}
+  .card h2::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--acc)}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:5px}
+  .field label{font-size:12px;color:var(--mut);font-weight:600}
+  input[type=text],input[type=number],textarea{background:#fff;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 11px;font-size:13px;transition:.15s}
+  input[type=text]:focus,input[type=number]:focus,textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-bg)}
+  input[type=number]{width:110px}
+  textarea{width:100%;min-height:90px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;resize:vertical}
+  .btn{background:linear-gradient(180deg,var(--acc2),var(--acc));color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:650;cursor:pointer;font-size:13px;box-shadow:0 1px 2px rgba(232,93,0,.25);transition:.15s}
+  .btn:hover{filter:brightness(1.04);transform:translateY(-1px)}
+  .btn.sec{background:#fff;color:var(--accd);border:1px solid var(--acc);box-shadow:none}
+  .btn.sec:hover{background:var(--acc-bg)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .drop{border:2px dashed var(--soft);border-radius:12px;padding:26px;text-align:center;color:var(--mut);cursor:pointer;transition:.15s;background:var(--panel2)}
+  .drop:hover,.drop.drag{border-color:var(--acc);color:var(--txt);background:var(--acc-bg)}
+  .drop b{color:var(--accd)}
+  .tabs{display:flex;gap:8px;margin-bottom:16px}
+  .tab{padding:10px 18px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;cursor:pointer;color:var(--mut);font-weight:650;transition:.15s}
+  .tab:hover{color:var(--txt)}
+  .tab.active{background:linear-gradient(180deg,var(--acc2),var(--acc));color:#fff;border-color:var(--acc);box-shadow:0 2px 6px rgba(232,93,0,.28)}
+  .page{display:none}
+  .page.active{display:block}
+  table{border-collapse:collapse;width:100%;font-size:12px;background:#fff}
+  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;white-space:nowrap}
+  th{background:#fbe9dc;position:sticky;top:0;color:#8a3d00;font-weight:700;border-color:#f0d3bd}
+  tbody tr:nth-child(even){background:var(--panel2)}
+  tbody tr:hover{background:var(--acc-bg)}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .neg{color:var(--bad)} .pos{color:var(--txt)}
+  .tablebox{max-height:460px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)}
+  .valgrid{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+  .valbox{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;min-width:160px;border-left:4px solid var(--acc)}
+  .valbox.bad{border-left-color:var(--bad);background:var(--bad-bg)}
+  .valbox .m{color:var(--mut);font-size:12px;font-weight:600} .valbox .v{font-size:17px;font-weight:750;margin-top:3px;letter-spacing:-.3px}
+  .diag{margin-top:14px;border:1px solid #f3c9c9;background:var(--bad-bg);border-radius:10px;padding:12px 14px}
+  .diag-h{font-weight:700;color:var(--bad);font-size:13px;margin-bottom:6px}
+  .diag-m{font-size:13px;margin-top:8px} .diag ul{margin:4px 0 4px 18px;padding:0} .diag li{font-size:12.5px;margin:3px 0}
+  .muted{color:var(--mut)} .small{font-size:12px}
+  .dlbar{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap;align-items:center}
+  .hide{display:none}
+  details{margin-top:10px} summary{cursor:pointer;color:var(--accd);font-weight:600}
+  code{background:var(--acc-bg);color:var(--accd);padding:1px 6px;border-radius:5px;font-weight:600}
+  ::-webkit-scrollbar{height:11px;width:11px} ::-webkit-scrollbar-thumb{background:#c4ccd5;border-radius:6px;border:2px solid var(--panel)} ::-webkit-scrollbar-thumb:hover{background:var(--acc2)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brandbar"></div>
+  <h1>Gerador de Ajustes Gerenciais <span class="o">→</span> MODELO 1 (Lançamentos) &amp; MODELO 2 (CT2T60)</h1>
+  <p>Carregue ou cole a planilha <b>RESULTADO E AJUSTES</b>. A ferramenta extrai apenas as colunas de <b>AJUSTE</b> de cada mês e monta os dois modelos. Baixe em XLSX ou CSV.</p>
+</header>
+<div class="wrap">
+
+  <div class="card">
+    <h2>1 · Entrada de dados</h2>
+    <div class="drop" id="drop">
+      <b>Clique para selecionar</b> ou arraste o arquivo <code>.xlsx</code> / <code>.csv</code> aqui<br>
+      <span class="small">(a aba lida é a primeira; o cabeçalho dos meses é detectado automaticamente)</span>
+      <input type="file" id="file" accept=".xlsx,.xls,.csv" class="hide">
+    </div>
+    <details>
+      <summary>…ou colar os dados (TSV/CSV) na caixa de texto</summary>
+      <textarea id="paste" placeholder="Cole aqui o conteúdo copiado da planilha (com tabulações ou ; como separador). Depois clique em Processar dados colados."></textarea>
+      <div style="margin-top:8px"><button class="btn sec" id="btnPaste">Processar dados colados</button></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>2 · Parâmetros</h2>
+    <div class="row">
+      <div class="field"><label>Filial (CT2_FILIAL)</label><input type="text" id="pFilial" value="01" style="width:90px"></div>
+      <div class="field"><label>Lote (CT2_LOTE)</label><input type="number" id="pLote" value="5551"></div>
+      <div class="field"><label>Ano competência</label><input type="number" id="pAno" value="2026"></div>
+      <div class="field"><label>Rotina (CT2_ROTINA)</label><input type="text" id="pRotina" value="CTBA102" style="width:120px"></div>
+      <div class="field" style="flex:1"></div>
+    </div>
+    <p class="small muted" style="margin:10px 0 0">Partida dobrada: ajuste <b>positivo → natureza no Crédito</b> · <b>negativo → natureza no Débito</b> · contrapartida no lado oposto (<b>11020122</b> para receita 31010101–31010112; <b>21120303</b> para o restante). Contas com abertura de fornecedor saem 1 linha por fornecedor (CLI/FOR), sem duplicar a natureza. CRED FISCAL é tratado como subtotal e a despesa não recorrente (JANKOVSKI) é excluída.</p>
+  </div>
+
+  <div id="result" class="hide">
+    <div class="card">
+      <h2>3 · Validação dos totais por mês</h2>
+      <div id="valStatus"></div>
+      <div class="valgrid" id="valgrid"></div>
+      <div id="diagBox"></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-pg="m1">Página 1 — MODELO 1 (Lançamentos)</div>
+      <div class="tab" data-pg="m2">Página 2 — MODELO 2 (CT2T60)</div>
+    </div>
+
+    <div class="page active" id="pg-m1">
+      <div class="card">
+        <div class="dlbar">
+          <span class="muted small" id="m1count"></span>
+          <span style="flex:1"></span>
+          <button class="btn" onclick="downloadM1('xlsx')">⬇ Baixar XLSX</button>
+          <button class="btn sec" onclick="downloadM1('csv')">⬇ Baixar CSV</button>
+        </div>
+        <div class="tablebox"><table id="tblM1"></table></div>
+      </div>
+    </div>
+
+    <div class="page" id="pg-m2">
+      <div class="card">
+        <div class="dlbar">
+          <span class="muted small" id="m2count"></span>
+          <span style="flex:1"></span>
+          <button class="btn" onclick="downloadM2('xlsx')">⬇ Baixar XLSX</button>
+          <button class="btn sec" onclick="downloadM2('csv')">⬇ Baixar CSV (CT2T60.csv)</button>
+        </div>
+        <div class="tablebox"><table id="tblM2"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="small muted">A conciliação é <b>dinâmica</b>: a soma dos lançamentos de cada mês é comparada com a própria DRE do arquivo carregado (linha <b>LAIR GERENCIAL</b> = Gerencial − Balancete). Não há alvo fixo — cada base traz seus próprios valores.</p>
+</div>
+
+<script>
+// ---------- Month dictionary ----------
+const MONTHS = {
+  'JANEIRO':['JAN',1],'FEVEREIRO':['FEV',2],'MARCO':['MAR',3],'MARÇO':['MAR',3],
+  'ABRIL':['ABR',4],'MAIO':['MAI',5],'JUNHO':['JUN',6],'JULHO':['JUL',7],
+  'AGOSTO':['AGO',8],'SETEMBRO':['SET',9],'OUTUBRO':['OUT',10],'NOVEMBRO':['NOV',11],'DEZEMBRO':['DEZ',12]
+};
+let LANC=[], M1=[], M2=[], DETECTED=[], ROWS=[], LAIRROW=-1, REF={}, DIAG={};
+
+// ---------- helpers ----------
+function norm(v){ return (v==null?'':(''+v)).trim(); }
+function up(v){ return norm(v).toUpperCase(); }
+function numv(v){ if(typeof v==='number')return v; const n=parseFloat((''+v).replace(/\./g,'').replace(',','.')); return isNaN(n)?0:0; }
+function asNum(v){ return (typeof v==='number')?v:0; }
+function contaFrom(b){
+  if(typeof b==='number') return String(Math.trunc(b));
+  const s=norm(b); if(!s) return '';
+  const pref=s.split('-')[0].trim();
+  return /^[0-9.]+$/.test(pref)? pref.replace(/\./g,'') : '';
+}
+function lastDay(y,m){ return new Date(y,m,0); }
+function fmtDate(d){ const p=n=>(''+n).padStart(2,'0'); return p(d.getDate())+'/'+p(d.getMonth()+1)+'/'+d.getFullYear(); }
+function fmtMoney(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+// ---------- detect AJUSTE columns ----------
+function detectAdjCols(rows){
+  // find a row containing 'AJUSTE' cells (the label row)
+  let labelRow=-1;
+  for(let r=0;r<Math.min(rows.length,15);r++){
+    const c=(rows[r]||[]).filter(x=>up(x)==='AJUSTE').length;
+    if(c>=3){ labelRow=r; break; }
+  }
+  if(labelRow<0) return [];
+  const monthRow = rows[labelRow-1]||[];
+  const cols=[];
+  const row=rows[labelRow];
+  for(let c=0;c<row.length;c++){
+    if(up(row[c])!=='AJUSTE') continue;
+    // scan left up to 2 cols in monthRow for a known month
+    let found=null;
+    for(let k=0;k<=2;k++){
+      const mv=up(monthRow[c-k]);
+      if(MONTHS[mv]){ found={col:c, month:mv, ab:MONTHS[mv][0], mnum:MONTHS[mv][1]}; break; }
+    }
+    if(found && !cols.some(x=>x.ab===found.ab)) cols.push(found);
+  }
+  return cols;
+}
+
+// ---------- core extraction (mirrors python) ----------
+function process(rows){
+  const adj = detectAdjCols(rows);
+  DETECTED = adj;
+  if(adj.length===0){ alert('Não encontrei as colunas de AJUSTE. Verifique se a planilha tem o cabeçalho de meses (linha BALANCETE/AJUSTE/GERENCIAL).'); return false; }
+
+  // find first data row: after the label row + a couple lines. Data rows have col A numeric (1/2/3) typically.
+  // We iterate all rows; classify by col A (index0), col B(1), col D(3).
+  // Stop at 'LAIR GERENCIAL' to exclude IRPJ diferido / non-recurring.
+  const TOL=0.005;
+  const groups=[]; let cur=null; let stop=false;
+  for(let r=0;r<rows.length && !stop;r++){
+    const row=rows[r]||[];
+    const A=row[0], B=row[1], D=row[3];
+    const Btxt=up(B);
+    if(Btxt==='LAIR GERENCIAL'){ stop=true; break; }
+    const a = (typeof A==='number')? A : (norm(A)!==''&&!isNaN(+A)? +A : null);
+    if(a===2 && contaFrom(B)!==''){
+      // natureza real = A==2 COM código contábil numérico
+      cur={r, conta:contaFrom(B), desc:(norm(D)!==''?norm(D):norm(B)), children:[], row:r};
+      groups.push(cur);
+    } else if(a===1){
+      if(!cur){ cur={r, conta:contaFrom(B), desc:norm(D), children:[], row:r}; groups.push(cur); }
+      cur.children.push({conta:contaFrom(B), sup:norm(D), row:r});
+    } else {
+      // A==3 (extra-contábil), branco (subtotal) OU A==2 sem conta (rótulo: CRED FISCAL 2 etc.)
+      cur=null;
+    }
+  }
+
+  // emit lançamentos
+  LANC=[];
+  for(const g of groups){
+    for(const m of adj){
+      const parent = asNum((rows[g.row]||[])[m.col]);
+      if(g.children.length){
+        let csum=0;
+        for(const c of g.children){
+          const v=asNum((rows[c.row]||[])[m.col]);
+          if(Math.abs(v)>TOL){
+            LANC.push({ab:m.ab,full:m.month,mnum:m.mnum,conta:c.conta||g.conta,desc:g.desc,clifor:c.sup,valor:Math.round(v*100)/100});
+            csum+=v;
+          }
+        }
+        const resid=parent-csum;
+        if(Math.abs(resid)>TOL){
+          LANC.push({ab:m.ab,full:m.month,mnum:m.mnum,conta:g.conta,desc:g.desc,clifor:'',valor:Math.round(resid*100)/100});
+        }
+      } else {
+        if(Math.abs(parent)>TOL){
+          LANC.push({ab:m.ab,full:m.month,mnum:m.mnum,conta:g.conta,desc:g.desc,clifor:'',valor:Math.round(parent*100)/100});
+        }
+      }
+    }
+  }
+  // order by month number
+  LANC.sort((x,y)=> x.mnum-y.mnum);
+
+  ROWS=rows;
+  LAIRROW=-1;
+  for(let r=0;r<rows.length;r++){ if(up((rows[r]||[])[1])==='LAIR GERENCIAL'){ LAIRROW=r; break; } }
+  computeRefAndDiag(adj);
+
+  buildModels();
+  render();
+  return true;
+}
+
+// dynamic reference (DRE do próprio arquivo) + diagnóstico de naturezas soltas
+function computeRefAndDiag(adj){
+  REF={}; DIAG={};
+  const end = LAIRROW<0 ? ROWS.length : LAIRROW;
+  for(const m of adj){
+    if(LAIRROW>=0){
+      const bal=asNum((ROWS[LAIRROW]||[])[m.col-1]);
+      const ger=asNum((ROWS[LAIRROW]||[])[m.col+1]);
+      REF[m.ab]=ger-bal;            // ajuste = Gerencial − Balancete na linha LAIR
+    }
+    const list=[];
+    let secName=null, secVal=0, sumA2=0, cntA2=0, secNats=[];
+    const flush=()=>{ if(secName!==null && cntA2>0 && Math.abs(secVal-sumA2)>1)
+      list.push({sec:secName,header:secVal,soma:sumA2,dif:secVal-sumA2,nats:secNats.slice()}); };
+    for(let r=0;r<end;r++){
+      const row=ROWS[r]||[]; const A=row[0],B=row[1],D=row[3];
+      const a=(typeof A==='number')?A:(norm(A)!==''&&!isNaN(+A)?+A:null);
+      const isNat=(a===2)&&contaFrom(B)!=='';           // natureza real (com conta)
+      const isHeader=typeof B==='string'&&norm(B)!==''&&(D===null||norm(D)==='')&&(a===null||(a===2&&contaFrom(B)===''));
+      if(isHeader){ flush(); secName=norm(B); secVal=asNum(row[m.col]); sumA2=0; cntA2=0; secNats=[]; }
+      else if(isNat){ const v=asNum(row[m.col]); sumA2+=v; cntA2++; if(Math.abs(v)>0.5) secNats.push({conta:contaFrom(B),desc:norm(D)||norm(B),val:v}); }
+    }
+    flush();
+    DIAG[m.ab]=list;
+  }
+}
+
+// Contrapartida da partida dobrada:
+//  - natureza 31010101..31010112 (receita) -> 11020122
+//  - todo o resto                            -> 21120303
+const CONTRAP_RECEITA = new Set(['31010101','31010102','31010103','31010104','31010105','31010106','31010107','31010108','31010109','31010110','31010111','31010112']);
+function contraConta(conta){ return CONTRAP_RECEITA.has(String(conta)) ? 11020122 : 21120303; }
+const MAXLIN = 99;   // limite TOTVS de linhas por sub-lote (CT2_LINHA/CT2_SEQLAN)
+
+function buildModels(){
+  const filial=norm(document.getElementById('pFilial').value)||'01';
+  const lote=+document.getElementById('pLote').value||5551;
+  const ano=+document.getElementById('pAno').value||2026;
+  const rotina=norm(document.getElementById('pRotina').value)||'CTBA102';
+
+  // MODELO 1
+  M1=[['Tipo Lcto','Cta Débito','Cta Crédito','Valor','Hist Lanc','Hist Pad','NUM DOC','Desc. Nat.','CLI/FOR','AJUSTE']];
+  for(const x of LANC){
+    const conta = x.conta? (/^\d+$/.test(x.conta)? +x.conta : x.conta) : '';
+    const cp = contraConta(x.conta);
+    const deb = x.valor>=0 ? cp : conta;   // natureza no crédito → contrapartida no débito
+    const cre = x.valor>=0 ? conta : cp;   // natureza no débito → contrapartida no crédito
+    M1.push(['partida dobrada',deb,cre,x.valor,`PROV | ${x.ab} | ${x.desc}`,'','',x.desc,x.clifor||'',x.full]);
+  }
+  // MODELO 2 - CT2T60
+  const H=['CT2_FILIAL','CT2_DATA','CT2_LOTE','CT2_SBLOTE','CT2_DOC','CT2_LINHA','CT2_MOEDLC','CT2_DC','CT2_DEBITO','CT2_CCD','CT2_CREDIT','CT2_CCC','CT2_VALOR','CT2_HIST','CT2_EMPORI','CT2_FILORI','CT2_TPSALD','CT2_MANUAL','CT2_ROTINA','CT2_AGLUT','CT2_SEQHIS','CT2_SEQLAN','CT2_CRCONV','CT2_DTCONF','CT2_CTLSLD','CT2_NUMDOC','CT2_PERIOD','CT2_CLIFOR'];
+  M2=[H];
+  const seq={};
+  for(const x of LANC){
+    const d = lastDay(ano,x.mnum);             // data do lançamento (hoje: sempre o último dia do mês)
+    const dkey = fmtDate(d);                   // rollover por DATA (CT2_DATA) — não por mês
+    seq[dkey]=(seq[dkey]||0)+1;
+    const idx=seq[dkey];                       // sequencial do lançamento dentro da mesma data
+    const sblote=Math.floor((idx-1)/MAXLIN)+1; // CT2_SBLOTE: incrementa a cada 99 linhas (limite TOTVS)
+    const lin=((idx-1)%MAXLIN)+1;              // CT2_LINHA / CT2_SEQLAN: 1..99, reinicia a cada sub-lote
+    const conta = x.conta? (/^\d+$/.test(x.conta)? +x.conta : x.conta) : '';
+    const cp = contraConta(x.conta);
+    const dc = 3;                          // partida dobrada (débito e crédito na mesma linha)
+    const deb = x.valor>=0 ? cp : conta;   // natureza no crédito → contrapartida no débito
+    const cre = x.valor>=0 ? conta : cp;   // natureza no débito → contrapartida no crédito
+    const hist = (`PROV ${x.ab} ${x.desc}`).substring(0,39);  // CT2_HIST: máx 39 caracteres
+    const period = '3'+(''+x.mnum).padStart(2,'0')+ano;       // CT2_PERIOD: 3 + MM + AAAA (3 = prov mensal) → ex.: 3012026
+    M2.push([filial,fmtDate(d),lote,sblote,x.mnum,lin,1,dc,deb,'',cre,'',Math.round(Math.abs(x.valor)*100)/100,hist,'','',1,1,rotina,2,1,lin,1,'',0,'',period,x.clifor||'']);
+  }
+}
+
+// ---------- render ----------
+function render(){
+  document.getElementById('result').classList.remove('hide');
+  // validation (referência dinâmica = DRE do próprio arquivo)
+  const totals={};
+  for(const x of LANC){ totals[x.ab]=(totals[x.ab]||0)+x.valor; }
+  const vg=document.getElementById('valgrid'); vg.innerHTML='';
+  const order=DETECTED.slice().sort((a,b)=>a.mnum-b.mnum);
+  let anyData=false, allok=true, diagRows=[];
+  for(const m of order){
+    const t=totals[m.ab]||0;
+    const ref=REF[m.ab];
+    const hasData = Math.abs(t)>0.5 || (ref!=null && Math.abs(ref)>0.5);
+    if(!hasData) continue;
+    anyData=true;
+    let pill='', sub='', bad=false;
+    if(ref!=null){
+      const dif=t-ref; bad=Math.abs(dif)>=1; allok=allok&&!bad;
+      pill=`<span class="pill ${bad?'bad':'ok'}">${bad?'✗ '+fmtMoney(dif):'✓ concilia'}</span>`;
+      sub=`<div class="m small">DRE (LAIR): ${fmtMoney(ref)}</div>`;
+      if(bad && DIAG[m.ab] && DIAG[m.ab].length) diagRows.push({month:m.month,dif,list:DIAG[m.ab]});
+    }
+    vg.innerHTML += `<div class="valbox ${bad?'bad':''}"><div class="m">${m.month} ${pill}</div><div class="v">${fmtMoney(t)}</div>${sub}</div>`;
+  }
+  const st=document.getElementById('valStatus');
+  if(!anyData) st.innerHTML='<span class="pill">Sem movimento de ajuste no arquivo</span>';
+  else if(LAIRROW<0) st.innerHTML='<span class="pill bad">Linha “LAIR GERENCIAL” não encontrada — totais exibidos sem conciliação</span>';
+  else st.innerHTML = allok
+    ? '<span class="pill ok">✓ Os lançamentos conciliam com a DRE do arquivo (linha LAIR GERENCIAL) em todos os meses</span>'
+    : '<span class="pill bad">Há meses que não conciliam — veja o diagnóstico abaixo</span>';
+  renderDiag(diagRows);
+
+  document.getElementById('m1count').textContent = (M1.length-1)+' lançamentos';
+  document.getElementById('m2count').textContent = (M2.length-1)+' lançamentos';
+  renderTable('tblM1',M1,[3]);
+  renderTable('tblM2',M2,[12]);
+}
+function renderDiag(diagRows){
+  const box=document.getElementById('diagBox');
+  if(!box) return;
+  if(!diagRows.length){ box.innerHTML=''; return; }
+  let h='<div class="diag"><div class="diag-h">⚠ Diagnóstico — naturezas “soltas” (valor que não entra no subtotal da seção)</div>';
+  for(const d of diagRows){
+    h+=`<div class="diag-m"><b>${d.month}</b> · diferença ${fmtMoney(d.dif)}</div><ul>`;
+    for(const s of d.list){
+      h+=`<li>Seção <b>${s.sec}</b>: subtotal ${fmtMoney(s.header)} ≠ soma das naturezas ${fmtMoney(s.soma)} <span class="muted">(Δ ${fmtMoney(s.dif)})</span>`;
+      if(s.nats && s.nats.length){
+        h+='<div class="muted small" style="margin:3px 0 0 4px">contas com valor: '+
+           s.nats.map(n=>`<b>${n.conta||'—'}</b> ${n.desc} (${fmtMoney(n.val)})`).join(' · ')+'</div>';
+      }
+      h+='</li>';
+    }
+    h+='</ul>';
+  }
+  h+='</div>';
+  box.innerHTML=h;
+}
+function renderTable(id,data,numCols){
+  const t=document.getElementById(id);
+  let html='<thead><tr>'+data[0].map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+  const max=Math.min(data.length,401);
+  for(let i=1;i<max;i++){
+    html+='<tr>'+data[i].map((c,ci)=>{
+      if(numCols.includes(ci) && typeof c==='number'){
+        return `<td class="num ${c<0?'neg':'pos'}">${fmtMoney(c)}</td>`;
+      }
+      return `<td>${c===''||c==null?'':c}</td>`;
+    }).join('')+'</tr>';
+  }
+  html+='</tbody>';
+  if(data.length>401) html+=`<tfoot><tr><td colspan="${data[0].length}" class="muted small">… mostrando 400 de ${data.length-1} linhas (o arquivo baixado contém tudo)</td></tr></tfoot>`;
+  t.innerHTML=html;
+}
+
+// ---------- downloads ----------
+function aoaToXlsx(aoa,sheet,file){
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,sheet);
+  XLSX.writeFile(wb,file);
+}
+function aoaToCsv(aoa,file){
+  const lines=aoa.map(r=>r.map(c=>{
+    let s = c===''||c==null?'':(''+c);
+    if(/[;"\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"';
+    return s;
+  }).join(';'));
+  const blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file; a.click();
+}
+function downloadM1(fmt){ if(fmt==='xlsx') aoaToXlsx(M1,'MODELO 1','MODELO 1.xlsx'); else aoaToCsv(M1,'MODELO 1.csv'); }
+function downloadM2(fmt){ if(fmt==='xlsx') aoaToXlsx(M2,'ct2T60','CT2T60.xlsx'); else aoaToCsv(M2,'CT2T60.csv'); }
+
+// ---------- input handling ----------
+function readWorkbook(data){
+  const wb=XLSX.read(data,{type:'array',cellDates:false});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+  if(process(rows)) document.getElementById('result').scrollIntoView({behavior:'smooth'});
+}
+function handleFile(f){
+  const ext=f.name.toLowerCase().split('.').pop();
+  const rd=new FileReader();
+  rd.onload=e=>{ try{ readWorkbook(new Uint8Array(e.target.result)); }catch(err){ alert('Erro ao ler o arquivo: '+err.message); } };
+  rd.readAsArrayBuffer(f);
+}
+const drop=document.getElementById('drop'), file=document.getElementById('file');
+drop.onclick=()=>file.click();
+file.onchange=e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); };
+['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');}));
+drop.addEventListener('drop',e=>{ if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+document.getElementById('btnPaste').onclick=()=>{
+  const txt=document.getElementById('paste').value;
+  if(!txt.trim()){ alert('Cole os dados primeiro.'); return; }
+  const sep = txt.indexOf('\t')>=0 ? '\t' : ';';
+  const rows=txt.split(/\r?\n/).map(l=>l.split(sep).map(c=>{
+    const s=c.trim();
+    if(s==='') return null;
+    const n = s.replace(/\./g,'').replace(',','.');
+    return /^-?\d+(\.\d+)?$/.test(n) ? parseFloat(n) : s;
+  }));
+  try{ if(process(rows)) document.getElementById('result').scrollIntoView({behavior:'smooth'}); }
+  catch(err){ alert('Erro ao processar: '+err.message); }
+};
+
+// re-process on param change (if already loaded)
+['pFilial','pLote','pAno','pRotina'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',()=>{ if(LANC.length){ buildModels(); render(); } });
+});
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('pg-'+t.dataset.pg).classList.add('active');
+});
+</script>
+</body>
+</html>
