@@ -334,6 +334,7 @@ function buildModels(){
   // MODELO 2 - CT2T60
   const H=['CT2_FILIAL','CT2_DATA','CT2_LOTE','CT2_SBLOTE','CT2_DOC','CT2_LINHA','CT2_MOEDLC','CT2_DC','CT2_DEBITO','CT2_CCD','CT2_CREDIT','CT2_CCC','CT2_VALOR','CT2_HIST','CT2_EMPORI','CT2_FILORI','CT2_TPSALD','CT2_MANUAL','CT2_ROTINA','CT2_AGLUT','CT2_SEQHIS','CT2_SEQLAN','CT2_CRCONV','CT2_DTCONF','CT2_CTLSLD','CT2_NUMDOC','CT2_PERIOD','CT2_CLIFOR'];
   M2=[H];
+  const geraDt = fmtDate(new Date());   // CT2_DTCONF = data de geração do arquivo (dd/mm/aaaa)
   const seq={};
   for(const x of LANC){
     const d = lastDay(ano,x.mnum);             // data do lançamento (hoje: sempre o último dia do mês)
@@ -349,7 +350,8 @@ function buildModels(){
     const cre = x.valor>=0 ? conta : cp;   // natureza no débito → contrapartida no crédito
     const hist = (`PROV ${x.ab} ${x.desc}`).substring(0,39);  // CT2_HIST: máx 39 caracteres
     const period = '3'+(''+x.mnum).padStart(2,'0')+ano;       // CT2_PERIOD: 3 + MM + AAAA (3 = prov mensal) → ex.: 3012026
-    M2.push([filial,fmtDate(d),lote,sblote,x.mnum,lin,1,dc,deb,'',cre,'',Math.round(Math.abs(x.valor)*100)/100,hist,'','',1,1,rotina,2,1,lin,1,'',0,'',period,x.clifor||'']);
+    M2.push([filial,fmtDate(d),lote,sblote,1,lin,1,dc,deb,'',cre,'',Math.round(Math.abs(x.valor)*100)/100,hist,'T6',1,1,1,rotina,2,1,lin,1,geraDt,0,'',period,x.clifor||'']);
+    // CT2_EMPORI='T6' | CT2_FILORI=1 | CT2_DTCONF=data de geração (geraDt)
   }
 }
 
@@ -428,15 +430,33 @@ function renderTable(id,data,numCols){
 }
 
 // ---------- downloads ----------
+function moneyColsOf(aoa){
+  const header=aoa[0]||[];
+  return new Set(header.map((h,i)=>/valor/i.test(String(h))?i:-1).filter(i=>i>=0));
+}
 function aoaToXlsx(aoa,sheet,file){
   const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const money=moneyColsOf(aoa);
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(const ci of money){                       // formato contábil (visual 5.000,03) mantendo número
+    for(let r=1;r<=range.e.r;r++){
+      const ref=XLSX.utils.encode_cell({r,c:ci});
+      if(ws[ref]&&typeof ws[ref].v==='number'){ ws[ref].t='n'; ws[ref].z='#,##0.00'; }
+    }
+  }
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,sheet);
   XLSX.writeFile(wb,file);
 }
 function aoaToCsv(aoa,file){
-  const lines=aoa.map(r=>r.map(c=>{
-    let s = c===''||c==null?'':(''+c);
+  const money=moneyColsOf(aoa);
+  const lines=aoa.map((r,ri)=>r.map((c,ci)=>{
+    let s;
+    if(ri>0 && money.has(ci) && typeof c==='number'){
+      s = c.toFixed(2).replace('.',',');        // valor com vírgula decimal (ex.: 5000,03) — não converte para ponto
+    } else {
+      s = c===''||c==null?'':(''+c);
+    }
     if(/[;"\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"';
     return s;
   }).join(';'));
