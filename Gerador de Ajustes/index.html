@@ -81,9 +81,9 @@
   <div class="card">
     <h2>1 · Entrada de dados</h2>
     <div class="drop" id="drop">
-      <b>Clique para selecionar</b> ou arraste o arquivo <code>.xlsx</code> / <code>.csv</code> aqui<br>
+      <b>Clique para selecionar</b> ou arraste o arquivo <code>.xlsx</code> / <code>.xlsm</code> / <code>.csv</code> aqui<br>
       <span class="small">(a aba lida é a primeira; o cabeçalho dos meses é detectado automaticamente)</span>
-      <input type="file" id="file" accept=".xlsx,.xls,.csv" class="hide">
+      <input type="file" id="file" accept=".xlsx,.xlsm,.xls,.csv" class="hide">
     </div>
     <details>
       <summary>…ou colar os dados (TSV/CSV) na caixa de texto</summary>
@@ -107,6 +107,7 @@
   <div id="result" class="hide">
     <div class="card">
       <h2>3 · Validação dos totais por mês</h2>
+      <div id="sheetInfo" class="small muted" style="margin-bottom:8px"></div>
       <div id="valStatus"></div>
       <div class="valgrid" id="valgrid"></div>
       <div id="diagBox"></div>
@@ -429,8 +430,15 @@ function downloadM2(fmt){ if(fmt==='xlsx') aoaToXlsx(M2,'ct2T60','CT2T60.xlsx');
 // ---------- input handling ----------
 function readWorkbook(data){
   const wb=XLSX.read(data,{type:'array',cellDates:false});
-  const ws=wb.Sheets[wb.SheetNames[0]];
+  const names=wb.SheetNames;
+  // seleciona a aba DRE-GERENCIAL (ignora CAPA, backups e demais abas)
+  const target = names.find(n=>norm(n).toUpperCase()==='DRE-GERENCIAL')
+              || names.find(n=>{const u=norm(n).toUpperCase(); return u.includes('DRE')&&u.includes('GERENCIAL')&&!u.includes('BACKUP');})
+              || names[0];
+  const ws=wb.Sheets[target];
   const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+  const info=document.getElementById('sheetInfo');
+  if(info) info.textContent='Aba lida: '+target+(names.length>1? '  ('+names.length+' abas no arquivo — as demais são ignoradas)':'');
   if(process(rows)) document.getElementById('result').scrollIntoView({behavior:'smooth'});
 }
 function handleFile(f){
