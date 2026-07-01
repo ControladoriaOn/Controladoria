@@ -4,22 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gerador de Ajustes — MODELO 1 & CT2T60</title>
+<link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
-    --bg:#eceef1; --bg2:#e3e6ea; --panel:#ffffff; --panel2:#f4f6f8; --line:#d6dbe1;
-    --txt:#1f2733; --mut:#6b7785; --soft:#94a1b0;
-    --acc:#ff6a00; --acc2:#ff8a33; --accd:#e85d00; --acc-bg:#fff1e6;
-    --ok:#1f9d63; --ok-bg:#e6f6ee; --bad:#d93a3a; --bad-bg:#fdecec;
-    --shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.08);
+    /* paleta Hub Ontime */
+    --plum:#3C003C; --plum-deep:#2A0028;
+    --bg:#FAF7F5; --bg2:#F2EEF2; --panel:#ffffff; --panel2:#FBF8FB; --line:#E8E0E8;
+    --txt:#3C003C; --mut:#745E74; --soft:#A78BA7;
+    --acc:#FF6E00; --acc2:#FF8A33; --accd:#D25500; --acc-bg:#FFF1E4;
+    --ok:#1F7A3D; --ok-bg:#E6F6EE; --bad:#B91C1C; --bad-bg:#FDECEC;
+    --shadow:0 2px 10px rgba(60,0,60,.05);
+    --font-display:'Fraunces',serif; --font-body:'Manrope',sans-serif; --font-mono:'JetBrains Mono',monospace;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px}
-  header{padding:20px 28px;background:linear-gradient(100deg,#ffffff 0%,#fbfcfd 60%,#fff5ee 100%);border-bottom:1px solid var(--line);box-shadow:var(--shadow)}
-  header h1{margin:0;font-size:19px;font-weight:700;letter-spacing:-.2px}
-  header h1 .o{color:var(--acc)}
-  header p{margin:6px 0 0;color:var(--mut);font-size:13px;max-width:1000px}
-  header .brandbar{height:4px;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:4px;width:64px;margin-bottom:12px}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font-body);font-size:14px}
+  header{background:var(--plum);color:#fff;padding:16px 28px;box-shadow:0 6px 22px rgba(60,0,60,.18)}
+  .head-inner{max-width:1500px;margin:0 auto;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .head-title{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
+  .mascote{width:46px;height:46px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:2px solid rgba(255,255,255,.3)}
+  .head-eyebrow{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--acc);text-transform:uppercase;margin-bottom:2px}
+  header h1{margin:0;font-family:var(--font-display);font-size:22px;font-weight:700;color:#fff;letter-spacing:-.2px;line-height:1.15}
+  header p{margin:5px 0 0;color:#EAD9EA;font-size:13px;max-width:1050px}
+  .btn-hub{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;font:700 13px var(--font-body);color:#fff;text-decoration:none;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.5);border-radius:9px;transition:.15s;flex:0 0 auto}
+  .btn-hub:hover{background:rgba(255,255,255,.26);border-color:#fff}
   .wrap{padding:24px 28px;max-width:1500px;margin:0 auto}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:var(--shadow)}
   .card h2{margin:0 0 14px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);display:flex;align-items:center;gap:8px}
@@ -30,27 +41,27 @@
   input[type=text],input[type=number],textarea{background:#fff;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 11px;font-size:13px;transition:.15s}
   input[type=text]:focus,input[type=number]:focus,textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-bg)}
   input[type=number]{width:110px}
-  textarea{width:100%;min-height:90px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;resize:vertical}
-  .btn{background:linear-gradient(180deg,var(--acc2),var(--acc));color:#fff;border:none;border-radius:8px;padding:10px 18px;font-weight:650;cursor:pointer;font-size:13px;box-shadow:0 1px 2px rgba(232,93,0,.25);transition:.15s}
-  .btn:hover{filter:brightness(1.04);transform:translateY(-1px)}
+  textarea{width:100%;min-height:90px;font-family:var(--font-mono);font-size:12px;resize:vertical}
+  .btn{background:var(--acc);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-weight:700;font-family:var(--font-body);cursor:pointer;font-size:13px;box-shadow:0 2px 8px rgba(255,110,0,.25);transition:.15s}
+  .btn:hover{background:var(--accd);transform:translateY(-1px);box-shadow:0 5px 16px rgba(255,110,0,.3)}
   .btn.sec{background:#fff;color:var(--accd);border:1px solid var(--acc);box-shadow:none}
   .btn.sec:hover{background:var(--acc-bg)}
   .btn:disabled{opacity:.4;cursor:not-allowed}
-  .drop{border:2px dashed var(--soft);border-radius:12px;padding:26px;text-align:center;color:var(--mut);cursor:pointer;transition:.15s;background:var(--panel2)}
-  .drop:hover,.drop.drag{border-color:var(--acc);color:var(--txt);background:var(--acc-bg)}
+  .drop{border:2px dashed #E8C9A8;border-radius:12px;padding:26px;text-align:center;color:var(--mut);cursor:pointer;transition:.15s;background:var(--acc-bg)}
+  .drop:hover,.drop.drag{border-color:var(--acc);color:var(--txt);background:#FFE6C9}
   .drop b{color:var(--accd)}
   .tabs{display:flex;gap:8px;margin-bottom:16px}
-  .tab{padding:10px 18px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;cursor:pointer;color:var(--mut);font-weight:650;transition:.15s}
-  .tab:hover{color:var(--txt)}
-  .tab.active{background:linear-gradient(180deg,var(--acc2),var(--acc));color:#fff;border-color:var(--acc);box-shadow:0 2px 6px rgba(232,93,0,.28)}
+  .tab{padding:11px 18px;background:var(--panel);border:1.5px solid var(--line);border-radius:11px;cursor:pointer;color:var(--mut);font-weight:700;font-family:var(--font-body);transition:.15s}
+  .tab:hover{color:var(--accd);border-color:var(--acc)}
+  .tab.active{background:var(--plum);color:#fff;border-color:var(--plum);box-shadow:0 4px 14px rgba(60,0,60,.22)}
   .page{display:none}
   .page.active{display:block}
   table{border-collapse:collapse;width:100%;font-size:12px;background:#fff}
   th,td{border:1px solid var(--line);padding:6px 9px;text-align:left;white-space:nowrap}
-  th{background:#fbe9dc;position:sticky;top:0;color:#8a3d00;font-weight:700;border-color:#f0d3bd}
+  th{background:var(--acc-bg);position:sticky;top:0;color:var(--accd);font-weight:700;border-color:#F1DBC6;font-family:var(--font-body)}
   tbody tr:nth-child(even){background:var(--panel2)}
   tbody tr:hover{background:var(--acc-bg)}
-  td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  td.num{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:600}
   .neg{color:var(--bad)} .pos{color:var(--txt)}
   .tablebox{max-height:460px;overflow:auto;border:1px solid var(--line);border-radius:10px}
   .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
@@ -66,15 +77,23 @@
   .dlbar{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap;align-items:center}
   .hide{display:none}
   details{margin-top:10px} summary{cursor:pointer;color:var(--accd);font-weight:600}
-  code{background:var(--acc-bg);color:var(--accd);padding:1px 6px;border-radius:5px;font-weight:600}
+  code{background:var(--acc-bg);color:var(--accd);padding:1px 6px;border-radius:5px;font-weight:600;font-family:var(--font-mono)}
   ::-webkit-scrollbar{height:11px;width:11px} ::-webkit-scrollbar-thumb{background:#c4ccd5;border-radius:6px;border:2px solid var(--panel)} ::-webkit-scrollbar-thumb:hover{background:var(--acc2)}
 </style>
 </head>
 <body>
 <header>
-  <div class="brandbar"></div>
-  <h1>Gerador de Ajustes Gerenciais <span class="o">→</span> MODELO 1 (Lançamentos) &amp; MODELO 2 (CT2T60)</h1>
-  <p>Carregue ou cole a planilha <b>RESULTADO E AJUSTES</b>. A ferramenta extrai apenas as colunas de <b>AJUSTE</b> de cada mês e monta os dois modelos. Baixe em XLSX ou CSV.</p>
+  <div class="head-inner">
+    <div class="head-title">
+      <img class="mascote" src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote On Time">
+      <div>
+        <div class="head-eyebrow">Controladoria On Time</div>
+        <h1>Gerador de Ajustes Gerenciais</h1>
+        <p>Carregue ou cole a planilha <b>RESULTADO E AJUSTES</b> — a ferramenta extrai as colunas de <b>AJUSTE</b> de cada mês e monta o MODELO 1 (Lançamentos) e o MODELO 2 (CT2T60). Baixe em XLSX ou CSV.</p>
+      </div>
+    </div>
+    <a id="btnVoltarHub" href="../index.html" class="btn-hub" style="display:none">← Voltar ao hub</a>
+  </div>
 </header>
 <div class="wrap">
 
@@ -480,6 +499,37 @@ document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   t.classList.add('active');
   document.getElementById('pg-'+t.dataset.pg).classList.add('active');
 });
+</script>
+<script>
+  (function () {
+    var HubLink = {
+      HUB_PATH_PREFIX: '/Controladoria',
+      STORAGE_KEY: 'came_from_hub_ajustes',
+      init: function () {
+        var btn = document.getElementById('btnVoltarHub');
+        if (!btn) return;
+        if (this.veioDoHub()) { btn.style.display = 'inline-flex'; try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {} }
+      },
+      veioDoHub: function () {
+        try {
+          if (document.referrer) {
+            var ref = new URL(document.referrer);
+            var refPath = decodeURIComponent(ref.pathname);
+            var selfPath = decodeURIComponent(location.pathname);
+            var selfDir = selfPath.slice(0, selfPath.lastIndexOf('/') + 1);
+            var mesmaOrigem = ref.origin === location.origin;
+            var dentroDoPortal = refPath.indexOf(this.HUB_PATH_PREFIX) === 0;
+            var mesmaFerramenta = refPath.indexOf(selfDir) === 0;
+            if (mesmaOrigem && dentroDoPortal && !mesmaFerramenta) return true;
+          }
+        } catch (e) {}
+        try { if (new URLSearchParams(location.search).has('from')) return true; } catch (e) {}
+        try { if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true; } catch (e) {}
+        return false;
+      }
+    };
+    HubLink.init();
+  })();
 </script>
 </body>
 </html>
