@@ -199,6 +199,7 @@ const DataService = {
     const response = await this.fetchWithRetry(url);
     const json = await response.json();
     this._validateData(json);
+    this._removeCanceladas(json);
     return json;
   },
 
@@ -212,6 +213,33 @@ const DataService = {
     } catch (err) {
       console.info('[DataService] naturezas.json não disponível — seguindo sem o mapa.');
       return {};
+    }
+  },
+
+  /* Remove da Prévia os títulos com status "Solicitação Cancelada"
+     e ajusta os totais (geral e por categoria). */
+  _removeCanceladas(data) {
+    const prev = data.previsto_amanha;
+    if (!prev) return;
+    const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    const isCancelada = r => norm(r && r.status) === 'solicitacao cancelada';
+
+    for (const key of ['nf_servico', 'nf_titulo', 'reembolso']) {
+      const rows = prev[key];
+      if (!Array.isArray(rows)) continue;
+      const canceladas = rows.filter(isCancelada);
+      if (!canceladas.length) continue;
+
+      const valor = canceladas.reduce((s, r) => s + (Number(r.valor_total) || 0), 0);
+      prev[key] = rows.filter(r => !isCancelada(r));
+
+      const cat = prev.por_categoria && prev.por_categoria[key];
+      if (cat) {
+        cat.total = Math.max(0, (cat.total || 0) - valor);
+        cat.quantidade = Math.max(0, (cat.quantidade || 0) - canceladas.length);
+      }
+      prev.total = Math.max(0, (prev.total || 0) - valor);
+      prev.quantidade = Math.max(0, (prev.quantidade || 0) - canceladas.length);
     }
   },
 
