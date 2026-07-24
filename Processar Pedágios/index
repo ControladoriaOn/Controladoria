@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Processar Comprovantes de Pedágio</title>
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --plum: #3C003C;
+      --plum-deep: #2A0028;
+      --orange: #FF6E00;
+      --orange-soft: #FFF1E4;
+      --orange-deep: #D25500;
+      --bg: #FAF7F5;
+      --surface: #FFFFFF;
+      --border: #E8E0E8;
+      --ok: #1F7A3D;
+      --warn: #C77700;
+      --err: #B91C1C;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      font-family: 'Manrope', sans-serif;
+      color: var(--plum-deep);
+      min-height: 100vh;
+    }
+    .topo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .topo img.mascote {
+      width: 40px; height: 40px;
+      border-radius: 8px; object-fit: cover;
+    }
+    .topo .titulo-hub {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--plum);
+      flex: 1;
+    }
+    main.content-body {
+      max-width: 520px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      box-shadow: 0 2px 10px rgba(60, 0, 60, 0.06);
+    }
+    h1.page-title {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      color: var(--plum);
+      margin: 0 0 8px;
+    }
+    p.descricao {
+      font-size: 14px;
+      line-height: 1.55;
+      color: #5C4A5C;
+      margin: 0 0 22px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--plum);
+    }
+    input#codigo {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-family: 'JetBrains Mono', monospace;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      background: var(--bg);
+    }
+    input#codigo:focus { border-color: var(--orange); }
+    button#btnProcessar {
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Manrope', sans-serif;
+      color: #fff;
+      background: var(--orange);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background .15s ease, transform .1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    button#btnProcessar:hover:not(:disabled) { background: var(--orange-deep); }
+    button#btnProcessar:active:not(:disabled) { transform: scale(.985); }
+    button#btnProcessar:disabled { opacity: .65; cursor: not-allowed; }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: girar .7s linear infinite;
+      display: none;
+    }
+    @keyframes girar { to { transform: rotate(360deg); } }
+    .resultado {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      display: none;
+    }
+    .resultado.ok { display: block; background: #EAF6EE; color: var(--ok); border: 1px solid #BFE3CB; }
+    .resultado.aviso { display: block; background: var(--orange-soft); color: var(--warn); border: 1px solid #F5D9B8; }
+    .resultado.erro { display: block; background: #FBEAEA; color: var(--err); border: 1px solid #F0C4C4; }
+    a.link-planilha {
+      display: none;
+      margin-top: 14px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--plum);
+      text-decoration: none;
+      padding: 11px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      transition: background .15s ease;
+    }
+    a.link-planilha:hover { background: var(--bg); }
+    .rodape-dica {
+      margin-top: 20px;
+      font-size: 12.5px;
+      color: #8A768A;
+      line-height: 1.5;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topo">
+    <img class="mascote" src="../logo-mascote.jpg" alt="Mascote On Time">
+    <div class="titulo-hub">Portal On Time</div>
+    <a id="btnVoltarHub" href="../index.html"
+       style="display:none;align-items:center;gap:6px;padding:7px 12px;
+              font:600 13px sans-serif;color:#6B21A8;text-decoration:none;
+              border:1.5px solid #E5E7EB;border-radius:9px;">
+      ← Voltar ao hub
+    </a>
+  </header>
+
+  <main class="content-body">
+    <div class="card">
+      <h1 class="page-title">🧾 Processar Comprovantes</h1>
+      <p class="descricao">
+        Suba os comprovantes de pedágio na pasta do Drive e clique no botão abaixo.
+        A leitura é feita por IA e o resultado aparece direto na planilha.
+        Ao final, os arquivos processados são movidos automaticamente para a subpasta Processados.
+      </p>
+
+      <label for="codigo">Código de acesso</label>
+      <input type="password" id="codigo" autocomplete="off" placeholder="Digite o código">
+
+      <button id="btnProcessar">
+        <span class="spinner" id="spinner"></span>
+        <span id="btnTexto">Processar comprovantes</span>
+      </button>
+
+      <div class="resultado" id="resultado"></div>
+
+      <a class="link-planilha" id="linkPlanilha" href="#" target="_blank" rel="noopener">
+        📊 Abrir planilha de resultados
+      </a>
+
+      <p class="rodape-dica">
+        Se algum arquivo permanecer na pasta principal após o processamento,
+        é porque ele falhou — basta clicar em processar novamente.
+      </p>
+    </div>
+  </main>
+
+  <script>
+    // ============================================================
+    // CONFIGURACAO — preencha as duas linhas abaixo
+    // ============================================================
+    var WEBHOOK_URL  = 'COLE_AQUI_A_URL_DO_WEBHOOK';
+    var PLANILHA_URL = 'COLE_AQUI_O_LINK_DA_PLANILHA';
+    // ============================================================
+
+    var btn      = document.getElementById('btnProcessar');
+    var btnTexto = document.getElementById('btnTexto');
+    var spinner  = document.getElementById('spinner');
+    var campo    = document.getElementById('codigo');
+    var caixa    = document.getElementById('resultado');
+    var linkPlan = document.getElementById('linkPlanilha');
+
+    function mostrar(tipo, mensagem) {
+      caixa.className = 'resultado ' + tipo;
+      caixa.textContent = mensagem;
+    }
+
+    function carregando(ativo) {
+      btn.disabled = ativo;
+      spinner.style.display = ativo ? 'inline-block' : 'none';
+      btnTexto.textContent = ativo ? 'Enviando...' : 'Processar comprovantes';
+    }
+
+    btn.addEventListener('click', function () {
+      var codigo = campo.value.trim();
+
+      if (WEBHOOK_URL.indexOf('COLE_AQUI') === 0) {
+        mostrar('erro', 'A página ainda não foi configurada: falta colar a URL do webhook no código.');
+        return;
+      }
+      if (!codigo) {
+        mostrar('aviso', 'Digite o código de acesso antes de processar.');
+        campo.focus();
+        return;
+      }
+
+      carregando(true);
+      caixa.className = 'resultado';
+      linkPlan.style.display = 'none';
+
+      fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo: codigo })
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (dados) {
+        carregando(false);
+        if (dados && dados.ok) {
+          if (dados.total === 0) {
+            mostrar('aviso', dados.mensagem || 'Nenhum comprovante na pasta.');
+          } else {
+            mostrar('ok', 'Processamento iniciado: ' + (dados.mensagem || dados.total + ' comprovante(s) na fila.'));
+            if (PLANILHA_URL.indexOf('COLE_AQUI') !== 0) {
+              linkPlan.href = PLANILHA_URL;
+              linkPlan.style.display = 'block';
+            }
+          }
+        } else {
+          mostrar('erro', (dados && dados.mensagem) ? dados.mensagem : 'O fluxo recusou a solicitação. Confira o código.');
+        }
+      })
+      .catch(function () {
+        carregando(false);
+        mostrar('erro', 'Não foi possível falar com o n8n. Verifique se o fluxo está publicado e tente de novo.');
+      });
+    });
+
+    campo.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') btn.click();
+    });
+  </script>
+
+  <script>
+    (function () {
+      var HubLink = {
+        HUB_PATH_PREFIX: '/Controladoria',
+        STORAGE_KEY: 'came_from_hub_processar_pedagios',
+        init: function () {
+          var btn = document.getElementById('btnVoltarHub');
+          if (!btn) return;
+          if (this.veioDoHub()) {
+            btn.style.display = 'inline-flex';
+            try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
+          }
+        },
+        veioDoHub: function () {
+          try {
+            if (document.referrer) {
+              var ref = new URL(document.referrer);
+              var refPath = decodeURIComponent(ref.pathname);
+              var selfPath = decodeURIComponent(location.pathname);
+              var selfDir = selfPath.slice(0, selfPath.lastIndexOf('/') + 1);
+              var mesmaOrigem = ref.origin === location.origin;
+              var dentroDoPortal = refPath.indexOf(this.HUB_PATH_PREFIX) === 0;
+              var mesmaFerramenta = refPath.indexOf(selfDir) === 0;
+              if (mesmaOrigem && dentroDoPortal && !mesmaFerramenta) return true;
+            }
+          } catch (e) {}
+          try {
+            if (new URLSearchParams(location.search).has('from')) return true;
+          } catch (e) {}
+          try {
+            if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true;
+          } catch (e) {}
+          return false;
+        }
+      };
+      HubLink.init();
+    })();
+  </script>
+
+</body>
+</html>
