@@ -203,8 +203,8 @@
     // ============================================================
     // CONFIGURACAO — preencha as duas linhas abaixo
     // ============================================================
-    var WEBHOOK_URL  = 'COLE_AQUI_A_URL_DO_WEBHOOK';
-    var PLANILHA_URL = 'COLE_AQUI_O_LINK_DA_PLANILHA';
+    var WEBHOOK_URL  = 'https://arthurfmendes.app.n8n.cloud/webhook/processar-pedagios';
+    var PLANILHA_URL = 'https://docs.google.com/spreadsheets/d/13FawORXjS5Y0XYJiPYShZS1ILGXbnIRqXrlx2Me4KK4/edit?gid=0#gid=0';
     // ============================================================
 
     var btn      = document.getElementById('btnProcessar');
@@ -316,3 +316,4 @@
 
 </body>
 </html>
+WEBHOOK_URL
