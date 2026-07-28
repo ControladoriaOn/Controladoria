@@ -216,7 +216,7 @@ btn.addEventListener('click', async function(){
     var leitura = { data:'', valor:'', placa:'', status:'REVISAR' };
     try{
       var b64 = await comprimirBase64(file);
-      // tenta até 2 vezes antes de marcar ERRO (ajuda quando a cota engasga)
+      // até 2 tentativas; se levar bloqueio de limite, espera 60s antes de repetir
       var d = null;
       for(var tent=0; tent<2 && !d; tent++){
         try{
@@ -224,10 +224,16 @@ btn.addEventListener('click', async function(){
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ codigo: codigo, nome: file.name, imagem: b64 })
           });
-          if(resp.ok) d = await resp.json();
-          else if(tent === 1) leitura.status = 'ERRO';
-        }catch(err){ if(tent === 1) leitura.status = 'ERRO'; }
-        if(!d) await esperar(2500);
+          if(resp.ok){ d = await resp.json(); }
+          else if(tent === 0){
+            // provavel limite da IA: espera um minuto e tenta de novo
+            progTxt.textContent = 'Limite da IA atingido — aguardando 60s para continuar (' + (i+1) + '/' + imagens.length + ')';
+            await esperar(60000);
+          } else { leitura.status = 'ERRO'; }
+        }catch(err){
+          if(tent === 0){ await esperar(60000); }
+          else { leitura.status = 'ERRO'; }
+        }
       }
       if(d && d.ok){ leitura = { data:d.data||'', valor:d.valor||'', placa:d.placa||'', status:d.status||'REVISAR' }; }
       else if(leitura.status !== 'ERRO'){ leitura.status = 'ERRO'; }
@@ -242,8 +248,8 @@ btn.addEventListener('click', async function(){
     if(!info.id || !baseIDs.has(info.id)) orfaos.push(linha);
     else linhas.push(linha);
 
-    // pausa curta para respeitar a cota gratuita do Gemini
-    await esperar(1200);
+    // ritmo: ~1 imagem a cada 7s para respeitar o limite gratuito do Gemini (~10/min)
+    await esperar(7000);
   }
 
   barra.style.width='100%';
