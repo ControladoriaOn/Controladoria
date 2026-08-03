@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATA de Reuniões - Portal On Time</title>
+
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+  .header-right { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+  .b-acao {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 14px; border-radius:9px; cursor:pointer;
+    font-family:var(--font-body); font-size:12.5px; font-weight:600;
+    border:1px solid var(--border); background:var(--surface); color:var(--muted);
+    transition:all .15s;
+  }
+  .b-acao:hover { border-color:var(--plum-light); color:var(--ink); background:var(--surface-soft); }
+  .b-acao.primaria { background:var(--plum); border-color:var(--plum); color:#fff; }
+  .b-acao.primaria:hover { background:var(--plum-light); color:#fff; }
+  .b-acao.laranja { background:var(--orange); border-color:var(--orange); color:#fff; }
+  .b-acao.laranja:hover { background:var(--orange-deep); color:#fff; }
+  .b-acao.perigo { color:var(--err); border-color:#F0C9C9; background:var(--err-soft); }
+  .b-acao:disabled { opacity:.45; cursor:not-allowed; }
+
+  .campo {
+    width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:9px;
+    font-family:var(--font-body); font-size:13px; background:var(--surface); color:var(--ink);
+  }
+  .campo:focus { outline:0; border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.12); }
+  select.campo { cursor:pointer; }
+  .campo-mini { padding:8px 10px; font-size:12.5px; width:auto; min-width:120px; }
+  .rotulo { display:block; font-size:11px; font-weight:700; letter-spacing:.04em;
+            text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
+
+  .st { border-radius:999px; padding:3px 9px; font-size:10.5px; font-weight:700;
+        display:inline-flex; white-space:nowrap; border:1px solid var(--border); }
+  .st-novo        { background:var(--orange-soft); color:var(--orange-deep); border-color:#F9C69C; }
+  .st-pendente    { background:var(--err-soft); color:var(--err); border-color:#F0C9C9; }
+  .st-aguardando  { background:var(--warn-soft); color:var(--warn); border-color:#F2D39A; }
+  .st-acompanhar  { background:rgba(14,165,233,.1); color:#0369A1; border-color:rgba(14,165,233,.3); }
+  .st-finalizado  { background:var(--ok-soft); color:var(--ok); border-color:#C2E4CC; }
+
+  table.data tbody tr { cursor:pointer; }
+  .cel-ponto { font-weight:700; color:var(--plum); }
+  .cel-tarefa { color:var(--muted); max-width:340px; display:-webkit-box; -webkit-line-clamp:2;
+                -webkit-box-orient:vertical; overflow:hidden; }
+  .cel-upd { max-width:280px; font-size:12px; color:var(--ink); }
+  .cel-upd small { display:block; color:var(--subtle); font-size:10.5px; margin-top:3px; }
+  .parado { color:var(--err); font-weight:700; font-size:10.5px; }
+
+  .grupo-head { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer;
+                background:var(--surface-soft); border-top:1px solid var(--border-soft);
+                font-size:12px; font-weight:700; color:var(--plum); text-transform:uppercase;
+                letter-spacing:.04em; }
+  .grupo-head .contagem { font-family:var(--font-mono); color:var(--muted); font-weight:600; }
+
+  .kanban { display:flex; gap:14px; padding:18px; overflow-x:auto; align-items:flex-start; }
+  .kb-col { flex:0 0 260px; background:var(--surface-soft); border:1px solid var(--border-soft);
+            border-radius:14px; padding:10px; min-height:120px; }
+  .kb-col.alvo { border-color:var(--orange); background:var(--orange-soft); }
+  .kb-col h3 { margin:2px 4px 10px; font-size:11.5px; font-weight:800; letter-spacing:.05em;
+               text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; }
+  .kb-card { background:var(--surface); border:1px solid var(--border); border-radius:11px;
+             padding:11px 12px; margin-bottom:9px; cursor:grab; box-shadow:var(--shadow-sm); }
+  .kb-card:hover { border-color:var(--plum-light); }
+  .kb-card b { display:block; font-size:12.5px; color:var(--plum); margin-bottom:4px; }
+  .kb-card p { margin:0; font-size:11.5px; color:var(--muted); display:-webkit-box;
+               -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .kb-meta { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; font-size:10.5px; color:var(--subtle); }
+
+  .backdrop { position:fixed; inset:0; background:rgba(26,15,26,.35); backdrop-filter:blur(2px);
+              opacity:0; pointer-events:none; transition:opacity .2s; z-index:60; }
+  .backdrop.on { opacity:1; pointer-events:auto; }
+
+  .drawer { position:fixed; top:0; right:0; height:100%; width:min(520px,100%); background:var(--surface);
+            border-left:1px solid var(--border); box-shadow:var(--shadow-lg); z-index:61;
+            transform:translateX(102%); transition:transform .22s ease; display:flex; flex-direction:column; }
+  .drawer.on { transform:none; }
+  .drawer header { padding:16px 20px; border-bottom:1px solid var(--border-soft); display:flex;
+                   align-items:center; gap:10px; position:static; }
+  .drawer header h2 { margin:0; font-family:var(--font-display); font-size:17px; color:var(--plum); flex:1; }
+  .drawer .corpo { padding:18px 20px; overflow-y:auto; flex:1; }
+  .drawer .rodape { padding:14px 20px; border-top:1px solid var(--border-soft); display:flex;
+                    gap:8px; align-items:center; background:var(--surface-soft); }
+  .linha2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .bloco { margin-bottom:14px; }
+
+  .hist { border:1px solid var(--border-soft); border-radius:12px; overflow:hidden; }
+  .hist-item { padding:10px 12px; border-bottom:1px solid var(--border-soft); font-size:12.5px; }
+  .hist-item:last-child { border-bottom:0; }
+  .hist-item small { display:block; color:var(--subtle); font-size:10.5px; margin-top:4px;
+                     font-family:var(--font-mono); }
+  .hist-vazio { padding:14px; color:var(--subtle); font-size:12.5px; text-align:center; }
+
+  .modal { position:fixed; z-index:70; left:50%; top:50%; transform:translate(-50%,-46%) scale(.97);
+           width:min(400px,92vw); background:var(--surface); border:1px solid var(--border);
+           border-radius:18px; box-shadow:var(--shadow-lg); padding:22px; opacity:0;
+           pointer-events:none; transition:all .18s; }
+  .modal.on { opacity:1; pointer-events:auto; transform:translate(-50%,-50%) scale(1); }
+  .modal h2 { margin:0 0 6px; font-family:var(--font-display); font-size:19px; color:var(--plum); }
+  .modal p { margin:0 0 14px; font-size:13px; color:var(--muted); line-height:1.5; }
+
+  .reuniao { position:fixed; inset:0; z-index:65; background:var(--bg); display:none;
+             flex-direction:column; padding:22px clamp(16px,5vw,60px); overflow-y:auto; }
+  .reuniao.on { display:flex; }
+  .reuniao .topo { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  .reuniao .topo h2 { margin:0; font-family:var(--font-display); font-size:20px; color:var(--plum); flex:1; }
+  .reuniao .painel { background:var(--surface); border:1px solid var(--border); border-radius:18px;
+                     padding:24px; max-width:900px; width:100%; margin:0 auto; box-shadow:var(--shadow-md); }
+  .reuniao .ponto-titulo { font-family:var(--font-display); font-size:26px; color:var(--plum); margin:0 0 6px; }
+  .reuniao .tarefa { font-size:14px; color:var(--ink); line-height:1.6; margin:0 0 16px; }
+  .reuniao .metas { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+  .reuniao .navegacao { display:flex; gap:8px; align-items:center; justify-content:space-between;
+                        margin-top:18px; flex-wrap:wrap; }
+  .contador { font-family:var(--font-mono); font-size:12.5px; color:var(--muted); }
+
+  .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+           background:var(--plum); color:#fff; padding:12px 20px; border-radius:11px; font-size:13px;
+           font-weight:600; z-index:80; opacity:0; pointer-events:none; transition:all .2s;
+           box-shadow:var(--shadow-lg); max-width:90vw; }
+  .toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.erro { background:var(--err); }
+
+  .carregando { position:fixed; inset:0; z-index:90; background:var(--bg); display:flex;
+                flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+  .carregando img { width:64px; height:64px; border-radius:14px; object-fit:cover;
+                    animation:pulsa 1.4s ease-in-out infinite; }
+  .carregando span { font-size:13px; color:var(--muted); font-weight:600; }
+  @keyframes pulsa { 0%,100%{opacity:.45;transform:scale(.96)} 50%{opacity:1;transform:scale(1)} }
+
+  .aviso-config { margin:0 0 18px; padding:14px 16px; border-radius:12px; background:var(--warn-soft);
+                  border:1px solid #F2D39A; color:#7A4A00; font-size:13px; line-height:1.5; }
+
+  @media (max-width:760px) {
+    .linha2 { grid-template-columns:1fr; }
+    .cel-tarefa, .cel-upd { max-width:none; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark"><img src="../logo-mascote.jpg" alt="Mascote On Time"></div>
+    <div class="logo-text"><span>On Time</span><span>Controladoria</span></div>
+  </div>
+  <nav>
+    <a href="../index.html"><i>📊</i> Hub</a>
+    <a href="#" class="active"><i>📋</i> ATA de Reuniões</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-stamp">
+      <span class="dot"></span>
+      <div>
+        <span class="stamp-label">Conexão</span>
+        <span class="stamp-text" id="statusConexao">Verificando…</span>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="main-content">
+  <header>
+    <div class="header-left">
+      <a id="btnVoltarHub" href="../index.html"
+         style="display:none;align-items:center;gap:6px;padding:7px 12px;font:600 13px sans-serif;
+                color:#6B21A8;text-decoration:none;border:1.5px solid #E5E7EB;border-radius:9px;">
+        ← Voltar ao hub
+      </a>
+      <h1 class="page-title"><i>📋</i> ATA de Reuniões</h1>
+    </div>
+    <div class="header-right">
+      <button class="b-acao" id="btnAtualizar">↻ Atualizar</button>
+      <button class="b-acao" id="btnImportar">⬆ Importar</button>
+      <button class="b-acao btn-export" id="btnExportar">⬇ Excel</button>
+      <button class="b-acao laranja" id="btnReuniao">▶ Modo reunião</button>
+      <button class="b-acao primaria" id="btnNovo">+ Novo ponto</button>
+    </div>
+  </header>
+
+  <main class="content-body">
+    <div id="avisoConfig" class="aviso-config" style="display:none;"></div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Em aberto</div>
+        <div class="kpi-value" id="kpiAberto">—</div>
+        <div class="kpi-sub">pontos não finalizados</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Parados</div>
+        <div class="kpi-value" id="kpiParado">—</div>
+        <div class="kpi-sub">sem atualização há 14 dias</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Finalizados no mês</div>
+        <div class="kpi-value" id="kpiMes">—</div>
+        <div class="kpi-sub" id="kpiMesSub">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sem responsável</div>
+        <div class="kpi-value" id="kpiSemResp">—</div>
+        <div class="kpi-sub">precisam de dono</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <div class="search">
+          <i>🔎</i>
+          <input type="text" id="busca" placeholder="Buscar ponto, tarefa ou atualização…">
+        </div>
+        <select class="campo campo-mini" id="fEmpresa"><option value="">Empresa: todas</option></select>
+        <select class="campo campo-mini" id="fArea"><option value="">Área: todas</option></select>
+        <select class="campo campo-mini" id="fResp"><option value="">Responsável: todos</option></select>
+        <select class="campo campo-mini" id="fStatus"><option value="">Status: todos</option></select>
+        <select class="campo campo-mini" id="fAgrupar">
+          <option value="">Sem agrupamento</option>
+          <option value="empresa">Agrupar por empresa</option>
+          <option value="area">Agrupar por área</option>
+          <option value="responsavel">Agrupar por responsável</option>
+        </select>
+        <button class="filter-chip" id="chipFinalizados">Ocultar finalizados</button>
+        <div class="toolbar-right"><span id="contador">0 pontos</span></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-visao="lista">Lista</button>
+        <button class="tab" data-visao="kanban">Quadro</button>
+      </div>
+
+      <div id="visaoLista" class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th data-ord="ponto">Ponto</th>
+              <th data-ord="tarefa">Tarefa</th>
+              <th data-ord="empresa">Empresa</th>
+              <th>Última atualização</th>
+              <th data-ord="status">Status</th>
+              <th data-ord="responsavel">Responsável</th>
+              <th data-ord="area">Área</th>
+              <th data-ord="data">Data</th>
+            </tr>
+          </thead>
+          <tbody id="corpoTabela"></tbody>
+        </table>
+      </div>
+
+      <div id="visaoKanban" class="kanban" style="display:none;"></div>
+    </div>
+  </main>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+
+<aside class="drawer" id="drawer">
+  <header>
+    <h2 id="drawerTitulo">Ponto</h2>
+    <button class="b-acao" id="btnFecharDrawer">Fechar</button>
+  </header>
+  <div class="corpo">
+    <div class="bloco">
+      <label class="rotulo" for="cPonto">Ponto reunião</label>
+      <input type="text" class="campo" id="cPonto" placeholder="Ex.: FLUIG">
+    </div>
+    <div class="bloco">
+      <label class="rotulo" for="cTarefa">Tarefa</label>
+      <textarea class="campo" id="cTarefa" rows="3" placeholder="O que precisa ser feito"></textarea>
+    </div>
+    <div class="linha2">
+      <div class="bloco">
+        <label class="rotulo" for="cEmpresa">Empresa</label>
+        <input type="text" class="campo" id="cEmpresa" list="listaEmpresas">
+        <datalist id="listaEmpresas"></datalist>
+      </div>
+      <div class="bloco">
+        <label class="rotulo" for="cArea">Área</label>
+        <input type="text" class="campo" id="cArea" list="listaAreas">
+        <datalist id="listaAreas"></datalist>
+      </div>
+    </div>
+    <div class="linha2">
+      <div class="bloco">
+        <label class="rotulo" for="cResp">Responsável</label>
+        <input type="text" class="campo" id="cResp" list="listaResps">
+        <datalist id="listaResps"></datalist>
+      </div>
+      <div class="bloco">
+        <label class="rotulo" for="cStatus">Status</label>
+        <select class="campo" id="cStatus"></select>
+      </div>
+    </div>
+    <div class="bloco">
+      <label class="rotulo" for="cData">Data</label>
+      <input type="date" class="campo" id="cData">
+    </div>
+
+    <div class="bloco">
+      <label class="rotulo" for="cNota">Nova atualização</label>
+      <textarea class="campo" id="cNota" rows="2" placeholder="O que andou desde a última reunião"></textarea>
+      <button class="b-acao laranja" id="btnAnotar" style="margin-top:8px;">Registrar atualização</button>
+    </div>
+
+    <div class="bloco">
+      <span class="rotulo">Histórico</span>
+      <div class="hist" id="histLista"></div>
+    </div>
+
+    <div class="bloco" id="assinatura" style="font-size:11px;color:var(--subtle);"></div>
+  </div>
+  <div class="rodape">
+    <button class="b-acao primaria" id="btnSalvar">Salvar</button>
+    <button class="b-acao perigo" id="btnExcluir">Excluir</button>
+    <span style="margin-left:auto;font-size:11px;color:var(--subtle);" id="editandoComo"></span>
+  </div>
+</aside>
+
+<div class="modal" id="modalAutor">
+  <h2>Quem está editando?</h2>
+  <p>Só para registrar quem fez a alteração. Fica valendo até você atualizar a página.</p>
+  <input type="text" class="campo" id="inputAutor" placeholder="Seu nome" autocomplete="off">
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button class="b-acao primaria" id="btnConfirmarAutor">Confirmar</button>
+    <button class="b-acao" id="btnCancelarAutor">Cancelar</button>
+  </div>
+</div>
+
+<div class="modal" id="modalImportar">
+  <h2>Importar planilha</h2>
+  <p>Aceita a ATA no formato atual (cabeçalho com PONTO REUNIÃO, TAREFA, EMPRESA…).</p>
+  <input type="file" class="campo" id="arquivoExcel" accept=".xlsx,.xls,.xlsm">
+  <div id="previaImport" style="margin-top:12px;font-size:12.5px;color:var(--muted);"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+    <button class="b-acao primaria" id="btnImpAnexar" disabled>Acrescentar</button>
+    <button class="b-acao perigo" id="btnImpSubstituir" disabled>Substituir tudo</button>
+    <button class="b-acao" id="btnImpCancelar">Cancelar</button>
+  </div>
+</div>
+
+<div class="reuniao" id="telaReuniao">
+  <div class="topo">
+    <img src="../logo-mascote.jpg" alt="" style="width:36px;height:36px;border-radius:9px;object-fit:cover;">
+    <h2>Modo reunião</h2>
+    <span class="contador" id="reuniaoContador">0 / 0</span>
+    <button class="b-acao" id="btnSairReuniao">Sair</button>
+  </div>
+  <div class="painel" id="reuniaoPainel"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="carregando" id="telaCarregando">
+  <img src="../logo-mascote.jpg" alt="Carregando">
+  <span id="textoCarregando">Carregando pontos de reunião…</span>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURAÇÃO — cole aqui a URL /exec do Apps Script publicado
+   ============================================================ */
+var API_URL = 'https://script.google.com/macros/s/AKfycbw2NWnDqRsA3LeItaNA9dbxYCWUqS2Jygz2QmcuDBaFheQjOAeAZuGb_TFx14DNqn71/exec';
+
+var STATUS = ['Novo', 'Pendente', 'Aguardando', 'Acompanhar', 'Finalizado'];
+var DIAS_PARADO = 14;
+
+var estado = {
+  dados: [],
+  visao: 'lista',
+  ordenar: { campo: 'data', dir: -1 },
+  ocultarFinalizados: false,
+  autor: '',
+  editando: null,
+  ultimaCarga: 0,
+  importados: []
+};
+
+/* ---------- utilidades ---------- */
+function $(id) { return document.getElementById(id); }
+
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function fmtData(iso) {
+  if (!iso) return '—';
+  var p = String(iso).slice(0, 10).split('-');
+  return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : String(iso);
+}
+
+function fmtDataHora(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso);
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function diasDesde(iso) {
+  if (!iso) return null;
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+
+function classeStatus(s) {
+  var mapa = {
+    'novo': 'st-novo', 'pendente': 'st-pendente', 'aguardando': 'st-aguardando',
+    'acompanhar': 'st-acompanhar', 'finalizado': 'st-finalizado'
+  };
+  return mapa[String(s || '').trim().toLowerCase()] || 'st-novo';
+}
+
+function ultimaAtualizacao(r) {
+  var lista = r.atualizacoes || [];
+  return lista.length ? lista[lista.length - 1] : null;
+}
+
+function referenciaTempo(r) {
+  var u = ultimaAtualizacao(r);
+  return (u && u.d) || r.atualizadoEm || r.criadoEm || '';
+}
+
+function estaParado(r) {
+  if (String(r.status).toLowerCase() === 'finalizado') return false;
+  var d = diasDesde(referenciaTempo(r));
+  return d !== null && d >= DIAS_PARADO;
+}
+
+function toast(msg, erro) {
+  var t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast on' + (erro ? ' erro' : '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { t.className = 'toast'; }, 3200);
+}
+
+function carregando(on, texto) {
+  $('telaCarregando').style.display = on ? 'flex' : 'none';
+  if (texto) $('textoCarregando').textContent = texto;
+}
+
+function abrirModal(id) { $('backdrop').classList.add('on'); $(id).classList.add('on'); }
+function fecharModais() {
+  $('backdrop').classList.remove('on');
+  $('modalAutor').classList.remove('on');
+  $('modalImportar').classList.remove('on');
+  $('drawer').classList.remove('on');
+}
+
+/* ============================================================
+   COMUNICAÇÃO COM O APPS SCRIPT
+   ============================================================ */
+function apiGet(forcar) {
+  var url = API_URL + (API_URL.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now() + (forcar ? '&forcar=1' : '');
+  return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+    if (!j.ok) throw new Error(j.erro || 'Falha ao ler os dados');
+    return j.dados || [];
+  });
+}
+
+function apiPost(corpo) {
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(corpo)
+  }).then(function (r) { return r.json(); }).then(function (j) {
+    if (!j.ok) throw new Error(j.erro || 'Falha ao gravar');
+    return j;
+  });
+}
+
+function carregar(forcar, silencioso) {
+  if (!API_URL) {
+    $('avisoConfig').style.display = 'block';
+    $('avisoConfig').innerHTML = 'A ferramenta ainda não está ligada à planilha. Publique o Apps Script e cole a URL /exec na variável <code>API_URL</code>, no topo do script desta página.';
+    $('statusConexao').textContent = 'Não configurada';
+    carregando(false);
+    render();
+    return Promise.resolve();
+  }
+  if (!silencioso) carregando(true, 'Carregando pontos de reunião…');
+  return apiGet(forcar).then(function (dados) {
+    estado.dados = dados;
+    estado.ultimaCarga = Date.now();
+    $('statusConexao').textContent = 'Online';
+    $('avisoConfig').style.display = 'none';
+    render();
+  }).catch(function (err) {
+    $('statusConexao').textContent = 'Offline';
+    toast('Erro ao carregar: ' + err.message, true);
+  }).then(function () { carregando(false); });
+}
+
+/* ============================================================
+   FILTROS E ORDENAÇÃO
+   ============================================================ */
+function filtrados() {
+  var termo = $('busca').value.trim().toLowerCase();
+  var fe = $('fEmpresa').value, fa = $('fArea').value;
+  var fr = $('fResp').value, fs = $('fStatus').value;
+
+  var lista = estado.dados.filter(function (r) {
+    if (estado.ocultarFinalizados && String(r.status).toLowerCase() === 'finalizado') return false;
+    if (fe && r.empresa !== fe) return false;
+    if (fa && (r.area || '(sem área)') !== fa) return false;
+    if (fr && (r.responsavel || '(sem responsável)') !== fr) return false;
+    if (fs && r.status !== fs) return false;
+    if (termo) {
+      var texto = [r.ponto, r.tarefa, r.empresa, r.responsavel, r.area,
+        (r.atualizacoes || []).map(function (a) { return a.t; }).join(' ')].join(' ').toLowerCase();
+      if (texto.indexOf(termo) < 0) return false;
+    }
+    return true;
+  });
+
+  var campo = estado.ordenar.campo, dir = estado.ordenar.dir;
+  lista.sort(function (a, b) {
+    var x = String(a[campo] || ''), y = String(b[campo] || '');
+    if (campo === 'status') { x = String(STATUS.indexOf(a.status)); y = String(STATUS.indexOf(b.status)); }
+    if (x === y) return 0;
+    return (x > y ? 1 : -1) * dir;
+  });
+  return lista;
+}
+
+function opcoesUnicas(campo, rotuloVazio) {
+  var vistos = {};
+  estado.dados.forEach(function (r) {
+    var v = String(r[campo] || '').trim() || rotuloVazio;
+    if (v) vistos[v] = true;
+  });
+  return Object.keys(vistos).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); });
+}
+
+function popularSelect(id, rotulo, valores) {
+  var sel = $(id), atual = sel.value;
+  sel.innerHTML = '<option value="">' + rotulo + '</option>' +
+    valores.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+  if (valores.indexOf(atual) >= 0) sel.value = atual;
+}
+
+function popularDatalist(id, valores) {
+  $(id).innerHTML = valores.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('');
+}
+
+/* ============================================================
+   RENDERIZAÇÃO
+   ============================================================ */
+function render() {
+  var empresas = opcoesUnicas('empresa', '');
+  var areas = opcoesUnicas('area', '(sem área)');
+  var resps = opcoesUnicas('responsavel', '(sem responsável)');
+
+  popularSelect('fEmpresa', 'Empresa: todas', empresas);
+  popularSelect('fArea', 'Área: todas', areas);
+  popularSelect('fResp', 'Responsável: todos', resps);
+  popularSelect('fStatus', 'Status: todos', STATUS);
+  popularDatalist('listaEmpresas', empresas);
+  popularDatalist('listaAreas', areas.filter(function (a) { return a !== '(sem área)'; }));
+  popularDatalist('listaResps', resps.filter(function (a) { return a !== '(sem responsável)'; }));
+
+  renderKpis();
+  var lista = filtrados();
+  $('contador').textContent = lista.length + (lista.length === 1 ? ' ponto' : ' pontos');
+
+  if (estado.visao === 'lista') {
+    $('visaoLista').style.display = '';
+    $('visaoKanban').style.display = 'none';
+    renderTabela(lista);
+  } else {
+    $('visaoLista').style.display = 'none';
+    $('visaoKanban').style.display = 'flex';
+    renderKanban(lista);
+  }
+}
+
+function renderKpis() {
+  var abertos = estado.dados.filter(function (r) { return String(r.status).toLowerCase() !== 'finalizado'; });
+  var mesAtual = new Date().toISOString().slice(0, 7);
+  var noMes = estado.dados.filter(function (r) {
+    return String(r.status).toLowerCase() === 'finalizado' &&
+           String(referenciaTempo(r)).slice(0, 7) === mesAtual;
+  });
+  $('kpiAberto').textContent = abertos.length;
+  $('kpiParado').textContent = estado.dados.filter(estaParado).length;
+  $('kpiMes').textContent = noMes.length;
+  $('kpiMesSub').textContent = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  $('kpiSemResp').textContent = abertos.filter(function (r) { return !String(r.responsavel || '').trim(); }).length;
+}
+
+function linhaTabela(r) {
+  var u = ultimaAtualizacao(r);
+  var dias = diasDesde(referenciaTempo(r));
+  var alerta = estaParado(r) ? '<span class="parado">parado há ' + dias + ' dias</span>' : '';
+  return '' +
+    '<tr data-id="' + esc(r.id) + '">' +
+      '<td><span class="cel-ponto">' + esc(r.ponto || '—') + '</span></td>' +
+      '<td><div class="cel-tarefa">' + esc(r.tarefa || '') + '</div></td>' +
+      '<td>' + esc(r.empresa || '—') + '</td>' +
+      '<td><div class="cel-upd">' + esc(u ? u.t : '—') +
+        (u && u.d ? '<small>' + esc(u.a || '') + ' · ' + fmtDataHora(u.d) + '</small>' : '') +
+        alerta + '</div></td>' +
+      '<td><span class="st ' + classeStatus(r.status) + '">' + esc(r.status || 'Novo') + '</span></td>' +
+      '<td>' + esc(r.responsavel || '—') + '</td>' +
+      '<td>' + esc(r.area || '—') + '</td>' +
+      '<td>' + fmtData(r.data) + '</td>' +
+    '</tr>';
+}
+
+function renderTabela(lista) {
+  var corpo = $('corpoTabela');
+  if (!lista.length) {
+    corpo.innerHTML = '<tr><td colspan="8" style="padding:34px;text-align:center;color:var(--subtle);">' +
+      'Nenhum ponto encontrado com esses filtros.</td></tr>';
+    return;
+  }
+  var agrupar = $('fAgrupar').value;
+  if (!agrupar) { corpo.innerHTML = lista.map(linhaTabela).join(''); return; }
+
+  var grupos = {};
+  lista.forEach(function (r) {
+    var chave = String(r[agrupar] || '').trim() || '(sem preenchimento)';
+    (grupos[chave] = grupos[chave] || []).push(r);
+  });
+
+  corpo.innerHTML = Object.keys(grupos).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); })
+    .map(function (chave) {
+      return '<tr class="linha-grupo"><td colspan="8" class="grupo-head">' +
+        esc(chave) + '<span class="contagem">' + grupos[chave].length + '</span></td></tr>' +
+        grupos[chave].map(linhaTabela).join('');
+    }).join('');
+}
+
+function renderKanban(lista) {
+  var alvo = $('visaoKanban');
+  alvo.innerHTML = STATUS.map(function (st) {
+    var itens = lista.filter(function (r) { return (r.status || 'Novo') === st; });
+    return '<div class="kb-col" data-status="' + esc(st) + '">' +
+      '<h3>' + esc(st) + '<span>' + itens.length + '</span></h3>' +
+      itens.map(function (r) {
+        var u = ultimaAtualizacao(r);
+        return '<div class="kb-card" draggable="true" data-id="' + esc(r.id) + '">' +
+          '<b>' + esc(r.ponto || '—') + '</b>' +
+          '<p>' + esc(r.tarefa || (u ? u.t : '')) + '</p>' +
+          '<div class="kb-meta">' + esc(r.empresa || '—') + ' · ' + esc(r.responsavel || 'sem responsável') +
+          (estaParado(r) ? ' · <span class="parado">parado</span>' : '') + '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+  }).join('');
+}
+
+/* ============================================================
+   IDENTIFICAÇÃO DE QUEM EDITA (só na primeira gravação da sessão)
+   ============================================================ */
+function garantirAutor() {
+  if (estado.autor) return Promise.resolve(estado.autor);
+  return new Promise(function (resolve, reject) {
+    abrirModal('modalAutor');
+    var campo = $('inputAutor');
+    campo.value = '';
+    setTimeout(function () { campo.focus(); }, 60);
+
+    function confirmar() {
+      var nome = campo.value.trim();
+      if (!nome) { campo.focus(); return; }
+      estado.autor = nome;
+      $('editandoComo').textContent = 'editando como ' + nome;
+      limpar();
+      fecharModais();
+      if ($('drawer').dataset.aberto === '1') $('drawer').classList.add('on');
+      $('backdrop').classList.add('on');
+      resolve(nome);
+    }
+    function cancelar() {
+      limpar();
+      fecharModais();
+      if ($('drawer').dataset.aberto === '1') {
+        $('drawer').classList.add('on');
+        $('backdrop').classList.add('on');
+      }
+      reject(new Error('cancelado'));
+    }
+    function tecla(e) { if (e.key === 'Enter') confirmar(); if (e.key === 'Escape') cancelar(); }
+    function limpar() {
+      $('btnConfirmarAutor').removeEventListener('click', confirmar);
+      $('btnCancelarAutor').removeEventListener('click', cancelar);
+      campo.removeEventListener('keydown', tecla);
+    }
+    $('btnConfirmarAutor').addEventListener('click', confirmar);
+    $('btnCancelarAutor').addEventListener('click', cancelar);
+    campo.addEventListener('keydown', tecla);
+  });
+}
+
+/* ============================================================
+   PAINEL DE EDIÇÃO
+   ============================================================ */
+function abrirDrawer(id) {
+  var r = id ? estado.dados.filter(function (x) { return x.id === id; })[0] : null;
+  estado.editando = r ? r.id : null;
+
+  $('drawerTitulo').textContent = r ? (r.ponto || 'Ponto') : 'Novo ponto';
+  $('cPonto').value = r ? r.ponto : '';
+  $('cTarefa').value = r ? r.tarefa : '';
+  $('cEmpresa').value = r ? r.empresa : '';
+  $('cArea').value = r ? r.area : '';
+  $('cResp').value = r ? r.responsavel : '';
+  $('cData').value = r ? String(r.data || '').slice(0, 10) : new Date().toISOString().slice(0, 10);
+  $('cNota').value = '';
+
+  $('cStatus').innerHTML = STATUS.map(function (s) {
+    return '<option value="' + s + '"' + (r && r.status === s ? ' selected' : '') + '>' + s + '</option>';
+  }).join('');
+
+  $('btnExcluir').style.display = r ? '' : 'none';
+  $('btnAnotar').textContent = r ? 'Registrar atualização' : 'Vai junto ao salvar';
+  $('btnAnotar').disabled = !r;
+  $('editandoComo').textContent = estado.autor ? 'editando como ' + estado.autor : '';
+
+  var hist = $('histLista');
+  var lista = (r && r.atualizacoes) || [];
+  hist.innerHTML = lista.length
+    ? lista.slice().reverse().map(function (a) {
+        return '<div class="hist-item">' + esc(a.t) +
+          '<small>' + esc(a.a || 'sem autor') + (a.d ? ' · ' + fmtDataHora(a.d) : '') + '</small></div>';
+      }).join('')
+    : '<div class="hist-vazio">Nenhuma atualização registrada ainda.</div>';
+
+  $('assinatura').innerHTML = r
+    ? 'Criado por ' + esc(r.criadoPor || '—') + ' em ' + fmtDataHora(r.criadoEm) +
+      '<br>Última alteração: ' + esc(r.atualizadoPor || '—') + ' em ' + fmtDataHora(r.atualizadoEm)
+    : '';
+
+  $('drawer').dataset.aberto = '1';
+  $('drawer').classList.add('on');
+  $('backdrop').classList.add('on');
+}
+
+function fecharDrawer() {
+  $('drawer').dataset.aberto = '0';
+  estado.editando = null;
+  fecharModais();
+}
+
+function coletarFormulario() {
+  return {
+    id: estado.editando || '',
+    ponto: $('cPonto').value.trim(),
+    tarefa: $('cTarefa').value.trim(),
+    empresa: $('cEmpresa').value.trim(),
+    area: $('cArea').value.trim(),
+    responsavel: $('cResp').value.trim(),
+    status: $('cStatus').value,
+    data: $('cData').value
+  };
+}
+
+function salvarPonto() {
+  var reg = coletarFormulario();
+  if (!reg.ponto && !reg.tarefa) { toast('Preencha ao menos o ponto ou a tarefa.', true); return; }
+
+  garantirAutor().then(function (autor) {
+    var nota = $('cNota').value.trim();
+    if (!reg.id && nota) {
+      reg.atualizacoes = [{ t: nota, a: autor, d: new Date().toISOString() }];
+    }
+    carregando(true, 'Salvando…');
+    return apiPost({ acao: 'salvar', registro: reg, autor: autor }).then(function () {
+      if (reg.id && nota) {
+        return apiPost({ acao: 'anotar', id: reg.id, texto: nota, autor: autor });
+      }
+    });
+  }).then(function () {
+    fecharDrawer();
+    toast('Ponto salvo.');
+    return carregar(true, true);
+  }).catch(function (err) {
+    carregando(false);
+    if (err.message !== 'cancelado') toast('Erro ao salvar: ' + err.message, true);
+  });
+}
+
+function anotarPonto() {
+  var texto = $('cNota').value.trim();
+  if (!texto) { toast('Escreva a atualização antes.', true); return; }
+  var id = estado.editando;
+
+  garantirAutor().then(function (autor) {
+    carregando(true, 'Registrando…');
+    return apiPost({ acao: 'anotar', id: id, texto: texto, autor: autor });
+  }).then(function () {
+    toast('Atualização registrada.');
+    return carregar(true, true);
+  }).then(function () {
+    if (id) abrirDrawer(id);
+  }).catch(function (err) {
+    carregando(false);
+    if (err.message !== 'cancelado') toast('Erro: ' + err.message, true);
+  });
+}
+
+function excluirPonto() {
+  var id = estado.editando;
+  if (!id) return;
+  if (!confirm('Excluir este ponto? Um backup da planilha é feito automaticamente antes.')) return;
+
+  garantirAutor().then(function (autor) {
+    carregando(true, 'Excluindo…');
+    return apiPost({ acao: 'excluir', id: id, autor: autor });
+  }).then(function () {
+    fecharDrawer();
+    toast('Ponto excluído.');
+    return carregar(true, true);
+  }).catch(function (err) {
+    carregando(false);
+    if (err.message !== 'cancelado') toast('Erro ao excluir: ' + err.message, true);
+  });
+}
+
+function mudarStatus(id, status) {
+  var r = estado.dados.filter(function (x) { return x.id === id; })[0];
+  if (!r || r.status === status) return;
+
+  garantirAutor().then(function (autor) {
+    carregando(true, 'Atualizando status…');
+    var copia = JSON.parse(JSON.stringify(r));
+    copia.status = status;
+    return apiPost({ acao: 'salvar', registro: copia, autor: autor });
+  }).then(function () {
+    toast('Status alterado para ' + status + '.');
+    return carregar(true, true);
+  }).catch(function (err) {
+    carregando(false);
+    if (err.message !== 'cancelado') toast('Erro: ' + err.message, true);
+    render();
+  });
+}
+
+/* ============================================================
+   IMPORTAR PLANILHA
+   ============================================================ */
+function norm(v) {
+  return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+}
+
+function dataParaISO(v) {
+  if (!v && v !== 0) return '';
+  if (v instanceof Date && !isNaN(v.getTime())) {
+    return new Date(v.getTime() - v.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  }
+  if (typeof v === 'number' && v > 20000) {
+    var base = new Date(Date.UTC(1899, 11, 30));
+    return new Date(base.getTime() + v * 86400000).toISOString().slice(0, 10);
+  }
+  var texto = String(v).trim();
+  var br = texto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (br) {
+    var ano = br[3].length === 2 ? '20' + br[3] : br[3];
+    return ano + '-' + ('0' + br[2]).slice(-2) + '-' + ('0' + br[1]).slice(-2);
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(texto)) return texto.slice(0, 10);
+  return '';
+}
+
+function lerPlanilha(arquivo) {
+  return new Promise(function (resolve, reject) {
+    var leitor = new FileReader();
+    leitor.onerror = function () { reject(new Error('Não consegui ler o arquivo.')); };
+    leitor.onload = function (ev) {
+      try {
+        var wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array', cellDates: true });
+        var mapaCampos = {
+          'PONTO REUNIAO': 'ponto', 'PONTO': 'ponto', 'TAREFA': 'tarefa', 'EMPRESA': 'empresa',
+          'ATUALIZACAO': 'atualizacao', 'STATUS': 'status', 'RESPONSAVEL': 'responsavel',
+          'AREA': 'area', 'DATA': 'data'
+        };
+        var registros = [];
+
+        wb.SheetNames.forEach(function (nome) {
+          var linhas = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header: 1, defval: '', raw: true, blankrows: false });
+          var iCab = -1;
+          for (var i = 0; i < Math.min(linhas.length, 15); i++) {
+            if (linhas[i].some(function (c) { return norm(c).indexOf('PONTO') === 0; })) { iCab = i; break; }
+          }
+          if (iCab < 0) return;
+
+          var colunas = {};
+          linhas[iCab].forEach(function (c, j) {
+            var campo = mapaCampos[norm(c)];
+            if (campo && colunas[campo] === undefined) colunas[campo] = j;
+          });
+
+          linhas.slice(iCab + 1).forEach(function (linha) {
+            function pega(campo) {
+              var j = colunas[campo];
+              return j === undefined ? '' : String(linha[j] == null ? '' : linha[j]).trim();
+            }
+            var reg = {
+              ponto: pega('ponto'), tarefa: pega('tarefa'), empresa: pega('empresa'),
+              atualizacao: pega('atualizacao'), status: pega('status'),
+              responsavel: pega('responsavel'), area: pega('area'),
+              data: dataParaISO(colunas.data === undefined ? '' : linha[colunas.data])
+            };
+            if (!reg.ponto && !reg.tarefa) return;
+            if (STATUS.indexOf(reg.status) < 0) {
+              var achado = STATUS.filter(function (s) { return norm(s) === norm(reg.status); })[0];
+              reg.status = achado || 'Novo';
+            }
+            registros.push(reg);
+          });
+        });
+
+        resolve(registros);
+      } catch (err) { reject(err); }
+    };
+    leitor.readAsArrayBuffer(arquivo);
+  });
+}
+
+function enviarImportacao(modo) {
+  if (!estado.importados.length) return;
+  if (modo === 'substituir' && !confirm('Isso apaga os pontos atuais e grava só os da planilha. Um backup é feito antes. Continuar?')) return;
+
+  garantirAutor().then(function (autor) {
+    carregando(true, 'Importando ' + estado.importados.length + ' registros…');
+    return apiPost({ acao: 'importar', registros: estado.importados, modo: modo, autor: autor });
+  }).then(function (resp) {
+    fecharModais();
+    estado.importados = [];
+    $('previaImport').textContent = '';
+    $('arquivoExcel').value = '';
+    $('btnImpAnexar').disabled = true;
+    $('btnImpSubstituir').disabled = true;
+    toast('Importados ' + resp.importados + ' pontos.');
+    return carregar(true, true);
+  }).catch(function (err) {
+    carregando(false);
+    if (err.message !== 'cancelado') toast('Erro na importação: ' + err.message, true);
+  });
+}
+
+/* ============================================================
+   EXPORTAR PLANILHA
+   ============================================================ */
+function exportar() {
+  var lista = filtrados();
+  if (!lista.length) { toast('Nada para exportar com esses filtros.', true); return; }
+
+  var aoa = [
+    ['FINANCEIRO | CONTROLADORIA | CONTABILIDADE'],
+    ['ATA DE REUNIÃO'],
+    ['PONTO REUNIÃO', 'TAREFA', 'EMPRESA', 'ATUALIZAÇÃO', 'Status', 'Responsável', 'ÁREA', 'Data', 'Histórico completo']
+  ];
+  lista.forEach(function (r) {
+    var u = ultimaAtualizacao(r);
+    var historico = (r.atualizacoes || []).map(function (a) {
+      return (a.d ? fmtDataHora(a.d) + ' — ' : '') + (a.a ? a.a + ': ' : '') + a.t;
+    }).join('\n');
+    aoa.push([r.ponto, r.tarefa, r.empresa, u ? u.t : '', r.status, r.responsavel, r.area, fmtData(r.data), historico]);
+  });
+
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = [{ wch: 26 }, { wch: 52 }, { wch: 22 }, { wch: 46 }, { wch: 14 }, { wch: 20 }, { wch: 16 }, { wch: 12 }, { wch: 60 }];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ATA');
+  XLSX.writeFile(wb, 'ATA_Reunioes_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  toast('Excel gerado.');
+}
+
+/* ============================================================
+   MODO REUNIÃO
+   ============================================================ */
+var reuniao = { lista: [], i: 0 };
+
+function abrirReuniao() {
+  reuniao.lista = filtrados().filter(function (r) { return String(r.status).toLowerCase() !== 'finalizado'; });
+  if (!reuniao.lista.length) { toast('Nenhum ponto em aberto com esses filtros.', true); return; }
+  reuniao.i = 0;
+  $('telaReuniao').classList.add('on');
+  renderReuniao();
+}
+
+function renderReuniao() {
+  var r = reuniao.lista[reuniao.i];
+  if (!r) { sairReuniao(); return; }
+  var atual = estado.dados.filter(function (x) { return x.id === r.id; })[0] || r;
+  $('reuniaoContador').textContent = (reuniao.i + 1) + ' / ' + reuniao.lista.length;
+
+  var ultimas = (atual.atualizacoes || []).slice(-3).reverse().map(function (a) {
+    return '<div class="hist-item">' + esc(a.t) +
+      '<small>' + esc(a.a || '') + (a.d ? ' · ' + fmtDataHora(a.d) : '') + '</small></div>';
+  }).join('') || '<div class="hist-vazio">Sem atualizações anteriores.</div>';
+
+  $('reuniaoPainel').innerHTML =
+    '<h3 class="ponto-titulo">' + esc(atual.ponto || 'Ponto sem título') + '</h3>' +
+    '<p class="tarefa">' + esc(atual.tarefa || '') + '</p>' +
+    '<div class="metas">' +
+      '<span class="pill">' + esc(atual.empresa || 'sem empresa') + '</span>' +
+      '<span class="pill">' + esc(atual.area || 'sem área') + '</span>' +
+      '<span class="pill">' + esc(atual.responsavel || 'sem responsável') + '</span>' +
+      '<span class="st ' + classeStatus(atual.status) + '">' + esc(atual.status) + '</span>' +
+      '<span class="pill">' + fmtData(atual.data) + '</span>' +
+    '</div>' +
+    '<div class="hist" style="margin-bottom:16px;">' + ultimas + '</div>' +
+    '<label class="rotulo" for="rNota">Atualização de hoje</label>' +
+    '<textarea class="campo" id="rNota" rows="3" placeholder="O que foi decidido agora"></textarea>' +
+    '<div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+      '<label class="rotulo" style="margin:0;">Status</label>' +
+      '<select class="campo campo-mini" id="rStatus">' +
+        STATUS.map(function (s) {
+          return '<option value="' + s + '"' + (atual.status === s ? ' selected' : '') + '>' + s + '</option>';
+        }).join('') +
+      '</select>' +
+    '</div>' +
+    '<div class="navegacao">' +
+      '<button class="b-acao" id="rAnterior">← Anterior</button>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button class="b-acao" id="rPular">Pular</button>' +
+        '<button class="b-acao primaria" id="rSalvar">Salvar e avançar →</button>' +
+      '</div>' +
+    '</div>';
+
+  $('rAnterior').onclick = function () { if (reuniao.i > 0) { reuniao.i--; renderReuniao(); } };
+  $('rPular').onclick = function () { avancarReuniao(); };
+  $('rSalvar').onclick = function () { salvarReuniao(atual); };
+}
+
+function avancarReuniao() {
+  if (reuniao.i < reuniao.lista.length - 1) { reuniao.i++; renderReuniao(); }
+  else { toast('Fim da lista.'); sairReuniao(); }
+}
+
+function salvarReuniao(atual) {
+  var nota = $('rNota').value.trim();
+  var novoStatus = $('rStatus').value;
+  if (!nota && novoStatus === atual.status) { avancarReuniao(); return; }
+
+  garantirAutor().then(function (autor) {
+    var passos = Promise.resolve();
+    if (novoStatus !== atual.status) {
+      var copia = JSON.parse(JSON.stringify(atual));
+      copia.status = novoStatus;
+      passos = passos.then(function () { return apiPost({ acao: 'salvar', registro: copia, autor: autor }); });
+    }
+    if (nota) {
+      passos = passos.then(function () {
+        return apiPost({ acao: 'anotar', id: atual.id, texto: nota, autor: autor });
+      });
+    }
+    return passos;
+  }).then(function () {
+    toast('Registrado.');
+    return carregar(true, true);
+  }).then(function () {
+    avancarReuniao();
+  }).catch(function (err) {
+    if (err.message !== 'cancelado') toast('Erro: ' + err.message, true);
+  });
+}
+
+function sairReuniao() {
+  $('telaReuniao').classList.remove('on');
+  render();
+}
+
+/* ============================================================
+   EVENTOS
+   ============================================================ */
+['busca', 'fEmpresa', 'fArea', 'fResp', 'fStatus', 'fAgrupar'].forEach(function (id) {
+  $(id).addEventListener(id === 'busca' ? 'input' : 'change', render);
+});
+
+$('chipFinalizados').addEventListener('click', function () {
+  estado.ocultarFinalizados = !estado.ocultarFinalizados;
+  this.classList.toggle('active', estado.ocultarFinalizados);
+  this.textContent = estado.ocultarFinalizados ? 'Mostrando só em aberto' : 'Ocultar finalizados';
+  render();
+});
+
+Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (tab) {
+  tab.addEventListener('click', function () {
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'), function (t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    estado.visao = tab.dataset.visao;
+    render();
+  });
+});
+
+Array.prototype.forEach.call(document.querySelectorAll('th[data-ord]'), function (th) {
+  th.addEventListener('click', function () {
+    var campo = th.dataset.ord;
+    if (estado.ordenar.campo === campo) estado.ordenar.dir *= -1;
+    else estado.ordenar = { campo: campo, dir: 1 };
+    render();
+  });
+});
+
+$('corpoTabela').addEventListener('click', function (ev) {
+  var tr = ev.target.closest('tr[data-id]');
+  if (tr) abrirDrawer(tr.dataset.id);
+});
+
+$('visaoKanban').addEventListener('click', function (ev) {
+  var card = ev.target.closest('.kb-card');
+  if (card) abrirDrawer(card.dataset.id);
+});
+
+$('visaoKanban').addEventListener('dragstart', function (ev) {
+  var card = ev.target.closest('.kb-card');
+  if (card) ev.dataTransfer.setData('text/plain', card.dataset.id);
+});
+$('visaoKanban').addEventListener('dragover', function (ev) {
+  var col = ev.target.closest('.kb-col');
+  if (col) { ev.preventDefault(); col.classList.add('alvo'); }
+});
+$('visaoKanban').addEventListener('dragleave', function (ev) {
+  var col = ev.target.closest('.kb-col');
+  if (col) col.classList.remove('alvo');
+});
+$('visaoKanban').addEventListener('drop', function (ev) {
+  var col = ev.target.closest('.kb-col');
+  if (!col) return;
+  ev.preventDefault();
+  col.classList.remove('alvo');
+  mudarStatus(ev.dataTransfer.getData('text/plain'), col.dataset.status);
+});
+
+$('btnNovo').addEventListener('click', function () { abrirDrawer(null); });
+$('btnAtualizar').addEventListener('click', function () { carregar(true); });
+$('btnFecharDrawer').addEventListener('click', fecharDrawer);
+$('btnSalvar').addEventListener('click', salvarPonto);
+$('btnAnotar').addEventListener('click', anotarPonto);
+$('btnExcluir').addEventListener('click', excluirPonto);
+$('backdrop').addEventListener('click', function () { fecharDrawer(); });
+$('btnExportar').addEventListener('click', exportar);
+$('btnReuniao').addEventListener('click', abrirReuniao);
+$('btnSairReuniao').addEventListener('click', sairReuniao);
+
+$('btnImportar').addEventListener('click', function () {
+  $('previaImport').textContent = '';
+  $('arquivoExcel').value = '';
+  estado.importados = [];
+  $('btnImpAnexar').disabled = true;
+  $('btnImpSubstituir').disabled = true;
+  abrirModal('modalImportar');
+});
+$('btnImpCancelar').addEventListener('click', fecharModais);
+$('btnImpAnexar').addEventListener('click', function () { enviarImportacao('anexar'); });
+$('btnImpSubstituir').addEventListener('click', function () { enviarImportacao('substituir'); });
+
+$('arquivoExcel').addEventListener('change', function () {
+  var arquivo = this.files[0];
+  if (!arquivo) return;
+  $('previaImport').textContent = 'Lendo arquivo…';
+  lerPlanilha(arquivo).then(function (registros) {
+    estado.importados = registros;
+    var ok = registros.length > 0;
+    $('btnImpAnexar').disabled = !ok;
+    $('btnImpSubstituir').disabled = !ok;
+    $('previaImport').innerHTML = ok
+      ? 'Encontrados <b>' + registros.length + '</b> pontos. Exemplo: ' + esc(registros[0].ponto || registros[0].tarefa)
+      : 'Não encontrei o cabeçalho PONTO REUNIÃO nessa planilha.';
+  }).catch(function (err) {
+    $('previaImport').textContent = 'Erro ao ler: ' + err.message;
+  });
+});
+
+document.addEventListener('keydown', function (ev) {
+  if (ev.key !== 'Escape') return;
+  if ($('telaReuniao').classList.contains('on')) sairReuniao();
+  else fecharDrawer();
+});
+
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden && Date.now() - estado.ultimaCarga > 60000) carregar(false, true);
+});
+
+/* ============================================================
+   BOTÃO "VOLTAR AO HUB"
+   ============================================================ */
+(function () {
+  var HubLink = {
+    HUB_PATH_PREFIX: '/Controladoria',
+    STORAGE_KEY: 'came_from_hub_reunioes',
+    init: function () {
+      var btn = document.getElementById('btnVoltarHub');
+      if (!btn) return;
+      if (this.veioDoHub()) {
+        btn.style.display = 'inline-flex';
+        try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
+      }
+    },
+    veioDoHub: function () {
+      try {
+        if (document.referrer) {
+          var ref = new URL(document.referrer);
+          var refPath = decodeURIComponent(ref.pathname);
+          var selfPath = decodeURIComponent(location.pathname);
+          var selfDir = selfPath.slice(0, selfPath.lastIndexOf('/') + 1);
+          var mesmaOrigem = ref.origin === location.origin;
+          var dentroDoPortal = refPath.indexOf(this.HUB_PATH_PREFIX) === 0;
+          var mesmaFerramenta = refPath.indexOf(selfDir) === 0;
+          if (mesmaOrigem && dentroDoPortal && !mesmaFerramenta) return true;
+        }
+      } catch (e) {}
+      try { if (new URLSearchParams(location.search).has('from')) return true; } catch (e) {}
+      try { if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true; } catch (e) {}
+      return false;
+    }
+  };
+  HubLink.init();
+})();
+
+carregar(false);
+</script>
+</body>
+</html>
