@@ -3,296 +3,388 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ATA de Reuniões · Portal On Time</title>
+<title>ATA de Reuniões - Portal On Time</title>
 
 <link rel="icon" type="image/png" href="../favicon.png">
 <link rel="stylesheet" href="../styles.css">
-<script src="https://unpkg.com/@phosphor-icons/web"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700;900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-:root {
-  --st-novo:        #FF6E00;
-  --st-pendente:    #B91C1C;
-  --st-aguardando:  #C77700;
-  --st-acompanhar:  #0369A1;
-  --st-finalizado:  #1F7A3D;
-  --curva: cubic-bezier(.22,.9,.28,1);
-}
+  /* ============================================================
+     ANIMAÇÕES & VIDA — concentradas, memoráveis
+     ============================================================ */
+  @keyframes entrada-suave {
+    from { opacity:0; transform:translateY(16px) scale(.985); }
+    to   { opacity:1; transform:translateY(0) scale(1); }
+  }
+  @keyframes entrada-lateral {
+    from { opacity:0; transform:translateX(-24px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+  @keyframes pulse-plum {
+    0%,100% { box-shadow:0 0 0 0 rgba(107,33,168,0); }
+    50%     { box-shadow:0 0 0 8px rgba(107,33,168,.18); }
+  }
+  @keyframes pulse-laranja {
+    0%,100% { box-shadow:0 0 0 0 rgba(255,110,0,0); }
+    50%     { box-shadow:0 0 0 8px rgba(255,110,0,.18); }
+  }
+  @keyframes shimmer {
+    0%   { background-position:-200% 0; }
+    100% { background-position:200% 0; }
+  }
+  @keyframes flutuar {
+    0%,100% { transform:translateY(0); }
+    50%     { transform:translateY(-4px); }
+  }
+  @keyframes contagem-pulso {
+    0%   { transform:scale(1); }
+    40%  { transform:scale(1.18); }
+    100% { transform:scale(1); }
+  }
+  @keyframes linha-entra {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  @keyframes card-entra {
+    from { opacity:0; transform:translateY(20px) rotateX(4deg); }
+    to   { opacity:1; transform:translateY(0) rotateX(0); }
+  }
+  @keyframes drawer-entra {
+    from { transform:translateX(102%); }
+    to   { transform:translateX(0); }
+  }
+  @keyframes modal-entra {
+    from { opacity:0; transform:translate(-50%,-46%) scale(.94); }
+    to   { opacity:1; transform:translate(-50%,-50%) scale(1); }
+  }
+  @keyframes toast-entra {
+    from { opacity:0; transform:translateX(-50%) translateY(30px) scale(.95); }
+    to   { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+  }
+  @keyframes barra-progresso {
+    from { width:0%; }
+  }
+  @keyframes brilho-borda {
+    0%   { border-color:var(--border); }
+    50%  { border-color:var(--plum-light); }
+    100% { border-color:var(--border); }
+  }
+  @keyframes status-glow {
+    0%,100% { filter:brightness(1); }
+    50%     { filter:brightness(1.15); }
+  }
 
-/* ---------- movimento base ---------- */
-@keyframes sobe      { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
-@keyframes entraDir  { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:none; } }
-@keyframes anel      { 0% { transform:scale(.82); opacity:.5; } 100% { transform:scale(1.5); opacity:0; } }
-@keyframes pulsaDot  { 0%,100% { box-shadow:0 0 0 0 rgba(31,122,61,.5); } 50% { box-shadow:0 0 0 6px rgba(31,122,61,0); } }
-@keyframes alerta    { 0%,100% { opacity:.55; } 50% { opacity:1; } }
-@keyframes brilho    { from { background-position:-420px 0; } to { background-position:420px 0; } }
-@keyframes flutua    { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
-@keyframes gira      { to { transform:rotate(360deg); } }
+  /* ============================================================
+     LAYOUT & COMPONENTES
+     ============================================================ */
+  .header-right { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
 
-.reveal-seq { opacity:0; animation:sobe .5s var(--curva) forwards; animation-delay:calc(var(--i,0) * 38ms); }
+  .b-acao {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 14px; border-radius:9px; cursor:pointer;
+    font-family:var(--font-body); font-size:12.5px; font-weight:600;
+    border:1px solid var(--border); background:var(--surface); color:var(--muted);
+    transition:all .2s cubic-bezier(.4,0,.2,1);
+    position:relative; overflow:hidden;
+  }
+  .b-acao::after {
+    content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+    transform:translateX(-100%); transition:transform .5s;
+  }
+  .b-acao:hover::after { transform:translateX(100%); }
+  .b-acao:hover {
+    border-color:var(--plum-light); color:var(--ink); background:var(--surface-soft);
+    transform:translateY(-1px); box-shadow:0 4px 12px rgba(107,33,168,.1);
+  }
+  .b-acao.primaria { background:var(--plum); border-color:var(--plum); color:#fff; }
+  .b-acao.primaria:hover { background:var(--plum-light); color:#fff; box-shadow:0 6px 20px rgba(107,33,168,.25); }
+  .b-acao.laranja { background:var(--orange); border-color:var(--orange); color:#fff; }
+  .b-acao.laranja:hover { background:var(--orange-deep); color:#fff; box-shadow:0 6px 20px rgba(255,110,0,.25); }
+  .b-acao.perigo { color:var(--err); border-color:#F0C9C9; background:var(--err-soft); }
+  .b-acao.perigo:hover { background:var(--err); color:#fff; }
+  .b-acao:disabled { opacity:.45; cursor:not-allowed; transform:none; box-shadow:none; }
 
-/* ---------- cabeçalho da pauta (assinatura da página) ---------- */
-.pauta {
-  position:relative; overflow:hidden; border-radius:22px; margin-bottom:22px; padding:26px 30px 22px;
-  background:
-    radial-gradient(120% 150% at 88% -30%, rgba(255,110,0,.42), transparent 60%),
-    linear-gradient(118deg, var(--plum-deep), var(--plum) 52%, var(--plum-light));
-  color:#fff; box-shadow:0 18px 40px -22px rgba(42,0,40,.75);
-  animation:sobe .55s var(--curva) both;
-}
-.pauta::after {
-  content:''; position:absolute; inset:0; pointer-events:none; opacity:.16;
-  background-image:radial-gradient(rgba(255,255,255,.85) 1px, transparent 1px);
-  background-size:22px 22px;
-  mask-image:linear-gradient(160deg, #000, transparent 72%);
-  -webkit-mask-image:linear-gradient(160deg, #000, transparent 72%);
-}
-.pauta-topo { position:relative; z-index:1; display:flex; align-items:flex-start; gap:20px; flex-wrap:wrap; }
-.pauta h2 {
-  margin:0; font-family:var(--font-display); font-weight:900; letter-spacing:-.02em;
-  font-size:clamp(26px,3.4vw,38px); line-height:1.05;
-}
-.pauta h2 em { font-style:normal; color:#FFC58F; }
-.pauta .legenda { margin:8px 0 0; font-size:13.5px; color:rgba(255,255,255,.74); max-width:52ch; line-height:1.55; }
-.pauta-mascote { position:relative; margin-left:auto; width:74px; height:74px; flex:none; }
-.pauta-mascote img { width:74px; height:74px; border-radius:20px; object-fit:cover;
-  border:2px solid rgba(255,255,255,.4); animation:flutua 5s ease-in-out infinite; position:relative; z-index:1; }
-.pauta-mascote span { position:absolute; inset:0; border-radius:22px; border:2px solid rgba(255,197,143,.6);
-  animation:anel 3.4s ease-out infinite; }
-.pauta-mascote span:nth-child(2) { animation-delay:1.7s; }
+  .campo {
+    width:100%; padding:9px 11px; border:1px solid var(--border); border-radius:9px;
+    font-family:var(--font-body); font-size:13px; background:var(--surface); color:var(--ink);
+    transition:all .2s cubic-bezier(.4,0,.2,1);
+  }
+  .campo:focus { outline:0; border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.12); }
+  select.campo { cursor:pointer; }
+  .campo-mini { padding:8px 10px; font-size:12.5px; width:auto; min-width:120px; }
+  .rotulo { display:block; font-size:11px; font-weight:700; letter-spacing:.04em;
+            text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
 
-/* termômetro da pauta — a barra que resume a reunião inteira */
-.termo { position:relative; z-index:1; margin-top:20px; }
-.termo-barra { display:flex; height:15px; border-radius:999px; overflow:hidden;
-  background:rgba(255,255,255,.14); box-shadow:inset 0 1px 3px rgba(0,0,0,.25); }
-.termo-seg { width:0; transition:width .85s var(--curva), filter .18s, opacity .18s;
-  cursor:pointer; position:relative; box-shadow:inset -1.5px 0 0 rgba(255,255,255,.28); }
-.termo-seg:hover { filter:brightness(1.18); }
-.termo-seg.apagado { opacity:.28; }
-.termo-legenda { display:flex; gap:14px; flex-wrap:wrap; margin-top:11px; }
-.termo-item { display:inline-flex; align-items:center; gap:7px; cursor:pointer; padding:3px 2px;
-  font-size:11.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase;
-  color:rgba(255,255,255,.62); transition:color .15s; background:none; border:0; font-family:inherit; }
-.termo-item:hover, .termo-item.ativo { color:#fff; }
-.termo-item b { font-family:var(--font-mono); font-size:12.5px; }
-.termo-bolha { width:9px; height:9px; border-radius:3px; }
+  .st { border-radius:999px; padding:3px 9px; font-size:10.5px; font-weight:700;
+        display:inline-flex; white-space:nowrap; border:1px solid var(--border);
+        transition:all .2s cubic-bezier(.4,0,.2,1); }
+  .st-novo        { background:var(--orange-soft); color:var(--orange-deep); border-color:#F9C69C; }
+  .st-pendente    { background:var(--err-soft); color:var(--err); border-color:#F0C9C9; }
+  .st-aguardando  { background:var(--warn-soft); color:var(--warn); border-color:#F2D39A; }
+  .st-acompanhar  { background:rgba(14,165,233,.1); color:#0369A1; border-color:rgba(14,165,233,.3); }
+  .st-finalizado  { background:var(--ok-soft); color:var(--ok); border-color:#C2E4CC; }
 
-/* ---------- ações do cabeçalho ---------- */
-.header-right { margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-.b-acao {
-  display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:10px; cursor:pointer;
-  font-family:var(--font-body); font-size:12.5px; font-weight:700; letter-spacing:.01em;
-  border:1px solid var(--border); background:var(--surface); color:var(--muted);
-  transition:transform .16s var(--curva), box-shadow .16s, background .16s, color .16s, border-color .16s;
-}
-.b-acao i { font-size:15px; }
-.b-acao:hover { transform:translateY(-2px); border-color:var(--plum-light); color:var(--ink);
-  box-shadow:0 8px 18px -10px rgba(42,0,40,.5); }
-.b-acao:active { transform:translateY(0); }
-.b-acao.primaria { background:var(--plum); border-color:var(--plum); color:#fff; }
-.b-acao.primaria:hover { background:var(--plum-light); color:#fff; }
-.b-acao.laranja { background:var(--orange); border-color:var(--orange); color:#fff; }
-.b-acao.laranja:hover { background:var(--orange-deep); color:#fff; }
-.b-acao.perigo { color:var(--err); border-color:#F0C9C9; background:var(--err-soft); }
-.b-acao:disabled { opacity:.42; cursor:not-allowed; transform:none; box-shadow:none; }
-.b-acao.girando i { animation:gira .8s linear infinite; }
+  table.data tbody tr {
+    cursor:pointer;
+    animation:linha-entra .35s cubic-bezier(.4,0,.2,1) both;
+    transition:all .2s cubic-bezier(.4,0,.2,1);
+  }
+  table.data tbody tr:hover {
+    background:var(--surface-soft);
+    transform:translateX(4px);
+    box-shadow:-2px 0 0 var(--plum-light);
+  }
+  .cel-ponto { font-weight:700; color:var(--plum); transition:color .2s; }
+  table.data tbody tr:hover .cel-ponto { color:var(--orange-deep); }
+  .cel-tarefa { color:var(--muted); max-width:340px; display:-webkit-box; -webkit-line-clamp:2;
+                -webkit-box-orient:vertical; overflow:hidden; }
+  .cel-upd { max-width:280px; font-size:12px; color:var(--ink); }
+  .cel-upd small { display:block; color:var(--subtle); font-size:10.5px; margin-top:3px; }
+  .parado { color:var(--err); font-weight:700; font-size:10.5px; animation:status-glow 2s ease-in-out infinite; }
 
-/* ---------- indicadores ---------- */
-.kpi-grid { margin-bottom:22px; }
-.kpi { position:relative; overflow:hidden; transition:transform .18s var(--curva), box-shadow .18s, border-color .18s;
-  animation:sobe .5s var(--curva) both; }
-.kpi:nth-child(1){animation-delay:.06s} .kpi:nth-child(2){animation-delay:.12s}
-.kpi:nth-child(3){animation-delay:.18s} .kpi:nth-child(4){animation-delay:.24s}
-.kpi::before { content:''; position:absolute; left:0; top:0; height:3px; width:100%;
-  background:linear-gradient(90deg, var(--orange), var(--plum-light)); transform:scaleX(0);
-  transform-origin:left; transition:transform .3s var(--curva); }
-.kpi:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:var(--plum-light); }
-.kpi:hover::before { transform:scaleX(1); }
-.kpi-icone { position:absolute; right:14px; top:14px; font-size:22px; color:var(--border);
-  transition:color .2s, transform .2s var(--curva); }
-.kpi:hover .kpi-icone { color:var(--orange); transform:scale(1.12) rotate(-6deg); }
-.kpi-value { font-variant-numeric:tabular-nums; }
-.kpi.alerta .kpi-value { color:var(--err); }
+  .grupo-head {
+    display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer;
+    background:var(--surface-soft); border-top:1px solid var(--border-soft);
+    font-size:12px; font-weight:700; color:var(--plum); text-transform:uppercase;
+    letter-spacing:.04em;
+    animation:entrada-lateral .4s cubic-bezier(.4,0,.2,1) both;
+  }
+  .grupo-head .contagem { font-family:var(--font-mono); color:var(--muted); font-weight:600; }
 
-/* ---------- tabela ---------- */
-table.data tbody tr { cursor:pointer; transition:background .14s; }
-table.data tbody tr td:first-child { border-left:3px solid transparent; transition:border-color .2s; }
-table.data tbody tr.fresco  td:first-child { border-left-color:rgba(31,122,61,.55); }
-table.data tbody tr.morno   td:first-child { border-left-color:rgba(199,119,0,.6); }
-table.data tbody tr.parado  td:first-child { border-left-color:var(--err); }
-table.data tbody tr.pronto  td:first-child { border-left-color:var(--border); }
-.linha-anima { animation:entraDir .34s var(--curva) both; animation-delay:calc(var(--i,0) * 22ms); }
+  .kanban { display:flex; gap:14px; padding:18px; overflow-x:auto; align-items:flex-start;
+            perspective:1000px; }
+  .kb-col { flex:0 0 260px; background:var(--surface-soft); border:1px solid var(--border-soft);
+            border-radius:14px; padding:10px; min-height:120px;
+            transition:all .3s cubic-bezier(.4,0,.2,1); }
+  .kb-col.alvo { border-color:var(--orange); background:var(--orange-soft);
+                 transform:scale(1.02); box-shadow:0 8px 24px rgba(255,110,0,.15); }
+  .kb-col h3 { margin:2px 4px 10px; font-size:11.5px; font-weight:800; letter-spacing:.05em;
+               text-transform:uppercase; color:var(--muted); display:flex; justify-content:space-between; }
+  .kb-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:11px;
+    padding:11px 12px; margin-bottom:9px; cursor:grab; box-shadow:var(--shadow-sm);
+    transition:all .25s cubic-bezier(.4,0,.2,1);
+    animation:card-entra .4s cubic-bezier(.4,0,.2,1) both;
+  }
+  .kb-card:hover {
+    border-color:var(--plum-light);
+    transform:translateY(-3px) rotateX(2deg);
+    box-shadow:0 8px 24px rgba(107,33,168,.12);
+  }
+  .kb-card b { display:block; font-size:12.5px; color:var(--plum); margin-bottom:4px; transition:color .2s; }
+  .kb-card:hover b { color:var(--orange-deep); }
+  .kb-card p { margin:0; font-size:11.5px; color:var(--muted); display:-webkit-box;
+               -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .kb-meta { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; font-size:10.5px; color:var(--subtle); }
 
-.cel-ponto { font-weight:700; color:var(--plum); display:inline-flex; align-items:center; gap:7px; }
-.cel-tarefa { color:var(--muted); max-width:330px; display:-webkit-box; -webkit-line-clamp:2;
-  -webkit-box-orient:vertical; overflow:hidden; line-height:1.5; }
-.cel-upd { max-width:290px; font-size:12.5px; color:var(--ink); line-height:1.5; }
-.cel-upd small { display:block; color:var(--subtle); font-size:10.5px; margin-top:4px; font-family:var(--font-mono); }
-.marca-parado { display:inline-flex; align-items:center; gap:4px; margin-top:5px; color:var(--err);
-  font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; animation:alerta 2.4s ease-in-out infinite; }
+  .backdrop { position:fixed; inset:0; background:rgba(26,15,26,.35); backdrop-filter:blur(4px);
+              opacity:0; pointer-events:none; transition:opacity .3s cubic-bezier(.4,0,.2,1); z-index:60; }
+  .backdrop.on { opacity:1; pointer-events:auto; }
 
-.st { border-radius:999px; padding:4px 10px; font-size:10.5px; font-weight:800; letter-spacing:.03em;
-  display:inline-flex; align-items:center; gap:6px; white-space:nowrap; border:1px solid; }
-.st::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; }
-.st-novo{background:var(--orange-soft);color:var(--orange-deep);border-color:#F9C69C}
-.st-pendente{background:var(--err-soft);color:var(--err);border-color:#F0C9C9}
-.st-aguardando{background:var(--warn-soft);color:var(--warn);border-color:#F2D39A}
-.st-acompanhar{background:rgba(14,165,233,.1);color:#0369A1;border-color:rgba(14,165,233,.3)}
-.st-finalizado{background:var(--ok-soft);color:var(--ok);border-color:#C2E4CC}
-.st-finalizado::before { animation:pulsaDot 2.6s ease-in-out infinite; }
+  .drawer { position:fixed; top:0; right:0; height:100%; width:min(520px,100%); background:var(--surface);
+            border-left:1px solid var(--border); box-shadow:var(--shadow-lg); z-index:61;
+            transform:translateX(102%); transition:transform .35s cubic-bezier(.4,0,.2,1);
+            display:flex; flex-direction:column; }
+  .drawer.on { transform:none; animation:drawer-entra .35s cubic-bezier(.4,0,.2,1); }
+  .drawer header { padding:16px 20px; border-bottom:1px solid var(--border-soft); display:flex;
+                   align-items:center; gap:10px; position:static; }
+  .drawer header h2 { margin:0; font-family:var(--font-display); font-size:17px; color:var(--plum); flex:1; }
+  .drawer .corpo { padding:18px 20px; overflow-y:auto; flex:1; }
+  .drawer .rodape { padding:14px 20px; border-top:1px solid var(--border-soft); display:flex;
+                    gap:8px; align-items:center; background:var(--surface-soft); }
+  .linha2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .bloco { margin-bottom:14px; }
 
-.grupo-head { display:flex; align-items:center; gap:10px; padding:11px 16px; cursor:default;
-  background:var(--surface-soft); border-top:1px solid var(--border-soft);
-  font-size:11.5px; font-weight:800; color:var(--plum); text-transform:uppercase; letter-spacing:.05em; }
-.grupo-head .contagem { font-family:var(--font-mono); color:var(--muted); }
+  .hist { border:1px solid var(--border-soft); border-radius:12px; overflow:hidden; }
+  .hist-item { padding:10px 12px; border-bottom:1px solid var(--border-soft); font-size:12.5px;
+               transition:all .2s cubic-bezier(.4,0,.2,1); }
+  .hist-item:hover { background:var(--surface-soft); padding-left:16px; }
+  .hist-item:last-child { border-bottom:0; }
+  .hist-item small { display:block; color:var(--subtle); font-size:10.5px; margin-top:4px;
+                     font-family:var(--font-mono); }
+  .hist-vazio { padding:14px; color:var(--subtle); font-size:12.5px; text-align:center; }
 
-/* ---------- quadro ---------- */
-.kanban { display:flex; gap:14px; padding:18px; overflow-x:auto; align-items:flex-start; }
-.kb-col { flex:0 0 268px; background:var(--surface-soft); border:1px solid var(--border-soft);
-  border-radius:16px; padding:12px; min-height:130px; transition:background .18s, border-color .18s, transform .18s; }
-.kb-col.alvo { border-color:var(--orange); border-style:dashed; background:var(--orange-soft); transform:scale(1.015); }
-.kb-col h3 { margin:2px 4px 12px; font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
-  color:var(--muted); display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.kb-col h3 .traco { flex:1; height:3px; border-radius:2px; opacity:.55; }
-.kb-col h3 span.n { font-family:var(--font-mono); color:var(--ink); }
-.kb-card { background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:12px;
-  margin-bottom:10px; cursor:grab; box-shadow:var(--shadow-sm);
-  transition:transform .16s var(--curva), box-shadow .16s, border-color .16s;
-  animation:sobe .34s var(--curva) both; animation-delay:calc(var(--i,0) * 26ms); }
-.kb-card:hover { transform:translateY(-3px); border-color:var(--plum-light); box-shadow:var(--shadow-md); }
-.kb-card.arrastando { opacity:.42; transform:rotate(1.5deg) scale(.98); }
-.kb-card b { display:block; font-size:12.5px; color:var(--plum); margin-bottom:5px; }
-.kb-card p { margin:0; font-size:11.5px; color:var(--muted); line-height:1.5;
-  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-.kb-meta { margin-top:9px; display:flex; gap:6px; flex-wrap:wrap; font-size:10.5px; color:var(--subtle); }
-.kb-vazia { padding:16px 8px; text-align:center; font-size:11.5px; color:var(--subtle); }
+  .modal { position:fixed; z-index:70; left:50%; top:50%; transform:translate(-50%,-46%) scale(.94);
+           width:min(400px,92vw); background:var(--surface); border:1px solid var(--border);
+           border-radius:18px; box-shadow:var(--shadow-lg); padding:22px; opacity:0;
+           pointer-events:none; transition:all .25s cubic-bezier(.4,0,.2,1); }
+  .modal.on { opacity:1; pointer-events:auto; transform:translate(-50%,-50%) scale(1);
+              animation:modal-entra .25s cubic-bezier(.4,0,.2,1); }
+  .modal h2 { margin:0 0 6px; font-family:var(--font-display); font-size:19px; color:var(--plum); }
+  .modal p { margin:0 0 14px; font-size:13px; color:var(--muted); line-height:1.5; }
 
-/* ---------- formulário e painel ---------- */
-.campo { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px;
-  font-family:var(--font-body); font-size:13px; background:var(--surface); color:var(--ink);
-  transition:border-color .15s, box-shadow .15s; }
-.campo:focus { outline:0; border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.13); }
-select.campo { cursor:pointer; }
-.campo-mini { padding:8px 10px; font-size:12.5px; width:auto; min-width:126px; }
-.rotulo { display:block; font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
-  color:var(--muted); margin:0 0 7px; }
+  .reuniao { position:fixed; inset:0; z-index:65; background:var(--bg); display:none;
+             flex-direction:column; padding:22px clamp(16px,5vw,60px); overflow-y:auto; }
+  .reuniao.on { display:flex; animation:entrada-suave .4s cubic-bezier(.4,0,.2,1); }
+  .reuniao .topo { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  .reuniao .topo h2 { margin:0; font-family:var(--font-display); font-size:20px; color:var(--plum); flex:1; }
+  .reuniao .painel { background:var(--surface); border:1px solid var(--border); border-radius:18px;
+                     padding:24px; max-width:900px; width:100%; margin:0 auto; box-shadow:var(--shadow-md);
+                     animation:entrada-suave .5s cubic-bezier(.4,0,.2,1) .1s both; }
+  .reuniao .ponto-titulo { font-family:var(--font-display); font-size:26px; color:var(--plum); margin:0 0 6px; }
+  .reuniao .tarefa { font-size:14px; color:var(--ink); line-height:1.6; margin:0 0 16px; }
+  .reuniao .metas { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+  .reuniao .navegacao { display:flex; gap:8px; align-items:center; justify-content:space-between;
+                        margin-top:18px; flex-wrap:wrap; }
+  .contador { font-family:var(--font-mono); font-size:12.5px; color:var(--muted); }
 
-.backdrop { position:fixed; inset:0; background:rgba(26,15,26,.4); backdrop-filter:blur(3px);
-  opacity:0; pointer-events:none; transition:opacity .22s; z-index:60; }
-.backdrop.on { opacity:1; pointer-events:auto; }
+  .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(30px) scale(.95);
+           background:var(--plum); color:#fff; padding:12px 20px; border-radius:11px; font-size:13px;
+           font-weight:600; z-index:80; opacity:0; pointer-events:none; transition:all .3s cubic-bezier(.4,0,.2,1);
+           box-shadow:var(--shadow-lg); max-width:90vw; }
+  .toast.on { opacity:1; transform:translateX(-50%) translateY(0) scale(1);
+              animation:toast-entra .3s cubic-bezier(.4,0,.2,1); }
+  .toast.erro { background:var(--err); }
 
-.drawer { position:fixed; top:0; right:0; height:100%; width:min(540px,100%); background:var(--surface);
-  border-left:1px solid var(--border); box-shadow:var(--shadow-lg); z-index:61;
-  transform:translateX(102%); transition:transform .32s var(--curva); display:flex; flex-direction:column; }
-.drawer.on { transform:none; }
-.drawer > header { padding:18px 22px; border-bottom:1px solid var(--border-soft); display:flex;
-  align-items:center; gap:10px; position:static; background:
-    linear-gradient(180deg, var(--surface-soft), transparent); }
-.drawer > header h2 { margin:0; font-family:var(--font-display); font-size:18px; color:var(--plum); flex:1;
-  line-height:1.25; }
-.drawer .corpo { padding:20px 22px; overflow-y:auto; flex:1; }
-.drawer .corpo > .bloco { animation:sobe .32s var(--curva) both; }
-.drawer .corpo > .bloco:nth-child(2){animation-delay:.04s} .drawer .corpo > .bloco:nth-child(3){animation-delay:.08s}
-.drawer .rodape { padding:14px 22px; border-top:1px solid var(--border-soft); display:flex; gap:8px;
-  align-items:center; background:var(--surface-soft); }
-.linha2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.bloco { margin-bottom:16px; }
+  .carregando { position:fixed; inset:0; z-index:90; background:var(--bg); display:flex;
+                flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+  .carregando img { width:64px; height:64px; border-radius:14px; object-fit:cover;
+                    animation:pulsa 1.4s ease-in-out infinite; }
+  .carregando span { font-size:13px; color:var(--muted); font-weight:600; }
+  @keyframes pulsa { 0%,100%{opacity:.45;transform:scale(.96)} 50%{opacity:1;transform:scale(1)} }
 
-.hist { border:1px solid var(--border-soft); border-radius:13px; overflow:hidden; }
-.hist-item { padding:11px 13px; border-bottom:1px solid var(--border-soft); font-size:12.5px; line-height:1.55;
-  position:relative; padding-left:30px; }
-.hist-item::before { content:''; position:absolute; left:13px; top:16px; width:7px; height:7px; border-radius:50%;
-  background:var(--orange); box-shadow:0 0 0 3px var(--orange-soft); }
-.hist-item:not(:last-child)::after { content:''; position:absolute; left:16px; top:26px; bottom:-2px; width:1px;
-  background:var(--border); }
-.hist-item:last-child { border-bottom:0; }
-.hist-item small { display:block; color:var(--subtle); font-size:10.5px; margin-top:5px; font-family:var(--font-mono); }
-.hist-vazio { padding:16px; color:var(--subtle); font-size:12.5px; text-align:center; }
+  .aviso-config { margin:0 0 18px; padding:14px 16px; border-radius:12px; background:var(--warn-soft);
+                  border:1px solid #F2D39A; color:#7A4A00; font-size:13px; line-height:1.5;
+                  animation:entrada-suave .4s cubic-bezier(.4,0,.2,1); }
 
-.modal { position:fixed; z-index:70; left:50%; top:50%; transform:translate(-50%,-46%) scale(.96);
-  width:min(420px,92vw); background:var(--surface); border:1px solid var(--border); border-radius:20px;
-  box-shadow:var(--shadow-lg); padding:24px; opacity:0; pointer-events:none; transition:all .24s var(--curva); }
-.modal.on { opacity:1; pointer-events:auto; transform:translate(-50%,-50%) scale(1); }
-.modal h2 { margin:0 0 6px; font-family:var(--font-display); font-size:20px; color:var(--plum); }
-.modal p { margin:0 0 15px; font-size:13px; color:var(--muted); line-height:1.55; }
+  /* ============================================================
+     KPIs COM VIDA
+     ============================================================ */
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+  .kpi {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:18px 16px; position:relative; overflow:hidden;
+    transition:all .3s cubic-bezier(.4,0,.2,1);
+    animation:entrada-suave .5s cubic-bezier(.4,0,.2,1) both;
+  }
+  .kpi:nth-child(1) { animation-delay:.05s; }
+  .kpi:nth-child(2) { animation-delay:.1s; }
+  .kpi:nth-child(3) { animation-delay:.15s; }
+  .kpi:nth-child(4) { animation-delay:.2s; }
+  .kpi::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,var(--plum),var(--orange));
+    opacity:0; transition:opacity .3s;
+  }
+  .kpi:hover::before { opacity:1; }
+  .kpi:hover {
+    transform:translateY(-4px);
+    box-shadow:0 12px 32px rgba(107,33,168,.1);
+    border-color:var(--plum-light);
+  }
+  .kpi-label { font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+               color:var(--muted); margin-bottom:8px; }
+  .kpi-value {
+    font-family:var(--font-display); font-size:32px; font-weight:700; color:var(--plum);
+    line-height:1; margin-bottom:6px;
+    transition:all .3s cubic-bezier(.4,0,.2,1);
+  }
+  .kpi:hover .kpi-value { color:var(--orange-deep); }
+  .kpi-sub { font-size:11.5px; color:var(--subtle); }
+  .kpi-pulse { animation:contagem-pulso .5s cubic-bezier(.4,0,.2,1); }
 
-/* ---------- modo reunião ---------- */
-.reuniao { position:fixed; inset:0; z-index:65; background:
-  radial-gradient(80% 60% at 50% -10%, rgba(255,110,0,.1), transparent 60%), var(--bg);
-  display:none; flex-direction:column; padding:22px clamp(16px,5vw,60px) 40px; overflow-y:auto; }
-.reuniao.on { display:flex; animation:sobe .3s var(--curva); }
-.reuniao .topo { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
-.reuniao .topo h2 { margin:0; font-family:var(--font-display); font-size:19px; color:var(--plum); flex:1; }
-.trilho { height:5px; border-radius:999px; background:var(--border-soft); overflow:hidden; margin-bottom:20px; }
-.trilho div { height:100%; background:linear-gradient(90deg, var(--orange), var(--plum-light));
-  border-radius:999px; transition:width .45s var(--curva); }
-.reuniao .painel { background:var(--surface); border:1px solid var(--border); border-radius:22px; padding:28px;
-  max-width:900px; width:100%; margin:0 auto; box-shadow:var(--shadow-md); animation:sobe .3s var(--curva); }
-.ponto-titulo { font-family:var(--font-display); font-size:clamp(22px,3vw,30px); color:var(--plum); margin:0 0 8px;
-  line-height:1.15; }
-.reuniao .tarefa { font-size:14.5px; color:var(--ink); line-height:1.65; margin:0 0 18px; }
-.reuniao .metas { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
-.reuniao .navegacao { display:flex; gap:8px; align-items:center; justify-content:space-between; margin-top:20px;
-  flex-wrap:wrap; }
-.contador { font-family:var(--font-mono); font-size:12.5px; color:var(--muted); }
+  /* Barra de progresso no modo reunião */
+  .reuniao-progresso {
+    width:100%; height:4px; background:var(--border-soft); border-radius:2px;
+    margin-bottom:18px; overflow:hidden;
+  }
+  .reuniao-progresso-fill {
+    height:100%; background:linear-gradient(90deg,var(--plum),var(--orange));
+    border-radius:2px; transition:width .4s cubic-bezier(.4,0,.2,1);
+    animation:barra-progresso .6s cubic-bezier(.4,0,.2,1) both;
+  }
 
-/* ---------- avisos, toast, carregamento ---------- */
-.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(24px);
-  background:var(--plum); color:#fff; padding:13px 20px; border-radius:12px; font-size:13px; font-weight:600;
-  z-index:80; opacity:0; pointer-events:none; transition:all .26s var(--curva); box-shadow:var(--shadow-lg);
-  max-width:90vw; display:flex; align-items:center; gap:9px; }
-.toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
-.toast.erro { background:var(--err); }
-.toast.festa { background:var(--ok); }
+  /* Shimmer nos botões primários */
+  .b-acao.primaria::before {
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.15) 50%,transparent 70%);
+    background-size:200% 100%;
+    animation:shimmer 3s ease-in-out infinite;
+    pointer-events:none;
+  }
 
-#confete { position:fixed; inset:0; z-index:79; pointer-events:none; }
+  /* Tabs animadas */
+  .tabs { display:flex; gap:4px; margin-bottom:14px; border-bottom:1px solid var(--border-soft); padding-bottom:2px; }
+  .tab {
+    padding:8px 16px; border-radius:8px 8px 0 0; cursor:pointer;
+    font-family:var(--font-body); font-size:13px; font-weight:600; color:var(--muted);
+    background:transparent; border:none; position:relative;
+    transition:all .2s cubic-bezier(.4,0,.2,1);
+  }
+  .tab::after {
+    content:''; position:absolute; bottom:-3px; left:50%; width:0; height:2.5px;
+    background:linear-gradient(90deg,var(--plum),var(--orange));
+    border-radius:2px; transition:all .25s cubic-bezier(.4,0,.2,1);
+    transform:translateX(-50%);
+  }
+  .tab:hover { color:var(--plum); background:var(--surface-soft); }
+  .tab.active { color:var(--plum); }
+  .tab.active::after { width:70%; }
 
-.carregando { position:fixed; inset:0; z-index:90; background:var(--bg); display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:16px; transition:opacity .3s; }
-.carregando.saindo { opacity:0; pointer-events:none; }
-.carregando .aro { position:relative; width:78px; height:78px; }
-.carregando .aro img { width:78px; height:78px; border-radius:22px; object-fit:cover; position:relative; z-index:1; }
-.carregando .aro span { position:absolute; inset:0; border-radius:24px; border:2px solid var(--orange);
-  animation:anel 2.2s ease-out infinite; }
-.carregando .aro span:nth-child(3) { animation-delay:1.1s; }
-.carregando b { font-family:var(--font-display); font-size:17px; color:var(--plum); font-weight:700; }
-.carregando small { font-size:12.5px; color:var(--muted); }
+  /* Toolbar */
+  .toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+  .search { display:flex; align-items:center; gap:8px; flex:1; min-width:220px;
+            background:var(--surface); border:1px solid var(--border); border-radius:10px;
+            padding:6px 12px; transition:all .2s cubic-bezier(.4,0,.2,1); }
+  .search:focus-within { border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.1); }
+  .search input { border:none; background:transparent; outline:none; font-size:13px; color:var(--ink); width:100%; }
+  .filter-chip {
+    padding:7px 14px; border-radius:999px; cursor:pointer; font-size:12px; font-weight:600;
+    border:1px solid var(--border); background:var(--surface); color:var(--muted);
+    transition:all .2s cubic-bezier(.4,0,.2,1);
+  }
+  .filter-chip:hover { border-color:var(--plum-light); color:var(--plum); }
+  .filter-chip.active { background:var(--plum); border-color:var(--plum); color:#fff;
+                         animation:pulse-plum 2s ease-in-out infinite; }
+  .toolbar-right { margin-left:auto; font-size:12px; color:var(--muted); font-weight:600; }
 
-.sk-linha { height:15px; border-radius:6px; margin:14px 16px;
-  background:linear-gradient(90deg, var(--border-soft) 25%, var(--surface-soft) 37%, var(--border-soft) 63%);
-  background-size:840px 100%; animation:brilho 1.5s linear infinite; }
+  /* Card principal */
+  .card {
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:18px; box-shadow:var(--shadow-sm);
+    animation:entrada-suave .6s cubic-bezier(.4,0,.2,1) .1s both;
+  }
 
-.aviso-config { margin:0 0 20px; padding:15px 17px; border-radius:14px; background:var(--warn-soft);
-  border:1px solid #F2D39A; color:#7A4A00; font-size:13px; line-height:1.6; display:flex; gap:11px; align-items:flex-start;
-  animation:sobe .4s var(--curva) both; }
-.aviso-config i { font-size:19px; flex:none; }
+  /* Status badges com glow */
+  .st { position:relative; overflow:hidden; }
+  .st::after {
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at center,rgba(255,255,255,.3),transparent 70%);
+    opacity:0; transition:opacity .3s;
+  }
+  .st:hover::after { opacity:1; }
 
-.vazio { padding:46px 20px; text-align:center; color:var(--subtle); animation:sobe .35s var(--curva) both; }
-.vazio i { font-size:36px; display:block; margin-bottom:10px; color:var(--border); }
-.vazio b { display:block; font-family:var(--font-display); font-size:17px; color:var(--muted); margin-bottom:5px; }
+  /* Drawer histórico com entrada escalonada */
+  .hist-item { animation:linha-entra .3s cubic-bezier(.4,0,.2,1) both; }
+  .hist-item:nth-child(1) { animation-delay:.05s; }
+  .hist-item:nth-child(2) { animation-delay:.1s; }
+  .hist-item:nth-child(3) { animation-delay:.15s; }
+  .hist-item:nth-child(4) { animation-delay:.2s; }
+  .hist-item:nth-child(5) { animation-delay:.25s; }
 
-.sidebar-stamp .dot { animation:pulsaDot 2.6s ease-in-out infinite; }
+  /* Tabela vazia animada */
+  .table-wrap { overflow-x:auto; }
+  table.data { width:100%; border-collapse:collapse; }
+  table.data thead th {
+    padding:10px 12px; text-align:left; font-size:11px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
+    border-bottom:1px solid var(--border-soft); cursor:pointer;
+    transition:color .2s; user-select:none;
+  }
+  table.data thead th:hover { color:var(--plum); }
+  table.data tbody td { padding:10px 12px; border-bottom:1px solid var(--border-soft); font-size:12.5px; }
 
-.b-acao:focus-visible, .campo:focus-visible, .termo-item:focus-visible,
-.tab:focus-visible, .filter-chip:focus-visible {
-  outline:2px solid var(--orange); outline-offset:2px;
-}
-
-@media (max-width:760px) {
-  .linha2 { grid-template-columns:1fr; }
-  .cel-tarefa, .cel-upd { max-width:none; }
-  .pauta { padding:22px 20px 20px; }
-  .pauta-mascote { display:none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation:none !important; transition-duration:.01ms !important; }
-}
+  @media (max-width:760px) {
+    .linha2 { grid-template-columns:1fr; }
+    .cel-tarefa, .cel-upd { max-width:none; }
+    .kpi-grid { grid-template-columns:repeat(2,1fr); }
+  }
+  @media (max-width:480px) {
+    .kpi-grid { grid-template-columns:1fr; }
+  }
 </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -302,15 +394,15 @@ select.campo { cursor:pointer; }
     <div class="logo-text"><span>On Time</span><span>Controladoria</span></div>
   </div>
   <nav>
-    <a href="../index.html"><i class="ph-fill ph-squares-four"></i> Hub</a>
-    <a href="#" class="active"><i class="ph-fill ph-clipboard-text"></i> ATA de Reuniões</a>
+    <a href="../index.html"><i>📊</i> Hub</a>
+    <a href="#" class="active"><i>📋</i> ATA de Reuniões</a>
   </nav>
   <div class="sidebar-footer">
     <div class="sidebar-stamp">
       <span class="dot"></span>
       <div>
         <span class="stamp-label">Conexão</span>
-        <span class="stamp-text" id="statusConexao">Verificando</span>
+        <span class="stamp-text" id="statusConexao">Verificando…</span>
       </div>
     </div>
   </div>
@@ -324,60 +416,39 @@ select.campo { cursor:pointer; }
                 color:#6B21A8;text-decoration:none;border:1.5px solid #E5E7EB;border-radius:9px;">
         ← Voltar ao hub
       </a>
-      <h1 class="page-title"><i class="ph-fill ph-clipboard-text"></i> ATA de Reuniões</h1>
+      <h1 class="page-title"><i>📋</i> ATA de Reuniões</h1>
     </div>
     <div class="header-right">
-      <button class="b-acao" id="btnAtualizar"><i class="ph-bold ph-arrows-clockwise"></i> Atualizar</button>
-      <button class="b-acao" id="btnImportar"><i class="ph-bold ph-upload-simple"></i> Importar</button>
-      <button class="b-acao" id="btnExportar"><i class="ph-bold ph-file-xls"></i> Excel</button>
-      <button class="b-acao laranja" id="btnReuniao"><i class="ph-fill ph-play"></i> Modo reunião</button>
-      <button class="b-acao primaria" id="btnNovo"><i class="ph-bold ph-plus"></i> Novo ponto</button>
+      <button class="b-acao" id="btnAtualizar">↻ Atualizar</button>
+      <button class="b-acao" id="btnImportar">⬆ Importar</button>
+      <button class="b-acao btn-export" id="btnExportar">⬇ Excel</button>
+      <button class="b-acao laranja" id="btnReuniao">▶ Modo reunião</button>
+      <button class="b-acao primaria" id="btnNovo">+ Novo ponto</button>
     </div>
   </header>
 
   <main class="content-body">
     <div id="avisoConfig" class="aviso-config" style="display:none;"></div>
 
-    <section class="pauta">
-      <div class="pauta-topo">
-        <div>
-          <h2>A pauta de <em>hoje</em></h2>
-          <p class="legenda" id="pautaLegenda">Carregando os pontos da controladoria.</p>
-        </div>
-        <div class="pauta-mascote">
-          <span></span><span></span>
-          <img src="../logo-mascote.jpg" alt="">
-        </div>
-      </div>
-      <div class="termo">
-        <div class="termo-barra" id="termoBarra"></div>
-        <div class="termo-legenda" id="termoLegenda"></div>
-      </div>
-    </section>
-
     <div class="kpi-grid">
       <div class="kpi">
-        <i class="ph-fill ph-fire kpi-icone"></i>
         <div class="kpi-label">Em aberto</div>
-        <div class="kpi-value" id="kpiAberto">0</div>
-        <div class="kpi-sub">pontos ainda andando</div>
+        <div class="kpi-value" id="kpiAberto">—</div>
+        <div class="kpi-sub">pontos não finalizados</div>
       </div>
-      <div class="kpi" id="kpiCardParado">
-        <i class="ph-fill ph-hourglass-medium kpi-icone"></i>
+      <div class="kpi">
         <div class="kpi-label">Parados</div>
-        <div class="kpi-value" id="kpiParado">0</div>
+        <div class="kpi-value" id="kpiParado">—</div>
         <div class="kpi-sub">sem atualização há 14 dias</div>
       </div>
       <div class="kpi">
-        <i class="ph-fill ph-check-circle kpi-icone"></i>
         <div class="kpi-label">Finalizados no mês</div>
-        <div class="kpi-value" id="kpiMes">0</div>
+        <div class="kpi-value" id="kpiMes">—</div>
         <div class="kpi-sub" id="kpiMesSub">—</div>
       </div>
       <div class="kpi">
-        <i class="ph-fill ph-user-focus kpi-icone"></i>
         <div class="kpi-label">Sem responsável</div>
-        <div class="kpi-value" id="kpiSemResp">0</div>
+        <div class="kpi-value" id="kpiSemResp">—</div>
         <div class="kpi-sub">precisam de dono</div>
       </div>
     </div>
@@ -385,8 +456,8 @@ select.campo { cursor:pointer; }
     <div class="card">
       <div class="toolbar">
         <div class="search">
-          <i class="ph-bold ph-magnifying-glass"></i>
-          <input type="text" id="busca" placeholder="Buscar ponto, tarefa ou atualização">
+          <i>🔎</i>
+          <input type="text" id="busca" placeholder="Buscar ponto, tarefa ou atualização…">
         </div>
         <select class="campo campo-mini" id="fEmpresa"><option value="">Empresa: todas</option></select>
         <select class="campo campo-mini" id="fArea"><option value="">Área: todas</option></select>
@@ -403,8 +474,8 @@ select.campo { cursor:pointer; }
       </div>
 
       <div class="tabs">
-        <button class="tab active" data-visao="lista"><i class="ph-bold ph-list-bullets"></i> Lista</button>
-        <button class="tab" data-visao="kanban"><i class="ph-bold ph-kanban"></i> Quadro</button>
+        <button class="tab active" data-visao="lista">Lista</button>
+        <button class="tab" data-visao="kanban">Quadro</button>
       </div>
 
       <div id="visaoLista" class="table-wrap">
@@ -435,7 +506,7 @@ select.campo { cursor:pointer; }
 <aside class="drawer" id="drawer">
   <header>
     <h2 id="drawerTitulo">Ponto</h2>
-    <button class="b-acao" id="btnFecharDrawer"><i class="ph-bold ph-x"></i> Fechar</button>
+    <button class="b-acao" id="btnFecharDrawer">Fechar</button>
   </header>
   <div class="corpo">
     <div class="bloco">
@@ -473,42 +544,43 @@ select.campo { cursor:pointer; }
       <label class="rotulo" for="cData">Data</label>
       <input type="date" class="campo" id="cData">
     </div>
+
     <div class="bloco">
       <label class="rotulo" for="cNota">Nova atualização</label>
       <textarea class="campo" id="cNota" rows="2" placeholder="O que andou desde a última reunião"></textarea>
-      <button class="b-acao laranja" id="btnAnotar" style="margin-top:9px;">
-        <i class="ph-bold ph-chat-teardrop-text"></i> Registrar atualização
-      </button>
+      <button class="b-acao laranja" id="btnAnotar" style="margin-top:8px;">Registrar atualização</button>
     </div>
+
     <div class="bloco">
       <span class="rotulo">Histórico</span>
       <div class="hist" id="histLista"></div>
     </div>
-    <div class="bloco" id="assinatura" style="font-size:11px;color:var(--subtle);line-height:1.7;"></div>
+
+    <div class="bloco" id="assinatura" style="font-size:11px;color:var(--subtle);"></div>
   </div>
   <div class="rodape">
-    <button class="b-acao primaria" id="btnSalvar"><i class="ph-bold ph-floppy-disk"></i> Salvar</button>
-    <button class="b-acao perigo" id="btnExcluir"><i class="ph-bold ph-trash"></i> Excluir</button>
+    <button class="b-acao primaria" id="btnSalvar">Salvar</button>
+    <button class="b-acao perigo" id="btnExcluir">Excluir</button>
     <span style="margin-left:auto;font-size:11px;color:var(--subtle);" id="editandoComo"></span>
   </div>
 </aside>
 
 <div class="modal" id="modalAutor">
   <h2>Quem está editando?</h2>
-  <p>Só para registrar quem fez a alteração. Vale até você recarregar a página.</p>
+  <p>Só para registrar quem fez a alteração. Fica valendo até você atualizar a página.</p>
   <input type="text" class="campo" id="inputAutor" placeholder="Seu nome" autocomplete="off">
-  <div style="display:flex;gap:8px;margin-top:15px;">
-    <button class="b-acao primaria" id="btnConfirmarAutor"><i class="ph-bold ph-check"></i> Confirmar</button>
+  <div style="display:flex;gap:8px;margin-top:14px;">
+    <button class="b-acao primaria" id="btnConfirmarAutor">Confirmar</button>
     <button class="b-acao" id="btnCancelarAutor">Cancelar</button>
   </div>
 </div>
 
 <div class="modal" id="modalImportar">
   <h2>Importar planilha</h2>
-  <p>Aceita a ATA no formato atual, com o cabeçalho PONTO REUNIÃO, TAREFA, EMPRESA e as demais colunas.</p>
+  <p>Aceita a ATA no formato atual (cabeçalho com PONTO REUNIÃO, TAREFA, EMPRESA…).</p>
   <input type="file" class="campo" id="arquivoExcel" accept=".xlsx,.xls,.xlsm">
-  <div id="previaImport" style="margin-top:13px;font-size:12.5px;color:var(--muted);line-height:1.55;"></div>
-  <div style="display:flex;gap:8px;margin-top:15px;flex-wrap:wrap;">
+  <div id="previaImport" style="margin-top:12px;font-size:12.5px;color:var(--muted);"></div>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
     <button class="b-acao primaria" id="btnImpAnexar" disabled>Acrescentar</button>
     <button class="b-acao perigo" id="btnImpSubstituir" disabled>Substituir tudo</button>
     <button class="b-acao" id="btnImpCancelar">Cancelar</button>
@@ -517,51 +589,48 @@ select.campo { cursor:pointer; }
 
 <div class="reuniao" id="telaReuniao">
   <div class="topo">
-    <img src="../logo-mascote.jpg" alt="" style="width:38px;height:38px;border-radius:11px;object-fit:cover;">
+    <img src="../logo-mascote.jpg" alt="" style="width:36px;height:36px;border-radius:9px;object-fit:cover;">
     <h2>Modo reunião</h2>
     <span class="contador" id="reuniaoContador">0 / 0</span>
-    <button class="b-acao" id="btnSairReuniao"><i class="ph-bold ph-x"></i> Sair</button>
+    <button class="b-acao" id="btnSairReuniao">Sair</button>
   </div>
-  <div class="trilho"><div id="reuniaoTrilho" style="width:0;"></div></div>
+  <div class="reuniao-progresso"><div class="reuniao-progresso-fill" id="reuniaoProgresso"></div></div>
   <div class="painel" id="reuniaoPainel"></div>
 </div>
 
-<canvas id="confete"></canvas>
 <div class="toast" id="toast"></div>
 
 <div class="carregando" id="telaCarregando">
-  <div class="aro"><span></span><span></span><img src="../logo-mascote.jpg" alt=""></div>
-  <b id="textoCarregando">Abrindo a pauta</b>
-  <small id="subtextoCarregando">Buscando os pontos na planilha</small>
+  <img src="../logo-mascote.jpg" alt="Carregando">
+  <span id="textoCarregando">Carregando pontos de reunião…</span>
 </div>
 
 <script>
 /* ============================================================
-   CONFIGURAÇÃO — cole aqui a URL /exec do Apps Script publicado
+   CONFIGURAÇÃO
    ============================================================ */
-   
 var API_URL = 'https://script.google.com/macros/s/AKfycbw2NWnDqRsA3LeItaNA9dbxYCWUqS2Jygz2QmcuDBaFheQjOAeAZuGb_TFx14DNqn71/exec';
 
 var STATUS = ['Novo', 'Pendente', 'Aguardando', 'Acompanhar', 'Finalizado'];
-var CORES = {
-  'Novo': 'var(--st-novo)', 'Pendente': 'var(--st-pendente)', 'Aguardando': 'var(--st-aguardando)',
-  'Acompanhar': 'var(--st-acompanhar)', 'Finalizado': 'var(--st-finalizado)'
-};
 var DIAS_PARADO = 14;
-var MENOS_MOVIMENTO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 var estado = {
-  dados: [], visao: 'lista', ordenar: { campo: 'data', dir: -1 },
-  ocultarFinalizados: false, autor: '', editando: null, ultimaCarga: 0,
-  importados: [], primeiraCarga: true
+  dados: [],
+  visao: 'lista',
+  ordenar: { campo: 'data', dir: -1 },
+  ocultarFinalizados: false,
+  autor: '',
+  editando: null,
+  ultimaCarga: 0,
+  importados: []
 };
 
-/* ---------- utilidades ---------- */
 function $(id) { return document.getElementById(id); }
 
 function esc(v) {
   return String(v == null ? '' : v)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function fmtData(iso) {
@@ -585,8 +654,10 @@ function diasDesde(iso) {
 }
 
 function classeStatus(s) {
-  var mapa = { 'novo': 'st-novo', 'pendente': 'st-pendente', 'aguardando': 'st-aguardando',
-    'acompanhar': 'st-acompanhar', 'finalizado': 'st-finalizado' };
+  var mapa = {
+    'novo': 'st-novo', 'pendente': 'st-pendente', 'aguardando': 'st-aguardando',
+    'acompanhar': 'st-acompanhar', 'finalizado': 'st-finalizado'
+  };
   return mapa[String(s || '').trim().toLowerCase()] || 'st-novo';
 }
 
@@ -606,82 +677,17 @@ function estaParado(r) {
   return d !== null && d >= DIAS_PARADO;
 }
 
-function frescor(r) {
-  if (String(r.status).toLowerCase() === 'finalizado') return 'pronto';
-  var d = diasDesde(referenciaTempo(r));
-  if (d === null) return '';
-  if (d < 7) return 'fresco';
-  if (d < DIAS_PARADO) return 'morno';
-  return 'parado';
-}
-
-function toast(msg, tipo) {
+function toast(msg, erro) {
   var t = $('toast');
-  var icone = tipo === 'erro' ? 'ph-warning-circle' : (tipo === 'festa' ? 'ph-confetti' : 'ph-check-circle');
-  t.innerHTML = '<i class="ph-fill ' + icone + '"></i>' + esc(msg);
-  t.className = 'toast on' + (tipo ? ' ' + tipo : '');
+  t.textContent = msg;
+  t.className = 'toast on' + (erro ? ' erro' : '');
   clearTimeout(toast._t);
-  toast._t = setTimeout(function () { t.className = 'toast'; }, 3400);
+  toast._t = setTimeout(function () { t.className = 'toast'; }, 3200);
 }
 
-function carregando(on, titulo, sub) {
-  var tela = $('telaCarregando');
-  if (on) {
-    if (titulo) $('textoCarregando').textContent = titulo;
-    if (sub) $('subtextoCarregando').textContent = sub;
-    tela.style.display = 'flex';
-    tela.classList.remove('saindo');
-  } else {
-    tela.classList.add('saindo');
-    setTimeout(function () { tela.style.display = 'none'; }, 320);
-  }
-}
-
-function esqueleto() {
-  $('corpoTabela').innerHTML = '<tr><td colspan="8" style="padding:6px 0;">' +
-    '<div class="sk-linha"></div><div class="sk-linha"></div><div class="sk-linha"></div>' +
-    '<div class="sk-linha"></div><div class="sk-linha"></div></td></tr>';
-}
-
-function animarNumero(el, alvo) {
-  var inicio = Number(el.textContent.replace(/\D/g, '')) || 0;
-  if (MENOS_MOVIMENTO || inicio === alvo) { el.textContent = alvo; return; }
-  var t0 = performance.now(), dur = 620;
-  function passo(t) {
-    var p = Math.min((t - t0) / dur, 1);
-    var suave = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(inicio + (alvo - inicio) * suave);
-    if (p < 1) requestAnimationFrame(passo);
-  }
-  requestAnimationFrame(passo);
-}
-
-function celebrar() {
-  if (MENOS_MOVIMENTO) return;
-  var cv = $('confete'), ctx = cv.getContext('2d');
-  cv.width = innerWidth; cv.height = innerHeight;
-  var cores = ['#FF6E00', '#3C003C', '#1F7A3D', '#FFC58F', '#5C1A5C'];
-  var pecas = [];
-  for (var i = 0; i < 70; i++) {
-    pecas.push({
-      x: innerWidth / 2 + (Math.random() - .5) * 220, y: innerHeight * .32,
-      vx: (Math.random() - .5) * 9, vy: Math.random() * -9 - 3,
-      g: .32 + Math.random() * .2, l: 5 + Math.random() * 7,
-      cor: cores[i % cores.length], rot: Math.random() * 6, vr: (Math.random() - .5) * .35
-    });
-  }
-  var fim = performance.now() + 1500;
-  (function quadro(t) {
-    ctx.clearRect(0, 0, cv.width, cv.height);
-    pecas.forEach(function (p) {
-      p.x += p.vx; p.y += p.vy; p.vy += p.g; p.rot += p.vr;
-      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-      ctx.fillStyle = p.cor; ctx.fillRect(-p.l / 2, -p.l / 2, p.l, p.l * 1.6);
-      ctx.restore();
-    });
-    if (t < fim) requestAnimationFrame(quadro);
-    else ctx.clearRect(0, 0, cv.width, cv.height);
-  })(performance.now());
+function carregando(on, texto) {
+  $('telaCarregando').style.display = on ? 'flex' : 'none';
+  if (texto) $('textoCarregando').textContent = texto;
 }
 
 function abrirModal(id) { $('backdrop').classList.add('on'); $(id).classList.add('on'); }
@@ -692,9 +698,6 @@ function fecharModais() {
   $('drawer').classList.remove('on');
 }
 
-/* ============================================================
-   COMUNICAÇÃO COM O APPS SCRIPT
-   ============================================================ */
 function apiGet(forcar) {
   var url = API_URL + (API_URL.indexOf('?') >= 0 ? '&' : '?') + 't=' + Date.now() + (forcar ? '&forcar=1' : '');
   return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
@@ -716,17 +719,14 @@ function apiPost(corpo) {
 
 function carregar(forcar, silencioso) {
   if (!API_URL) {
-    $('avisoConfig').style.display = 'flex';
-    $('avisoConfig').innerHTML = '<i class="ph-fill ph-plug"></i><div>A ferramenta ainda não está ligada à planilha. ' +
-      'Publique o Apps Script e cole a URL <code>/exec</code> na variável <code>API_URL</code>, no topo do script desta página.</div>';
+    $('avisoConfig').style.display = 'block';
+    $('avisoConfig').innerHTML = 'A ferramenta ainda não está ligada à planilha. Publique o Apps Script e cole a URL /exec na variável <code>API_URL</code>, no topo do script desta página.';
     $('statusConexao').textContent = 'Não configurada';
     carregando(false);
     render();
     return Promise.resolve();
   }
-  if (!silencioso && !estado.primeiraCarga) esqueleto();
-  $('btnAtualizar').classList.add('girando');
-
+  if (!silencioso) carregando(true, 'Carregando pontos de reunião…');
   return apiGet(forcar).then(function (dados) {
     estado.dados = dados;
     estado.ultimaCarga = Date.now();
@@ -734,19 +734,11 @@ function carregar(forcar, silencioso) {
     $('avisoConfig').style.display = 'none';
     render();
   }).catch(function (err) {
-    $('statusConexao').textContent = 'Sem conexão';
-    toast('Não consegui carregar: ' + err.message, 'erro');
-    render();
-  }).then(function () {
-    $('btnAtualizar').classList.remove('girando');
-    estado.primeiraCarga = false;
-    carregando(false);
-  });
+    $('statusConexao').textContent = 'Offline';
+    toast('Erro ao carregar: ' + err.message, true);
+  }).then(function () { carregando(false); });
 }
 
-/* ============================================================
-   FILTROS E ORDENAÇÃO
-   ============================================================ */
 function filtrados() {
   var termo = $('busca').value.trim().toLowerCase();
   var fe = $('fEmpresa').value, fa = $('fArea').value;
@@ -796,9 +788,6 @@ function popularDatalist(id, valores) {
   $(id).innerHTML = valores.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('');
 }
 
-/* ============================================================
-   RENDERIZAÇÃO
-   ============================================================ */
 function render() {
   var empresas = opcoesUnicas('empresa', '');
   var areas = opcoesUnicas('area', '(sem área)');
@@ -812,9 +801,7 @@ function render() {
   popularDatalist('listaAreas', areas.filter(function (a) { return a !== '(sem área)'; }));
   popularDatalist('listaResps', resps.filter(function (a) { return a !== '(sem responsável)'; }));
 
-  renderPauta();
   renderKpis();
-
   var lista = filtrados();
   $('contador').textContent = lista.length + (lista.length === 1 ? ' ponto' : ' pontos');
 
@@ -829,71 +816,41 @@ function render() {
   }
 }
 
-function renderPauta() {
-  var total = estado.dados.length;
-  var contagem = {};
-  STATUS.forEach(function (s) { contagem[s] = 0; });
-  estado.dados.forEach(function (r) {
-    var s = STATUS.indexOf(r.status) >= 0 ? r.status : 'Novo';
-    contagem[s]++;
-  });
-
-  var selecionado = $('fStatus').value;
-  $('termoBarra').innerHTML = STATUS.map(function (s) {
-    return '<div class="termo-seg' + (selecionado && selecionado !== s ? ' apagado' : '') + '"' +
-      ' data-status="' + s + '" title="' + s + ': ' + contagem[s] + '"' +
-      ' style="background:' + CORES[s] + ';"></div>';
-  }).join('');
-
-  requestAnimationFrame(function () {
-    Array.prototype.forEach.call($('termoBarra').children, function (seg) {
-      var s = seg.dataset.status;
-      seg.style.width = total ? (contagem[s] / total * 100) + '%' : (100 / STATUS.length) + '%';
-    });
-  });
-
-  $('termoLegenda').innerHTML = STATUS.map(function (s) {
-    return '<button class="termo-item' + (selecionado === s ? ' ativo' : '') + '" data-status="' + s + '">' +
-      '<span class="termo-bolha" style="background:' + CORES[s] + ';"></span>' + s + ' <b>' + contagem[s] + '</b></button>';
-  }).join('');
-
-  var abertos = total - contagem['Finalizado'];
-  var parados = estado.dados.filter(estaParado).length;
-  var hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
-  $('pautaLegenda').textContent = total
-    ? hoje + ' · ' + total + ' pontos no radar, ' + abertos + ' em aberto' +
-      (parados ? ' e ' + parados + ' parados há mais de duas semanas.' : '. Nada parado por aqui.')
-    : 'Nenhum ponto registrado ainda. Crie o primeiro ou importe a planilha da última reunião.';
-}
-
 function renderKpis() {
   var abertos = estado.dados.filter(function (r) { return String(r.status).toLowerCase() !== 'finalizado'; });
   var mesAtual = new Date().toISOString().slice(0, 7);
   var noMes = estado.dados.filter(function (r) {
-    return String(r.status).toLowerCase() === 'finalizado' && String(referenciaTempo(r)).slice(0, 7) === mesAtual;
+    return String(r.status).toLowerCase() === 'finalizado' &&
+           String(referenciaTempo(r)).slice(0, 7) === mesAtual;
   });
-  var parados = estado.dados.filter(estaParado).length;
-
-  animarNumero($('kpiAberto'), abertos.length);
-  animarNumero($('kpiParado'), parados);
-  animarNumero($('kpiMes'), noMes.length);
-  animarNumero($('kpiSemResp'), abertos.filter(function (r) { return !String(r.responsavel || '').trim(); }).length);
-  $('kpiCardParado').classList.toggle('alerta', parados > 0);
+  animarContagem('kpiAberto', abertos.length);
+  animarContagem('kpiParado', estado.dados.filter(estaParado).length);
+  animarContagem('kpiMes', noMes.length);
+  animarContagem('kpiSemResp', abertos.filter(function (r) { return !String(r.responsavel || '').trim(); }).length);
   $('kpiMesSub').textContent = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 }
 
-function linhaTabela(r, i) {
+function animarContagem(id, valor) {
+  var el = $(id);
+  var atual = parseInt(el.textContent) || 0;
+  if (atual === valor) { el.textContent = valor; return; }
+  el.classList.add('kpi-pulse');
+  el.textContent = valor;
+  setTimeout(function () { el.classList.remove('kpi-pulse'); }, 500);
+}
+
+function linhaTabela(r, idx) {
   var u = ultimaAtualizacao(r);
   var dias = diasDesde(referenciaTempo(r));
-  var aviso = estaParado(r)
-    ? '<span class="marca-parado"><i class="ph-fill ph-warning-circle"></i>parado há ' + dias + ' dias</span>' : '';
+  var alerta = estaParado(r) ? '<span class="parado">parado há ' + dias + ' dias</span>' : '';
   return '' +
-    '<tr class="linha-anima ' + frescor(r) + '" style="--i:' + i + '" data-id="' + esc(r.id) + '">' +
+    '<tr data-id="' + esc(r.id) + '" style="animation-delay:' + (idx * .03) + 's">' +
       '<td><span class="cel-ponto">' + esc(r.ponto || '—') + '</span></td>' +
       '<td><div class="cel-tarefa">' + esc(r.tarefa || '') + '</div></td>' +
       '<td>' + esc(r.empresa || '—') + '</td>' +
       '<td><div class="cel-upd">' + esc(u ? u.t : '—') +
-        (u && u.d ? '<small>' + esc(u.a || '') + ' · ' + fmtDataHora(u.d) + '</small>' : '') + aviso + '</div></td>' +
+        (u && u.d ? '<small>' + esc(u.a || '') + ' · ' + fmtDataHora(u.d) + '</small>' : '') +
+        alerta + '</div></td>' +
       '<td><span class="st ' + classeStatus(r.status) + '">' + esc(r.status || 'Novo') + '</span></td>' +
       '<td>' + esc(r.responsavel || '—') + '</td>' +
       '<td>' + esc(r.area || '—') + '</td>' +
@@ -904,12 +861,12 @@ function linhaTabela(r, i) {
 function renderTabela(lista) {
   var corpo = $('corpoTabela');
   if (!lista.length) {
-    corpo.innerHTML = '<tr><td colspan="8"><div class="vazio"><i class="ph-fill ph-binoculars"></i>' +
-      '<b>Nenhum ponto por aqui</b>Ajuste os filtros ou crie um ponto novo.</div></td></tr>';
+    corpo.innerHTML = '<tr><td colspan="8" style="padding:34px;text-align:center;color:var(--subtle);">' +
+      'Nenhum ponto encontrado com esses filtros.</td></tr>';
     return;
   }
   var agrupar = $('fAgrupar').value;
-  if (!agrupar) { corpo.innerHTML = lista.map(linhaTabela).join(''); return; }
+  if (!agrupar) { corpo.innerHTML = lista.map(function(r,i){ return linhaTabela(r,i); }).join(''); return; }
 
   var grupos = {};
   lista.forEach(function (r) {
@@ -917,59 +874,60 @@ function renderTabela(lista) {
     (grupos[chave] = grupos[chave] || []).push(r);
   });
 
-  var n = 0;
   corpo.innerHTML = Object.keys(grupos).sort(function (a, b) { return a.localeCompare(b, 'pt-BR'); })
     .map(function (chave) {
-      return '<tr><td colspan="8" class="grupo-head">' + esc(chave) +
-        '<span class="contagem">' + grupos[chave].length + '</span></td></tr>' +
-        grupos[chave].map(function (r) { return linhaTabela(r, n++); }).join('');
+      return '<tr class="linha-grupo"><td colspan="8" class="grupo-head">' +
+        esc(chave) + '<span class="contagem">' + grupos[chave].length + '</span></td></tr>' +
+        grupos[chave].map(function(r,i){ return linhaTabela(r,i); }).join('');
     }).join('');
 }
 
 function renderKanban(lista) {
-  $('visaoKanban').innerHTML = STATUS.map(function (st) {
+  var alvo = $('visaoKanban');
+  alvo.innerHTML = STATUS.map(function (st, si) {
     var itens = lista.filter(function (r) { return (r.status || 'Novo') === st; });
-    return '<div class="kb-col" data-status="' + esc(st) + '">' +
-      '<h3>' + esc(st) + '<span class="traco" style="background:' + CORES[st] + ';"></span>' +
-      '<span class="n">' + itens.length + '</span></h3>' +
-      (itens.length ? itens.map(function (r, i) {
+    return '<div class="kb-col" data-status="' + esc(st) + '" style="animation-delay:' + (si * .08) + 's">' +
+      '<h3>' + esc(st) + '<span>' + itens.length + '</span></h3>' +
+      itens.map(function (r, i) {
         var u = ultimaAtualizacao(r);
-        return '<div class="kb-card" draggable="true" style="--i:' + i + '" data-id="' + esc(r.id) + '">' +
+        return '<div class="kb-card" draggable="true" data-id="' + esc(r.id) + '" style="animation-delay:' + (i * .05) + 's">' +
           '<b>' + esc(r.ponto || '—') + '</b>' +
           '<p>' + esc(r.tarefa || (u ? u.t : '')) + '</p>' +
           '<div class="kb-meta">' + esc(r.empresa || '—') + ' · ' + esc(r.responsavel || 'sem responsável') +
-          (estaParado(r) ? ' · <span class="marca-parado">parado</span>' : '') + '</div>' +
+          (estaParado(r) ? ' · <span class="parado">parado</span>' : '') + '</div>' +
         '</div>';
-      }).join('') : '<div class="kb-vazia">Nada aqui</div>') + '</div>';
+      }).join('') + '</div>';
   }).join('');
 }
 
-/* ============================================================
-   IDENTIFICAÇÃO DE QUEM EDITA (só na primeira gravação da sessão)
-   ============================================================ */
 function garantirAutor() {
   if (estado.autor) return Promise.resolve(estado.autor);
   return new Promise(function (resolve, reject) {
     abrirModal('modalAutor');
     var campo = $('inputAutor');
     campo.value = '';
-    setTimeout(function () { campo.focus(); }, 80);
+    setTimeout(function () { campo.focus(); }, 60);
 
-    function reabrirDrawer() {
-      if ($('drawer').dataset.aberto === '1') {
-        $('drawer').classList.add('on');
-        $('backdrop').classList.add('on');
-      }
-    }
     function confirmar() {
       var nome = campo.value.trim();
       if (!nome) { campo.focus(); return; }
       estado.autor = nome;
       $('editandoComo').textContent = 'editando como ' + nome;
-      limpar(); fecharModais(); reabrirDrawer();
+      limpar();
+      fecharModais();
+      if ($('drawer').dataset.aberto === '1') $('drawer').classList.add('on');
+      $('backdrop').classList.add('on');
       resolve(nome);
     }
-    function cancelar() { limpar(); fecharModais(); reabrirDrawer(); reject(new Error('cancelado')); }
+    function cancelar() {
+      limpar();
+      fecharModais();
+      if ($('drawer').dataset.aberto === '1') {
+        $('drawer').classList.add('on');
+        $('backdrop').classList.add('on');
+      }
+      reject(new Error('cancelado'));
+    }
     function tecla(e) { if (e.key === 'Enter') confirmar(); if (e.key === 'Escape') cancelar(); }
     function limpar() {
       $('btnConfirmarAutor').removeEventListener('click', confirmar);
@@ -982,9 +940,6 @@ function garantirAutor() {
   });
 }
 
-/* ============================================================
-   PAINEL DE EDIÇÃO
-   ============================================================ */
 function abrirDrawer(id) {
   var r = id ? estado.dados.filter(function (x) { return x.id === id; })[0] : null;
   estado.editando = r ? r.id : null;
@@ -1003,13 +958,15 @@ function abrirDrawer(id) {
   }).join('');
 
   $('btnExcluir').style.display = r ? '' : 'none';
+  $('btnAnotar').textContent = r ? 'Registrar atualização' : 'Vai junto ao salvar';
   $('btnAnotar').disabled = !r;
   $('editandoComo').textContent = estado.autor ? 'editando como ' + estado.autor : '';
 
+  var hist = $('histLista');
   var lista = (r && r.atualizacoes) || [];
-  $('histLista').innerHTML = lista.length
-    ? lista.slice().reverse().map(function (a) {
-        return '<div class="hist-item">' + esc(a.t) +
+  hist.innerHTML = lista.length
+    ? lista.slice().reverse().map(function (a, i) {
+        return '<div class="hist-item" style="animation-delay:' + (i * .06) + 's">' + esc(a.t) +
           '<small>' + esc(a.a || 'sem autor') + (a.d ? ' · ' + fmtDataHora(a.d) : '') + '</small></div>';
       }).join('')
     : '<div class="hist-vazio">Nenhuma atualização registrada ainda.</div>';
@@ -1045,53 +1002,55 @@ function coletarFormulario() {
 
 function salvarPonto() {
   var reg = coletarFormulario();
-  if (!reg.ponto && !reg.tarefa) { toast('Preencha ao menos o ponto ou a tarefa.', 'erro'); return; }
-  var anterior = estado.dados.filter(function (x) { return x.id === reg.id; })[0];
-  var virouFinalizado = reg.status === 'Finalizado' && (!anterior || anterior.status !== 'Finalizado');
+  if (!reg.ponto && !reg.tarefa) { toast('Preencha ao menos o ponto ou a tarefa.', true); return; }
 
   garantirAutor().then(function (autor) {
     var nota = $('cNota').value.trim();
-    if (!reg.id && nota) reg.atualizacoes = [{ t: nota, a: autor, d: new Date().toISOString() }];
-    carregando(true, 'Salvando', 'Gravando na planilha');
+    if (!reg.id && nota) {
+      reg.atualizacoes = [{ t: nota, a: autor, d: new Date().toISOString() }];
+    }
+    carregando(true, 'Salvando…');
     return apiPost({ acao: 'salvar', registro: reg, autor: autor }).then(function () {
-      if (reg.id && nota) return apiPost({ acao: 'anotar', id: reg.id, texto: nota, autor: autor });
+      if (reg.id && nota) {
+        return apiPost({ acao: 'anotar', id: reg.id, texto: nota, autor: autor });
+      }
     });
   }).then(function () {
     fecharDrawer();
-    if (virouFinalizado) { celebrar(); toast('Ponto finalizado.', 'festa'); }
-    else toast('Ponto salvo.');
+    toast('Ponto salvo.');
     return carregar(true, true);
   }).catch(function (err) {
     carregando(false);
-    if (err.message !== 'cancelado') toast('Não consegui salvar: ' + err.message, 'erro');
+    if (err.message !== 'cancelado') toast('Erro ao salvar: ' + err.message, true);
   });
 }
 
 function anotarPonto() {
   var texto = $('cNota').value.trim();
-  if (!texto) { toast('Escreva a atualização antes.', 'erro'); return; }
+  if (!texto) { toast('Escreva a atualização antes.', true); return; }
   var id = estado.editando;
 
   garantirAutor().then(function (autor) {
-    carregando(true, 'Registrando', 'Anexando ao histórico');
+    carregando(true, 'Registrando…');
     return apiPost({ acao: 'anotar', id: id, texto: texto, autor: autor });
   }).then(function () {
     toast('Atualização registrada.');
     return carregar(true, true);
-  }).then(function () { if (id) abrirDrawer(id); })
-  .catch(function (err) {
+  }).then(function () {
+    if (id) abrirDrawer(id);
+  }).catch(function (err) {
     carregando(false);
-    if (err.message !== 'cancelado') toast('Não consegui registrar: ' + err.message, 'erro');
+    if (err.message !== 'cancelado') toast('Erro: ' + err.message, true);
   });
 }
 
 function excluirPonto() {
   var id = estado.editando;
   if (!id) return;
-  if (!confirm('Excluir este ponto? A planilha faz um backup automático antes.')) return;
+  if (!confirm('Excluir este ponto? Um backup da planilha é feito automaticamente antes.')) return;
 
   garantirAutor().then(function (autor) {
-    carregando(true, 'Excluindo', 'Fazendo backup antes');
+    carregando(true, 'Excluindo…');
     return apiPost({ acao: 'excluir', id: id, autor: autor });
   }).then(function () {
     fecharDrawer();
@@ -1099,7 +1058,7 @@ function excluirPonto() {
     return carregar(true, true);
   }).catch(function (err) {
     carregando(false);
-    if (err.message !== 'cancelado') toast('Não consegui excluir: ' + err.message, 'erro');
+    if (err.message !== 'cancelado') toast('Erro ao excluir: ' + err.message, true);
   });
 }
 
@@ -1108,24 +1067,20 @@ function mudarStatus(id, status) {
   if (!r || r.status === status) return;
 
   garantirAutor().then(function (autor) {
-    carregando(true, 'Atualizando', 'Movendo para ' + status);
+    carregando(true, 'Atualizando status…');
     var copia = JSON.parse(JSON.stringify(r));
     copia.status = status;
     return apiPost({ acao: 'salvar', registro: copia, autor: autor });
   }).then(function () {
-    if (status === 'Finalizado') { celebrar(); toast('Ponto finalizado.', 'festa'); }
-    else toast('Agora está em ' + status + '.');
+    toast('Status alterado para ' + status + '.');
     return carregar(true, true);
   }).catch(function (err) {
     carregando(false);
-    if (err.message !== 'cancelado') toast('Não consegui mover: ' + err.message, 'erro');
+    if (err.message !== 'cancelado') toast('Erro: ' + err.message, true);
     render();
   });
 }
 
-/* ============================================================
-   IMPORTAR PLANILHA
-   ============================================================ */
 function norm(v) {
   return String(v == null ? '' : v).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
 }
@@ -1152,7 +1107,7 @@ function dataParaISO(v) {
 function lerPlanilha(arquivo) {
   return new Promise(function (resolve, reject) {
     var leitor = new FileReader();
-    leitor.onerror = function () { reject(new Error('não consegui abrir o arquivo')); };
+    leitor.onerror = function () { reject(new Error('Não consegui ler o arquivo.')); };
     leitor.onload = function (ev) {
       try {
         var wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array', cellDates: true });
@@ -1209,7 +1164,7 @@ function enviarImportacao(modo) {
   if (modo === 'substituir' && !confirm('Isso apaga os pontos atuais e grava só os da planilha. Um backup é feito antes. Continuar?')) return;
 
   garantirAutor().then(function (autor) {
-    carregando(true, 'Importando', estado.importados.length + ' pontos a caminho');
+    carregando(true, 'Importando ' + estado.importados.length + ' registros…');
     return apiPost({ acao: 'importar', registros: estado.importados, modo: modo, autor: autor });
   }).then(function (resp) {
     fecharModais();
@@ -1218,20 +1173,17 @@ function enviarImportacao(modo) {
     $('arquivoExcel').value = '';
     $('btnImpAnexar').disabled = true;
     $('btnImpSubstituir').disabled = true;
-    toast(resp.importados + ' pontos importados.');
+    toast('Importados ' + resp.importados + ' pontos.');
     return carregar(true, true);
   }).catch(function (err) {
     carregando(false);
-    if (err.message !== 'cancelado') toast('Importação parou: ' + err.message, 'erro');
+    if (err.message !== 'cancelado') toast('Erro na importação: ' + err.message, true);
   });
 }
 
-/* ============================================================
-   EXPORTAR PLANILHA
-   ============================================================ */
 function exportar() {
   var lista = filtrados();
-  if (!lista.length) { toast('Nada para exportar com esses filtros.', 'erro'); return; }
+  if (!lista.length) { toast('Nada para exportar com esses filtros.', true); return; }
 
   var aoa = [
     ['FINANCEIRO | CONTROLADORIA | CONTABILIDADE'],
@@ -1254,14 +1206,11 @@ function exportar() {
   toast('Excel gerado.');
 }
 
-/* ============================================================
-   MODO REUNIÃO
-   ============================================================ */
 var reuniao = { lista: [], i: 0 };
 
 function abrirReuniao() {
   reuniao.lista = filtrados().filter(function (r) { return String(r.status).toLowerCase() !== 'finalizado'; });
-  if (!reuniao.lista.length) { toast('Nenhum ponto em aberto com esses filtros.', 'erro'); return; }
+  if (!reuniao.lista.length) { toast('Nenhum ponto em aberto com esses filtros.', true); return; }
   reuniao.i = 0;
   $('telaReuniao').classList.add('on');
   renderReuniao();
@@ -1271,14 +1220,15 @@ function renderReuniao() {
   var r = reuniao.lista[reuniao.i];
   if (!r) { sairReuniao(); return; }
   var atual = estado.dados.filter(function (x) { return x.id === r.id; })[0] || r;
-
   $('reuniaoContador').textContent = (reuniao.i + 1) + ' / ' + reuniao.lista.length;
-  $('reuniaoTrilho').style.width = ((reuniao.i + 1) / reuniao.lista.length * 100) + '%';
+
+  var progresso = reuniao.lista.length > 0 ? ((reuniao.i + 1) / reuniao.lista.length * 100) + '%' : '0%';
+  $('reuniaoProgresso').style.width = progresso;
 
   var ultimas = (atual.atualizacoes || []).slice(-3).reverse().map(function (a) {
     return '<div class="hist-item">' + esc(a.t) +
       '<small>' + esc(a.a || '') + (a.d ? ' · ' + fmtDataHora(a.d) : '') + '</small></div>';
-  }).join('') || '<div class="hist-vazio">Primeira vez que este ponto entra em pauta.</div>';
+  }).join('') || '<div class="hist-vazio">Sem atualizações anteriores.</div>';
 
   $('reuniaoPainel').innerHTML =
     '<h3 class="ponto-titulo">' + esc(atual.ponto || 'Ponto sem título') + '</h3>' +
@@ -1290,21 +1240,22 @@ function renderReuniao() {
       '<span class="st ' + classeStatus(atual.status) + '">' + esc(atual.status) + '</span>' +
       '<span class="pill">' + fmtData(atual.data) + '</span>' +
     '</div>' +
-    '<div class="hist" style="margin-bottom:18px;">' + ultimas + '</div>' +
+    '<div class="hist" style="margin-bottom:16px;">' + ultimas + '</div>' +
     '<label class="rotulo" for="rNota">Atualização de hoje</label>' +
-    '<textarea class="campo" id="rNota" rows="3" placeholder="O que ficou decidido agora"></textarea>' +
-    '<div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+    '<textarea class="campo" id="rNota" rows="3" placeholder="O que foi decidido agora"></textarea>' +
+    '<div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
       '<label class="rotulo" style="margin:0;">Status</label>' +
       '<select class="campo campo-mini" id="rStatus">' +
         STATUS.map(function (s) {
           return '<option value="' + s + '"' + (atual.status === s ? ' selected' : '') + '>' + s + '</option>';
-        }).join('') + '</select>' +
+        }).join('') +
+      '</select>' +
     '</div>' +
     '<div class="navegacao">' +
-      '<button class="b-acao" id="rAnterior"><i class="ph-bold ph-arrow-left"></i> Anterior</button>' +
+      '<button class="b-acao" id="rAnterior">← Anterior</button>' +
       '<div style="display:flex;gap:8px;">' +
         '<button class="b-acao" id="rPular">Pular</button>' +
-        '<button class="b-acao primaria" id="rSalvar">Salvar e avançar <i class="ph-bold ph-arrow-right"></i></button>' +
+        '<button class="b-acao primaria" id="rSalvar">Salvar e avançar →</button>' +
       '</div>' +
     '</div>';
 
@@ -1315,7 +1266,7 @@ function renderReuniao() {
 
 function avancarReuniao() {
   if (reuniao.i < reuniao.lista.length - 1) { reuniao.i++; renderReuniao(); }
-  else { toast('Pauta encerrada.', 'festa'); celebrar(); sairReuniao(); }
+  else { toast('Fim da lista.'); sairReuniao(); }
 }
 
 function salvarReuniao(atual) {
@@ -1331,15 +1282,18 @@ function salvarReuniao(atual) {
       passos = passos.then(function () { return apiPost({ acao: 'salvar', registro: copia, autor: autor }); });
     }
     if (nota) {
-      passos = passos.then(function () { return apiPost({ acao: 'anotar', id: atual.id, texto: nota, autor: autor }); });
+      passos = passos.then(function () {
+        return apiPost({ acao: 'anotar', id: atual.id, texto: nota, autor: autor });
+      });
     }
     return passos;
   }).then(function () {
     toast('Registrado.');
     return carregar(true, true);
-  }).then(function () { avancarReuniao(); })
-  .catch(function (err) {
-    if (err.message !== 'cancelado') toast('Não consegui registrar: ' + err.message, 'erro');
+  }).then(function () {
+    avancarReuniao();
+  }).catch(function (err) {
+    if (err.message !== 'cancelado') toast('Erro: ' + err.message, true);
   });
 }
 
@@ -1348,25 +1302,8 @@ function sairReuniao() {
   render();
 }
 
-/* ============================================================
-   EVENTOS
-   ============================================================ */
 ['busca', 'fEmpresa', 'fArea', 'fResp', 'fStatus', 'fAgrupar'].forEach(function (id) {
   $(id).addEventListener(id === 'busca' ? 'input' : 'change', render);
-});
-
-$('termoBarra').addEventListener('click', function (ev) {
-  var seg = ev.target.closest('.termo-seg');
-  if (!seg) return;
-  $('fStatus').value = $('fStatus').value === seg.dataset.status ? '' : seg.dataset.status;
-  render();
-});
-
-$('termoLegenda').addEventListener('click', function (ev) {
-  var item = ev.target.closest('.termo-item');
-  if (!item) return;
-  $('fStatus').value = $('fStatus').value === item.dataset.status ? '' : item.dataset.status;
-  render();
 });
 
 $('chipFinalizados').addEventListener('click', function () {
@@ -1406,11 +1343,7 @@ $('visaoKanban').addEventListener('click', function (ev) {
 
 $('visaoKanban').addEventListener('dragstart', function (ev) {
   var card = ev.target.closest('.kb-card');
-  if (card) { ev.dataTransfer.setData('text/plain', card.dataset.id); card.classList.add('arrastando'); }
-});
-$('visaoKanban').addEventListener('dragend', function (ev) {
-  var card = ev.target.closest('.kb-card');
-  if (card) card.classList.remove('arrastando');
+  if (card) ev.dataTransfer.setData('text/plain', card.dataset.id);
 });
 $('visaoKanban').addEventListener('dragover', function (ev) {
   var col = ev.target.closest('.kb-col');
@@ -1434,7 +1367,7 @@ $('btnFecharDrawer').addEventListener('click', fecharDrawer);
 $('btnSalvar').addEventListener('click', salvarPonto);
 $('btnAnotar').addEventListener('click', anotarPonto);
 $('btnExcluir').addEventListener('click', excluirPonto);
-$('backdrop').addEventListener('click', fecharDrawer);
+$('backdrop').addEventListener('click', function () { fecharDrawer(); });
 $('btnExportar').addEventListener('click', exportar);
 $('btnReuniao').addEventListener('click', abrirReuniao);
 $('btnSairReuniao').addEventListener('click', sairReuniao);
@@ -1454,44 +1387,30 @@ $('btnImpSubstituir').addEventListener('click', function () { enviarImportacao('
 $('arquivoExcel').addEventListener('change', function () {
   var arquivo = this.files[0];
   if (!arquivo) return;
-  $('previaImport').textContent = 'Lendo o arquivo…';
+  $('previaImport').textContent = 'Lendo arquivo…';
   lerPlanilha(arquivo).then(function (registros) {
     estado.importados = registros;
     var ok = registros.length > 0;
     $('btnImpAnexar').disabled = !ok;
     $('btnImpSubstituir').disabled = !ok;
     $('previaImport').innerHTML = ok
-      ? 'Encontrei <b>' + registros.length + '</b> pontos. O primeiro é ' +
-        esc(registros[0].ponto || registros[0].tarefa) + '.'
-      : 'Não achei o cabeçalho PONTO REUNIÃO nessa planilha. Confira se a aba certa está no arquivo.';
+      ? 'Encontrados <b>' + registros.length + '</b> pontos. Exemplo: ' + esc(registros[0].ponto || registros[0].tarefa)
+      : 'Não encontrei o cabeçalho PONTO REUNIÃO nessa planilha.';
   }).catch(function (err) {
-    $('previaImport').textContent = 'Falhou na leitura: ' + err.message;
+    $('previaImport').textContent = 'Erro ao ler: ' + err.message;
   });
 });
 
 document.addEventListener('keydown', function (ev) {
-  if (ev.key === 'Escape') {
-    if ($('telaReuniao').classList.contains('on')) sairReuniao();
-    else fecharDrawer();
-  }
-  if ($('telaReuniao').classList.contains('on') && ev.target.tagName !== 'TEXTAREA') {
-    if (ev.key === 'ArrowRight') avancarReuniao();
-    if (ev.key === 'ArrowLeft' && reuniao.i > 0) { reuniao.i--; renderReuniao(); }
-  }
+  if (ev.key !== 'Escape') return;
+  if ($('telaReuniao').classList.contains('on')) sairReuniao();
+  else fecharDrawer();
 });
 
 document.addEventListener('visibilitychange', function () {
   if (!document.hidden && Date.now() - estado.ultimaCarga > 60000) carregar(false, true);
 });
 
-window.addEventListener('resize', function () {
-  var cv = $('confete');
-  cv.width = innerWidth; cv.height = innerHeight;
-});
-
-/* ============================================================
-   BOTÃO "VOLTAR AO HUB"
-   ============================================================ */
 (function () {
   var HubLink = {
     HUB_PATH_PREFIX: '/Controladoria',
@@ -1527,6 +1446,5 @@ window.addEventListener('resize', function () {
 
 carregar(false);
 </script>
-
 </body>
 </html>
