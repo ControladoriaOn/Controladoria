@@ -21,64 +21,73 @@
 
     <!-- Estilos próprios dos controles do cabeçalho (não dependem do styles.css) -->
     <style id="dctl-style">
-      #main-header .header-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+      #main-header .header-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 
-      /* Base (mês / ano) */
-      #main-header .header-right .dctl-base {
-        display:inline-flex; align-items:center; gap:4px; height:38px;
-        padding:0 10px; background:#fff; border:1px solid #E8E2E8; border-radius:10px;
+      /* Seletor de data-base (mês / ano) */
+      #main-header .dctl-base {
+        display:inline-flex; align-items:center; gap:2px; height:40px;
+        padding:0 6px 0 12px; background:#fff; border:1px solid var(--border);
+        border-radius:12px; box-shadow:var(--shadow-sm);
+        transition:border-color .15s, box-shadow .15s;
       }
-      #main-header .header-right .dctl-base > i { color:#FF6E00; font-size:15px; }
-      #main-header .header-right .dctl-base select {
-        appearance:auto; border:none; background:transparent; cursor:pointer;
-        font:600 13px 'Manrope',sans-serif; color:#2D1B2D; padding:2px; outline:none;
+      #main-header .dctl-base:hover { border-color:var(--orange); }
+      #main-header .dctl-base:focus-within { border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,0.12); }
+      #main-header .dctl-base > i { color:var(--orange); font-size:16px; margin-right:5px; }
+      #main-header .dctl-base select {
+        appearance:none; -webkit-appearance:none; border:none; background-color:transparent;
+        cursor:pointer; outline:none; font:700 13px 'Manrope',sans-serif; color:var(--ink);
+        padding:6px 24px 6px 8px; border-radius:8px;
+        background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 256 256" fill="%23A89CB0"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>');
+        background-repeat:no-repeat; background-position:right 8px center;
+        transition:background-color .12s;
       }
+      #main-header .dctl-base select:hover { background-color:var(--orange-soft); }
+      #main-header .dctl-base .dctl-sep { width:1px; height:18px; background:var(--border); margin:0 3px; }
 
-      /* Sincronização */
-      #main-header .header-right .dctl-sync {
-        display:inline-flex; align-items:center; gap:7px; white-space:nowrap;
-        font:500 12px 'Manrope',sans-serif; color:#6B5E6B; padding:0 4px;
+      /* Botão Exportar (menu) */
+      #main-header .dctl-export { position:relative; }
+      #main-header .dctl-export-btn {
+        display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 18px;
+        background:linear-gradient(135deg, #FF8A2E 0%, var(--orange) 55%, var(--orange-deep) 100%);
+        color:#fff; border:none; border-radius:12px;
+        font:800 13px 'Manrope',sans-serif; letter-spacing:.01em; cursor:pointer;
+        box-shadow:0 8px 20px -10px rgba(255,110,0,0.65), inset 0 1px 0 rgba(255,255,255,0.25);
+        transition:transform .15s, box-shadow .15s, filter .15s;
       }
-      #main-header .header-right .dctl-sync .dctl-dot {
-        width:7px; height:7px; border-radius:50%; background:#16A34A;
-        box-shadow:0 0 0 3px rgba(22,163,74,0.14);
+      #main-header .dctl-export-btn:hover {
+        transform:translateY(-1px); filter:brightness(1.05);
+        box-shadow:0 12px 26px -10px rgba(255,110,0,0.75), inset 0 1px 0 rgba(255,255,255,0.25);
       }
+      #main-header .dctl-export-btn:active { transform:translateY(0); filter:brightness(0.98); }
+      #main-header .dctl-export-btn .dctl-caret { font-size:13px; transition:transform .15s; }
+      #main-header .dctl-export-btn[aria-expanded="true"] .dctl-caret { transform:rotate(180deg); }
 
-      /* Exportar (menu) */
-      #main-header .header-right .dctl-export { position:relative; }
-      #main-header .header-right .dctl-export-btn {
-        display:inline-flex; align-items:center; gap:8px; height:38px; padding:0 16px;
-        background:#FF6E00; color:#fff; border:1px solid #FF6E00; border-radius:10px;
-        font:700 13px 'Manrope',sans-serif; cursor:pointer;
-        box-shadow:0 6px 16px -8px rgba(255,110,0,0.5); transition:all .15s;
+      #main-header .dctl-menu {
+        position:absolute; top:calc(100% + 10px); right:0; z-index:1200; min-width:224px;
+        max-width:calc(100vw - 32px);
+        background:#fff; border:1px solid var(--border); border-radius:14px; padding:6px;
+        box-shadow:0 18px 44px -14px rgba(26,15,26,0.35);
+        animation:dctlPop .16s ease-out;
       }
-      #main-header .header-right .dctl-export-btn:hover { background:#E55B00; border-color:#E55B00; }
-      #main-header .header-right .dctl-export-btn .dctl-caret { font-size:13px; transition:transform .15s; }
-      #main-header .header-right .dctl-export-btn[aria-expanded="true"] .dctl-caret { transform:rotate(180deg); }
-
-      #main-header .header-right .dctl-menu {
-        position:absolute; top:calc(100% + 8px); right:0; z-index:1200; min-width:218px;
-        background:#fff; border:1px solid #E8E2E8; border-radius:12px; padding:6px;
-        box-shadow:0 14px 34px -12px rgba(45,27,45,0.3);
-      }
-      #main-header .header-right .dctl-menu[hidden] { display:none; }
-      #main-header .header-right .dctl-menu-item {
+      @keyframes dctlPop { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+      #main-header .dctl-menu[hidden] { display:none; }
+      #main-header .dctl-menu-item {
         display:flex; align-items:center; gap:10px; width:100%; text-align:left;
-        padding:10px 12px; background:none; border:none; border-radius:8px; cursor:pointer;
-        font:600 13px 'Manrope',sans-serif; color:#2D1B2D;
+        padding:11px 12px; background:none; border:none; border-radius:10px; cursor:pointer;
+        font:600 13px 'Manrope',sans-serif; color:var(--ink); transition:background .12s;
       }
-      #main-header .header-right .dctl-menu-item:hover { background:#FFF1E0; }
-      #main-header .header-right .dctl-menu-item i { font-size:17px; color:#16794A; }
-      #main-header .header-right .dctl-menu-item:last-child i { color:#DC2626; }
-      #main-header .header-right .dctl-menu-item span {
+      #main-header .dctl-menu-item:hover { background:var(--orange-soft); }
+      #main-header .dctl-menu-item i { font-size:17px; color:var(--ok); }
+      #main-header .dctl-menu-item:last-child i { color:var(--err); }
+      #main-header .dctl-menu-item.loading i { animation:cmpspin 1s linear infinite; }
+      #main-header .dctl-menu-item span {
         margin-left:auto; font:700 10.5px 'Manrope',sans-serif; letter-spacing:.04em;
-        text-transform:uppercase; color:#9B8F9B; background:#F6F2F6; padding:2px 7px; border-radius:6px;
+        text-transform:uppercase; color:var(--subtle); background:var(--surface-soft); padding:2px 7px; border-radius:6px;
       }
 
       @media (max-width:720px) {
-        #main-header .header-right { gap:8px; }
-        #main-header .header-right .dctl-sync { display:none; }
-        #main-header .header-right .dctl-menu { right:auto; left:0; }
+        #main-header .header-right { width:100%; justify-content:space-between; gap:8px; }
+        #main-header .dctl-export-btn { padding:0 15px; }
       }
 
       /* ---- Comprovantes no Detalhamento ---- */
@@ -173,6 +182,23 @@
             <i class="ph ph-upload-simple"></i> Atualizar
         </a>
     </nav>
+
+    <div class="sidebar-summary" aria-label="Resumo rápido">
+        <div class="ss-title"><i class="ph-fill ph-lightning" aria-hidden="true"></i> Resumo rápido</div>
+        <div class="ss-item">
+            <span class="ss-label">Saldo devedor total</span>
+            <span class="ss-value" id="ss-saldo">—</span>
+        </div>
+        <div class="ss-item">
+            <span class="ss-label">Contratos ativos</span>
+            <span class="ss-value" id="ss-ativas">—</span>
+        </div>
+        <div class="ss-sync" title="Última sincronização">
+            <span class="ss-dot" aria-hidden="true"></span>
+            <span id="lastSync">—</span>
+        </div>
+    </div>
+
     <div class="sidebar-footer">
         <a id="btn-hub" class="btn-hub" href="../" rel="noopener" hidden>
             <i class="ph ph-arrow-left"></i>
@@ -191,14 +217,10 @@
         </div>
         <div class="header-right">
             <div class="dctl-base" role="group" aria-label="Selecionar data-base">
-                <i class="ph ph-calendar-blank" aria-hidden="true"></i>
+                <i class="ph-fill ph-calendar-blank" aria-hidden="true"></i>
                 <select id="dataBaseMes" aria-label="Mês base"></select>
+                <span class="dctl-sep" aria-hidden="true"></span>
                 <select id="dataBaseAno" aria-label="Ano base"></select>
-            </div>
-
-            <div class="dctl-sync" title="Última sincronização">
-                <span class="dctl-dot" aria-hidden="true"></span>
-                <span id="lastSync">—</span>
             </div>
 
             <div class="dctl-export" id="dctlExport">
@@ -224,11 +246,15 @@
     <div class="content-area" id="contentArea">
         <div id="loader" role="status" aria-live="polite">
             <div class="loader-brand">
-                <div class="loader-mascote-box">
-                    <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="loader-mascote-img">
+                <div class="loader-mascote-wrap">
+                    <div class="loader-ring" aria-hidden="true"></div>
+                    <div class="loader-mascote-box">
+                        <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="loader-mascote-img">
+                    </div>
                 </div>
                 <div class="loader-logo">ON<span>TIME</span></div>
                 <div class="loader-text">Carregando dados do sistema...</div>
+                <div class="loader-bar" aria-hidden="true"><span></span></div>
             </div>
         </div>
 

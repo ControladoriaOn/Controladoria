@@ -1203,6 +1203,12 @@ const App = (() => {
 
     const updateDashboard = () => {
         computeDashData(); updateKPIs(); ChartManager.registerPlugins();
+
+        // Resumo rápido da sidebar (totais gerais da data-base, sem filtro de órgão)
+        const ssSaldo = $('ss-saldo'), ssAtivas = $('ss-ativas');
+        if (ssSaldo) ssSaldo.textContent = Utils.fmtD(dashData.totalS);
+        if (ssAtivas) ssAtivas.textContent = String(dashData.contSetSize);
+
         $('caixaSubtitle').textContent = `Comparativo Jan/2023 vs ${Config.MONTH_NAMES[currMonth]}/${currYear}`;
         const orgE = dashData.orgEntries;
 
@@ -1368,7 +1374,10 @@ const App = (() => {
             updateDashboard(); filterSintetico();
             lastDetalhadoFiltered = DataService.getRawData();
             renderDetalhado(applySort(DataService.getRawData(), 'detalhado'));
-            $('loader').style.display = 'none'; $('app-content').style.display = 'flex';
+            $('app-content').style.display = 'flex';
+            const loaderEl = $('loader');
+            loaderEl.classList.add('fade-out');
+            setTimeout(() => { loaderEl.style.display = 'none'; }, 480);
             initScrollSpy();
         } catch (err) { showError('Erro ao renderizar o dashboard.', err.message); }
     };
