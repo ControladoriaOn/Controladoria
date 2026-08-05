@@ -18,6 +18,7 @@
       --bg:#F4EFEE; --card:#FFFFFF; --surface:#FFFFFF;
       --green:#15803D; --ok:#15803D; --green-bg:#E4F6E9;
       --red:#B42318; --red-bg:#FBE9E7; --gray-bg:#F1EAF1;
+      --warn:#8A5300; --warn-bg:#FEF3DC; --warn-line:#F4DCA6;
       --r-card:18px; --r-ctl:12px; --r-field:11px;
       --sh-sm:0 1px 2px rgba(52,0,46,.05), 0 1px 3px rgba(52,0,46,.04);
       --sh-md:0 2px 6px rgba(52,0,46,.05), 0 16px 36px -16px rgba(52,0,46,.18);
@@ -29,8 +30,12 @@
     .wrap{max-width:920px;margin:0 auto;padding:28px 20px 76px}
 
     /* ===== header ===== */
-    header{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(135deg,var(--plum-deep),var(--plum) 50%,var(--plum-2));color:#fff;border-radius:22px;padding:22px 24px;box-shadow:var(--sh-md);border:1px solid rgba(255,255,255,.06)}
+    header{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(135deg,var(--plum-deep),var(--plum) 50%,var(--plum-2));color:#fff;border-radius:22px;padding:22px 24px 26px;box-shadow:var(--sh-md);border:1px solid rgba(255,255,255,.06)}
     header::after{content:"";position:absolute;top:-45%;right:-4%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,110,0,.34),transparent 62%);pointer-events:none}
+    /* picote de comprovante: linha pontilhada na base do cabeçalho */
+    header::before{content:"";position:absolute;left:22px;right:22px;bottom:10px;height:2px;pointer-events:none;
+      background-image:radial-gradient(circle,rgba(255,255,255,.55) 1px,transparent 1.5px);
+      background-size:8px 2px;background-repeat:repeat-x;opacity:.45}
     .head-brand{display:flex;align-items:center;gap:15px;min-width:0;position:relative;z-index:1}
     .mascwrap{flex:0 0 auto;display:inline-flex;padding:3px;border-radius:14px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22)}
     .mascote{width:46px;height:46px;border-radius:11px;object-fit:cover;display:block}
@@ -47,6 +52,16 @@
     .maintab .mt-ico{font-size:16px}
     .maintab:hover{border-color:var(--orange);color:var(--orange-deep)}
     .maintab.active{background:linear-gradient(135deg,var(--plum-deep),var(--plum-2));color:#fff;border-color:transparent;box-shadow:var(--sh-md)}
+
+    /* ===== aviso de bloqueio do navegador ===== */
+    .alertbar{display:flex;align-items:flex-start;gap:12px;margin-top:14px;padding:14px 16px;border-radius:14px;background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn);font-size:13.5px;line-height:1.5;box-shadow:var(--sh-sm)}
+    .alertbar .alertico{flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:var(--warn);color:var(--warn-bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;font-family:'Fraunces',serif}
+    .alertbar .alerttxt{min-width:0;flex:1}
+    .alertbar b{display:block;font-size:14px;margin-bottom:3px;color:var(--warn)}
+    .alertbar .btn{flex:0 0 auto}
+    html.dark .alertbar{background:#3A2E15;border-color:#5A4A20;color:#E8C77A}
+    html.dark .alertbar b{color:#E8C77A}
+    html.dark .alertbar .alertico{background:#E8C77A;color:#3A2E15}
 
     /* ===== cards & steps ===== */
     .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:20px;margin-top:14px;box-shadow:var(--sh-sm)}
@@ -68,6 +83,8 @@
     .info{margin-top:12px;font-size:13px;padding:10px 13px;border-radius:10px;font-weight:600}
     .info.ok{background:var(--green-bg);color:var(--green)}
     .info.erro{background:var(--red-bg);color:var(--red)}
+    .info.aviso{background:var(--warn-bg);color:var(--warn)}
+    html.dark .info.aviso{background:#3A2E15;color:#E8C77A}
     #resumo{margin-top:14px;font-size:13.5px;background:var(--gray-bg);padding:12px 14px;border-radius:11px;line-height:1.7}
     #resumo b{color:var(--ink)}
 
@@ -94,7 +111,7 @@
     .badge.ok{background:var(--orange-soft);color:var(--orange-deep)}
     .badge.up{background:#FEF1D6;color:#A8650C}
     .badge.done{background:var(--green-bg);color:var(--green)}
-    .badge.err{background:var(--red-bg);color:var(--red)}
+    .badge.err{background:var(--red-bg);color:var(--red);cursor:help}
     .chip{display:inline-flex;align-items:center;gap:5px;background:var(--gray-bg);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--muted)}
     .chip b{color:var(--ink)}
     .chip.on{background:var(--green-bg);color:var(--green)}
@@ -120,6 +137,8 @@
     #bar{height:100%;width:0;background:linear-gradient(90deg,#FF8A2B,#FF6E00);border-radius:999px;transition:width .25s}
     #progTxt{font-size:12.5px;color:var(--muted);margin-top:8px;font-weight:600}
     #doneMsg{margin-top:14px;font-size:13.5px;background:var(--green-bg);color:var(--green);padding:12px 14px;border-radius:11px;font-weight:600}
+    #doneMsg.ruim{background:var(--warn-bg);color:var(--warn)}
+    html.dark #doneMsg.ruim{background:#3A2E15;color:#E8C77A}
 
     /* ===== orfaos ===== */
     .orphans{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
@@ -150,7 +169,9 @@
     .lightbox img{max-width:100%;max-height:100%;border-radius:10px}
 
     /* ===== tela de envio ===== */
-    .loadbox{background:var(--surface);border-radius:22px;padding:30px 32px;width:min(440px,92vw);text-align:center;box-shadow:var(--sh-lg);border:1px solid var(--line)}
+    .loadbox{position:relative;background:var(--surface);border-radius:22px;padding:30px 32px;width:min(440px,92vw);text-align:center;box-shadow:var(--sh-lg);border:1px solid var(--line)}
+    .loadbox::before{content:"";position:absolute;left:20px;right:20px;top:12px;height:2px;pointer-events:none;
+      background-image:radial-gradient(circle,var(--line) 1px,transparent 1.5px);background-size:8px 2px;background-repeat:repeat-x}
     .spinner{width:46px;height:46px;border-radius:50%;border:4px solid var(--orange-soft);border-top-color:var(--orange);margin:0 auto 16px;animation:spin .8s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     .loadtitle{margin:0 0 14px;font-weight:700;font-size:18px;color:var(--ink);font-family:'Fraunces',serif}
@@ -158,7 +179,9 @@
     .loadtxt{margin:12px 0 0;font-size:13.5px;font-weight:700;color:var(--ink)}
     .loadhint{margin:6px 0 0;font-size:12px;color:var(--muted)}
     .okcheck{width:56px;height:56px;border-radius:50%;background:var(--green-bg);color:var(--green);font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
-    .donewarn{margin:0 0 16px;font-size:13.5px;color:#8A5300;background:#FEF3DC;border:1px solid #F4DCA6;border-radius:12px;padding:12px 14px;line-height:1.5;text-align:left}
+    .okcheck.ruim{background:var(--warn-bg);color:var(--warn);font-family:'Fraunces',serif;font-size:32px}
+    html.dark .okcheck.ruim{background:#3A2E15;color:#E8C77A}
+    .donewarn{margin:0 0 16px;font-size:13.5px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:12px;padding:12px 14px;line-height:1.5;text-align:left}
     .doneok{margin:0 0 16px;font-size:13.5px;color:var(--green);background:var(--green-bg);border-radius:12px;padding:12px 14px;line-height:1.5}
     #doneState .btn{width:100%}
     #doneState .btn + .btn{margin-top:10px}
@@ -198,7 +221,7 @@
     #sec-consultar .confrow{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
     #sec-consultar .summary{border-radius:12px;padding:13px 16px;font-weight:700;font-size:14.5px;margin-bottom:16px}
     #sec-consultar .summary.ok{background:var(--green-bg);color:var(--ok)}
-    #sec-consultar .summary.warn{background:#FEF3DC;color:#8A5300}
+    #sec-consultar .summary.warn{background:var(--warn-bg);color:var(--warn)}
     #sec-consultar .block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
     #sec-consultar .block-head .t{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)}
     #sec-consultar .chips{display:flex;flex-wrap:wrap;gap:7px;max-height:180px;overflow-y:auto}
@@ -218,9 +241,9 @@
       --orange-soft:#3A2718; --orange-dark:#FF9A52; --orange-deep:#FF9A52; --orange-line:#5A3D22;
       --green:#5FD18C; --ok:#5FD18C; --green-bg:#16321F;
       --red:#F0A0A0; --red-bg:#3A1C1C; --plum:#3C003C; --plum-deep:#2A0028; --plum-2:#5A1457;
+      --warn:#E8C77A; --warn-bg:#3A2E15; --warn-line:#5A4A20;
     }
     html.dark .badge.up{background:#3A2E15;color:#E8C77A}
-    html.dark .summary.warn,html.dark #sec-consultar .summary.warn,html.dark .donewarn{background:#3A2E15;color:#E8C77A;border-color:#5A4A20}
     html.dark .mchip,html.dark #sec-consultar .mchip{background:#3A1C1C;color:#F0A0A0}
     html.dark .pastezone{border-color:#5A3D22}
     html.dark .pastezone:focus,html.dark .pastezone.drag{background:#43301C;border-color:var(--orange)}
@@ -229,18 +252,27 @@
 
     /* ===== fundo animado ===== */
     .orbs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
-    .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;will-change:transform}
+    .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.5;will-change:transform}
     .orb.a{width:46vmax;height:46vmax;top:-16vmax;left:-12vmax;background:radial-gradient(circle,rgba(255,110,0,.30),transparent 64%);animation:drift1 26s ease-in-out infinite}
     .orb.b{width:42vmax;height:42vmax;bottom:-18vmax;right:-14vmax;background:radial-gradient(circle,rgba(60,0,60,.30),transparent 64%);animation:drift2 32s ease-in-out infinite}
     .orb.c{width:30vmax;height:30vmax;top:38vh;right:16vw;background:radial-gradient(circle,rgba(255,150,70,.22),transparent 66%);animation:drift3 38s ease-in-out infinite}
-    @keyframes drift1{0%,100%{transform:translate(0,0)}50%{transform:translate(13vw,15vh)}}
-    @keyframes drift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-14vw,-12vh)}}
-    @keyframes drift3{0%,100%{transform:translate(0,0)}33%{transform:translate(-11vw,9vh)}66%{transform:translate(6vw,-10vh)}}
-    html.dark .orb{opacity:.5}
+    .orb.d{width:26vmax;height:26vmax;bottom:6vh;left:6vw;background:radial-gradient(circle,rgba(90,15,85,.20),transparent 66%);animation:drift4 46s ease-in-out infinite}
+    @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(13vw,15vh) scale(1.06)}}
+    @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-14vw,-12vh) scale(1.05)}}
+    @keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-11vw,9vh) scale(1.07)}66%{transform:translate(6vw,-10vh) scale(.96)}}
+    @keyframes drift4{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(10vw,-9vh) scale(1.1)}}
+    html.dark .orb{opacity:.46}
     html.dark .orb.a{background:radial-gradient(circle,rgba(255,120,40,.20),transparent 64%)}
     html.dark .orb.b{background:radial-gradient(circle,rgba(120,40,120,.34),transparent 64%)}
     html.dark .orb.c{background:radial-gradient(circle,rgba(150,60,150,.20),transparent 66%)}
+    html.dark .orb.d{background:radial-gradient(circle,rgba(90,30,110,.22),transparent 66%)}
     @media (prefers-reduced-motion: reduce){ .orb{animation:none} }
+
+    /* grão fino de papel por cima de tudo (textura, não anima) */
+    .grain{position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.045;mix-blend-mode:multiply;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size:180px 180px}
+    html.dark .grain{opacity:.06;mix-blend-mode:screen}
 
     /* SEMPRE POR ULTIMO */
     /* ====== ANIMAÇÕES (importadas) ====== */
@@ -255,12 +287,15 @@
     @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
     @keyframes popIn{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
     @keyframes floatBadge{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+    @keyframes respira{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
 
     /* entradas (backwards: não sobrescreve os hovers depois de terminar) */
     header{animation:fadeSlideDown .55s var(--ease-out-expo) backwards}
     header h1{animation:fadeSlideUp .5s var(--ease-out-expo) .15s backwards}
     .head-sub{animation:fadeSlideUp .5s var(--ease-out-expo) .25s backwards}
+    .mascote{animation:respira 6.5s var(--ease-smooth) 1.2s infinite}
     .maintabs{animation:fadeSlideUp .45s var(--ease-out-expo) .08s backwards}
+    .alertbar{animation:fadeSlideUp .4s var(--ease-out-expo) backwards}
     .card{animation:fadeSlideUp .42s var(--ease-out-expo) backwards}
     #sec-enviar > .card:nth-child(1){animation-delay:.05s}
     #sec-enviar > .card:nth-child(2){animation-delay:.10s}
@@ -320,8 +355,9 @@
   </style>
 </head>
 <body>
-  
-  <div class="orbs" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
+
+  <div class="orbs" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div><div class="orb d"></div></div>
+  <div class="grain" aria-hidden="true"></div>
   <div class="wrap">
     <header>
       <div class="head-brand">
@@ -342,6 +378,15 @@
     <div class="maintabs">
       <button class="maintab active" type="button" data-sec="enviar"><span class="mt-ico">📤</span> Enviar comprovantes</button>
       <button class="maintab" type="button" data-sec="consultar"><span class="mt-ico">🔎</span> Consultar no Drive</button>
+    </div>
+
+    <div class="alertbar" id="netAlert" hidden="">
+      <span class="alertico">!</span>
+      <div class="alerttxt">
+        <b>O navegador está bloqueando a resposta do Drive</b>
+        <span id="netAlertMsg">Os arquivos até sobem, mas o link não volta pra planilha. Desative o bloqueador de anúncios nesta página (ou libere cookies de terceiros) e teste de novo.</span>
+      </div>
+      <button class="btn ghost sm" id="btnTestarConexao" type="button">Testar de novo</button>
     </div>
 
     <section id="sec-enviar">
@@ -448,7 +493,10 @@
         <div class="actions">
           <button class="btn primary" id="btnEnviar" disabled="">Enviar comprovantes</button>
           <button class="btn ghost" id="btnBaixar" disabled="">Baixar planilha preenchida</button>
+          <button class="btn ghost" id="btnRecuperar" type="button">Recuperar links do Drive</button>
         </div>
+        <p class="hint">Se o envio falhar no meio, os arquivos que já subiram continuam no Drive. <b>Recuperar links do Drive</b> procura os IDs desta planilha lá e preenche a coluna LINK sem reenviar nada.</p>
+        <div id="recInfo" class="info" hidden=""></div>
         <div id="progressWrap" hidden="">
           <div class="bar-bg"><div id="bar"></div></div>
           <div id="progTxt"></div>
@@ -461,6 +509,7 @@
       <div class="tabs">
         <button class="tab active" id="tabBuscar" type="button">Buscar por ID</button>
         <button class="tab" id="tabConferir" type="button">Conferir vários IDs</button>
+        <button class="tab" id="tabPlanilha" type="button">Baixar planilha da quinzena</button>
       </div>
 
       <section class="card" id="cardBuscar">
@@ -480,6 +529,16 @@
           <button class="btn primary" id="btnConferir" type="button">Conferir</button>
           <button class="btn ghost" id="btnLimparConf" type="button">Limpar</button>
         </div>
+      </section>
+
+      <section class="card" id="cardPlanilha" hidden="">
+        <span class="lbl">Quinzena</span>
+        <div class="searchrow">
+          <select id="selPeriodo"><option value="">Carregando…</option></select>
+          <button class="btn primary" id="btnGerarPlan" type="button">Gerar planilha</button>
+          <button class="btn ghost" id="btnRecarregarPer" type="button">Recarregar lista</button>
+        </div>
+        <p class="hint">Gera um .xlsx com o ID da rota e o link de cada comprovante que está no Drive naquela quinzena. Serve pra auditoria e pra recuperar links de um envio antigo.</p>
       </section>
 
       <div id="status" class="status" hidden=""></div>
@@ -546,10 +605,11 @@
       </div>
       <!-- estado: enviado (precisa baixar) -->
       <div id="doneState" hidden="">
-        <div class="okcheck"><svg class="okcheck-svg" viewBox="0 0 52 52" aria-hidden="true"><path class="okcheck-path" d="M14 27l8 8 16-18"/></svg></div>
+        <div class="okcheck" id="doneIcon"><svg class="okcheck-svg" viewBox="0 0 52 52" aria-hidden="true"><path class="okcheck-path" d="M14 27l8 8 16-18"/></svg></div>
         <p class="loadtitle" id="doneTitle">Comprovantes enviados!</p>
         <p class="donewarn" id="doneWarn">Agora baixe a planilha — é nela que ficam todos os links. Os comprovantes vão pra uma pasta que você não acessa, então sem a planilha você perde os links.</p>
         <button class="btn primary big" id="btnBaixarOverlay" type="button">Baixar planilha</button>
+        <button class="btn primary big" id="btnRecuperarOverlay" type="button" hidden="">Recuperar links do Drive</button>
         <button class="btn ghost" id="btnFecharOverlay" type="button" hidden="">Fechar</button>
         <p class="loadhint" id="doneHint">Esta tela fica aqui até você baixar a planilha.</p>
       </div>
@@ -612,21 +672,66 @@
   <!-- ===== ponte com a API do Drive (Apps Script) via fetch ===== -->
   <script>
   var API_URL = 'https://script.google.com/macros/s/AKfycbz0oEfvSev744cn4mJgxQxpYkFTXmGwLiv99lBdKStiK8ANudQAwgqq7tyZoFU1FnDCJQ/exec';
-  function api(acao, dados){
-    var corpo = JSON.stringify(Object.assign({ acao: acao }, dados || {}));
-    return fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // requisição "simples": sem preflight CORS
-      body: corpo
-    }).then(function(r){ return r.json(); }).then(function(res){
-      if (res && res.__erro) throw new Error(res.__erro);
-      return res;
+  var API_TIMEOUT_MS = 60000;   // se o Drive não responder nesse tempo, desiste e tenta de novo
+
+  // Traduz a falha técnica pra uma frase que diz o que fazer.
+  function erroAmigavel(err){
+    var m = String((err && err.message) || err || '');
+    if(/TEMPO_ESGOTADO/.test(m)) return 'O Drive não respondeu a tempo.';
+    if(/BLOQUEADO/.test(m)) return 'O navegador bloqueou a resposta do Drive. Quase sempre é bloqueador de anúncios ou bloqueio de cookies de terceiros nesta página.';
+    return m || 'Erro desconhecido.';
+  }
+
+  function apiUmaVez(corpo){
+    var ctrl  = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, API_TIMEOUT_MS) : null;
+    var opts  = { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: corpo };
+    if(ctrl) opts.signal = ctrl.signal;
+    return fetch(API_URL, opts).then(function(r){
+      if(timer) clearTimeout(timer);
+      return r.text().then(function(txt){
+        if(!r.ok) throw new Error('BLOQUEADO: o servidor respondeu ' + r.status + '.');
+        var res;
+        try { res = JSON.parse(txt); }
+        catch(e){ throw new Error('BLOQUEADO: a resposta não veio em JSON.'); }
+        if(res && res.__erro) throw new Error(res.__erro);
+        return res;
+      });
+    }, function(err){
+      if(timer) clearTimeout(timer);
+      if(err && err.name === 'AbortError') throw new Error('TEMPO_ESGOTADO');
+      throw new Error('BLOQUEADO: ' + String((err && err.message) || err));
     });
   }
+
+  // Reenvia até "max" vezes com espera crescente. O upload é idempotente lá no
+  // Apps Script (ele apaga o arquivo antigo do mesmo ID antes de gravar), então
+  // repetir não duplica comprovante.
+  function api(acao, dados, max){
+    var corpo = JSON.stringify(Object.assign({ acao: acao }, dados || {}));
+    max = max || 3;
+    function tenta(n){
+      return apiUmaVez(corpo).catch(function(err){
+        if(n >= max) throw new Error(erroAmigavel(err));
+        return new Promise(function(res){ setTimeout(res, 700 * n); }).then(function(){ return tenta(n + 1); });
+      });
+    }
+    return tenta(1);
+  }
+
+  // Ping rápido: descobre se o navegador deixa a resposta chegar, antes de subir 40 arquivos.
+  function checarConexao(){
+    return api('', {}, 1)
+      .then(function(res){ return { ok: !!(res && res.ok) }; })
+      .catch(function(e){ return { ok:false, msg:String((e && e.message) || e) }; });
+  }
+  window.PedagiosApi = { chamar: api, checar: checarConexao };
+
   // Emula google.script.run apontando pra api() — o código existente continua igual.
   (function(){
     var ACOES = { uploadComprovante:'upload', listarPeriodos:'listarPeriodos', buscarPorId:'buscar',
                   listarPorPeriodo:'listarPorPeriodo', conferirIds:'conferir', getThumb:'thumb', getArquivo:'arquivo' };
+    var TENTATIVAS = { uploadComprovante:3, conferirIds:3, listarPeriodos:2, listarPorPeriodo:2, buscarPorId:2, getArquivo:2, getThumb:1 };
     var ARGS = {
       uploadComprovante: function(a){ return a[0]; },
       listarPeriodos:    function(){ return {}; },
@@ -643,13 +748,82 @@
         withFailureHandler: function(fn){ if (fn) onErr = fn; return runner; }
       };
       Object.keys(ACOES).forEach(function(fname){
-        runner[fname] = function(){ api(ACOES[fname], ARGS[fname](arguments)).then(onOk).catch(onErr); };
+        runner[fname] = function(){ api(ACOES[fname], ARGS[fname](arguments), TENTATIVAS[fname]).then(onOk).catch(onErr); };
       });
       return runner;
     }
     window.google = window.google || {};
     window.google.script = window.google.script || {};
     Object.defineProperty(window.google.script, 'run', { get: makeRunner, configurable: true });
+  })();
+  </script>
+
+  <!-- ===== gerador de planilhas (usado pelo envio e pela consulta) ===== -->
+  <script>
+  var XlsxOut = (function(){
+    function borda(){ var l = { style:'thin', color:{ rgb:'D9D9D9' } }; return { top:l, bottom:l, left:l, right:l }; }
+    var CAB = { fill:{ patternType:'solid', fgColor:{ rgb:'1F4E79' } },
+                font:{ color:{ rgb:'FFFFFF' }, bold:true, sz:11 },
+                alignment:{ horizontal:'center', vertical:'center', wrapText:true }, border:borda() };
+
+    function larguras(aoa, opts){
+      var cols = aoa[0] || [];
+      return cols.map(function(_, c){
+        var max = String(cols[c]).length;
+        for(var i = 1; i < aoa.length; i++){
+          var v = aoa[i][c];
+          if(opts.formatos && opts.formatos[c] && typeof v === 'number'){
+            v = (opts.formatos[c].indexOf('R$') >= 0) ? 'R$ 000.000,00' : '00/00/0000';
+          }
+          var len = String(v == null ? '' : v).length;
+          if(len > max) max = len;
+        }
+        var w = max + 2;
+        if(opts.links && opts.links.indexOf(c) >= 0) w = Math.min(w, 46);
+        return { wch: Math.min(Math.max(w, 8), 46) };
+      });
+    }
+
+    function folha(aoa, opts){
+      opts = opts || {};
+      var alinha = opts.alinha || [], cols = aoa[0] || [];
+      var ws = XLSX.utils.aoa_to_sheet(aoa);
+      for(var c = 0; c < cols.length; c++){
+        var a = XLSX.utils.encode_cell({ r:0, c:c }); if(ws[a]) ws[a].s = CAB;
+      }
+      for(var i = 1; i < aoa.length; i++){
+        for(var k = 0; k < cols.length; k++){
+          var ref = XLSX.utils.encode_cell({ r:i, c:k }), cel = ws[ref];
+          if(!cel) continue;
+          cel.s = { alignment:{ horizontal: alinha[k] || 'left', vertical:'center' }, border:borda() };
+          if(opts.formatos && opts.formatos[k] && cel.t === 'n') cel.z = opts.formatos[k];
+          if(opts.links && opts.links.indexOf(k) >= 0 && typeof cel.v === 'string' && /^https?:\/\//i.test(cel.v)){
+            cel.l = { Target: cel.v };
+            cel.s.font = { color:{ rgb:'0563C1' }, underline:true };
+          }
+        }
+      }
+      ws['!cols'] = larguras(aoa, opts);
+      ws['!rows'] = aoa.map(function(_, i){ return { hpt: i === 0 ? 24 : 18 }; });
+      return ws;
+    }
+
+    function baixar(aoa, opts, nomeArquivo, nomeAba){
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, folha(aoa, opts), nomeAba || 'Pedágios');
+      var out  = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+      var blob = new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = String(nomeArquivo || 'planilha').replace(/[\\\/:*?"<>|]/g, '-') + '.xlsx';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+    }
+
+    // O Apps Script devolve o fileId; o link do Drive é montado a partir dele.
+    function linkDoArquivo(fileId){ return 'https://drive.google.com/file/d/' + fileId + '/view?usp=drivesdk'; }
+
+    return { folha: folha, baixar: baixar, linkDoArquivo: linkDoArquivo };
   })();
   </script>
 
@@ -670,6 +844,19 @@
     let baixou = false;           // virou true quando a planilha é baixada
     let validadorPredominante = ''; // validador que mais aparece (modelo gerado da validação)
     let nomeGerado = false;         // true quando o modelo foi gerado a partir da aba "Validação"
+
+    // ---- links já confirmados, guardados no navegador (rede de segurança) ----
+    const LS_LINKS = 'pedagios_links_v1';
+    function salvarLink(periodo, id, url){
+      try{
+        const m = JSON.parse(localStorage.getItem(LS_LINKS) || '{}');
+        (m[periodo] = m[periodo] || {})[id] = url;
+        localStorage.setItem(LS_LINKS, JSON.stringify(m));
+      }catch(e){}
+    }
+    function linksSalvos(periodo){
+      try{ return JSON.parse(localStorage.getItem(LS_LINKS) || '{}')[periodo] || {}; }catch(e){ return {}; }
+    }
 
     // ---- período ----
     function anosOptions(){
@@ -700,28 +887,46 @@
     }
 
     // Comprime uma vez só, mesmo que a órfã esteja associada a várias rotas.
+    // Se falhar, limpa o cache pra próxima tentativa poder recomeçar.
     function comprimirFonte(fonte){
       if(fonte && fonte.file){            // órfã (associada à mão)
-        if(!fonte._comp) fonte._comp = comprimir(fonte.file);
+        if(!fonte._comp){
+          fonte._comp = comprimir(fonte.file);
+          fonte._comp.catch(function(){ fonte._comp = null; });
+        }
         return fonte._comp;
       }
       return comprimir(fonte);            // File casado pelo nome
     }
 
+    // Prepara o arquivo pra subir. Resolve OU rejeita sempre — nunca fica pendurada.
     function comprimir(file){
-      return new Promise((resolve) => {
-        if(!/^image\//.test(file.type || '')){ lerBase64(file).then(b => resolve({ base64:b, mime:file.type||'application/octet-stream', ext:extDe(file.name)||'bin' })); return; }
+      const NOME = (file && file.name) || 'sem nome';
+      return new Promise((resolve, reject) => {
+        let pronto = false;
+        const guarda = setTimeout(() => falha(new Error('O arquivo "' + NOME + '" demorou demais pra ser preparado.')), 20000);
+        function ok(v){ if(pronto) return; pronto = true; clearTimeout(guarda); resolve(v); }
+        function falha(e){ if(pronto) return; pronto = true; clearTimeout(guarda); reject(e); }
+        function cru(){
+          lerBase64(file)
+            .then(b => ok({ base64:b, mime:file.type||'application/octet-stream', ext:extDe(file.name)||'bin' }))
+            .catch(() => falha(new Error('Não consegui ler o arquivo "' + NOME + '".')));
+        }
+        if(!/^image\//.test(file.type || '')){ cru(); return; }
         const img = new Image(); const url = URL.createObjectURL(file);
         img.onload = () => {
           URL.revokeObjectURL(url);
-          const max = 1600; let w = img.width, h = img.height;
-          if(w > max || h > max){ const r = Math.min(max/w, max/h); w = Math.round(w*r); h = Math.round(h*r); }
-          const c = document.createElement('canvas'); c.width = w; c.height = h;
-          c.getContext('2d').drawImage(img, 0, 0, w, h);
-          const durl = c.toDataURL('image/jpeg', 0.72);
-          resolve({ base64: durl.split(',')[1], mime: 'image/jpeg', ext: 'jpg' });
+          try{
+            const max = 1600; let w = img.width, h = img.height;
+            if(!w || !h){ cru(); return; }
+            if(w > max || h > max){ const r = Math.min(max/w, max/h); w = Math.round(w*r); h = Math.round(h*r); }
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            const durl = c.toDataURL('image/jpeg', 0.72);
+            ok({ base64: durl.split(',')[1], mime: 'image/jpeg', ext: 'jpg' });
+          }catch(e){ cru(); }
         };
-        img.onerror = () => { URL.revokeObjectURL(url); lerBase64(file).then(b => resolve({ base64:b, mime:file.type||'application/octet-stream', ext:extDe(file.name)||'bin' })); };
+        img.onerror = () => { URL.revokeObjectURL(url); cru(); };
         img.src = url;
       });
     }
@@ -866,11 +1071,19 @@
               enviado: false
             });
           }
+
+          // Reaproveita links que este navegador já confirmou nesta quinzena.
+          const salvos = linksSalvos(periodoFolder());
+          let reaproveitados = 0;
+          rows.forEach(r => { if(!r.link && salvos[r.id]){ r.link = salvos[r.id]; r.temLink = true; reaproveitados++; } });
+          if(reaproveitados) $('btnBaixar').disabled = false;
+
+          const extra = reaproveitados ? ' · ' + reaproveitados + ' link(s) recuperado(s) deste navegador' : '';
           if(nomeGerado){
             setPlanInfo('ok', 'Modelo gerado da validação: ' + rows.length + ' rota(s) com pedágio' +
-              (validadorPredominante ? ' · validador: ' + validadorPredominante : '') + '.');
+              (validadorPredominante ? ' · validador: ' + validadorPredominante : '') + extra + '.');
           } else {
-            setPlanInfo('ok', rows.length + ' linha(s) lida(s) da aba "' + sheetName + '".');
+            setPlanInfo('ok', rows.length + ' linha(s) lida(s) da aba "' + sheetName + '"' + extra + '.');
           }
           populaFiltros();
           limpaAssociacoesInvalidas();
@@ -901,7 +1114,6 @@
       return wb.SheetNames[0];
     }
 
-    // ---- 3. imagens com ID no nome ----
     // ---- 3. imagens com ID (clique ou arrastar) ----
     function ehImagemOuPdf(f){
       return /^image\//.test(f.type) || f.type === 'application/pdf' || /\.(png|jpe?g|gif|webp|bmp|heic|heif|pdf)$/i.test(f.name || '');
@@ -982,7 +1194,8 @@
         const tr = document.createElement('tr'); tr.id = 'row-' + r.id;
         tr.style.animationDelay = (Math.min(idx,14) * 0.03) + 's';
         let st;
-        if(r.enviado)      st = '<span class="badge done">enviado ✓</span>';
+        if(r.recuperado)   st = '<span class="badge done">link recuperado ✓</span>';
+        else if(r.enviado) st = '<span class="badge done">enviado ✓</span>';
         else if(temImg)    st = '<span class="badge ok">imagem pronta</span>';
         else if(temMan)    st = '<span class="badge ok">associada à mão</span>';
         else if(r.temLink) st = '<span class="badge done">já tem link</span>';
@@ -998,8 +1211,8 @@
     }
     $('soPend').addEventListener('change', renderTabela);
     function setStatus(id, html){ const tr = $('row-' + id); if(tr){ const c = tr.querySelector('.st'); if(c) c.innerHTML = html; } }
+    function badgeErro(msg){ return '<span class="badge err" title="' + escapeHtml(msg) + '">erro</span>'; }
 
-    // ---- enviar ----
     // ---- limpar tudo (sem precisar atualizar a página) ----
     function limpar(){
       const temAlgo = rows.length || Object.keys(imagesById).length || orphans.length;
@@ -1012,12 +1225,14 @@
       originalName = 'pedagios.xlsx';
       ['inPlan','inImgs','inOrphan'].forEach(id => { if($(id)) $(id).value = ''; });
       $('planInfo').hidden = true; $('planInfo').textContent = ''; $('planInfo').className = 'info';
+      $('recInfo').hidden = true; $('recInfo').textContent = ''; $('recInfo').className = 'info';
       $('resumo').hidden = true; $('resumo').innerHTML = '';
       $('previewCard').hidden = true; $('tbody').innerHTML = '';
       $('orphans').innerHTML = '';
       $('progressWrap').hidden = true; $('bar').style.width = '0';
-      $('doneMsg').hidden = true; $('doneMsg').textContent = '';
+      $('doneMsg').hidden = true; $('doneMsg').textContent = ''; $('doneMsg').className = '';
       $('btnEnviar').disabled = true; $('btnBaixar').disabled = true;
+      pendenteBaixar = false; baixou = false;
     }
     $('btnLimpar').addEventListener('click', limpar);
 
@@ -1034,6 +1249,7 @@
       orphans.forEach(o => { o.ids = new Set(); });
       $('inPlan').value = '';
       $('planInfo').hidden = true; $('planInfo').textContent = ''; $('planInfo').className = 'info';
+      $('recInfo').hidden = true; $('recInfo').textContent = ''; $('recInfo').className = 'info';
       $('previewCard').hidden = true; $('tbody').innerHTML = '';
       $('btnEnviar').disabled = true; $('btnBaixar').disabled = true;
       renderOrphans();
@@ -1065,6 +1281,25 @@
     $('limpaPlan').addEventListener('click', limparPlanilha);
     $('limpaImgs').addEventListener('click', limparImagens);
     $('limpaOrf').addEventListener('click', limparOrfas);
+
+    // ---- aviso de conexão bloqueada ----
+    function mostraAviso(msg){
+      $('netAlert').hidden = false;
+      $('netAlertMsg').textContent = msg + ' Os arquivos até sobem, mas o link não volta pra planilha. Desative o bloqueador de anúncios nesta página (ou libere cookies de terceiros) e teste de novo.';
+    }
+    function testarConexao(silencioso){
+      const b = $('btnTestarConexao');
+      b.disabled = true; b.textContent = 'Testando…';
+      return PedagiosApi.checar().then(r => {
+        b.disabled = false; b.textContent = 'Testar de novo';
+        if(r.ok){ $('netAlert').hidden = true; if(!silencioso) alert('Conexão com o Drive funcionando normalmente.'); }
+        else mostraAviso(r.msg);
+        return r;
+      });
+    }
+    $('btnTestarConexao').addEventListener('click', () => testarConexao(false));
+
+    // ---- enviar ----
     $('btnEnviar').addEventListener('click', enviar);
     async function enviar(){
       const periodo = periodoFolder();
@@ -1075,15 +1310,30 @@
 
       if(!confirm('⚠️ CONFIRME A QUINZENA\n\nVocê vai enviar ' + alvo.length + ' comprovante(s) para:\n\n📁  ' + periodo + '\n\nSe a quinzena estiver errada, clique em Cancelar e ajuste o Período (passo 1).')){ return; }
 
+      // Testa a conexão ANTES de subir tudo — é o que evita o envio inteiro voltar como erro.
       $('btnEnviar').disabled = true;
-      $('btnBaixar').disabled = true;
+      const teste = await PedagiosApi.checar();
+      if(!teste.ok){
+        mostraAviso(teste.msg);
+        $('btnEnviar').disabled = false;
+        if(!confirm('O navegador está bloqueando a resposta do Drive.\n\n' + teste.msg + '\n\nSe enviar assim, os arquivos podem subir mas os links não voltam pra planilha.\n\nQuer tentar mesmo assim?')) return;
+        $('btnEnviar').disabled = true;
+      } else {
+        $('netAlert').hidden = true;
+      }
+
       $('progressWrap').hidden = false;
-      $('doneMsg').hidden = true;
+      $('doneMsg').hidden = true; $('doneMsg').className = '';
       $('sendBar').style.width = '0';
+      $('bar').style.width = '0';
       $('sendTxt').textContent = 'Preparando… (0 / ' + alvo.length + ')';
+      $('doneIcon').className = 'okcheck';
+      $('doneIcon').innerHTML = '<svg class="okcheck-svg" viewBox="0 0 52 52" aria-hidden="true"><path class="okcheck-path" d="M14 27l8 8 16-18"/></svg>';
+      $('sendingState').hidden = false;
+      $('doneState').hidden = true;
       $('sendOverlay').hidden = false;
 
-      let ok = 0, erros = 0;
+      let ok = 0, erros = 0, ultimoErro = '';
       for(let i = 0; i < alvo.length; i++){
         const r = alvo[i];
         setStatus(r.id, '<span class="badge up">enviando…</span>');
@@ -1095,42 +1345,67 @@
           if(resp && resp.ok){
             ensureRef(ws, r.r, colLink);
             ws[XLSX.utils.encode_cell({ r:r.r, c:colLink })] = { t:'s', v:resp.url, l:{ Target:resp.url } };
-            r.temLink = true; r.enviado = true; r.link = resp.url;
-            ok++; setStatus(r.id, '<span class="badge done">enviado ✓</span>');
+            r.temLink = true; r.enviado = true; r.recuperado = false; r.link = resp.url;
+            salvarLink(periodo, r.id, resp.url);
+            ok++;
+            $('btnBaixar').disabled = false;   // libera o download já no primeiro link que chega
+            setStatus(r.id, '<span class="badge done">enviado ✓</span>');
           }else{
             erros++;
-            setStatus(r.id, '<span class="badge err">erro</span>');
+            ultimoErro = (resp && resp.msg) || 'O Drive recusou o arquivo.';
+            setStatus(r.id, badgeErro(ultimoErro));
           }
         }catch(err){
-          erros++; setStatus(r.id, '<span class="badge err">erro</span>');
+          erros++;
+          ultimoErro = String((err && err.message) || err);
+          setStatus(r.id, badgeErro(ultimoErro));
         }
         const pct = Math.round(((i+1)/alvo.length)*100);
         $('bar').style.width = pct + '%';
         $('progTxt').textContent = (i+1) + ' / ' + alvo.length + ' processado(s)';
         $('sendBar').style.width = pct + '%';
-        $('sendTxt').textContent = 'Enviando ' + (i+1) + ' de ' + alvo.length + '…';
+        $('sendTxt').textContent = 'Enviando ' + Math.min(i+2, alvo.length) + ' de ' + alvo.length + '…';
       }
 
       $('btnEnviar').disabled = false;
-      if(ok > 0) $('btnBaixar').disabled = false;
       $('doneMsg').hidden = false;
-      $('doneMsg').textContent = ok + ' enviado(s)' + (erros ? ' · ' + erros + ' com erro (clique em Enviar de novo pra retentar)' : '') + '. Baixe a planilha preenchida ao lado.';
+      $('doneMsg').className = erros ? 'ruim' : '';
+      $('doneMsg').textContent = ok + ' enviado(s)' +
+        (erros ? ' · ' + erros + ' com erro. Motivo: ' + ultimoErro : '') +
+        (ok ? ' Baixe a planilha preenchida ao lado.' : '');
 
-      // Tela de "enviando" vira "enviado": fica na frente até a pessoa baixar a planilha.
+      // A tela de "enviando" vira o resultado e fica na frente até você resolver.
+      $('sendingState').hidden = true;
+      $('doneState').hidden = false;
+
       if(ok > 0){
         baixou = false; pendenteBaixar = true;
-        $('doneTitle').textContent = ok + ' comprovante(s) enviado(s)!';
-        $('doneWarn').textContent = 'Agora baixe a planilha — é nela que ficam todos os links. Os comprovantes vão pra uma pasta que você não acessa, então sem a planilha você perde os links.';
+        $('doneTitle').textContent = ok + ' comprovante(s) enviado(s)!' + (erros ? ' · ' + erros + ' com erro' : '');
+        $('doneWarn').textContent = erros
+          ? 'Baixe a planilha com os ' + ok + ' links que deram certo. Depois use "Recuperar links do Drive" no passo 5 pra completar os que falharam.'
+          : 'Agora baixe a planilha — é nela que ficam todos os links. Os comprovantes vão pra uma pasta que você não acessa, então sem a planilha você perde os links.';
         $('doneWarn').className = 'donewarn';
         $('btnBaixarOverlay').textContent = 'Baixar planilha';
         $('btnBaixarOverlay').className = 'btn primary big';
+        $('btnBaixarOverlay').hidden = false;
+        $('btnRecuperarOverlay').hidden = !erros;
+        $('btnRecuperarOverlay').className = 'btn ghost';
         $('btnFecharOverlay').hidden = true;
         $('doneHint').hidden = false;
-        $('sendingState').hidden = true;
-        $('doneState').hidden = false;
-        // o overlay continua aberto de propósito (não esconde)
+        $('doneHint').textContent = 'Esta tela fica aqui até você baixar a planilha.';
       } else {
-        $('sendOverlay').hidden = true;   // nada enviado: só fecha a tela
+        pendenteBaixar = false;
+        $('doneIcon').className = 'okcheck ruim';
+        $('doneIcon').textContent = '!';
+        $('doneTitle').textContent = 'Nenhum link foi gravado';
+        $('doneWarn').textContent = 'Motivo: ' + ultimoErro + ' Os arquivos podem ter chegado no Drive mesmo assim — clique abaixo pra procurar os links lá e preencher a planilha sem reenviar nada.';
+        $('doneWarn').className = 'donewarn';
+        $('btnBaixarOverlay').hidden = true;
+        $('btnRecuperarOverlay').hidden = false;
+        $('btnRecuperarOverlay').className = 'btn primary big';
+        $('btnFecharOverlay').hidden = false;
+        $('btnFecharOverlay').className = 'btn ghost';
+        $('doneHint').hidden = true;
       }
     }
 
@@ -1140,68 +1415,68 @@
       });
     }
 
+    // ---- recuperar links direto do Drive (sem reenviar) ----
+    function setRecInfo(kind, msg){ const el = $('recInfo'); el.hidden = false; el.className = 'info ' + kind; el.textContent = msg; }
+
+    function recuperarLinks(){
+      if(!rows.length){ setRecInfo('erro', 'Carregue a planilha primeiro (passo 2) pra eu saber quais IDs procurar.'); return; }
+      const ids = rows.map(r => r.id);
+      setRecInfo('aviso', 'Procurando ' + ids.length + ' ID(s) no Drive…');
+      $('btnRecuperar').disabled = true;
+      google.script.run
+        .withSuccessHandler(res => {
+          $('btnRecuperar').disabled = false;
+          const alvoQz = periodoFolder();
+          const mapa = {};
+          (res.encontrados || []).forEach(item => {
+            let hit = (item.hits || []).find(h => h.quinzena === alvoQz) || (item.hits || [])[0];
+            if(hit) mapa[item.id] = hit;
+          });
+          let achou = 0, semNada = 0;
+          rows.forEach(r => {
+            const hit = mapa[r.id];
+            if(hit){
+              r.link = XlsxOut.linkDoArquivo(hit.fileId);
+              r.temLink = true; r.recuperado = true;
+              salvarLink(alvoQz, r.id, r.link);
+              achou++;
+            } else if(!r.link) semNada++;
+          });
+          if(achou){ $('btnBaixar').disabled = false; pendenteBaixar = true; baixou = false; }
+          setRecInfo(achou ? 'ok' : 'erro',
+            achou
+              ? achou + ' link(s) recuperado(s) do Drive' + (semNada ? ' · ' + semNada + ' rota(s) ainda sem comprovante lá' : '') + '. Agora é só baixar a planilha.'
+              : 'Nenhum comprovante desses IDs foi encontrado no Drive.');
+          casar();
+        })
+        .withFailureHandler(e => {
+          $('btnRecuperar').disabled = false;
+          setRecInfo('erro', 'Não consegui consultar o Drive: ' + String((e && e.message) || e));
+        })
+        .conferirIds(ids);
+    }
+    $('btnRecuperar').addEventListener('click', recuperarLinks);
+    $('btnRecuperarOverlay').addEventListener('click', () => {
+      $('sendOverlay').hidden = true;
+      recuperarLinks();
+      const alvo = $('btnRecuperar');
+      if(alvo && alvo.scrollIntoView) alvo.scrollIntoView({ behavior:'smooth', block:'center' });
+    });
+
     // ---- baixar: monta a planilha final SEMPRE com a mesma ordem de colunas e o cabeçalho azul ----
     const COLS_SAIDA = ['ID ROTA','DATA','SVC','PLACA','VEICULO','MOTORISTA','LINK','VALOR'];
-    function borda(){ const l = { style:'thin', color:{ rgb:'D9D9D9' } }; return { top:l, bottom:l, left:l, right:l }; }
-    function largurasSaida(aoa){
-      return COLS_SAIDA.map((_, c) => {
-        let max = String(COLS_SAIDA[c]).length;
-        for(let i = 1; i < aoa.length; i++){
-          let v = aoa[i][c];
-          if(c === 1 && typeof v === 'number') v = '00/00/0000';
-          if(c === 7 && typeof v === 'number') v = 'R$ ' + Number(v).toFixed(2);
-          const len = String(v == null ? '' : v).length;
-          if(len > max) max = len;
-        }
-        let w = max + 2;
-        if(c === 6) w = Math.min(w, 46);              // LINK não fica largo demais
-        return { wch: Math.min(Math.max(w, 8), 46) };
-      });
-    }
-    function montarPlanilhaSaida(){
+    function baixarPlanilha(){
+      if(!rows.length) return;
       const aoa = [COLS_SAIDA.slice()];
       rows.forEach(r => {
         aoa.push([ r.id, r.dataRaw, r.svc || '', r.placa || '', r.veiculo || '', r.mot || '',
                    r.link || '', (r.valor === '' || r.valor == null) ? '' : r.valor ]);
       });
-      const ws2 = XLSX.utils.aoa_to_sheet(aoa);
-
-      // cabeçalho azul com letra branca
-      const azul = { fill:{ patternType:'solid', fgColor:{ rgb:'1F4E79' } },
-                     font:{ color:{ rgb:'FFFFFF' }, bold:true, sz:11 },
-                     alignment:{ horizontal:'center', vertical:'center', wrapText:true }, border:borda() };
-      for(let c = 0; c < COLS_SAIDA.length; c++){
-        const a = XLSX.utils.encode_cell({ r:0, c }); if(ws2[a]) ws2[a].s = azul;
-      }
-      // corpo: alinhamento, bordas, formatos de data/valor e link clicável
-      const alinha = ['left','center','center','center','center','left','left','right'];
-      for(let i = 0; i < rows.length; i++){
-        for(let c = 0; c < COLS_SAIDA.length; c++){
-          const a = XLSX.utils.encode_cell({ r:i+1, c }); const cel = ws2[a]; if(!cel) continue;
-          cel.s = { alignment:{ horizontal:alinha[c], vertical:'center' }, border:borda() };
-          if(c === 1 && cel.t === 'n') cel.z = 'dd/mm/yyyy';
-          if(c === 7 && cel.t === 'n') cel.z = '"R$" #,##0.00';
-          if(c === 6 && typeof cel.v === 'string' && /^https?:\/\//i.test(cel.v)){
-            cel.l = { Target: cel.v };
-            cel.s.font = { color:{ rgb:'0563C1' }, underline:true };
-          }
-        }
-      }
-      ws2['!cols'] = largurasSaida(aoa);
-      ws2['!rows'] = aoa.map((_, i) => ({ hpt: i === 0 ? 24 : 18 }));
-      const wb2 = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb2, ws2, 'Pedágios');
-      return wb2;
-    }
-    function baixarPlanilha(){
-      if(!rows.length) return;
-      const out = XLSX.write(montarPlanilhaSaida(), { bookType:'xlsx', type:'array' });
-      const blob = new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = (nomeGerado ? nomeModeloGerado() : (originalName.replace(/\.(xlsx|xls)$/i, '') + ' - com links')) + '.xlsx';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      XlsxOut.baixar(aoa, {
+        alinha:   ['left','center','center','center','center','left','left','right'],
+        formatos: { 1:'dd/mm/yyyy', 7:'"R$" #,##0.00' },
+        links:    [6]
+      }, nomeGerado ? nomeModeloGerado() : (originalName.replace(/\.(xlsx|xls)$/i, '') + ' - com links'), 'Pedágios');
       marcarBaixado();
     }
     // marca como baixada: libera a saída e, se a tela de conclusão estiver aberta, mostra o "ok"
@@ -1396,6 +1671,7 @@
 
     anosOptions();
     atualizaExemplo();
+    setTimeout(() => testarConexao(true), 900);   // checagem discreta ao abrir a página
   })();
   </script>
 
@@ -1475,7 +1751,7 @@
         const b = $('modalBaixar');
         b.href = uri; b.setAttribute('download', res.nome || nome || 'comprovante'); b.style.display = '';
       })
-      .withFailureHandler(e => { $('modalBody').innerHTML = '<div class="empty">Erro ao carregar: ' + esc(e) + '</div>'; })
+      .withFailureHandler(e => { $('modalBody').innerHTML = '<div class="empty">Erro ao carregar: ' + esc(String((e && e.message) || e)) + '</div>'; })
       .getArquivo(fileId);
   }
   function fecharModal(){ $('modal').hidden = true; $('modalBody').innerHTML = ''; }
@@ -1490,7 +1766,7 @@
     loading();
     google.script.run
       .withSuccessHandler(r => { setStatus(r.length + ' resultado(s) para "' + q + '".'); render(r); })
-      .withFailureHandler(e => { setStatus('Erro na busca.'); $('results').innerHTML = '<div class="empty">' + esc(e) + '</div>'; })
+      .withFailureHandler(e => { setStatus('Erro na busca.'); $('results').innerHTML = '<div class="empty">' + esc(String((e && e.message) || e)) + '</div>'; })
       .buscarPorId(q);
   }
 
@@ -1499,15 +1775,18 @@
 
   // ----- abas -----
   function setMode(mode){
-    const b = mode === 'buscar';
-    $('tabBuscar').classList.toggle('active', b);
-    $('tabConferir').classList.toggle('active', !b);
-    $('cardBuscar').hidden = !b;
-    $('cardConferir').hidden = b;
+    $('tabBuscar').classList.toggle('active', mode === 'buscar');
+    $('tabConferir').classList.toggle('active', mode === 'conferir');
+    $('tabPlanilha').classList.toggle('active', mode === 'planilha');
+    $('cardBuscar').hidden   = (mode !== 'buscar');
+    $('cardConferir').hidden = (mode !== 'conferir');
+    $('cardPlanilha').hidden = (mode !== 'planilha');
     $('results').innerHTML = ''; setStatus('');
+    if(mode === 'planilha' && !periodosCarregados) carregarPeriodos();
   }
   $('tabBuscar').addEventListener('click', () => setMode('buscar'));
   $('tabConferir').addEventListener('click', () => setMode('conferir'));
+  $('tabPlanilha').addEventListener('click', () => setMode('planilha'));
 
   // ----- conferir vários IDs -----
   function parseIds(txt){
@@ -1525,7 +1804,7 @@
     loading();
     google.script.run
       .withSuccessHandler(renderConferir)
-      .withFailureHandler(e => { setStatus('Erro na conferência.'); $('results').innerHTML = '<div class="empty">' + esc(e) + '</div>'; })
+      .withFailureHandler(e => { setStatus('Erro na conferência.'); $('results').innerHTML = '<div class="empty">' + esc(String((e && e.message) || e)) + '</div>'; })
       .conferirIds(ids);
   }
   function renderConferir(res){
@@ -1547,7 +1826,8 @@
           '<span class="fqz">' + esc(h.quinzena) + extra + '</span>' +
           '<button class="linkver" type="button" data-fileid="' + esc(h.fileId) + '" data-nome="' + esc(item.id) + '" onclick="verArquivo(this.dataset.fileid, this.dataset.nome)">Ver ›</button></div>';
       }).join('');
-      html += '<div class="card"><div class="block-head"><span class="t">Encontrados (' + enc.length + ')</span></div>' +
+      html += '<div class="card"><div class="block-head"><span class="t">Encontrados (' + enc.length + ')</span>' +
+        '<button class="btn ghost sm" id="btnBaixarConf" type="button">Baixar links em .xlsx</button></div>' +
         '<div class="frows">' + rows + '</div></div>';
     }
     $('results').innerHTML = html;
@@ -1555,6 +1835,16 @@
 
     const cb = $('btnCopiarFalt');
     if(cb) cb.addEventListener('click', () => copiar(falt.join('\n'), cb));
+
+    const bx = $('btnBaixarConf');
+    if(bx) bx.addEventListener('click', function(){
+      const aoa = [['ID ROTA','LINK','QUINZENA']];
+      enc.forEach(item => {
+        const h = item.hits[0];
+        aoa.push([ item.id, XlsxOut.linkDoArquivo(h.fileId), h.quinzena ]);
+      });
+      XlsxOut.baixar(aoa, { alinha:['left','left','center'], links:[1] }, 'Links dos comprovantes conferidos', 'Links');
+    });
   }
   function copiar(txt, btn){
     const ok = () => { const o = btn.textContent; btn.textContent = 'Copiado!'; setTimeout(() => btn.textContent = o, 1500); };
@@ -1570,6 +1860,44 @@
   }
   $('btnConferir').addEventListener('click', conferir);
   $('btnLimparConf').addEventListener('click', () => { $('idsInput').value = ''; $('results').innerHTML = ''; setStatus(''); $('idsInput').focus(); });
+
+  // ----- planilha de uma quinzena inteira -----
+  let periodosCarregados = false;
+  function carregarPeriodos(){
+    const sel = $('selPeriodo');
+    sel.innerHTML = '<option value="">Carregando…</option>';
+    google.script.run
+      .withSuccessHandler(lista => {
+        if(!lista || !lista.length){ sel.innerHTML = '<option value="">Nenhuma quinzena no Drive ainda</option>'; return; }
+        sel.innerHTML = lista.map(p => '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>').join('');
+        periodosCarregados = true;
+      })
+      .withFailureHandler(e => { sel.innerHTML = '<option value="">Não consegui listar as quinzenas</option>'; setStatus(String((e && e.message) || e)); })
+      .listarPeriodos();
+  }
+  $('btnRecarregarPer').addEventListener('click', () => { periodosCarregados = false; carregarPeriodos(); });
+
+  function gerarPlanilhaQuinzena(){
+    const sel = $('selPeriodo'), folderId = sel.value;
+    if(!folderId){ setStatus('Escolha uma quinzena primeiro.'); return; }
+    const nomeQz = sel.options[sel.selectedIndex].textContent;
+    setStatus('Montando a planilha de ' + nomeQz + '…');
+    loading();
+    $('btnGerarPlan').disabled = true;
+    google.script.run
+      .withSuccessHandler(lista => {
+        $('btnGerarPlan').disabled = false;
+        if(!lista || !lista.length){ setStatus('Nenhum comprovante nessa quinzena.'); $('results').innerHTML = '<div class="empty">Nenhum comprovante nessa quinzena.</div>'; return; }
+        const aoa = [['ID ROTA','LINK','ARQUIVO','QUINZENA']];
+        lista.forEach(c => { aoa.push([ c.base, XlsxOut.linkDoArquivo(c.id), c.nome, c.quinzena ]); });
+        XlsxOut.baixar(aoa, { alinha:['left','left','left','center'], links:[1] }, 'Links dos comprovantes - ' + nomeQz, 'Links');
+        setStatus(lista.length + ' comprovante(s) na planilha de ' + nomeQz + '.');
+        render(lista);
+      })
+      .withFailureHandler(e => { $('btnGerarPlan').disabled = false; setStatus('Erro: ' + String((e && e.message) || e)); $('results').innerHTML = ''; })
+      .listarPorPeriodo(folderId);
+  }
+  $('btnGerarPlan').addEventListener('click', gerarPlanilhaQuinzena);
 
   window.verArquivo = verArquivo;
   })();
