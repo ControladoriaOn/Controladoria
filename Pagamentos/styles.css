@@ -1121,3 +1121,141 @@
     color: #FFFFFF;
   }
   .cf-confirm:hover { background: var(--orange-deep); border-color: var(--orange-deep); }
+
+  /* ============================================================
+     MELHORIAS V2 — fundo, mobile drawer, resumo da sidebar,
+     mascote no loading e refinamentos (append: sobrescreve acima)
+     ============================================================ */
+
+  /* Fundo com "luzes" sutis nas cores da marca sobre o creme */
+  body {
+    background:
+      radial-gradient(1000px 640px at 88% -12%, rgba(255, 110, 0, 0.07), transparent 62%),
+      radial-gradient(900px 700px at -12% 108%, rgba(60, 0, 60, 0.06), transparent 60%),
+      radial-gradient(700px 520px at 108% 82%, rgba(255, 110, 0, 0.045), transparent 58%),
+      var(--bg);
+    background-attachment: fixed;
+  }
+
+  /* ---- Resumo rápido na sidebar (preenche o vazio entre nav e rodapé) ---- */
+  .sidebar-summary {
+    margin-top: 18px;
+    padding: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+  .sidebar-summary .ss-title {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+  }
+  .sidebar-summary .ss-title i { color: var(--orange); font-size: 11px; }
+  .sidebar-summary .ss-item { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-summary .ss-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.55); }
+  .sidebar-summary .ss-value {
+    font-family: var(--font-display);
+    font-size: 19px; font-weight: 600;
+    color: #FFFFFF; letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  /* ---- Hambúrguer + overlay (só aparecem no mobile) ---- */
+  .hamburger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--ink);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 8px;
+  }
+  .hamburger:hover { background: var(--orange-soft); color: var(--orange-deep); }
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,15,26,0.5);
+    backdrop-filter: blur(2px);
+    z-index: 110;
+  }
+  .sidebar-overlay.visible { display: block; }
+
+  /* ---- Mascote com anel no painel de loading ---- */
+  .load-mascote {
+    position: relative;
+    width: 86px;
+    height: 86px;
+    margin: 0 auto 16px;
+    display: grid;
+    place-items: center;
+  }
+  .load-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.18);
+    border-top-color: var(--orange);
+    animation: spin 1s linear infinite;
+  }
+  .load-mascote-img {
+    width: 62px;
+    height: 62px;
+    border-radius: 16px;
+    object-fit: cover;
+    display: block;
+    border: 2px solid rgba(255,255,255,0.25);
+    box-shadow: 0 8px 24px -8px rgba(0,0,0,0.4);
+  }
+  .load-status.done .load-ring { border-top-color: #4ade80; animation: none; }
+
+  /* ---- Botão Exportar Excel: um pouco mais de presença ---- */
+  .btn-export {
+    box-shadow: var(--shadow-sm);
+    transition: all 0.14s ease;
+  }
+  .btn-export:hover:not(:disabled) {
+    box-shadow: 0 6px 16px -8px rgba(29,112,68,0.45);
+  }
+
+  /* ---- Mobile: sidebar vira gaveta em vez de sumir ---- */
+  @media (max-width: 1100px) {
+    .sidebar {
+      display: flex;
+      z-index: 120;
+      width: min(280px, 84vw);
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: none;
+    }
+    .sidebar.open {
+      transform: translateX(0);
+      box-shadow: 10px 0 30px rgba(0,0,0,0.25);
+    }
+    .hamburger { display: inline-flex; align-items: center; }
+    header { padding: 0 20px; }
+  }
+
+  @media (max-width: 640px) {
+    .page-title { font-size: 21px; }
+    .section-title { font-size: 22px; }
+    .search input,
+    .toolbar input[type="text"],
+    .toolbar input[type="search"] { font-size: 16px; } /* evita o zoom automático do iOS ao tocar */
+    .date-badge { font-size: 11.5px; padding: 7px 12px; }
+    .section-head { gap: 10px; }
+  }
+
+  /* ---- Respeita quem prefere menos movimento ---- */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }

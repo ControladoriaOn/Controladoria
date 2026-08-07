@@ -17,7 +17,9 @@
 </head>
 <body>
 
-<aside class="sidebar" aria-label="Navegação principal">
+<div class="sidebar-overlay" id="sidebarOverlay" role="presentation"></div>
+
+<aside class="sidebar" id="sidebar" aria-label="Navegação principal">
   <div class="logo">
     <div class="logo-mark">
       <img src="../logo-mascote.jpg"
@@ -44,6 +46,18 @@
     </a>
   </nav>
 
+  <div class="sidebar-summary" aria-label="Resumo rápido">
+    <div class="ss-title"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Resumo rápido</div>
+    <div class="ss-item">
+      <span class="ss-label">Pago hoje</span>
+      <span class="ss-value" id="ss-pago">—</span>
+    </div>
+    <div class="ss-item">
+      <span class="ss-label">Previsto amanhã</span>
+      <span class="ss-value" id="ss-previsto">—</span>
+    </div>
+  </div>
+
   <div class="sidebar-footer">
     <div class="sidebar-stamp" id="stamp" role="status" aria-live="polite">
       <span class="dot"></span>
@@ -62,6 +76,9 @@
 <div class="main-content">
   <header>
     <div class="header-left">
+      <button class="hamburger" id="btnHamburger" type="button" aria-label="Abrir menu lateral" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+      </button>
       <h1 class="page-title">
         <i class="fa-solid fa-chart-line"></i>
         Pagamentos
