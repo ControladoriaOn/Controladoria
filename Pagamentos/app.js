@@ -315,6 +315,15 @@ const UI_Sidebar = {
     }
   },
 
+  updateResumo(data) {
+    const pago = DOM.byId('ss-pago');
+    const prev = DOM.byId('ss-previsto');
+    if (!pago || !prev) return;
+    if (!data || !data.pago_hoje || !data.previsto_amanha) return;
+    pago.textContent = 'R$ ' + Utils.fmtBRInt(data.pago_hoje.total);
+    prev.textContent = 'R$ ' + Utils.fmtBRInt(data.previsto_amanha.total);
+  },
+
   setError() {
     const stamp = DOM.byId('stamp');
     const text = DOM.byId('stamp-text');
@@ -1397,7 +1406,10 @@ const UI_Loading = {
     const barEl = DOM.h('div', { class: 'load-bar' });
     const pctEl = DOM.h('div', { class: 'load-pct' }, '0%');
     const statusEl = DOM.h('div', { class: 'load-status' }, [
-      DOM.h('div', { class: 'load-spinner' }),
+      DOM.h('div', { class: 'load-mascote' }, [
+        DOM.h('div', { class: 'load-ring' }),
+        DOM.h('img', { class: 'load-mascote-img', src: '../logo-mascote.jpg', alt: '' }),
+      ]),
       msgEl,
       DOM.h('div', { class: 'load-track' }, barEl),
       pctEl,
@@ -1503,6 +1515,33 @@ function showConfirm({ icon, title, message, details, confirmLabel, onConfirm })
 }
 
 /* ============================================================================
+   UI_MENU — gaveta lateral no mobile (hambúrguer + overlay)
+   ============================================================================ */
+const UI_Menu = {
+  init() {
+    const sidebar = DOM.byId('sidebar');
+    const overlay = DOM.byId('sidebarOverlay');
+    const burger = DOM.byId('btnHamburger');
+    if (!sidebar || !overlay || !burger) return;
+
+    const setOpen = open => {
+      sidebar.classList.toggle('open', open);
+      overlay.classList.toggle('visible', open);
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    const isOpen = () => sidebar.classList.contains('open');
+
+    burger.addEventListener('click', () => setOpen(!isOpen()));
+    overlay.addEventListener('click', () => setOpen(false));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && isOpen()) setOpen(false); });
+    // Fecha a gaveta ao tocar num link da navegação (mobile)
+    sidebar.querySelectorAll('nav a, .btn-hub').forEach(a =>
+      a.addEventListener('click', () => setOpen(false))
+    );
+  },
+};
+
+/* ============================================================================
    APP
    ============================================================================ */
 const App = {
@@ -1517,6 +1556,7 @@ const App = {
       NaturezaMap.set(naturezas);
       await UI_Loading.finish();
       UI_Sidebar.updateStamp(data);
+      UI_Sidebar.updateResumo(data);
       HubLink.init();
       this._renderAll(data);
       ScrollSpy.init();
@@ -1547,6 +1587,7 @@ const App = {
       ]);
       NaturezaMap.set(naturezas);
       UI_Sidebar.updateStamp(data);
+      UI_Sidebar.updateResumo(data);
       this._renderAll(data);
       ScrollSpy.init();
     } catch (err) {
@@ -1620,4 +1661,4 @@ const App = {
   },
 };
 
-document.addEventListener('DOMContentLoaded', () => App.init());
+document.addEventListener('DOMContentLoaded', () => { UI_Menu.init(); App.init(); });
