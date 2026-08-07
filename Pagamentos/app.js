@@ -200,6 +200,7 @@ const DataService = {
     const json = await response.json();
     this._validateData(json);
     this._removeCanceladas(json);
+    this._removeLinhasModelo(json);
     return json;
   },
 
@@ -240,6 +241,56 @@ const DataService = {
       }
       prev.total = Math.max(0, (prev.total || 0) - valor);
       prev.quantidade = Math.max(0, (prev.quantidade || 0) - canceladas.length);
+    }
+  },
+
+  /* Remove linhas-modelo coladas por engano na planilha (ex.: uma linha
+     com "No. Titulo" / "Tipo" / "Nome Fornece" e valores zerados).
+     Vale para Realizados, Previa e Postergados; ajusta os totais. */
+  _removeLinhasModelo(data) {
+    const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    const isModelo = r => {
+      if (!r) return false;
+      return norm(r.tipo) === 'tipo'
+        || norm(r.numero) === 'no. titulo'
+        || norm(r.fornecedor) === 'nome fornece'
+        || norm(r.natureza) === 'natureza';
+    };
+
+    // Pagamentos Realizados (hoje)
+    const hoje = data.pago_hoje;
+    if (hoje && Array.isArray(hoje.titulos)) {
+      const modelos = hoje.titulos.filter(isModelo);
+      if (modelos.length) {
+        const valor = modelos.reduce((s, r) => s + (Number(r.valor_rs) || 0), 0);
+        hoje.titulos = hoje.titulos.filter(r => !isModelo(r));
+        hoje.total = Math.max(0, (hoje.total || 0) - valor);
+        hoje.quantidade = Math.max(0, (hoje.quantidade || 0) - modelos.length);
+      }
+    }
+
+    // Previa de amanha (3 categorias principais + postergados)
+    const prev = data.previsto_amanha;
+    if (!prev) return;
+    for (const key of ['nf_servico', 'nf_titulo', 'reembolso']) {
+      const rows = prev[key];
+      if (!Array.isArray(rows)) continue;
+      const modelos = rows.filter(isModelo);
+      if (!modelos.length) continue;
+
+      const valor = modelos.reduce((s, r) => s + (Number(r.valor_total) || 0), 0);
+      prev[key] = rows.filter(r => !isModelo(r));
+
+      const cat = prev.por_categoria && prev.por_categoria[key];
+      if (cat) {
+        cat.total = Math.max(0, (cat.total || 0) - valor);
+        cat.quantidade = Math.max(0, (cat.quantidade || 0) - modelos.length);
+      }
+      prev.total = Math.max(0, (prev.total || 0) - valor);
+      prev.quantidade = Math.max(0, (prev.quantidade || 0) - modelos.length);
+    }
+    if (Array.isArray(prev.postergados) && prev.postergados.some(isModelo)) {
+      prev.postergados = prev.postergados.filter(r => !isModelo(r));
     }
   },
 
