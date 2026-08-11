@@ -586,6 +586,7 @@ async function parseTotvs(file){
     }
     return null;
   };
+  const cIdFluig = acharCampo('idfluig') || acharCampo('id','fluig');
   const cFluxo   = acharCampo('fluxo','caixa');
   const cConta   = acharCampo('conta','fluxo') || acharCampo('classific');
   const cVencto  = acharCampo('vencimento');
@@ -598,6 +599,9 @@ async function parseTotvs(file){
     const venc = parseBRDate(r[cVenctoR]) || parseBRDate(r[cVencto]);
     out.push({
       numero: numero,
+      /* O Totvs carimba em cada título o ID da solicitação que o originou.
+         É a chave exata entre os dois sistemas — bem melhor que número ou valor. */
+      id_fluig: cIdFluig ? safeStr(r[cIdFluig]) : '',
       parcela: safeStr(r['Parcela']),
       prefixo: safeStr(r['Prefixo']),
       tipo: safeStr(r['Tipo']),
@@ -705,10 +709,16 @@ async function parseNFTitulo(file){
     status: safeStr(r['STATUS']),
   }));
 }
+/* O export do Fluig grava o VALOR TOTAL de dois jeitos: como texto no formato
+   brasileiro ("4.500,00") ou como número inteiro com os centavos colados
+   (93382 = 933,82). Quando vem inteiro, a gente divide por cem e guarda o
+   original para conferência. */
 async function parseReembolso(file){
   const rows = await lerPlanilhaFluig(file);
   return rows.map(r => {
     const bruto = r['VALOR TOTAL'];
+    const cru = (typeof bruto === 'number');
+    const valor = cru ? (bruto / 100) : parseBRNumber(bruto);
     return {
       id: parseInt(r['ID'],10) || null,
       solicitante: safeStr(r['SOLICITANTE']),
@@ -716,9 +726,10 @@ async function parseReembolso(file){
       tipo_despesa: safeStr(r['TIPO DE DESPESA']),
       natureza_cod: safeStr(r['CÓD. NATUREZA']),
       fornecedor: txt(r['DESC FORNECEDOR']) || txt(r['FORNE NOVO']),
-      valor_total: parseBRNumber(bruto),
+      valor_total: valor,
+      valor_original: cru ? bruto : null,
       valor_texto: safeStr(bruto),
-      valor_numerico_cru: (typeof bruto === 'number'),
+      valor_numerico_cru: cru,
       vencimento: parseBRDate(r['VENCIMENTO']),
       dt_emissao: parseBRDate(r['DT EMISSÃO']),
       aprovador: safeStr(r['APROVADOR']),
@@ -754,14 +765,14 @@ async function parseNaturezas(file){
 /* ============================================================================
    CONCILIAÇÃO — o coração da ferramenta
    ----------------------------------------------------------------------------
-   Notas (NF de Serviço e Contas): casam pelo NÚMERO do título. Foi testado
-   contra dados reais e bateu 100% — todo Fluig "aprovado" achou o par no
-   Totvs, e todo "aguardando aprovação" não achou, que é o esperado.
+   O Totvs carimba em cada título o campo IDFluig com o número da solicitação
+   que o originou. Esse é o casamento exato, e vale para as três categorias,
+   inclusive reembolso (que não tem número em comum entre os dois sistemas).
 
-   Reembolsos: NÃO casam por número, porque o Totvs cria um número próprio.
-   Casam por favorecido + vencimento + valor com tolerância. Aqui o casamento
-   é aproximado por natureza, então tudo que fica duvidoso vai para uma lista
-   de divergências em vez de ser somado no escuro.
+   Só quando o título está SEM IDFluig a gente tenta o casamento aproximado,
+   por número (notas) ou por favorecido + vencimento + valor (reembolsos).
+   Título que já tem um IDFluig diferente nunca é candidato: ele pertence a
+   outra solicitação, e casar por semelhança ali só produziria erro.
    ============================================================================ */
 const TOL = 0.05;              // tolerância de centavos no casamento por valor
 
@@ -769,14 +780,29 @@ function conciliar(store){
   const titulos = store.totvs || [];
   const usados = new Set();
 
-  // índice dos títulos do Totvs por número normalizado
+  // índice por IDFluig — o casamento exato
+  const porIdFluig = {};
+  titulos.forEach((t, i) => {
+    const k = safeStr(t.id_fluig);
+    if (k) (porIdFluig[k] = porIdFluig[k] || []).push(i);
+  });
+  // índice por número, usado só nos títulos SEM IDFluig
   const porNumero = {};
   titulos.forEach((t, i) => {
+    if (safeStr(t.id_fluig)) return;
     const k = normNum(t.numero);
     if (k) (porNumero[k] = porNumero[k] || []).push(i);
   });
 
   const itens = [];   // um registro por solicitação do Fluig
+
+  /* Acha o título da solicitação: primeiro pelo ID, depois por semelhança. */
+  const acharPar = (idFluig, aproximado) => {
+    const exatos = (porIdFluig[safeStr(idFluig)] || []).filter(i => !usados.has(i));
+    if (exatos.length) return { i: exatos[0], modo: 'id' };
+    const apr = aproximado();
+    return (apr === undefined || apr === null) ? null : { i: apr, modo: 'aprox' };
+  };
 
   /* ---- Notas: casamento por número ---- */
   [['nf_servico','numero_nf','NF de Serviço'], ['nf_titulo','numero_titulo','Conta']]
@@ -791,12 +817,15 @@ function conciliar(store){
         par: null, situacao: '', aviso: '',
       };
       if (est !== 'cancelado'){
-        const cands = (porNumero[normNum(r[campo])] || []).filter(i => !usados.has(i));
-        let pick = cands.find(i => titulos[i].vencimento === r.vencimento);
-        if (pick === undefined) pick = cands[0];
-        if (pick !== undefined){
-          usados.add(pick);
-          item.par = titulos[pick];
+        const achado = acharPar(r.id, () => {
+          const cands = (porNumero[normNum(r[campo])] || []).filter(i => !usados.has(i));
+          const c = cands.find(i => titulos[i].vencimento === r.vencimento);
+          return c !== undefined ? c : cands[0];
+        });
+        if (achado){
+          usados.add(achado.i);
+          item.par = titulos[achado.i];
+          item.modoPar = achado.modo;
         }
       }
       classificarItem(item);
@@ -813,36 +842,46 @@ function conciliar(store){
       fornecedor: r.fornecedor, par: null, situacao: '', aviso: '',
     };
     if (est !== 'cancelado'){
-      const cands = [];
-      titulos.forEach((t, i) => {
-        if (usados.has(i)) return;
-        if (!nomesBatem(t.fornecedor, r.fornecedor)) return;
-        if (t.vencimento && r.vencimento && t.vencimento !== r.vencimento) return;
-        cands.push(i);
+      const achado = acharPar(r.id, () => {
+        // só títulos sem IDFluig entram como candidatos por semelhança
+        const cands = [];
+        titulos.forEach((t, i) => {
+          if (usados.has(i) || safeStr(t.id_fluig)) return;
+          if (!nomesBatem(t.fornecedor, r.fornecedor)) return;
+          if (t.vencimento && r.vencimento && t.vencimento !== r.vencimento) return;
+          cands.push(i);
+        });
+        const c = cands.find(i => Math.abs((titulos[i].valor_rs||0) - (r.valor_total||0)) <= TOL);
+        if (c !== undefined) return c;
+        return cands.length === 1 ? cands[0] : null;
       });
-      // 1ª tentativa: valor bate
-      let pick = cands.find(i => Math.abs((titulos[i].valor_rs||0) - (r.valor_total||0)) <= TOL);
-      // 2ª tentativa: valor bate se o do Fluig estiver com os centavos colados
-      if (pick === undefined && r.valor_numerico_cru && Number.isInteger(r.valor_total)){
-        pick = cands.find(i => Math.abs((titulos[i].valor_rs||0) - (r.valor_total/100)) <= TOL);
-        if (pick !== undefined) item.aviso = 'valor_centavos';
+      if (achado){
+        usados.add(achado.i);
+        item.par = titulos[achado.i];
+        item.modoPar = achado.modo;
       }
-      // 3ª: só um candidato, mas o valor diverge — casa e marca a divergência
-      if (pick === undefined && cands.length === 1){
-        pick = cands[0];
-        item.aviso = 'valor_diverge';
-      }
-      if (pick !== undefined){ usados.add(pick); item.par = titulos[pick]; }
     }
     classificarItem(item);
     itens.push(item);
   });
 
-  /* ---- O que sobrou do Totvs: lançado direto, sem passar pelo Fluig ---- */
-  const soTotvs = [];
-  titulos.forEach((t, i) => { if (!usados.has(i)) soTotvs.push(t); });
+  /* ---- O que sobrou do Totvs, separado em dois casos bem diferentes ----
+     · direto        — sem IDFluig: alguém lançou no Totvs sem passar pelo Fluig
+     · antigo        — tem IDFluig, mas de uma solicitação que não está no
+                       relatório de hoje. É o caso das parcelas de títulos
+                       lançados meses atrás (parcela AAC, AAB e por aí). */
+  const soTotvsDireto = [], soTotvsAntigo = [];
+  titulos.forEach((t, i) => {
+    if (usados.has(i)) return;
+    // parcela em letras (AAB, AAC...) é a marca de título parcelado antigo no
+    // Protheus — mesmo sem IDFluig, não é lançamento direto de hoje
+    const parcelado = /[A-Za-z]/.test(safeStr(t.parcela));
+    ((safeStr(t.id_fluig) || parcelado) ? soTotvsAntigo : soTotvsDireto).push(t);
+  });
+  const soTotvs = soTotvsDireto.concat(soTotvsAntigo);
 
-  return { itens: itens, soTotvs: soTotvs, titulos: titulos };
+  return { itens: itens, soTotvs: soTotvs, soTotvsDireto: soTotvsDireto,
+           soTotvsAntigo: soTotvsAntigo, titulos: titulos };
 }
 
 /* Traduz o cruzamento em uma situação legível.
@@ -855,21 +894,18 @@ function classificarItem(item){
   if (item.estado === 'cancelado'){ item.situacao = 'cancelado'; return; }
   if (!t){
     item.situacao = (item.estado === 'pendente') ? 'sem_titulo_pendente' : 'sem_titulo_aprovado';
+    if (item.fluig.valor_numerico_cru) item.aviso = 'valor_corrigido_sem_par';
     return;
   }
   if (estaPago(t)) item.situacao = 'pago';
   else item.situacao = (item.estado === 'pendente') ? 'em_aberto_pendente' : 'em_aberto';
-  if (item.aviso !== 'valor_centavos' && item.aviso !== 'valor_diverge'){
-    const dif = Math.abs((t.valor_rs||0) - (item.valor||0));
-    if (dif > TOL){
-      // o caso clássico do reembolso: Fluig manda 93382 onde o Totvs tem 933,82
-      if (item.fluig.valor_numerico_cru && Math.abs((t.valor_rs||0) - (item.valor||0)/100) <= TOL){
-        item.aviso = 'valor_centavos';
-      } else {
-        item.aviso = 'valor_diverge';
-      }
-    }
+
+  // valor já corrigido na leitura e confirmado pelo título — só informa
+  if (item.fluig.valor_numerico_cru && Math.abs((t.valor_rs||0) - (item.valor||0)) <= TOL){
+    item.aviso = 'valor_corrigido';
+    return;
   }
+  if (Math.abs((t.valor_rs||0) - (item.valor||0)) > TOL) item.aviso = 'valor_diverge';
 }
 
 const SITUACOES = {
@@ -899,7 +935,7 @@ function resumir(conc, dataRef){
     aPagarHoje: z(), aPagarAmanha: z(),      // soma dos dois acima
     aguardandoHoje: z(), aguardandoAmanha: z(), // recorte sobreposto: falta aprovar
     atrasado: z(), semTituloAprovado: z(), cancelados: z(),
-    divergencias: 0, suspeitos: 0, soTotvs: z(), historico: z(),
+    divergencias: 0, suspeitos: 0, aproximados: 0, soTotvs: z(), historico: z(),
     temDataRef: false,
   };
   const add = (b, v) => { b.qtd++; b.valor += (Number(v)||0); };
@@ -917,12 +953,13 @@ function resumir(conc, dataRef){
     else if (t.vencimento === amanha) add(r.abertoAmanha, t.valor_rs);
     else if (t.vencimento < dataRef) add(r.atrasado, t.valor_rs);
   });
-  conc.soTotvs.forEach(t => { if (!estaPago(t)) add(r.soTotvs, t.valor_rs); });
+  (conc.soTotvsDireto || []).forEach(t => { if (!estaPago(t)) add(r.soTotvs, t.valor_rs); });
 
   // Lado do Fluig
   conc.itens.forEach(it => {
-    if (it.aviso) r.divergencias++;
-    if (it.aviso === 'valor_centavos') r.suspeitos++;
+    if (it.aviso === 'valor_diverge') r.divergencias++;
+    if (it.aviso === 'valor_corrigido' || it.aviso === 'valor_corrigido_sem_par') r.suspeitos++;
+    if (it.modoPar === 'aprox') r.aproximados++;
     if (it.situacao === 'cancelado'){ add(r.cancelados, it.valor); return; }
 
     // só entra no "a pagar" o que ainda NÃO existe como título — o que já
@@ -951,7 +988,8 @@ function montarHistorico(conc){
   return conc.titulos.filter(estaPago).map(t => ({
     chave: chaveTitulo(t),
     dt_baixa: t.dt_baixa, vencimento: t.vencimento,
-    numero: t.numero, parcela: t.parcela, prefixo: t.prefixo, tipo: t.tipo,
+    numero: t.numero, id_fluig: t.id_fluig,
+    parcela: t.parcela, prefixo: t.prefixo, tipo: t.tipo,
     natureza: t.natureza, conta_fluxo: t.conta_fluxo,
     fornecedor_cod: t.fornecedor_cod, loja: t.loja, fornecedor: t.fornecedor,
     valor_pago: t.valor_liquido || t.valor_rs,
@@ -1062,7 +1100,8 @@ function listasDaAba(){
     semTitulo:   { rotulo:'Sem título no Totvs',  icone:'fa-triangle-exclamation', linhas: c.itens.filter(i => semTituloSit(i.situacao)) },
     divergentes: { rotulo:'Divergências',         icone:'fa-scale-unbalanced', linhas: c.itens.filter(i => i.aviso) },
     cancelados:  { rotulo:'Cancelados',           icone:'fa-ban',             linhas: porSit('cancelado') },
-    soTotvs:     { rotulo:'Só no Totvs',          icone:'fa-database',        linhas: c.soTotvs, totvs:true },
+    direto:      { rotulo:'Lançado direto',       icone:'fa-database',        linhas: c.soTotvsDireto, totvs:true },
+    antigos:     { rotulo:'De solicitação antiga', icone:'fa-clock-rotate-left', linhas: c.soTotvsAntigo, totvs:true },
   };
 }
 function renderConferencia(){
@@ -1088,12 +1127,24 @@ function renderConferencia(){
   const notes = el('conf-notes'); notes.textContent = '';
   const r = state.resumo;
   if (r && r.suspeitos){
-    notes.appendChild(h('div', { class:'note warn' }, [
-      h('i', { class:'fa-solid fa-triangle-exclamation' }),
+    const semPar = state.conc.itens.filter(i => i.aviso === 'valor_corrigido_sem_par').length;
+    notes.appendChild(h('div', { class:'note info' }, [
+      h('i', { class:'fa-solid fa-wand-magic-sparkles' }),
       h('div', {}, [
-        h('strong', { text: r.suspeitos + ' valor(es) com centavos colados. ' }),
-        'O Fluig mandou o número sem vírgula (ex.: 93382 onde o Totvs tem 933,82). ' +
-        'Não converti nada por conta própria: o valor vai gravado como veio, e a linha está marcada na aba Divergências para você conferir.',
+        h('strong', { text: r.suspeitos + ' valor(es) corrigido(s). ' }),
+        'Nessas linhas o Fluig exportou o número com os centavos colados (93382 no lugar de 933,82). ' +
+        'A tela dividiu por cem e mostra embaixo o número como veio da planilha.' +
+        (semPar ? (' ' + semPar + ' desses não têm título no Totvs para confirmar a correção — valem uma olhada.') : ''),
+      ]),
+    ]));
+  }
+  if (r && r.aproximados){
+    notes.appendChild(h('div', { class:'note warn' }, [
+      h('i', { class:'fa-solid fa-link-slash' }),
+      h('div', {}, [
+        h('strong', { text: r.aproximados + ' casado(s) por semelhança. ' }),
+        'O título no Totvs veio sem o IDFluig, então o casamento foi por número ou por favorecido e valor. ' +
+        'É o único ponto onde pode haver engano — confira essas linhas.',
       ]),
     ]));
   }
@@ -1149,7 +1200,9 @@ function tabelaItens(linhas){
   linhas.slice(0, 400).forEach(it => {
     const sit = SITUACOES[it.situacao] || ['—','b-mute'];
     const tdSit = h('td', {}, [ badge(sit[0], sit[1]) ]);
-    if (it.aviso === 'valor_centavos') tdSit.appendChild(badge('valor a conferir','b-warn'));
+    if (it.modoPar === 'aprox') tdSit.appendChild(badge('casado por semelhança','b-info'));
+    if (it.aviso === 'valor_corrigido') tdSit.appendChild(badge('valor corrigido','b-info'));
+    if (it.aviso === 'valor_corrigido_sem_par') tdSit.appendChild(badge('valor a conferir','b-warn'));
     if (it.aviso === 'valor_diverge')  tdSit.appendChild(badge('valor diverge','b-danger'));
     tbody.appendChild(h('tr', {}, [
       h('td', {}, [ badge(it.rotulo, 'b-mute') ]),
@@ -1159,7 +1212,14 @@ function tabelaItens(linhas){
         h('small', { text: (it.fluig.status || '') + (it.fluig.solicitante ? (' · ' + it.fluig.solicitante) : '') }),
       ])]),
       h('td', { class:'mono', text: fmtData(it.vencimento) }),
-      h('td', { class:'num', text: fmtBR(it.valor) }),
+      (function(){
+        const td = h('td', { class:'num', text: fmtBR(it.valor) });
+        if (it.fluig.valor_original != null){
+          td.appendChild(h('small', { style:'display:block;color:var(--plum-soft);font-weight:400',
+            text: 'planilha: ' + it.fluig.valor_original }));
+        }
+        return td;
+      })(),
       h('td', { class:'num', text: it.par ? fmtBR(it.par.valor_rs) : '—' }),
       tdSit,
     ]));
@@ -1181,7 +1241,10 @@ function tabelaTotvs(linhas){
     tbody.appendChild(h('tr', {}, [
       h('td', {}, [ badge(t.tipo || '?', 'b-mute') ]),
       h('td', { class:'mono', text: t.numero + (t.parcela ? ('/' + t.parcela) : '') }),
-      h('td', {}, [ h('div', { class:'forn' }, [ t.fornecedor || '—', h('small', { text: t.historico || '' }) ]) ]),
+      h('td', {}, [ h('div', { class:'forn' }, [
+        t.fornecedor || '—',
+        h('small', { text: (t.id_fluig ? ('Fluig #' + t.id_fluig + ' · ') : '') + (t.historico || '') }),
+      ])]),
       h('td', { class:'mono', text: fmtData(t.vencimento) }),
       h('td', { class:'num', text: fmtBR(t.valor_rs) }),
       h('td', {}, [ estaPago(t) ? badge('Pago ' + fmtData(t.dt_baixa), 'b-ok') : badge('Em aberto', 'b-orange') ]),
