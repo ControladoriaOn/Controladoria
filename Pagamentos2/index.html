@@ -1,0 +1,1420 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Atualizar Pagamentos · V2</title>
+
+<link rel="icon" type="image/png" href="../favicon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<style>
+  :root{
+    --plum-deep:#2D1B2D; --plum:#4A2C4A; --plum-soft:#6B5E6B;
+    --bg:#FBF9FA; --surface:#FFF; --surface-soft:#F6F2F6;
+    --border:#E8E2E8; --border-soft:#F0EBF0;
+    --orange:#FF6E00; --orange-deep:#E55B00; --orange-soft:#FFF1E0;
+    --ok:#16794A; --ok-soft:#E8F6EE;
+    --warn:#B45309; --warn-soft:#FEF3C7;
+    --danger:#DC2626; --danger-soft:#FEE2E2;
+    --info:#1D4ED8; --info-soft:#EFF4FF;
+    --radius:14px; --radius-sm:10px;
+    --font-display:'Fraunces',serif; --font-body:'Manrope',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+    --shadow:0 1px 2px rgba(45,27,45,.04), 0 8px 24px -12px rgba(45,27,45,.12);
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font-body); font-size:14px; color:var(--plum-deep);
+    background:
+      radial-gradient(900px 600px at 88% -12%, rgba(255,110,0,.06), transparent 60%),
+      radial-gradient(800px 620px at -10% 108%, rgba(60,0,60,.05), transparent 58%),
+      var(--bg);
+    background-attachment:fixed; min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- header ---------- */
+  .page-header{
+    background:linear-gradient(135deg,#1A0F1A 0%,var(--plum-deep) 100%);
+    color:#fff; padding:26px 32px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+  }
+  .page-header .head-text{flex:1; min-width:230px}
+  .page-header h1{font-family:var(--font-display); font-weight:500; font-size:25px; margin:0 0 4px}
+  .page-header h1 i{color:var(--orange); margin-right:8px}
+  .page-header p{margin:0; opacity:.7; font-size:13px}
+  .head-right{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .status-pill{
+    display:flex; align-items:center; gap:8px; padding:8px 14px;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.1);
+    border-radius:999px; font-size:12.5px; white-space:nowrap;
+  }
+  .status-pill .dot{width:7px;height:7px;border-radius:50%;background:#22C55E;flex-shrink:0}
+  .status-pill .dot.warn{background:#F59E0B} .status-pill .dot.off{background:#9CA3AF}
+  .btn-back{
+    display:inline-flex; align-items:center; gap:8px; padding:10px 16px;
+    background:var(--orange); color:#fff; border:1px solid var(--orange);
+    border-radius:10px; text-decoration:none; font-weight:600; font-size:13px;
+    box-shadow:0 6px 18px -8px rgba(255,110,0,.55); transition:all .15s;
+  }
+  .btn-back:hover{background:var(--orange-deep); transform:translateY(-1px)}
+
+  main{max-width:1180px; margin:0 auto; padding:26px 22px 90px}
+  section{margin-bottom:22px}
+
+  /* ---------- dropzone ---------- */
+  .dropzone{
+    background:var(--surface); border:2px dashed var(--border); border-radius:var(--radius);
+    padding:42px 22px; text-align:center; transition:all .2s; cursor:pointer; box-shadow:var(--shadow);
+  }
+  .dropzone:hover,.dropzone.drag{border-color:var(--orange); background:var(--orange-soft)}
+  .dropzone i.icon-up{font-size:42px; color:var(--orange); margin-bottom:12px; display:block}
+  .dropzone .dz-title{font-family:var(--font-display); font-weight:500; font-size:19px; margin:0 0 6px}
+  .dropzone .dz-sub{margin:0 0 16px; font-size:13px; color:var(--plum-soft)}
+  .btn-pick{
+    padding:10px 22px; background:var(--surface); color:var(--plum);
+    border:1px solid var(--border); border-radius:10px; font-family:inherit;
+    font-weight:600; font-size:13px; cursor:pointer; transition:all .15s;
+  }
+  .btn-pick:hover{background:var(--orange-soft); border-color:var(--orange); color:var(--orange-deep)}
+  .dz-hint{margin-top:14px; font-size:12px; color:var(--plum-soft); line-height:1.6}
+  .dz-hint code{
+    font-family:var(--font-mono); font-size:11.5px; background:var(--surface-soft);
+    padding:1px 6px; border-radius:4px;
+  }
+
+  /* ---------- cards / arquivos ---------- */
+  .card{
+    background:var(--surface); border:1px solid var(--border-soft);
+    border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;
+  }
+  .card-head{
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:16px 20px; border-bottom:1px solid var(--border-soft);
+  }
+  .card-head h3{
+    margin:0; font-family:var(--font-display); font-weight:500; font-size:17px;
+    display:flex; align-items:center; gap:9px;
+  }
+  .card-head h3 i{color:var(--orange); font-size:16px}
+  .card-head .sub{color:var(--plum-soft); font-size:12.5px; margin:2px 0 0}
+  .card-body{padding:16px 20px}
+
+  .file-row{
+    display:flex; align-items:center; gap:12px; padding:9px 0;
+    border-bottom:1px solid var(--border-soft); font-size:13px;
+  }
+  .file-row:last-child{border-bottom:none}
+  .file-row i{font-size:17px}
+  .file-row.ok i{color:var(--ok)} .file-row.err i{color:var(--danger)}
+  .file-row .name{flex:1; font-weight:600; color:var(--plum); word-break:break-all}
+  .file-row .meta{color:var(--plum-soft); font-size:12px; text-align:right}
+
+  /* ---------- resumo em números ---------- */
+  .grid-kpi{display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:12px}
+  .kpi{
+    background:var(--surface); border:1px solid var(--border-soft);
+    border-radius:var(--radius-sm); padding:15px 16px; box-shadow:var(--shadow);
+  }
+  .kpi .k-label{
+    font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--plum-soft); display:flex; align-items:center; gap:6px;
+  }
+  .kpi .k-value{font-family:var(--font-display); font-size:23px; font-weight:600; margin-top:7px; line-height:1.1}
+  .kpi .k-sub{font-size:11.5px; color:var(--plum-soft); margin-top:3px}
+  .kpi.ok .k-value{color:var(--ok)} .kpi.warn .k-value{color:var(--warn)}
+  .kpi.danger .k-value{color:var(--danger)} .kpi.info .k-value{color:var(--info)}
+
+  /* ---------- abas de conferência ---------- */
+  .tabs{display:flex; gap:6px; flex-wrap:wrap; padding:14px 20px 0}
+  .tab{
+    display:inline-flex; align-items:center; gap:7px; padding:8px 14px;
+    background:var(--surface-soft); border:1px solid var(--border);
+    border-radius:999px; font-size:12.5px; font-weight:600; color:var(--plum-soft);
+    cursor:pointer; transition:all .14s; font-family:inherit;
+  }
+  .tab:hover{border-color:var(--orange); color:var(--orange-deep)}
+  .tab.active{background:var(--plum-deep); border-color:var(--plum-deep); color:#fff}
+  .tab .cnt{
+    font-family:var(--font-mono); font-size:11px; font-weight:700;
+    background:rgba(0,0,0,.07); padding:1px 6px; border-radius:5px;
+  }
+  .tab.active .cnt{background:rgba(255,255,255,.18)}
+
+  /* ---------- tabela ---------- */
+  .tbl-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
+  table{width:100%; border-collapse:separate; border-spacing:0; text-align:left}
+  th{
+    padding:11px 14px; font-size:10.5px; font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--plum-soft); background:var(--surface-soft);
+    border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  td{
+    padding:10px 14px; font-size:12.5px; border-bottom:1px solid var(--border-soft);
+    vertical-align:top;
+  }
+  tbody tr:hover td{background:rgba(255,110,0,.03)}
+  td.num{font-family:var(--font-mono); text-align:right; white-space:nowrap}
+  td.mono{font-family:var(--font-mono); white-space:nowrap}
+  .forn{font-weight:600; color:var(--plum-deep)}
+  .forn small{display:block; font-weight:400; color:var(--plum-soft); font-size:11px; margin-top:2px}
+  .empty{padding:34px 20px; text-align:center; color:var(--plum-soft); font-size:13px}
+
+  .badge{
+    display:inline-block; padding:2px 8px; border-radius:999px; font-size:10.5px;
+    font-weight:700; text-transform:uppercase; letter-spacing:.03em; white-space:nowrap;
+  }
+  .b-ok{background:var(--ok-soft); color:var(--ok)}
+  .b-warn{background:var(--warn-soft); color:var(--warn)}
+  .b-danger{background:var(--danger-soft); color:var(--danger)}
+  .b-info{background:var(--info-soft); color:var(--info)}
+  .b-mute{background:var(--surface-soft); color:var(--plum-soft)}
+  .b-orange{background:var(--orange-soft); color:var(--orange-deep)}
+
+  .note{
+    display:flex; gap:10px; align-items:flex-start; padding:12px 16px;
+    border-radius:var(--radius-sm); font-size:12.5px; line-height:1.55; margin-bottom:12px;
+  }
+  .note i{font-size:15px; flex-shrink:0; margin-top:1px}
+  .note.warn{background:var(--warn-soft); color:#7C2D12}
+  .note.info{background:var(--info-soft); color:#1E3A8A}
+  .note.danger{background:var(--danger-soft); color:#7F1D1D}
+
+  /* ---------- ações ---------- */
+  .actions{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:18px 20px; background:var(--surface); border:1px solid var(--border-soft);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; padding:11px 18px;
+    border-radius:10px; font-family:inherit; font-weight:600; font-size:13px;
+    border:1px solid transparent; cursor:pointer; transition:all .15s;
+  }
+  .btn:disabled{opacity:.45; cursor:not-allowed}
+  .btn-primary{
+    background:linear-gradient(135deg,#FF8A2E 0%,var(--orange) 55%,var(--orange-deep) 100%);
+    color:#fff; box-shadow:0 8px 20px -10px rgba(255,110,0,.65);
+  }
+  .btn-primary:hover:not(:disabled){transform:translateY(-1px); filter:brightness(1.05)}
+  .btn-ghost{background:var(--surface); color:var(--plum); border-color:var(--border)}
+  .btn-ghost:hover:not(:disabled){background:var(--surface-soft)}
+  .btn-danger{background:var(--surface); color:var(--danger); border-color:var(--danger-soft)}
+  .btn-danger:hover:not(:disabled){background:var(--danger-soft); border-color:var(--danger)}
+  .actions .hint{margin-left:auto; color:var(--plum-soft); font-size:12.5px}
+
+  /* ---------- overlay / toast / modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(26,15,26,.62); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; z-index:1500;
+    opacity:0; pointer-events:none; transition:opacity .15s;
+  }
+  .overlay.show{opacity:1; pointer-events:auto}
+  .overlay-box{
+    background:var(--surface); padding:22px 28px; border-radius:14px;
+    display:flex; align-items:center; gap:14px; box-shadow:0 20px 60px -20px rgba(0,0,0,.5);
+    font-weight:600;
+  }
+  .spinner{
+    width:22px;height:22px;border:3px solid var(--border);border-top-color:var(--orange);
+    border-radius:50%; animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--plum-deep); color:#fff; padding:13px 22px; border-radius:10px;
+    font-size:13px; font-weight:600; max-width:92vw; text-align:center;
+    box-shadow:0 12px 32px -8px rgba(45,27,45,.4);
+    opacity:0; pointer-events:none; transition:all .25s; z-index:2000;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  .cf-overlay{
+    position:fixed; inset:0; background:rgba(26,15,26,.55); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:1800;
+  }
+  .cf-overlay.show{display:flex}
+  .cf-modal{
+    background:var(--surface); border-radius:16px; width:100%; max-width:440px;
+    box-shadow:0 24px 60px rgba(26,15,26,.4); overflow:hidden;
+  }
+  .cf-body{padding:22px 24px 18px}
+  .cf-title{
+    font-family:var(--font-display); font-weight:500; font-size:19px; margin:0 0 8px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .cf-title i{color:var(--danger)}
+  .cf-text{margin:0 0 14px; font-size:13px; color:var(--plum-soft); line-height:1.55}
+  .cf-opt{
+    display:flex; align-items:flex-start; gap:10px; padding:11px 14px;
+    background:var(--surface-soft); border:1px solid var(--border); border-radius:10px; cursor:pointer;
+  }
+  .cf-opt:hover{border-color:var(--orange); background:var(--orange-soft)}
+  .cf-opt input{margin-top:3px; accent-color:var(--orange)}
+  .cf-foot{
+    padding:14px 20px; background:var(--surface-soft); border-top:1px solid var(--border-soft);
+    display:flex; justify-content:flex-end; gap:10px;
+  }
+
+  @media (max-width:720px){
+    .page-header{padding:20px 18px}
+    .page-header h1{font-size:21px}
+    main{padding:18px 14px 70px}
+    .dropzone{padding:30px 16px}
+    .card-head,.card-body,.actions{padding-left:16px; padding-right:16px}
+    .tabs{padding:12px 16px 0}
+    td,th{padding:9px 11px}
+    .actions .hint{margin-left:0; width:100%}
+  }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="head-text">
+    <h1><i class="fa-solid fa-cloud-arrow-up"></i>Atualizar Pagamentos</h1>
+    <p>Suba os relatórios do Totvs e do Fluig. A tela concilia os dois e mostra o resultado antes de gravar.</p>
+  </div>
+  <div class="head-right">
+    <div class="status-pill" id="status-pill" title="Situação da base">
+      <span class="dot off" id="status-dot"></span>
+      <span id="status-text">verificando…</span>
+    </div>
+    <a class="btn-back" href="./"><i class="fa-solid fa-arrow-left-long"></i> Painel</a>
+  </div>
+</header>
+
+<main>
+
+  <section class="dropzone" id="dz" tabindex="0" role="button" aria-label="Arraste os arquivos ou clique para escolher">
+    <i class="fa-solid fa-cloud-arrow-up icon-up"></i>
+    <h3 class="dz-title">Arraste os relatórios aqui</h3>
+    <p class="dz-sub">pode soltar todos de uma vez — a tela reconhece cada um</p>
+    <button class="btn-pick" id="btn-pick" type="button">
+      <i class="fa-solid fa-folder-open" style="margin-right:6px"></i>Escolher arquivos
+    </button>
+    <input type="file" id="file-input" hidden multiple accept=".csv,.xlsx,.xls">
+    <div class="dz-hint">
+      Totvs: <code>.csv</code> de títulos, filtrado por vencimento até amanhã<br>
+      Fluig: <code>.xlsx</code> de NFs de Serviço, Contas e Reembolsos · opcional: mapa de naturezas
+    </div>
+  </section>
+
+  <section class="card" id="files-wrap" hidden>
+    <div class="card-head">
+      <h3><i class="fa-solid fa-file-circle-check"></i> Arquivos lidos</h3>
+    </div>
+    <div class="card-body" id="file-list"></div>
+  </section>
+
+  <section id="resumo-wrap" hidden>
+    <div class="grid-kpi" id="grid-kpi"></div>
+  </section>
+
+  <section class="card" id="conf-wrap" hidden>
+    <div class="card-head">
+      <div>
+        <h3><i class="fa-solid fa-code-compare"></i> Conferência</h3>
+        <p class="sub">O que casou entre Fluig e Totvs, e o que ficou de fora. Confira antes de enviar.</p>
+      </div>
+    </div>
+    <div class="tabs" id="conf-tabs"></div>
+    <div id="conf-notes" style="padding:14px 20px 0"></div>
+    <div class="tbl-wrap" id="conf-table"></div>
+  </section>
+
+  <section class="actions" id="actions-wrap" hidden>
+    <button class="btn btn-primary" id="btn-enviar">
+      <i class="fa-solid fa-cloud-arrow-up"></i> Enviar para a base
+    </button>
+    <button class="btn btn-ghost" id="btn-json">
+      <i class="fa-solid fa-download"></i> Baixar JSON
+    </button>
+    <button class="btn btn-danger" id="btn-limpar">
+      <i class="fa-solid fa-eraser"></i> Limpar base
+    </button>
+    <button class="btn btn-ghost" id="btn-reset">
+      <i class="fa-solid fa-rotate-left"></i> Recomeçar
+    </button>
+    <span class="hint" id="hint"></span>
+  </section>
+
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-box"><div class="spinner"></div><div id="overlay-text">Processando…</div></div>
+</div>
+
+<div class="cf-overlay" id="modal-limpar">
+  <div class="cf-modal" role="dialog" aria-modal="true">
+    <div class="cf-body">
+      <h3 class="cf-title"><i class="fa-solid fa-eraser"></i> Limpar a base de operação</h3>
+      <p class="cf-text">
+        Apaga a posição atual (títulos do Totvs e solicitações do Fluig) da planilha de operação.
+        O <strong>histórico de pagamentos não é tocado</strong> — ele fica em outra planilha e nunca é apagado por aqui.
+      </p>
+      <label class="cf-opt">
+        <input type="checkbox" id="ml-check">
+        <div>
+          <div style="font-weight:700; font-size:13px">Entendi e quero limpar</div>
+          <div style="color:var(--plum-soft); font-size:12px" id="ml-sub">A posição atual será zerada.</div>
+        </div>
+      </label>
+    </div>
+    <div class="cf-foot">
+      <button class="btn btn-ghost" id="ml-cancel">Cancelar</button>
+      <button class="btn btn-danger" id="ml-do" disabled><i class="fa-solid fa-trash"></i> Limpar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================================
+   CONFIG — cole aqui a URL /exec do Apps Script V2 (planilha de operação).
+   ============================================================================ */
+const CONFIG = {
+  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec',
+};
+
+/* ============================================================================
+   HELPERS
+   ============================================================================ */
+const el = id => document.getElementById(id);
+const safeStr = v => (v === null || v === undefined) ? '' : String(v).trim();
+
+/* minúsculas, sem acento, sem pontuação — para comparar texto */
+function norm(s){
+  return safeStr(s).toLowerCase().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+}
+function normHdr(s){
+  return norm(s).replace(/[^a-z0-9]/g,'');
+}
+/* número de título: sem zeros à esquerda, sem espaço, maiúsculo.
+   O Totvs grava "0E6828185" onde o Fluig manda "E6828185". */
+function normNum(v){
+  const s = safeStr(v).toUpperCase().replace(/\s+/g,'');
+  if (!s) return '';
+  const semZero = s.replace(/^0+/,'');
+  return semZero || s;
+}
+/* nome de favorecido: o Totvs corta em 20 caracteres e às vezes o Fluig
+   traz o CNPJ/CPF na frente do nome. */
+function normNome(v){
+  let s = norm(v);
+  s = s.replace(/^[\d.\-\/]+\s+/,'');       // tira "58.212.228 " do começo
+  return s.replace(/[^a-z0-9 ]/g,'').trim();
+}
+function nomesBatem(a, b){
+  const x = normNome(a), y = normNome(b);
+  if (!x || !y) return false;
+  const n = Math.min(x.length, y.length);
+  if (n < 8) return x === y;
+  return x.slice(0, n) === y.slice(0, n);
+}
+
+function parseBRNumber(x){
+  if (x === null || x === undefined || x === '') return 0;
+  if (typeof x === 'number') return x;
+  let s = String(x).trim().replace(/R\$\s*/i,'').replace(/\s/g,'');
+  if (!s) return 0;
+  if (s.indexOf(',') >= 0) s = s.replace(/\./g,'').replace(',','.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+function parseBRDate(x){
+  if (x === null || x === undefined || x === '') return null;
+  if (x instanceof Date && !isNaN(x)){
+    return x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0');
+  }
+  const s = String(x).trim();
+  if (!s || /^[\/\s]+$/.test(s)) return null;
+  let m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return m[3] + '-' + m[2] + '-' + m[1];
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return s.slice(0,10);
+  const n = Number(s);
+  if (!isNaN(n) && n > 20000 && n < 80000){
+    return parseBRDate(new Date((n - 25569) * 86400 * 1000));
+  }
+  return null;
+}
+const fmtBR = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtBR0 = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:0, maximumFractionDigits:0});
+function fmtData(iso){
+  if (!iso) return '—';
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? (m[3]+'/'+m[2]+'/'+m[1]) : String(iso);
+}
+function hojeISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function proxDiaUtil(iso){
+  const p = String(iso).split('-');
+  const d = new Date(+p[0], +p[1]-1, +p[2]);
+  do { d.setDate(d.getDate()+1); } while (d.getDay()===0 || d.getDay()===6);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+const readAsArrayBuffer = file => new Promise((res,rej)=>{
+  const r = new FileReader();
+  r.onload = () => res(r.result); r.onerror = () => rej(new Error('Falha ao ler o arquivo'));
+  r.readAsArrayBuffer(file);
+});
+const readAsText = (file, enc) => new Promise((res,rej)=>{
+  const r = new FileReader();
+  r.onload = () => res(r.result); r.onerror = () => rej(new Error('Falha ao ler o arquivo'));
+  r.readAsText(file, enc || 'iso-8859-1');
+});
+</script>
+<script>
+/* ============================================================================
+   ENCODING DO CSV DO TOTVS
+   O export chega com os acentos quebrados: cada letra acentuada virou a letra
+   "A" seguida do segundo byte da sequência UTF-8. "MANUTENÇÃO" chega como
+   "MANUTENA\x87A\x83O". Aqui a gente desfaz isso. Só converte quando a letra
+   anterior é A/a e o byte seguinte é de fato uma letra portuguesa, pra não
+   estragar coisas legítimas como "Nº".
+   ============================================================================ */
+const MAPA_ACENTO = {
+  '\u0081':'Á','\u0082':'Â','\u0083':'Ã','\u0084':'Ä','\u0087':'Ç','\u0088':'È',
+  '\u0089':'É','\u008A':'Ê','\u008D':'Í','\u0093':'Ó','\u0094':'Ô','\u0095':'Õ',
+  '\u009A':'Ú','\u00A0':'à','\u00A1':'á','\u00A2':'â','\u00A3':'ã','\u00A7':'ç',
+  '\u00A8':'è','\u00A9':'é','\u00AA':'ê','\u00AD':'í','\u00B3':'ó','\u00B4':'ô',
+  '\u00B5':'õ','\u00BA':'ú',
+  /* Os .xlsx do Fluig trazem os mesmos bytes já interpretados como cp1252,
+     então o mesmo defeito aparece com outros caracteres. */
+  '\u0192':'Ã','\u2021':'Ç','\u2030':'É','\u0160':'Ê','\u201C':'Ó',
+  '\u201D':'Ô','\u2022':'Õ','\u0161':'Ú','\u02C6':'È','\u201E':'Ä',
+};
+function repararAcentos(txt){
+  if (txt === null || txt === undefined) return txt;
+  return String(txt).replace(/[Aa]([\u0080-\u00BF\u0160\u0161\u0192\u02C6\u2021\u2022\u2030\u201C\u201D\u201E])/g,
+    (todo, b) => MAPA_ACENTO[b] || todo);
+}
+/* Igual a safeStr, mas já conserta os acentos quebrados do export. */
+const txt = v => repararAcentos(safeStr(v));
+
+/* ============================================================================
+   STATUS DO FLUIG
+   pendente  → ainda não aprovado, portanto ainda não existe no Totvs
+   aprovado  → já aprovado; deve ter virado título no Totvs
+   cancelado → ignorado em todos os totais
+   ============================================================================ */
+function classificarStatus(status){
+  const s = norm(status);
+  if (!s) return 'outro';
+  if (s.indexOf('cancelad') >= 0) return 'cancelado';
+  if (s.indexOf('aprovac') >= 0 || s.indexOf('aguardando aprova') >= 0) return 'pendente';
+  if (s.indexOf('aguardando baixa') >= 0 || s.indexOf('disponivel') >= 0) return 'aprovado';
+  return 'outro';
+}
+const ROTULO_STATUS = {
+  pendente:  ['Aguardando aprovação','b-warn'],
+  aprovado:  ['Aprovado','b-ok'],
+  cancelado: ['Cancelado','b-mute'],
+  outro:     ['Status novo','b-info'],
+};
+
+/* ============================================================================
+   DETECÇÃO DE ARQUIVO
+   ============================================================================ */
+async function detectType(file){
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.csv')){
+    const head = await readAsText(file.slice(0,300), 'iso-8859-1');
+    if (head.indexOf('SE2') === 0 || head.indexOf('No. Titulo') >= 0) return 'totvs';
+    return 'desconhecido';
+  }
+  if (name.endsWith('.xlsx') || name.endsWith('.xls')){
+    const buf = await readAsArrayBuffer(file);
+    const wb = XLSX.read(buf, { type:'array', cellDates:true });
+    if (wb.SheetNames.some(n => /natureza\s*x\s*fluxo/i.test(String(n)))) return 'naturezas';
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    for (let i = 0; i < Math.min(15, rows.length); i++){
+      const orig = (rows[i]||[]).map(safeStr);
+      const nrm = orig.map(normHdr);
+      if (orig[0] === 'ID'){
+        if (orig.indexOf('TIPO DE DESPESA') >= 0) return 'reembolso';
+        if (orig.indexOf('VALOR TOTAL SERVIÇO') >= 0) return 'nf_servico';
+        if (orig.indexOf('N. TITULO') >= 0) return 'nf_titulo';
+        return 'desconhecido';
+      }
+      if (nrm[0] === 'banco' && orig.indexOf('No. Titulo') >= 0) return 'totvs_xlsx';
+      const temCod  = nrm.some(h => h === 'codigo' || h === 'cod' || (h.indexOf('cod')===0 && h.indexOf('natureza')>=0));
+      const temDesc = nrm.some(h => h.indexOf('desc') === 0);
+      if (temCod && temDesc) return 'naturezas';
+    }
+    return 'desconhecido';
+  }
+  return 'desconhecido';
+}
+
+/* ============================================================================
+   PARSER — TOTVS (CSV do SE2)
+   Agora o relatório traz título EM ABERTO também. Quem diz se o dinheiro
+   saiu é a DT Baixa; o Saldo diz quanto ainda falta.
+   ============================================================================ */
+async function parseTotvs(file){
+  const bruto = await readAsText(file, 'iso-8859-1');
+  const texto = repararAcentos(bruto);
+  const linhas = texto.split(/\r?\n/);
+
+  // acha a linha de cabeçalho (as 2 primeiras costumam ser "SE2" e uma vazia)
+  let hi = -1;
+  for (let i = 0; i < Math.min(12, linhas.length); i++){
+    if (linhas[i].indexOf('No. Titulo') >= 0){ hi = i; break; }
+  }
+  if (hi === -1) return [];
+
+  const corpo = linhas.slice(hi).join('\n');
+  const parsed = Papa.parse(corpo, { header:true, delimiter:';', skipEmptyLines:true });
+  const campos = (parsed.meta && parsed.meta.fields) || [];
+  const acharCampo = (...kws) => {
+    for (const c of campos){
+      const h = normHdr(c);
+      if (kws.every(k => h.indexOf(k) >= 0)) return c;
+    }
+    return null;
+  };
+  const cFluxo   = acharCampo('fluxo','caixa');
+  const cConta   = acharCampo('conta','fluxo') || acharCampo('classific');
+  const cVencto  = acharCampo('vencimento');
+  const cVenctoR = acharCampo('vencto','real');
+
+  const out = [];
+  for (const r of parsed.data){
+    const numero = safeStr(r['No. Titulo']);
+    if (!numero) continue;
+    const venc = parseBRDate(r[cVenctoR]) || parseBRDate(r[cVencto]);
+    out.push({
+      numero: numero,
+      parcela: safeStr(r['Parcela']),
+      prefixo: safeStr(r['Prefixo']),
+      tipo: safeStr(r['Tipo']),
+      natureza: safeStr(r['Natureza']),
+      fornecedor_cod: safeStr(r['Fornecedor']),
+      loja: safeStr(r['Loja']),
+      fornecedor: txt(r['Nome Fornece']),
+      dt_emissao: parseBRDate(r['DT Emissao']),
+      vencimento: venc,
+      dt_baixa: parseBRDate(r['DT Baixa']),
+      valor: parseBRNumber(r['Vlr.Titulo']),
+      valor_rs: parseBRNumber(r['Vlr R$']),
+      valor_liquido: parseBRNumber(r['Val Liq Baix']),
+      saldo: parseBRNumber(r['Saldo']),
+      historico: txt(r['Historico']),
+      forma_pgto: safeStr(r['Forma Pgto.']),
+      banco: safeStr(r['Bco de Pgto']) || safeStr(r['Banco For.']),
+      bordero: safeStr(r['Num Bordero']),
+      fluxo_caixa: cFluxo ? safeStr(r[cFluxo]) : '',
+      conta_fluxo: cConta ? safeStr(r[cConta]) : '',
+      manual: false,
+    });
+  }
+  return out;
+}
+
+/* chave do título no Totvs — é o que identifica ele de forma estável */
+function chaveTitulo(t){
+  return [t.prefixo, t.numero, t.parcela, t.tipo, t.fornecedor_cod, t.loja]
+    .map(v => safeStr(v)).join('|');
+}
+/* um título está pago quando tem data de baixa */
+const estaPago = t => !!t.dt_baixa;
+
+/* ============================================================================
+   PARSERS — FLUIG
+   valor_texto guarda como o valor veio escrito, e valor_numerico_cru marca
+   quando a célula veio como número puro (é aí que mora a armadilha dos
+   centavos colados no relatório de reembolso).
+   ============================================================================ */
+function lerXlsxComCabecalho(rows){
+  let hi = -1;
+  for (let i = 0; i < Math.min(15, rows.length); i++){
+    if (safeStr((rows[i]||[])[0]) === 'ID'){ hi = i; break; }
+  }
+  if (hi === -1) return [];
+  const headers = (rows[hi]||[]).map(safeStr);
+  return rows.slice(hi+1).filter(r => r && safeStr(r[0]) !== '').map(r => {
+    const o = {};
+    headers.forEach((h,i) => { if (h) o[h] = r[i]; });
+    return o;
+  });
+}
+async function lerPlanilhaFluig(file){
+  const buf = await readAsArrayBuffer(file);
+  const wb = XLSX.read(buf, { type:'array', cellDates:true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  return lerXlsxComCabecalho(XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:true }));
+}
+
+async function parseNFServico(file){
+  const rows = await lerPlanilhaFluig(file);
+  return rows.map(r => {
+    const vs = parseBRNumber(r['VALOR TOTAL SERVIÇO']);
+    const vp = parseBRNumber(r['VALOR TOTAL PRODUTO']);
+    return {
+      id: parseInt(r['ID'],10) || null,
+      solicitante: safeStr(r['SOLICITANTE']),
+      numero_nf: safeStr(r['N. NF']),
+      natureza_cod: safeStr(r['NATUREZA']),
+      natureza: txt(r['DESC NATUREZA']),
+      fornecedor: txt(r['DESC FORNECEDOR']) || txt(r['FORNE NOVO']),
+      contato: txt(r['CONTATO']),
+      valor_servico: vs, valor_produto: vp, valor_total: vs + vp,
+      valor_texto: safeStr(r['VALOR TOTAL SERVIÇO']),
+      vencimento: parseBRDate(r['VENCIMENTO']),
+      dt_solicitacao: parseBRDate(r['DT SOLICITAÇÃO']),
+      dt_emissao: parseBRDate(r['DT EMISSÃO']),
+      aprovador: safeStr(r['APROVADOR']),
+      cnpj: safeStr(r['CNPJ FORNECE']),
+      empresa: safeStr(r['EMPRESA']),
+      observacoes: txt(r['OBSERVAÇÕES']),
+      status: safeStr(r['STATUS']),
+    };
+  });
+}
+async function parseNFTitulo(file){
+  const rows = await lerPlanilhaFluig(file);
+  return rows.map(r => ({
+    id: parseInt(r['ID'],10) || null,
+    solicitante: safeStr(r['SOLICITANTE']),
+    numero_titulo: safeStr(r['N. TITULO']),
+    natureza_cod: safeStr(r['NATUREZA']),
+    natureza: txt(r['DESC NATUREZA']),
+    fornecedor: txt(r['DESC FORNECEDOR']) || txt(r['FORNE NOVO']),
+    valor_total: parseBRNumber(r['VALOR TOTAL']),
+    valor_texto: safeStr(r['VALOR TOTAL']),
+    vencimento: parseBRDate(r['VENCIMENTO']),
+    dt_solicitacao: parseBRDate(r['DT SOLICITAÇÃO']),
+    dt_emissao: parseBRDate(r['DT EMISSÃO']),
+    aprovador: safeStr(r['APROVADOR']),
+    cnpj: safeStr(r['CNPJ FORNECE']),
+    empresa: safeStr(r['EMPRESA']),
+    historico: txt(r['HISTÓRICO']),
+    status: safeStr(r['STATUS']),
+  }));
+}
+async function parseReembolso(file){
+  const rows = await lerPlanilhaFluig(file);
+  return rows.map(r => {
+    const bruto = r['VALOR TOTAL'];
+    return {
+      id: parseInt(r['ID'],10) || null,
+      solicitante: safeStr(r['SOLICITANTE']),
+      tipo_solicitacao: safeStr(r['TIPO DE SOLICITAÇÃO']),
+      tipo_despesa: safeStr(r['TIPO DE DESPESA']),
+      natureza_cod: safeStr(r['CÓD. NATUREZA']),
+      fornecedor: txt(r['DESC FORNECEDOR']) || txt(r['FORNE NOVO']),
+      valor_total: parseBRNumber(bruto),
+      valor_texto: safeStr(bruto),
+      valor_numerico_cru: (typeof bruto === 'number'),
+      vencimento: parseBRDate(r['VENCIMENTO']),
+      dt_emissao: parseBRDate(r['DT EMISSÃO']),
+      aprovador: safeStr(r['APROVADOR']),
+      cnpj: safeStr(r['CNPJ FORNECE']),
+      empresa: safeStr(r['EMPRESA']),
+      status: safeStr(r['STATUS']),
+    };
+  });
+}
+async function parseNaturezas(file){
+  const buf = await readAsArrayBuffer(file);
+  const wb = XLSX.read(buf, { type:'array', cellDates:false });
+  const pref = wb.SheetNames.find(n => /natureza\s*x\s*fluxo/i.test(norm(n)));
+  const ws = wb.Sheets[pref || wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false });
+  let hi = -1, ci = -1, di = -1;
+  for (let i = 0; i < Math.min(15, rows.length); i++){
+    const nrm = (rows[i]||[]).map(normHdr);
+    const c = nrm.findIndex(h => h === 'codigo' || h === 'cod' || (h.indexOf('cod')>=0 && h.indexOf('natureza')>=0));
+    const d = nrm.findIndex(h => h.indexOf('desc') === 0);
+    if (c !== -1 && d !== -1){ hi = i; ci = c; di = d; break; }
+  }
+  if (hi === -1) return {};
+  const map = {};
+  for (let i = hi+1; i < rows.length; i++){
+    const code = safeStr((rows[i]||[])[ci]), desc = safeStr((rows[i]||[])[di]);
+    if (code && desc && !(code in map)) map[code] = desc;
+  }
+  return map;
+}
+</script>
+<script>
+/* ============================================================================
+   CONCILIAÇÃO — o coração da ferramenta
+   ----------------------------------------------------------------------------
+   Notas (NF de Serviço e Contas): casam pelo NÚMERO do título. Foi testado
+   contra dados reais e bateu 100% — todo Fluig "aprovado" achou o par no
+   Totvs, e todo "aguardando aprovação" não achou, que é o esperado.
+
+   Reembolsos: NÃO casam por número, porque o Totvs cria um número próprio.
+   Casam por favorecido + vencimento + valor com tolerância. Aqui o casamento
+   é aproximado por natureza, então tudo que fica duvidoso vai para uma lista
+   de divergências em vez de ser somado no escuro.
+   ============================================================================ */
+const TOL = 0.05;              // tolerância de centavos no casamento por valor
+
+function conciliar(store){
+  const titulos = store.totvs || [];
+  const usados = new Set();
+
+  // índice dos títulos do Totvs por número normalizado
+  const porNumero = {};
+  titulos.forEach((t, i) => {
+    const k = normNum(t.numero);
+    if (k) (porNumero[k] = porNumero[k] || []).push(i);
+  });
+
+  const itens = [];   // um registro por solicitação do Fluig
+
+  /* ---- Notas: casamento por número ---- */
+  [['nf_servico','numero_nf','NF de Serviço'], ['nf_titulo','numero_titulo','Conta']]
+  .forEach(function(cfg){
+    const cat = cfg[0], campo = cfg[1], rotulo = cfg[2];
+    (store[cat] || []).forEach(r => {
+      const est = classificarStatus(r.status);
+      const item = {
+        cat: cat, rotulo: rotulo, fluig: r, estado: est,
+        numero: safeStr(r[campo]), valor: r.valor_total,
+        vencimento: r.vencimento, fornecedor: r.fornecedor,
+        par: null, situacao: '', aviso: '',
+      };
+      if (est !== 'cancelado'){
+        const cands = (porNumero[normNum(r[campo])] || []).filter(i => !usados.has(i));
+        let pick = cands.find(i => titulos[i].vencimento === r.vencimento);
+        if (pick === undefined) pick = cands[0];
+        if (pick !== undefined){
+          usados.add(pick);
+          item.par = titulos[pick];
+        }
+      }
+      classificarItem(item);
+      itens.push(item);
+    });
+  });
+
+  /* ---- Reembolsos: casamento por favorecido + vencimento + valor ---- */
+  (store.reembolso || []).forEach(r => {
+    const est = classificarStatus(r.status);
+    const item = {
+      cat: 'reembolso', rotulo: 'Reembolso', fluig: r, estado: est,
+      numero: '', valor: r.valor_total, vencimento: r.vencimento,
+      fornecedor: r.fornecedor, par: null, situacao: '', aviso: '',
+    };
+    if (est !== 'cancelado'){
+      const cands = [];
+      titulos.forEach((t, i) => {
+        if (usados.has(i)) return;
+        if (!nomesBatem(t.fornecedor, r.fornecedor)) return;
+        if (t.vencimento && r.vencimento && t.vencimento !== r.vencimento) return;
+        cands.push(i);
+      });
+      // 1ª tentativa: valor bate
+      let pick = cands.find(i => Math.abs((titulos[i].valor_rs||0) - (r.valor_total||0)) <= TOL);
+      // 2ª tentativa: valor bate se o do Fluig estiver com os centavos colados
+      if (pick === undefined && r.valor_numerico_cru && Number.isInteger(r.valor_total)){
+        pick = cands.find(i => Math.abs((titulos[i].valor_rs||0) - (r.valor_total/100)) <= TOL);
+        if (pick !== undefined) item.aviso = 'valor_centavos';
+      }
+      // 3ª: só um candidato, mas o valor diverge — casa e marca a divergência
+      if (pick === undefined && cands.length === 1){
+        pick = cands[0];
+        item.aviso = 'valor_diverge';
+      }
+      if (pick !== undefined){ usados.add(pick); item.par = titulos[pick]; }
+    }
+    classificarItem(item);
+    itens.push(item);
+  });
+
+  /* ---- O que sobrou do Totvs: lançado direto, sem passar pelo Fluig ---- */
+  const soTotvs = [];
+  titulos.forEach((t, i) => { if (!usados.has(i)) soTotvs.push(t); });
+
+  return { itens: itens, soTotvs: soTotvs, titulos: titulos };
+}
+
+/* Traduz o cruzamento em uma situação legível.
+   Atenção: estar aprovado no Fluig e existir como título no Totvs são coisas
+   independentes. Nos dados reais aparece título já lançado no Totvs cuja
+   liberação de pagamento ainda está em aprovação no Fluig — por isso as duas
+   dimensões entram na situação, em vez de uma só. */
+function classificarItem(item){
+  const t = item.par;
+  if (item.estado === 'cancelado'){ item.situacao = 'cancelado'; return; }
+  if (!t){
+    item.situacao = (item.estado === 'pendente') ? 'sem_titulo_pendente' : 'sem_titulo_aprovado';
+    return;
+  }
+  if (estaPago(t)) item.situacao = 'pago';
+  else item.situacao = (item.estado === 'pendente') ? 'em_aberto_pendente' : 'em_aberto';
+  if (item.aviso !== 'valor_centavos' && item.aviso !== 'valor_diverge'){
+    const dif = Math.abs((t.valor_rs||0) - (item.valor||0));
+    if (dif > TOL){
+      // o caso clássico do reembolso: Fluig manda 93382 onde o Totvs tem 933,82
+      if (item.fluig.valor_numerico_cru && Math.abs((t.valor_rs||0) - (item.valor||0)/100) <= TOL){
+        item.aviso = 'valor_centavos';
+      } else {
+        item.aviso = 'valor_diverge';
+      }
+    }
+  }
+}
+
+const SITUACOES = {
+  pago:                ['Pago',                       'b-ok'],
+  em_aberto:           ['Em aberto no Totvs',         'b-orange'],
+  em_aberto_pendente:  ['Em aberto · falta aprovar',  'b-warn'],
+  sem_titulo_pendente: ['Aguardando aprovação',       'b-warn'],
+  sem_titulo_aprovado: ['Aprovado, sem título',       'b-danger'],
+  cancelado:           ['Cancelado',                  'b-mute'],
+};
+/* atalhos usados nos recortes */
+const semTituloSit  = s => s === 'sem_titulo_pendente' || s === 'sem_titulo_aprovado';
+const aguardandoSit = s => s === 'sem_titulo_pendente' || s === 'em_aberto_pendente';
+
+/* ============================================================================
+   NÚMEROS DO DIA
+   Cada título é classificado pelo VENCIMENTO dele, não pela data do envio.
+   ============================================================================ */
+function resumir(conc, dataRef){
+  const amanha = proxDiaUtil(dataRef);
+  const z = () => ({ qtd:0, valor:0 });
+  const r = {
+    dataRef: dataRef, amanha: amanha,
+    pagoHoje: z(),
+    abertoHoje: z(), abertoAmanha: z(),      // títulos do Totvs, sem baixa
+    foraTotvsHoje: z(), foraTotvsAmanha: z(),// Fluig que ainda não virou título
+    aPagarHoje: z(), aPagarAmanha: z(),      // soma dos dois acima
+    aguardandoHoje: z(), aguardandoAmanha: z(), // recorte sobreposto: falta aprovar
+    atrasado: z(), semTituloAprovado: z(), cancelados: z(),
+    divergencias: 0, suspeitos: 0, soTotvs: z(), historico: z(),
+    temDataRef: false,
+  };
+  const add = (b, v) => { b.qtd++; b.valor += (Number(v)||0); };
+
+  // Lado do Totvs — inclui o que foi lançado direto, sem passar pelo Fluig
+  conc.titulos.forEach(t => {
+    if (t.vencimento === dataRef || t.dt_baixa === dataRef) r.temDataRef = true;
+    if (estaPago(t)){
+      if (t.dt_baixa === dataRef) add(r.pagoHoje, t.valor_liquido || t.valor_rs);
+      add(r.historico, t.valor_liquido || t.valor_rs);
+      return;
+    }
+    if (!t.vencimento) return;
+    if (t.vencimento === dataRef) add(r.abertoHoje, t.valor_rs);
+    else if (t.vencimento === amanha) add(r.abertoAmanha, t.valor_rs);
+    else if (t.vencimento < dataRef) add(r.atrasado, t.valor_rs);
+  });
+  conc.soTotvs.forEach(t => { if (!estaPago(t)) add(r.soTotvs, t.valor_rs); });
+
+  // Lado do Fluig
+  conc.itens.forEach(it => {
+    if (it.aviso) r.divergencias++;
+    if (it.aviso === 'valor_centavos') r.suspeitos++;
+    if (it.situacao === 'cancelado'){ add(r.cancelados, it.valor); return; }
+
+    // só entra no "a pagar" o que ainda NÃO existe como título — o que já
+    // existe já foi contado do lado do Totvs, somar de novo duplicaria.
+    if (semTituloSit(it.situacao)){
+      if (it.situacao === 'sem_titulo_aprovado') add(r.semTituloAprovado, it.valor);
+      if (it.vencimento === dataRef) add(r.foraTotvsHoje, it.valor);
+      else if (it.vencimento === amanha) add(r.foraTotvsAmanha, it.valor);
+    }
+    // recorte sobreposto: o que ainda depende de aprovação, com ou sem título
+    if (aguardandoSit(it.situacao)){
+      if (it.vencimento === dataRef) add(r.aguardandoHoje, it.valor);
+      else if (it.vencimento === amanha) add(r.aguardandoAmanha, it.valor);
+    }
+  });
+
+  const soma = (a, b) => ({ qtd: a.qtd + b.qtd, valor: a.valor + b.valor });
+  r.aPagarHoje = soma(r.abertoHoje, r.foraTotvsHoje);
+  r.aPagarAmanha = soma(r.abertoAmanha, r.foraTotvsAmanha);
+  return r;
+}
+
+/* Linhas que vão para o histórico (base do futuro fluxo de caixa):
+   todo título com data de baixa, seja de qual vencimento for. */
+function montarHistorico(conc){
+  return conc.titulos.filter(estaPago).map(t => ({
+    chave: chaveTitulo(t),
+    dt_baixa: t.dt_baixa, vencimento: t.vencimento,
+    numero: t.numero, parcela: t.parcela, prefixo: t.prefixo, tipo: t.tipo,
+    natureza: t.natureza, conta_fluxo: t.conta_fluxo,
+    fornecedor_cod: t.fornecedor_cod, loja: t.loja, fornecedor: t.fornecedor,
+    valor_pago: t.valor_liquido || t.valor_rs,
+    valor_titulo: t.valor_rs,
+    historico: t.historico, banco: t.banco, bordero: t.bordero,
+    fluxo_caixa: t.fluxo_caixa,
+    origem: t.manual ? 'manual' : 'totvs',
+  }));
+}
+</script>
+<script>
+/* ============================================================================
+   ESTADO + RENDER
+   ============================================================================ */
+const state = {
+  files: [],                 // [{nome, tipo, count, ok, err}]
+  store: { totvs:[], nf_servico:[], nf_titulo:[], reembolso:[] },
+  naturezas: null,
+  conc: null, resumo: null,
+  aba: 'todos',
+  dataRef: hojeISO(),
+};
+const TIPO_ROTULO = {
+  totvs:      ['Títulos do Totvs','totvs'],
+  totvs_xlsx: ['Títulos do Totvs (xlsx)','totvs'],
+  nf_servico: ['NFs de Serviço (Fluig)','nf_servico'],
+  nf_titulo:  ['Contas (Fluig)','nf_titulo'],
+  reembolso:  ['Reembolsos (Fluig)','reembolso'],
+  naturezas:  ['Mapa de naturezas','naturezas'],
+  desconhecido: ['Não reconhecido','err'],
+};
+
+function toast(msg){
+  const t = el('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+function showOverlay(on, txt){
+  if (txt) el('overlay-text').textContent = txt;
+  el('overlay').classList.toggle('show', !!on);
+}
+function h(tag, attrs, filhos){
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs){
+    if (k === 'class') e.className = attrs[k];
+    else if (k === 'text') e.textContent = attrs[k];
+    else if (attrs[k] !== null && attrs[k] !== undefined) e.setAttribute(k, attrs[k]);
+  }
+  (filhos || []).forEach(f => { if (f) e.appendChild(typeof f === 'string' ? document.createTextNode(f) : f); });
+  return e;
+}
+const badge = (txt, cls) => h('span', { class:'badge ' + cls, text:txt });
+
+/* ---------------------------- arquivos ---------------------------- */
+function renderArquivos(){
+  const wrap = el('files-wrap'), list = el('file-list');
+  if (!state.files.length){ wrap.hidden = true; return; }
+  wrap.hidden = false; list.textContent = '';
+  const ordem = { totvs:0, totvs_xlsx:0, nf_servico:1, nf_titulo:2, reembolso:3, naturezas:4, desconhecido:9 };
+  [...state.files].sort((a,b) => (ordem[a.tipo]??99) - (ordem[b.tipo]??99)).forEach(f => {
+    const rot = TIPO_ROTULO[f.tipo] || TIPO_ROTULO.desconhecido;
+    const row = h('div', { class:'file-row ' + (f.ok ? 'ok' : 'err') }, [
+      h('i', { class: f.ok ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark' }),
+      h('div', { class:'name' }, [ f.nome, h('small', { style:'display:block;font-weight:400;color:var(--plum-soft)', text: rot[0] }) ]),
+      h('div', { class:'meta', text: f.ok ? (f.count + ' registro(s)') : (f.err || 'não reconhecido') }),
+    ]);
+    list.appendChild(row);
+  });
+}
+
+/* ---------------------------- números ---------------------------- */
+function kpi(label, valor, sub, cls){
+  return h('div', { class:'kpi ' + (cls||'') }, [
+    h('div', { class:'k-label', text: label }),
+    h('div', { class:'k-value', text: valor }),
+    h('div', { class:'k-sub', text: sub || '' }),
+  ]);
+}
+function renderResumo(){
+  const wrap = el('resumo-wrap'), grid = el('grid-kpi');
+  if (!state.resumo){ wrap.hidden = true; return; }
+  const r = state.resumo;
+  wrap.hidden = false; grid.textContent = '';
+  const money = b => 'R$ ' + fmtBR0(b.valor);
+  const qtd = b => b.qtd + ' título(s)';
+
+  grid.appendChild(kpi('Pago em ' + fmtData(r.dataRef), money(r.pagoHoje), qtd(r.pagoHoje), 'ok'));
+  grid.appendChild(kpi('A pagar hoje', money(r.aPagarHoje),
+    r.abertoHoje.qtd + ' no Totvs + ' + r.foraTotvsHoje.qtd + ' só no Fluig', 'info'));
+  grid.appendChild(kpi('Falta aprovar · hoje', money(r.aguardandoHoje),
+    qtd(r.aguardandoHoje) + ' · já dentro do "a pagar"', 'warn'));
+  grid.appendChild(kpi('A pagar amanhã', money(r.aPagarAmanha),
+    r.abertoAmanha.qtd + ' no Totvs + ' + r.foraTotvsAmanha.qtd + ' só no Fluig · ' + fmtData(r.amanha), 'info'));
+  grid.appendChild(kpi('Falta aprovar · amanhã', money(r.aguardandoAmanha),
+    qtd(r.aguardandoAmanha) + ' · já dentro do "a pagar"', 'warn'));
+  if (r.atrasado.qtd) grid.appendChild(kpi('Vencido e em aberto', money(r.atrasado), qtd(r.atrasado), 'danger'));
+  if (r.semTituloAprovado.qtd) grid.appendChild(kpi('Aprovado sem título', money(r.semTituloAprovado), qtd(r.semTituloAprovado), 'danger'));
+  grid.appendChild(kpi('Vai para o histórico', qtd(r.historico), 'R$ ' + fmtBR0(r.historico.valor) + ' já baixados', ''));
+}
+
+/* ---------------------------- conferência ---------------------------- */
+function listasDaAba(){
+  const c = state.conc;
+  const porSit = s => c.itens.filter(i => i.situacao === s);
+  return {
+    todos:       { rotulo:'Tudo',                 icone:'fa-list',            linhas: c.itens },
+    pendentes:   { rotulo:'Falta aprovar',        icone:'fa-hourglass-half',  linhas: c.itens.filter(i => aguardandoSit(i.situacao)) },
+    casados:     { rotulo:'Casados com o Totvs',  icone:'fa-link',            linhas: c.itens.filter(i => i.par) },
+    semTitulo:   { rotulo:'Sem título no Totvs',  icone:'fa-triangle-exclamation', linhas: c.itens.filter(i => semTituloSit(i.situacao)) },
+    divergentes: { rotulo:'Divergências',         icone:'fa-scale-unbalanced', linhas: c.itens.filter(i => i.aviso) },
+    cancelados:  { rotulo:'Cancelados',           icone:'fa-ban',             linhas: porSit('cancelado') },
+    soTotvs:     { rotulo:'Só no Totvs',          icone:'fa-database',        linhas: c.soTotvs, totvs:true },
+  };
+}
+function renderConferencia(){
+  const wrap = el('conf-wrap');
+  if (!state.conc){ wrap.hidden = true; return; }
+  wrap.hidden = false;
+  const listas = listasDaAba();
+
+  // abas
+  const tabs = el('conf-tabs'); tabs.textContent = '';
+  Object.keys(listas).forEach(k => {
+    const L = listas[k];
+    const b = h('button', { class:'tab' + (state.aba===k ? ' active' : ''), type:'button' }, [
+      h('i', { class:'fa-solid ' + L.icone }),
+      L.rotulo,
+      h('span', { class:'cnt', text: String(L.linhas.length) }),
+    ]);
+    b.addEventListener('click', () => { state.aba = k; renderConferencia(); });
+    tabs.appendChild(b);
+  });
+
+  // avisos
+  const notes = el('conf-notes'); notes.textContent = '';
+  const r = state.resumo;
+  if (r && r.suspeitos){
+    notes.appendChild(h('div', { class:'note warn' }, [
+      h('i', { class:'fa-solid fa-triangle-exclamation' }),
+      h('div', {}, [
+        h('strong', { text: r.suspeitos + ' valor(es) com centavos colados. ' }),
+        'O Fluig mandou o número sem vírgula (ex.: 93382 onde o Totvs tem 933,82). ' +
+        'Não converti nada por conta própria: o valor vai gravado como veio, e a linha está marcada na aba Divergências para você conferir.',
+      ]),
+    ]));
+  }
+  if (r && !r.temDataRef){
+    const dp = dataPredominante();
+    notes.appendChild(h('div', { class:'note danger' }, [
+      h('i', { class:'fa-solid fa-calendar-xmark' }),
+      h('div', {}, [
+        h('strong', { text: 'Nenhum título de hoje (' + fmtData(r.dataRef) + ') neste arquivo. ' }),
+        dp ? ('O relatório parece ser de ' + fmtData(dp) + '. Confira se baixou o arquivo do dia — os números acima vão sair zerados.')
+           : 'Confira se o relatório é o do dia.',
+      ]),
+    ]));
+  }
+  const divVal = state.conc.itens.filter(i => i.aviso === 'valor_diverge').length;
+  if (divVal){
+    notes.appendChild(h('div', { class:'note danger' }, [
+      h('i', { class:'fa-solid fa-scale-unbalanced' }),
+      h('div', {}, [
+        h('strong', { text: divVal + ' com valor diferente entre Fluig e Totvs. ' }),
+        'Casaram por favorecido e vencimento, mas o valor não bate. Vale olhar antes de confiar no total.',
+      ]),
+    ]));
+  }
+  const semTit = state.conc.itens.filter(i => i.situacao === 'sem_titulo_aprovado').length;
+  if (semTit){
+    notes.appendChild(h('div', { class:'note info' }, [
+      h('i', { class:'fa-solid fa-circle-info' }),
+      h('div', {}, [
+        h('strong', { text: semTit + ' aprovado(s) sem título no Totvs. ' }),
+        'Foram liberados no Fluig mas ainda não apareceram no relatório do Totvs — ou ainda não foram lançados, ou o filtro de vencimento do relatório deixou de fora.',
+      ]),
+    ]));
+  }
+
+  // tabela
+  const L = listas[state.aba];
+  const box = el('conf-table'); box.textContent = '';
+  if (!L.linhas.length){
+    box.appendChild(h('div', { class:'empty', text:'Nada nesta lista.' }));
+    return;
+  }
+  box.appendChild(L.totvs ? tabelaTotvs(L.linhas) : tabelaItens(L.linhas));
+}
+
+function tabelaItens(linhas){
+  const thead = h('thead', {}, [ h('tr', {}, [
+    h('th', { text:'Origem' }), h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
+    h('th', { text:'Vencimento' }), h('th', { text:'Valor Fluig' }), h('th', { text:'Valor Totvs' }),
+    h('th', { text:'Situação' }),
+  ])]);
+  const tbody = h('tbody');
+  linhas.slice(0, 400).forEach(it => {
+    const sit = SITUACOES[it.situacao] || ['—','b-mute'];
+    const tdSit = h('td', {}, [ badge(sit[0], sit[1]) ]);
+    if (it.aviso === 'valor_centavos') tdSit.appendChild(badge('valor a conferir','b-warn'));
+    if (it.aviso === 'valor_diverge')  tdSit.appendChild(badge('valor diverge','b-danger'));
+    tbody.appendChild(h('tr', {}, [
+      h('td', {}, [ badge(it.rotulo, 'b-mute') ]),
+      h('td', { class:'mono', text: it.numero || ('#' + (it.fluig.id||'')) }),
+      h('td', {}, [ h('div', { class:'forn' }, [
+        it.fornecedor || '—',
+        h('small', { text: (it.fluig.status || '') + (it.fluig.solicitante ? (' · ' + it.fluig.solicitante) : '') }),
+      ])]),
+      h('td', { class:'mono', text: fmtData(it.vencimento) }),
+      h('td', { class:'num', text: fmtBR(it.valor) }),
+      h('td', { class:'num', text: it.par ? fmtBR(it.par.valor_rs) : '—' }),
+      tdSit,
+    ]));
+  });
+  const tbl = h('table', {}, [ thead, tbody ]);
+  if (linhas.length > 400){
+    return h('div', {}, [ tbl, h('div', { class:'empty', text:'mostrando 400 de ' + linhas.length + ' — o envio leva todos' }) ]);
+  }
+  return tbl;
+}
+
+function tabelaTotvs(linhas){
+  const thead = h('thead', {}, [ h('tr', {}, [
+    h('th', { text:'Tipo' }), h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
+    h('th', { text:'Vencimento' }), h('th', { text:'Valor' }), h('th', { text:'Situação' }),
+  ])]);
+  const tbody = h('tbody');
+  linhas.slice(0, 400).forEach(t => {
+    tbody.appendChild(h('tr', {}, [
+      h('td', {}, [ badge(t.tipo || '?', 'b-mute') ]),
+      h('td', { class:'mono', text: t.numero + (t.parcela ? ('/' + t.parcela) : '') }),
+      h('td', {}, [ h('div', { class:'forn' }, [ t.fornecedor || '—', h('small', { text: t.historico || '' }) ]) ]),
+      h('td', { class:'mono', text: fmtData(t.vencimento) }),
+      h('td', { class:'num', text: fmtBR(t.valor_rs) }),
+      h('td', {}, [ estaPago(t) ? badge('Pago ' + fmtData(t.dt_baixa), 'b-ok') : badge('Em aberto', 'b-orange') ]),
+    ]));
+  });
+  const tbl = h('table', {}, [ thead, tbody ]);
+  if (linhas.length > 400){
+    return h('div', {}, [ tbl, h('div', { class:'empty', text:'mostrando 400 de ' + linhas.length + ' — o envio leva todos' }) ]);
+  }
+  return tbl;
+}
+</script>
+<script>
+/* ============================================================================
+   FLUXO PRINCIPAL
+   ============================================================================ */
+function recalcular(){
+  const temAlgo = state.store.totvs.length || state.store.nf_servico.length
+               || state.store.nf_titulo.length || state.store.reembolso.length;
+  if (!temAlgo){ state.conc = null; state.resumo = null; return; }
+
+  // A referência é o dia de hoje, sempre. Se o arquivo não tiver nada de hoje,
+  // a tela avisa em vez de adivinhar uma data por conta própria.
+  state.dataRef = hojeISO();
+  state.conc = conciliar(state.store);
+  state.resumo = resumir(state.conc, state.dataRef);
+}
+/* Data mais presente entre os títulos em aberto — usada só para explicar,
+   no aviso, de que dia o arquivo parece ser. */
+function dataPredominante(){
+  const cont = {};
+  (state.store.totvs || []).forEach(t => {
+    if (!t.vencimento || estaPago(t)) return;
+    cont[t.vencimento] = (cont[t.vencimento] || 0) + 1;
+  });
+  const datas = Object.keys(cont).sort((a,b) => cont[b] - cont[a]);
+  return datas[0] || null;
+}
+
+async function processFiles(files){
+  showOverlay(true, 'Lendo arquivos…');
+  try {
+    for (const f of files){
+      const tipo = await detectType(f);
+      const entry = { nome: f.name, tipo: tipo, count: 0, ok: tipo !== 'desconhecido', err: null };
+      try {
+        if (tipo === 'totvs' || tipo === 'totvs_xlsx'){
+          state.store.totvs = await parseTotvs(f);
+          entry.count = state.store.totvs.length;
+          if (!entry.count){ entry.ok = false; entry.err = 'nenhum título encontrado'; }
+        }
+        else if (tipo === 'nf_servico'){ state.store.nf_servico = await parseNFServico(f); entry.count = state.store.nf_servico.length; }
+        else if (tipo === 'nf_titulo'){  state.store.nf_titulo  = await parseNFTitulo(f);  entry.count = state.store.nf_titulo.length; }
+        else if (tipo === 'reembolso'){  state.store.reembolso  = await parseReembolso(f); entry.count = state.store.reembolso.length; }
+        else if (tipo === 'naturezas'){  state.naturezas = await parseNaturezas(f); entry.count = Object.keys(state.naturezas||{}).length; }
+      } catch (e){
+        entry.ok = false; entry.err = e.message || String(e);
+      }
+      // um arquivo do mesmo tipo substitui o anterior
+      state.files = state.files.filter(x => x.tipo !== tipo || tipo === 'desconhecido');
+      state.files.push(entry);
+    }
+    recalcular();
+  } finally {
+    showOverlay(false);
+    render();
+  }
+}
+
+function render(){
+  renderArquivos();
+  renderResumo();
+  renderConferencia();
+
+  const pronto = !!state.conc;
+  el('actions-wrap').hidden = !state.files.length;
+  el('btn-enviar').disabled = !pronto;
+  el('btn-json').disabled = !pronto;
+
+  const hint = el('hint');
+  if (!pronto){ hint.textContent = 'Suba pelo menos um relatório para conferir.'; return; }
+  const faltando = [];
+  if (!state.store.totvs.length) faltando.push('Totvs');
+  if (!state.store.nf_servico.length) faltando.push('NFs de Serviço');
+  if (!state.store.nf_titulo.length) faltando.push('Contas');
+  if (!state.store.reembolso.length) faltando.push('Reembolsos');
+  hint.textContent = faltando.length
+    ? ('Sem: ' + faltando.join(', ') + ' — dá pra enviar assim mesmo, mas a conferência fica parcial.')
+    : ('Tudo lido · referência ' + fmtData(state.dataRef) +
+       (state.resumo && state.resumo.historico.qtd ? (' · ' + state.resumo.historico.qtd + ' para o histórico') : '') + '.');
+}
+
+/* ============================================================================
+   ENVIO
+   ============================================================================ */
+function montarPayload(){
+  const p = {};
+  const tiposLidos = new Set(state.files.filter(f => f.ok).map(f => f.tipo));
+  if (tiposLidos.has('totvs') || tiposLidos.has('totvs_xlsx')) p.titulos = state.store.totvs;
+  if (tiposLidos.has('nf_servico')) p.nf_servico = state.store.nf_servico;
+  if (tiposLidos.has('nf_titulo'))  p.nf_titulo  = state.store.nf_titulo;
+  if (tiposLidos.has('reembolso'))  p.reembolso  = state.store.reembolso;
+  if (state.naturezas) p.naturezas = state.naturezas;
+  if (state.conc){
+    const hist = montarHistorico(state.conc);
+    if (hist.length) p.historico = hist;
+  }
+  return p;
+}
+
+async function enviar(){
+  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0){
+    toast('URL do Apps Script não configurada no topo do arquivo.'); return;
+  }
+  const payload = montarPayload();
+  if (!Object.keys(payload).length){ toast('Nada para enviar.'); return; }
+
+  const nHist = (payload.historico || []).length;
+  showOverlay(true, 'Enviando…');
+  try {
+    await fetch(CONFIG.APP_SCRIPT_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(payload),
+    });
+    toast(nHist ? ('Enviado · ' + nHist + ' pagamento(s) para o histórico.') : 'Enviado.');
+    setTimeout(fetchStatus, 1800);
+  } catch (e){
+    toast('Erro ao enviar: ' + (e.message || e));
+  } finally {
+    showOverlay(false);
+  }
+}
+
+async function limparBase(){
+  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0){
+    toast('URL do Apps Script não configurada.'); return;
+  }
+  fecharLimpar();
+  showOverlay(true, 'Limpando…');
+  try {
+    await fetch(CONFIG.APP_SCRIPT_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ acao:'limpar', alvo:'tudo' }),
+    });
+    toast('Base de operação limpa. O histórico continua intacto.');
+    setTimeout(fetchStatus, 1800);
+  } catch (e){
+    toast('Erro ao limpar: ' + (e.message || e));
+  } finally { showOverlay(false); }
+}
+
+function baixarJson(){
+  const blob = new Blob([JSON.stringify(montarPayload(), null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pagamentos-' + state.dataRef + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+async function fetchStatus(){
+  const dot = el('status-dot'), txt = el('status-text');
+  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0){
+    dot.className = 'dot warn'; txt.textContent = 'URL não configurada'; return;
+  }
+  try {
+    const res = await fetch(CONFIG.APP_SCRIPT_URL + '?check=1&v=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const j = await res.json();
+    const c = j.contagem || {};
+    const total = (c.titulos||0) + (c.nf_servico||0) + (c.nf_titulo||0) + (c.reembolso||0);
+    if (j.lastUpdated){
+      const d = new Date(j.lastUpdated);
+      const horas = (Date.now() - d.getTime()) / 36e5;
+      dot.className = 'dot' + (horas > 5 ? ' warn' : '');
+      txt.textContent = total + ' registros · ' +
+        String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') +
+        ' às ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') +
+        (horas > 5 ? ' · desatualizado' : '');
+    } else {
+      dot.className = 'dot off'; txt.textContent = 'base vazia';
+    }
+  } catch (e){
+    dot.className = 'dot warn'; txt.textContent = 'falha ao consultar';
+  }
+}
+
+function resetTudo(){
+  state.files = [];
+  state.store = { totvs:[], nf_servico:[], nf_titulo:[], reembolso:[] };
+  state.naturezas = null; state.conc = null; state.resumo = null; state.aba = 'todos';
+  el('file-input').value = '';
+  render();
+  toast('Recomeçando');
+}
+function abrirLimpar(){
+  el('ml-check').checked = false; el('ml-do').disabled = true;
+  el('modal-limpar').classList.add('show');
+}
+function fecharLimpar(){ el('modal-limpar').classList.remove('show'); }
+
+/* ============================================================================
+   EVENTOS
+   ============================================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  const dz = el('dz'), input = el('file-input');
+  el('btn-pick').addEventListener('click', e => { e.stopPropagation(); input.click(); });
+  dz.addEventListener('click', () => input.click());
+  dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
+  input.addEventListener('change', e => processFiles(Array.from(e.target.files || [])));
+  ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation(); dz.classList.add('drag');
+  }));
+  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag');
+  }));
+  dz.addEventListener('drop', e => processFiles(Array.from(e.dataTransfer.files || [])));
+
+  el('btn-enviar').addEventListener('click', enviar);
+  el('btn-json').addEventListener('click', baixarJson);
+  el('btn-limpar').addEventListener('click', abrirLimpar);
+  el('btn-reset').addEventListener('click', resetTudo);
+  el('ml-cancel').addEventListener('click', fecharLimpar);
+  el('ml-check').addEventListener('change', e => { el('ml-do').disabled = !e.target.checked; });
+  el('ml-do').addEventListener('click', limparBase);
+  el('modal-limpar').addEventListener('click', e => { if (e.target === el('modal-limpar')) fecharLimpar(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharLimpar(); });
+
+  render();
+  fetchStatus();
+});
+</script>
+</body>
+</html>
