@@ -579,6 +579,11 @@ async function parseTotvs(file){
   const corpo = linhas.slice(hi).join('\n');
   const parsed = Papa.parse(corpo, { header:true, delimiter:';', skipEmptyLines:true });
   const campos = (parsed.meta && parsed.meta.fields) || [];
+
+  /* O layout do relatório muda conforme as colunas escolhidas no Totvs, então
+     nada aqui depende do nome exato: cada campo é procurado por palavra-chave,
+     com alternativas. Se uma coluna não vier, o valor fica vazio e a tela avisa
+     — em vez de mostrar zero em silêncio. */
   const acharCampo = (...kws) => {
     for (const c of campos){
       const h = normHdr(c);
@@ -586,45 +591,85 @@ async function parseTotvs(file){
     }
     return null;
   };
-  const cIdFluig = acharCampo('idfluig') || acharCampo('id','fluig');
-  const cFluxo   = acharCampo('fluxo','caixa');
-  const cConta   = acharCampo('conta','fluxo') || acharCampo('classific');
-  const cVencto  = acharCampo('vencimento');
-  const cVenctoR = acharCampo('vencto','real');
+  const primeiro = (...listas) => {
+    for (const kws of listas){ const c = acharCampo.apply(null, kws); if (c) return c; }
+    return null;
+  };
+  const C = {
+    numero:   primeiro(['no','titulo'], ['numtitulo'], ['numero']),
+    idFluig:  primeiro(['idfluig'], ['id','fluig']),
+    parcela:  acharCampo('parcela'),
+    prefixo:  acharCampo('prefixo'),
+    tipo:     acharCampo('tipo'),
+    natureza: acharCampo('natureza'),
+    fornCod:  primeiro(['fornecedor'], ['codfornece']),
+    loja:     acharCampo('loja'),
+    fornNome: primeiro(['nomefornece'], ['nome','fornec']),
+    emissao:  primeiro(['dtemissao'], ['emissao']),
+    vencto:   acharCampo('vencimento'),
+    venctoR:  acharCampo('vencto','real'),
+    baixa:    primeiro(['dtbaixa'], ['baixa']),
+    vlrTit:   primeiro(['vlrtitulo'], ['valortitulo']),
+    vlrRs:    primeiro(['vlrr'], ['valorr']),
+    vlrLiq:   primeiro(['valliqbaix'], ['valorliquido'], ['liquido']),
+    saldo:    acharCampo('saldo'),
+    historico: acharCampo('historico'),
+    formaPgto: acharCampo('forma','pgto'),
+    banco:    primeiro(['bcodepgto'], ['bancofor'], ['portador']),
+    bordero:  primeiro(['numbordero'], ['bordero']),
+    fluxo:    acharCampo('fluxo','caixa'),
+    conta:    primeiro(['conta','fluxo'], ['classific']),
+  };
+  const v = (r, campo) => campo ? r[campo] : '';
 
   const out = [];
   for (const r of parsed.data){
-    const numero = safeStr(r['No. Titulo']);
+    const numero = safeStr(v(r, C.numero));
     if (!numero) continue;
-    const venc = parseBRDate(r[cVenctoR]) || parseBRDate(r[cVencto]);
+    const baixa = parseBRDate(v(r, C.baixa));
+    const vlrTit = parseBRNumber(v(r, C.vlrTit));
+    // Vlr R$ é o valor na moeda corrente; sem essa coluna, o do título serve
+    const vlrRs = C.vlrRs ? parseBRNumber(v(r, C.vlrRs)) : vlrTit;
+    // Val Liq Baix é quanto de fato saiu; sem ela, assume o valor do título
+    const vlrLiq = C.vlrLiq ? parseBRNumber(v(r, C.vlrLiq)) : vlrRs;
+    // Saldo: sem a coluna, deduz pela baixa
+    const saldo = C.saldo ? parseBRNumber(v(r, C.saldo)) : (baixa ? 0 : vlrRs);
     out.push({
       numero: numero,
       /* O Totvs carimba em cada título o ID da solicitação que o originou.
          É a chave exata entre os dois sistemas — bem melhor que número ou valor. */
-      id_fluig: cIdFluig ? safeStr(r[cIdFluig]) : '',
-      parcela: safeStr(r['Parcela']),
-      prefixo: safeStr(r['Prefixo']),
-      tipo: safeStr(r['Tipo']),
-      natureza: safeStr(r['Natureza']),
-      fornecedor_cod: safeStr(r['Fornecedor']),
-      loja: safeStr(r['Loja']),
-      fornecedor: txt(r['Nome Fornece']),
-      dt_emissao: parseBRDate(r['DT Emissao']),
-      vencimento: venc,
-      dt_baixa: parseBRDate(r['DT Baixa']),
-      valor: parseBRNumber(r['Vlr.Titulo']),
-      valor_rs: parseBRNumber(r['Vlr R$']),
-      valor_liquido: parseBRNumber(r['Val Liq Baix']),
-      saldo: parseBRNumber(r['Saldo']),
-      historico: txt(r['Historico']),
-      forma_pgto: safeStr(r['Forma Pgto.']),
-      banco: safeStr(r['Bco de Pgto']) || safeStr(r['Banco For.']),
-      bordero: safeStr(r['Num Bordero']),
-      fluxo_caixa: cFluxo ? safeStr(r[cFluxo]) : '',
-      conta_fluxo: cConta ? safeStr(r[cConta]) : '',
+      id_fluig: safeStr(v(r, C.idFluig)),
+      parcela: safeStr(v(r, C.parcela)),
+      prefixo: safeStr(v(r, C.prefixo)),
+      tipo: safeStr(v(r, C.tipo)),
+      natureza: safeStr(v(r, C.natureza)),
+      fornecedor_cod: safeStr(v(r, C.fornCod)),
+      loja: safeStr(v(r, C.loja)),
+      fornecedor: txt(v(r, C.fornNome)),
+      dt_emissao: parseBRDate(v(r, C.emissao)),
+      vencimento: parseBRDate(v(r, C.venctoR)) || parseBRDate(v(r, C.vencto)),
+      dt_baixa: baixa,
+      valor: vlrTit,
+      valor_rs: vlrRs,
+      valor_liquido: vlrLiq,
+      saldo: saldo,
+      historico: txt(v(r, C.historico)),
+      forma_pgto: safeStr(v(r, C.formaPgto)),
+      banco: safeStr(v(r, C.banco)),
+      bordero: safeStr(v(r, C.bordero)),
+      fluxo_caixa: safeStr(v(r, C.fluxo)),
+      conta_fluxo: safeStr(v(r, C.conta)),
       manual: false,
     });
   }
+  /* Guarda quais colunas úteis não vieram, para a tela poder avisar. */
+  out.colunasAusentes = [
+    [C.vlrRs,  'Vlr R$'],
+    [C.vlrLiq, 'Val Liq Baix'],
+    [C.saldo,  'Saldo'],
+    [C.fluxo,  'Fluxo Caixa'],
+    [C.bordero,'Num Bordero'],
+  ].filter(x => !x[0]).map(x => x[1]);
   return out;
 }
 
@@ -1008,6 +1053,7 @@ const state = {
   files: [],                 // [{nome, tipo, count, ok, err}]
   store: { totvs:[], nf_servico:[], nf_titulo:[], reembolso:[] },
   naturezas: null,
+  colunasAusentes: [],
   conc: null, resumo: null,
   aba: 'todos',
   dataRef: hojeISO(),
@@ -1126,6 +1172,19 @@ function renderConferencia(){
   // avisos
   const notes = el('conf-notes'); notes.textContent = '';
   const r = state.resumo;
+
+  if (state.colunasAusentes && state.colunasAusentes.length){
+    const temValor = state.colunasAusentes.indexOf('Val Liq Baix') >= 0;
+    notes.appendChild(h('div', { class:'note warn' }, [
+      h('i', { class:'fa-solid fa-table-columns' }),
+      h('div', {}, [
+        h('strong', { text: 'O relatório do Totvs veio sem: ' + state.colunasAusentes.join(', ') + '. ' }),
+        'A tela se virou com as colunas que existem' +
+        (temValor ? ', mas o histórico está gravando o valor do título no lugar do valor efetivamente baixado. ' : '. ') +
+        'Vale incluir essas colunas na próxima geração do relatório.',
+      ]),
+    ]));
+  }
   if (r && r.suspeitos){
     const semPar = state.conc.itens.filter(i => i.aviso === 'valor_corrigido_sem_par').length;
     notes.appendChild(h('div', { class:'note info' }, [
@@ -1293,6 +1352,7 @@ async function processFiles(files){
       try {
         if (tipo === 'totvs' || tipo === 'totvs_xlsx'){
           state.store.totvs = await parseTotvs(f);
+          state.colunasAusentes = state.store.totvs.colunasAusentes || [];
           entry.count = state.store.totvs.length;
           if (!entry.count){ entry.ok = false; entry.err = 'nenhum título encontrado'; }
         }
@@ -1437,7 +1497,8 @@ async function fetchStatus(){
 function resetTudo(){
   state.files = [];
   state.store = { totvs:[], nf_servico:[], nf_titulo:[], reembolso:[] };
-  state.naturezas = null; state.conc = null; state.resumo = null; state.aba = 'todos';
+  state.naturezas = null; state.colunasAusentes = [];
+  state.conc = null; state.resumo = null; state.aba = 'todos';
   el('file-input').value = '';
   render();
   toast('Recomeçando');
