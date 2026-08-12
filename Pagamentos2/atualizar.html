@@ -13,6 +13,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="conciliacao.js"></script>
 
 <style>
   :root{
@@ -385,84 +386,18 @@ const CONFIG = {
 
 /* ============================================================================
    HELPERS
+   As funções de texto, data, número e toda a regra de conciliação vêm do
+   conciliacao.js, compartilhado com o painel — um acerto de regra vale para as
+   duas telas de uma vez.
    ============================================================================ */
 const el = id => document.getElementById(id);
-const safeStr = v => (v === null || v === undefined) ? '' : String(v).trim();
-
-/* minúsculas, sem acento, sem pontuação — para comparar texto */
-function norm(s){
-  return safeStr(s).toLowerCase().normalize('NFD')
-    .replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
-}
-function normHdr(s){
-  return norm(s).replace(/[^a-z0-9]/g,'');
-}
-/* número de título: sem zeros à esquerda, sem espaço, maiúsculo.
-   O Totvs grava "0E6828185" onde o Fluig manda "E6828185". */
-function normNum(v){
-  const s = safeStr(v).toUpperCase().replace(/\s+/g,'');
-  if (!s) return '';
-  const semZero = s.replace(/^0+/,'');
-  return semZero || s;
-}
-/* nome de favorecido: o Totvs corta em 20 caracteres e às vezes o Fluig
-   traz o CNPJ/CPF na frente do nome. */
-function normNome(v){
-  let s = norm(v);
-  s = s.replace(/^[\d.\-\/]+\s+/,'');       // tira "58.212.228 " do começo
-  return s.replace(/[^a-z0-9 ]/g,'').trim();
-}
-function nomesBatem(a, b){
-  const x = normNome(a), y = normNome(b);
-  if (!x || !y) return false;
-  const n = Math.min(x.length, y.length);
-  if (n < 8) return x === y;
-  return x.slice(0, n) === y.slice(0, n);
-}
-
-function parseBRNumber(x){
-  if (x === null || x === undefined || x === '') return 0;
-  if (typeof x === 'number') return x;
-  let s = String(x).trim().replace(/R\$\s*/i,'').replace(/\s/g,'');
-  if (!s) return 0;
-  if (s.indexOf(',') >= 0) s = s.replace(/\./g,'').replace(',','.');
-  const n = parseFloat(s);
-  return isNaN(n) ? 0 : n;
-}
-function parseBRDate(x){
-  if (x === null || x === undefined || x === '') return null;
-  if (x instanceof Date && !isNaN(x)){
-    return x.getFullYear() + '-' + String(x.getMonth()+1).padStart(2,'0') + '-' + String(x.getDate()).padStart(2,'0');
-  }
-  const s = String(x).trim();
-  if (!s || /^[\/\s]+$/.test(s)) return null;
-  let m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (m) return m[3] + '-' + m[2] + '-' + m[1];
-  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return s.slice(0,10);
-  const n = Number(s);
-  if (!isNaN(n) && n > 20000 && n < 80000){
-    return parseBRDate(new Date((n - 25569) * 86400 * 1000));
-  }
-  return null;
-}
-const fmtBR = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
-const fmtBR0 = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:0, maximumFractionDigits:0});
-function fmtData(iso){
-  if (!iso) return '—';
-  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
-  return m ? (m[3]+'/'+m[2]+'/'+m[1]) : String(iso);
-}
-function hojeISO(){
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
-function proxDiaUtil(iso){
-  const p = String(iso).split('-');
-  const d = new Date(+p[0], +p[1]-1, +p[2]);
-  do { d.setDate(d.getDate()+1); } while (d.getDay()===0 || d.getDay()===6);
-  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-}
+const {
+  safeStr, norm, normHdr, normNum, nomesBatem,
+  parseBRNumber, parseBRDate, fmtBR, fmtBR0, fmtData, hojeISO, proxDiaUtil,
+  repararAcentos, txt, classificarStatus,
+  chaveTitulo, estaPago, SITUACOES, semTituloSit, aguardandoSit,
+  conciliar, resumir, montarHistorico,
+} = Conc;
 
 const readAsArrayBuffer = file => new Promise((res,rej)=>{
   const r = new FileReader();
@@ -476,53 +411,6 @@ const readAsText = (file, enc) => new Promise((res,rej)=>{
 });
 </script>
 <script>
-/* ============================================================================
-   ENCODING DO CSV DO TOTVS
-   O export chega com os acentos quebrados: cada letra acentuada virou a letra
-   "A" seguida do segundo byte da sequência UTF-8. "MANUTENÇÃO" chega como
-   "MANUTENA\x87A\x83O". Aqui a gente desfaz isso. Só converte quando a letra
-   anterior é A/a e o byte seguinte é de fato uma letra portuguesa, pra não
-   estragar coisas legítimas como "Nº".
-   ============================================================================ */
-const MAPA_ACENTO = {
-  '\u0081':'Á','\u0082':'Â','\u0083':'Ã','\u0084':'Ä','\u0087':'Ç','\u0088':'È',
-  '\u0089':'É','\u008A':'Ê','\u008D':'Í','\u0093':'Ó','\u0094':'Ô','\u0095':'Õ',
-  '\u009A':'Ú','\u00A0':'à','\u00A1':'á','\u00A2':'â','\u00A3':'ã','\u00A7':'ç',
-  '\u00A8':'è','\u00A9':'é','\u00AA':'ê','\u00AD':'í','\u00B3':'ó','\u00B4':'ô',
-  '\u00B5':'õ','\u00BA':'ú',
-  /* Os .xlsx do Fluig trazem os mesmos bytes já interpretados como cp1252,
-     então o mesmo defeito aparece com outros caracteres. */
-  '\u0192':'Ã','\u2021':'Ç','\u2030':'É','\u0160':'Ê','\u201C':'Ó',
-  '\u201D':'Ô','\u2022':'Õ','\u0161':'Ú','\u02C6':'È','\u201E':'Ä',
-};
-function repararAcentos(txt){
-  if (txt === null || txt === undefined) return txt;
-  return String(txt).replace(/[Aa]([\u0080-\u00BF\u0160\u0161\u0192\u02C6\u2021\u2022\u2030\u201C\u201D\u201E])/g,
-    (todo, b) => MAPA_ACENTO[b] || todo);
-}
-/* Igual a safeStr, mas já conserta os acentos quebrados do export. */
-const txt = v => repararAcentos(safeStr(v));
-
-/* ============================================================================
-   STATUS DO FLUIG
-   pendente  → ainda não aprovado, portanto ainda não existe no Totvs
-   aprovado  → já aprovado; deve ter virado título no Totvs
-   cancelado → ignorado em todos os totais
-   ============================================================================ */
-function classificarStatus(status){
-  const s = norm(status);
-  if (!s) return 'outro';
-  if (s.indexOf('cancelad') >= 0) return 'cancelado';
-  if (s.indexOf('aprovac') >= 0 || s.indexOf('aguardando aprova') >= 0) return 'pendente';
-  if (s.indexOf('aguardando baixa') >= 0 || s.indexOf('disponivel') >= 0) return 'aprovado';
-  return 'outro';
-}
-const ROTULO_STATUS = {
-  pendente:  ['Aguardando aprovação','b-warn'],
-  aprovado:  ['Aprovado','b-ok'],
-  cancelado: ['Cancelado','b-mute'],
-  outro:     ['Status novo','b-info'],
-};
 
 /* ============================================================================
    DETECÇÃO DE ARQUIVO
@@ -673,13 +561,53 @@ async function parseTotvs(file){
   return out;
 }
 
-/* chave do título no Totvs — é o que identifica ele de forma estável */
-function chaveTitulo(t){
-  return [t.prefixo, t.numero, t.parcela, t.tipo, t.fornecedor_cod, t.loja]
-    .map(v => safeStr(v)).join('|');
+/* ============================================================================
+   QUAL DOS DOIS RELATÓRIOS DO TOTVS É ESTE?
+   ----------------------------------------------------------------------------
+   Os dois são opostos no preenchimento da data de baixa: o de pagos tem baixa
+   em quase toda linha, o de vencimento não tem em quase nenhuma. Além de
+   reconhecer, a função confere se o conteúdo bate com o esperado, para a tela
+   poder perguntar "tem certeza que é esse relatório?" antes de gravar.
+   ============================================================================ */
+function diagnosticarTotvs(linhas){
+  const n = linhas.length;
+  const comBaixa = linhas.filter(t => !!t.dt_baixa);
+  const prop = n ? (comBaixa.length / n) : 0;
+  const d = { total:n, comBaixa:comBaixa.length, proporcao:prop, alertas:[] };
+
+  d.papel = prop >= 0.6 ? 'baixas' : 'previsto';
+
+  const datas = {};
+  comBaixa.forEach(t => { datas[t.dt_baixa] = (datas[t.dt_baixa]||0) + 1; });
+  d.datasBaixa = Object.keys(datas).sort();
+
+  const hoje = hojeISO();
+  const p = hoje.split('-'); const x = new Date(+p[0], +p[1]-1, +p[2]);
+  x.setDate(x.getDate()-1);
+  const ontem = x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+
+  if (d.papel === 'baixas'){
+    if (prop < 1){
+      d.alertas.push((n - comBaixa.length) + ' linha(s) sem data de baixa neste relatório de pagos — ficam de fora do total pago.');
+    }
+    if (d.datasBaixa.length > 1){
+      d.alertas.push('as baixas são de mais de um dia: ' + d.datasBaixa.map(fmtData).join(', ') + '.');
+    } else if (d.datasBaixa.length === 1 && d.datasBaixa[0] !== ontem){
+      d.alertas.push('as baixas são de ' + fmtData(d.datasBaixa[0]) + ', e não de ontem (' + fmtData(ontem) + ').');
+    }
+  } else {
+    const vencs = {};
+    linhas.forEach(t => { if (t.vencimento && !t.dt_baixa) vencs[t.vencimento] = 1; });
+    d.vencimentos = Object.keys(vencs).sort();
+    if (comBaixa.length){
+      d.alertas.push(comBaixa.length + ' linha(s) já baixada(s) neste relatório de previsão — ficam de fora dos previstos.');
+    }
+    if (d.vencimentos.length && d.vencimentos.indexOf(hoje) < 0){
+      d.alertas.push('nenhum vencimento de hoje (' + fmtData(hoje) + '); o arquivo cobre ' + d.vencimentos.map(fmtData).join(', ') + '.');
+    }
+  }
+  return d;
 }
-/* um título está pago quando tem data de baixa */
-const estaPago = t => !!t.dt_baixa;
 
 /* ============================================================================
    PARSERS — FLUIG
@@ -808,259 +736,22 @@ async function parseNaturezas(file){
 </script>
 <script>
 /* ============================================================================
-   CONCILIAÇÃO — o coração da ferramenta
-   ----------------------------------------------------------------------------
-   O Totvs carimba em cada título o campo IDFluig com o número da solicitação
-   que o originou. Esse é o casamento exato, e vale para as três categorias,
-   inclusive reembolso (que não tem número em comum entre os dois sistemas).
-
-   Só quando o título está SEM IDFluig a gente tenta o casamento aproximado,
-   por número (notas) ou por favorecido + vencimento + valor (reembolsos).
-   Título que já tem um IDFluig diferente nunca é candidato: ele pertence a
-   outra solicitação, e casar por semelhança ali só produziria erro.
-   ============================================================================ */
-const TOL = 0.05;              // tolerância de centavos no casamento por valor
-
-function conciliar(store){
-  const titulos = store.totvs || [];
-  const usados = new Set();
-
-  // índice por IDFluig — o casamento exato
-  const porIdFluig = {};
-  titulos.forEach((t, i) => {
-    const k = safeStr(t.id_fluig);
-    if (k) (porIdFluig[k] = porIdFluig[k] || []).push(i);
-  });
-  // índice por número, usado só nos títulos SEM IDFluig
-  const porNumero = {};
-  titulos.forEach((t, i) => {
-    if (safeStr(t.id_fluig)) return;
-    const k = normNum(t.numero);
-    if (k) (porNumero[k] = porNumero[k] || []).push(i);
-  });
-
-  const itens = [];   // um registro por solicitação do Fluig
-
-  /* Acha o título da solicitação: primeiro pelo ID, depois por semelhança. */
-  const acharPar = (idFluig, aproximado) => {
-    const exatos = (porIdFluig[safeStr(idFluig)] || []).filter(i => !usados.has(i));
-    if (exatos.length) return { i: exatos[0], modo: 'id' };
-    const apr = aproximado();
-    return (apr === undefined || apr === null) ? null : { i: apr, modo: 'aprox' };
-  };
-
-  /* ---- Notas: casamento por número ---- */
-  [['nf_servico','numero_nf','NF de Serviço'], ['nf_titulo','numero_titulo','Conta']]
-  .forEach(function(cfg){
-    const cat = cfg[0], campo = cfg[1], rotulo = cfg[2];
-    (store[cat] || []).forEach(r => {
-      const est = classificarStatus(r.status);
-      const item = {
-        cat: cat, rotulo: rotulo, fluig: r, estado: est,
-        numero: safeStr(r[campo]), valor: r.valor_total,
-        vencimento: r.vencimento, fornecedor: r.fornecedor,
-        par: null, situacao: '', aviso: '',
-      };
-      if (est !== 'cancelado'){
-        const achado = acharPar(r.id, () => {
-          const cands = (porNumero[normNum(r[campo])] || []).filter(i => !usados.has(i));
-          const c = cands.find(i => titulos[i].vencimento === r.vencimento);
-          return c !== undefined ? c : cands[0];
-        });
-        if (achado){
-          usados.add(achado.i);
-          item.par = titulos[achado.i];
-          item.modoPar = achado.modo;
-        }
-      }
-      classificarItem(item);
-      itens.push(item);
-    });
-  });
-
-  /* ---- Reembolsos: casamento por favorecido + vencimento + valor ---- */
-  (store.reembolso || []).forEach(r => {
-    const est = classificarStatus(r.status);
-    const item = {
-      cat: 'reembolso', rotulo: 'Reembolso', fluig: r, estado: est,
-      numero: '', valor: r.valor_total, vencimento: r.vencimento,
-      fornecedor: r.fornecedor, par: null, situacao: '', aviso: '',
-    };
-    if (est !== 'cancelado'){
-      const achado = acharPar(r.id, () => {
-        // só títulos sem IDFluig entram como candidatos por semelhança
-        const cands = [];
-        titulos.forEach((t, i) => {
-          if (usados.has(i) || safeStr(t.id_fluig)) return;
-          if (!nomesBatem(t.fornecedor, r.fornecedor)) return;
-          if (t.vencimento && r.vencimento && t.vencimento !== r.vencimento) return;
-          cands.push(i);
-        });
-        const c = cands.find(i => Math.abs((titulos[i].valor_rs||0) - (r.valor_total||0)) <= TOL);
-        if (c !== undefined) return c;
-        return cands.length === 1 ? cands[0] : null;
-      });
-      if (achado){
-        usados.add(achado.i);
-        item.par = titulos[achado.i];
-        item.modoPar = achado.modo;
-      }
-    }
-    classificarItem(item);
-    itens.push(item);
-  });
-
-  /* ---- O que sobrou do Totvs, separado em dois casos bem diferentes ----
-     · direto        — sem IDFluig: alguém lançou no Totvs sem passar pelo Fluig
-     · antigo        — tem IDFluig, mas de uma solicitação que não está no
-                       relatório de hoje. É o caso das parcelas de títulos
-                       lançados meses atrás (parcela AAC, AAB e por aí). */
-  const soTotvsDireto = [], soTotvsAntigo = [];
-  titulos.forEach((t, i) => {
-    if (usados.has(i)) return;
-    // parcela em letras (AAB, AAC...) é a marca de título parcelado antigo no
-    // Protheus — mesmo sem IDFluig, não é lançamento direto de hoje
-    const parcelado = /[A-Za-z]/.test(safeStr(t.parcela));
-    ((safeStr(t.id_fluig) || parcelado) ? soTotvsAntigo : soTotvsDireto).push(t);
-  });
-  const soTotvs = soTotvsDireto.concat(soTotvsAntigo);
-
-  return { itens: itens, soTotvs: soTotvs, soTotvsDireto: soTotvsDireto,
-           soTotvsAntigo: soTotvsAntigo, titulos: titulos };
-}
-
-/* Traduz o cruzamento em uma situação legível.
-   Atenção: estar aprovado no Fluig e existir como título no Totvs são coisas
-   independentes. Nos dados reais aparece título já lançado no Totvs cuja
-   liberação de pagamento ainda está em aprovação no Fluig — por isso as duas
-   dimensões entram na situação, em vez de uma só. */
-function classificarItem(item){
-  const t = item.par;
-  if (item.estado === 'cancelado'){ item.situacao = 'cancelado'; return; }
-  if (!t){
-    item.situacao = (item.estado === 'pendente') ? 'sem_titulo_pendente' : 'sem_titulo_aprovado';
-    if (item.fluig.valor_numerico_cru) item.aviso = 'valor_corrigido_sem_par';
-    return;
-  }
-  if (estaPago(t)) item.situacao = 'pago';
-  else item.situacao = (item.estado === 'pendente') ? 'em_aberto_pendente' : 'em_aberto';
-
-  // valor já corrigido na leitura e confirmado pelo título — só informa
-  if (item.fluig.valor_numerico_cru && Math.abs((t.valor_rs||0) - (item.valor||0)) <= TOL){
-    item.aviso = 'valor_corrigido';
-    return;
-  }
-  if (Math.abs((t.valor_rs||0) - (item.valor||0)) > TOL) item.aviso = 'valor_diverge';
-}
-
-const SITUACOES = {
-  pago:                ['Pago',                       'b-ok'],
-  em_aberto:           ['Em aberto no Totvs',         'b-orange'],
-  em_aberto_pendente:  ['Em aberto · falta aprovar',  'b-warn'],
-  sem_titulo_pendente: ['Aguardando aprovação',       'b-warn'],
-  sem_titulo_aprovado: ['Aprovado, sem título',       'b-danger'],
-  cancelado:           ['Cancelado',                  'b-mute'],
-};
-/* atalhos usados nos recortes */
-const semTituloSit  = s => s === 'sem_titulo_pendente' || s === 'sem_titulo_aprovado';
-const aguardandoSit = s => s === 'sem_titulo_pendente' || s === 'em_aberto_pendente';
-
-/* ============================================================================
-   NÚMEROS DO DIA
-   Cada título é classificado pelo VENCIMENTO dele, não pela data do envio.
-   ============================================================================ */
-function resumir(conc, dataRef){
-  const amanha = proxDiaUtil(dataRef);
-  const z = () => ({ qtd:0, valor:0 });
-  const r = {
-    dataRef: dataRef, amanha: amanha,
-    pagoHoje: z(),
-    abertoHoje: z(), abertoAmanha: z(),      // títulos do Totvs, sem baixa
-    foraTotvsHoje: z(), foraTotvsAmanha: z(),// Fluig que ainda não virou título
-    aPagarHoje: z(), aPagarAmanha: z(),      // soma dos dois acima
-    aguardandoHoje: z(), aguardandoAmanha: z(), // recorte sobreposto: falta aprovar
-    atrasado: z(), semTituloAprovado: z(), cancelados: z(),
-    divergencias: 0, suspeitos: 0, aproximados: 0, soTotvs: z(), historico: z(),
-    temDataRef: false,
-  };
-  const add = (b, v) => { b.qtd++; b.valor += (Number(v)||0); };
-
-  // Lado do Totvs — inclui o que foi lançado direto, sem passar pelo Fluig
-  conc.titulos.forEach(t => {
-    if (t.vencimento === dataRef || t.dt_baixa === dataRef) r.temDataRef = true;
-    if (estaPago(t)){
-      if (t.dt_baixa === dataRef) add(r.pagoHoje, t.valor_liquido || t.valor_rs);
-      add(r.historico, t.valor_liquido || t.valor_rs);
-      return;
-    }
-    if (!t.vencimento) return;
-    if (t.vencimento === dataRef) add(r.abertoHoje, t.valor_rs);
-    else if (t.vencimento === amanha) add(r.abertoAmanha, t.valor_rs);
-    else if (t.vencimento < dataRef) add(r.atrasado, t.valor_rs);
-  });
-  (conc.soTotvsDireto || []).forEach(t => { if (!estaPago(t)) add(r.soTotvs, t.valor_rs); });
-
-  // Lado do Fluig
-  conc.itens.forEach(it => {
-    if (it.aviso === 'valor_diverge') r.divergencias++;
-    if (it.aviso === 'valor_corrigido' || it.aviso === 'valor_corrigido_sem_par') r.suspeitos++;
-    if (it.modoPar === 'aprox') r.aproximados++;
-    if (it.situacao === 'cancelado'){ add(r.cancelados, it.valor); return; }
-
-    // só entra no "a pagar" o que ainda NÃO existe como título — o que já
-    // existe já foi contado do lado do Totvs, somar de novo duplicaria.
-    if (semTituloSit(it.situacao)){
-      if (it.situacao === 'sem_titulo_aprovado') add(r.semTituloAprovado, it.valor);
-      if (it.vencimento === dataRef) add(r.foraTotvsHoje, it.valor);
-      else if (it.vencimento === amanha) add(r.foraTotvsAmanha, it.valor);
-    }
-    // recorte sobreposto: o que ainda depende de aprovação, com ou sem título
-    if (aguardandoSit(it.situacao)){
-      if (it.vencimento === dataRef) add(r.aguardandoHoje, it.valor);
-      else if (it.vencimento === amanha) add(r.aguardandoAmanha, it.valor);
-    }
-  });
-
-  const soma = (a, b) => ({ qtd: a.qtd + b.qtd, valor: a.valor + b.valor });
-  r.aPagarHoje = soma(r.abertoHoje, r.foraTotvsHoje);
-  r.aPagarAmanha = soma(r.abertoAmanha, r.foraTotvsAmanha);
-  return r;
-}
-
-/* Linhas que vão para o histórico (base do futuro fluxo de caixa):
-   todo título com data de baixa, seja de qual vencimento for. */
-function montarHistorico(conc){
-  return conc.titulos.filter(estaPago).map(t => ({
-    chave: chaveTitulo(t),
-    dt_baixa: t.dt_baixa, vencimento: t.vencimento,
-    numero: t.numero, id_fluig: t.id_fluig,
-    parcela: t.parcela, prefixo: t.prefixo, tipo: t.tipo,
-    natureza: t.natureza, conta_fluxo: t.conta_fluxo,
-    fornecedor_cod: t.fornecedor_cod, loja: t.loja, fornecedor: t.fornecedor,
-    valor_pago: t.valor_liquido || t.valor_rs,
-    valor_titulo: t.valor_rs,
-    historico: t.historico, banco: t.banco, bordero: t.bordero,
-    fluxo_caixa: t.fluxo_caixa,
-    origem: t.manual ? 'manual' : 'totvs',
-  }));
-}
-</script>
-<script>
-/* ============================================================================
    ESTADO + RENDER
    ============================================================================ */
 const state = {
   files: [],                 // [{nome, tipo, count, ok, err}]
-  store: { totvs:[], nf_servico:[], nf_titulo:[], reembolso:[] },
+  store: { totvs:[], baixas:[], nf_servico:[], nf_titulo:[], reembolso:[] },
   naturezas: null,
   colunasAusentes: [],
+  diagBaixas: null, diagPrevisto: null,
   conc: null, resumo: null,
   aba: 'todos',
   dataRef: hojeISO(),
 };
 const TIPO_ROTULO = {
-  totvs:      ['Títulos do Totvs','totvs'],
-  totvs_xlsx: ['Títulos do Totvs (xlsx)','totvs'],
+  totvs:      ['Totvs · previsto (por vencimento)','totvs'],
+  baixas:     ['Totvs · pago (por data de baixa)','baixas'],
+  totvs_xlsx: ['Totvs · previsto (xlsx)','totvs'],
   nf_servico: ['NFs de Serviço (Fluig)','nf_servico'],
   nf_titulo:  ['Contas (Fluig)','nf_titulo'],
   reembolso:  ['Reembolsos (Fluig)','reembolso'],
@@ -1121,7 +812,9 @@ function renderResumo(){
   const money = b => 'R$ ' + fmtBR0(b.valor);
   const qtd = b => b.qtd + ' título(s)';
 
-  grid.appendChild(kpi('Pago em ' + fmtData(r.dataRef), money(r.pagoHoje), qtd(r.pagoHoje), 'ok'));
+  grid.appendChild(kpi(r.dataPago ? ('Pago em ' + fmtData(r.dataPago)) : 'Pago',
+    money(r.pago),
+    r.dataPago ? qtd(r.pago) : 'sem relatório de baixas', 'ok'));
   grid.appendChild(kpi('A pagar hoje', money(r.aPagarHoje),
     r.abertoHoje.qtd + ' no Totvs + ' + r.foraTotvsHoje.qtd + ' só no Fluig', 'info'));
   grid.appendChild(kpi('Falta aprovar · hoje', money(r.aguardandoHoje),
@@ -1172,6 +865,23 @@ function renderConferencia(){
   // avisos
   const notes = el('conf-notes'); notes.textContent = '';
   const r = state.resumo;
+
+  /* "Tem certeza que é esse relatório?" — o que a tela entendeu de cada
+     arquivo do Totvs, com o que destoou do esperado. */
+  [[state.diagBaixas, 'pago (por data de baixa)'], [state.diagPrevisto, 'previsto (por vencimento)']]
+  .forEach(function(par){
+    const d = par[0]; if (!d) return;
+    const box = h('div', { class: d.alertas.length ? 'note warn' : 'note info' }, [
+      h('i', { class: d.alertas.length ? 'fa-solid fa-circle-question' : 'fa-solid fa-circle-check' }),
+      h('div', {}, [
+        h('strong', { text: 'Entendi como relatório de ' + par[1] + ': ' }),
+        d.total + ' títulos, ' + d.comBaixa + ' com data de baixa' +
+        (d.datasBaixa && d.datasBaixa.length ? (' em ' + d.datasBaixa.map(fmtData).join(', ')) : '') + '. ',
+        d.alertas.length ? h('span', { text: 'Confira: ' + d.alertas.join(' ') }) : null,
+      ]),
+    ]);
+    notes.appendChild(box);
+  });
 
   if (state.colunasAusentes && state.colunasAusentes.length){
     const temValor = state.colunasAusentes.indexOf('Val Liq Baix') >= 0;
@@ -1321,7 +1031,8 @@ function tabelaTotvs(linhas){
    FLUXO PRINCIPAL
    ============================================================================ */
 function recalcular(){
-  const temAlgo = state.store.totvs.length || state.store.nf_servico.length
+  const temAlgo = state.store.totvs.length || state.store.baixas.length
+               || state.store.nf_servico.length
                || state.store.nf_titulo.length || state.store.reembolso.length;
   if (!temAlgo){ state.conc = null; state.resumo = null; return; }
 
@@ -1329,7 +1040,7 @@ function recalcular(){
   // a tela avisa em vez de adivinhar uma data por conta própria.
   state.dataRef = hojeISO();
   state.conc = conciliar(state.store);
-  state.resumo = resumir(state.conc, state.dataRef);
+  state.resumo = resumir(state.conc, state.dataRef, state.store.baixas);
 }
 /* Data mais presente entre os títulos em aberto — usada só para explicar,
    no aviso, de que dia o arquivo parece ser. */
@@ -1351,10 +1062,20 @@ async function processFiles(files){
       const entry = { nome: f.name, tipo: tipo, count: 0, ok: tipo !== 'desconhecido', err: null };
       try {
         if (tipo === 'totvs' || tipo === 'totvs_xlsx'){
-          state.store.totvs = await parseTotvs(f);
-          state.colunasAusentes = state.store.totvs.colunasAusentes || [];
-          entry.count = state.store.totvs.length;
+          const linhas = await parseTotvs(f);
+          const diag = diagnosticarTotvs(linhas);
+          entry.count = linhas.length;
+          entry.diag = diag;
           if (!entry.count){ entry.ok = false; entry.err = 'nenhum título encontrado'; }
+          else if (diag.papel === 'baixas'){
+            entry.tipo = tipo = 'baixas';
+            state.store.baixas = linhas;
+            state.diagBaixas = diag;
+          } else {
+            state.store.totvs = linhas;
+            state.colunasAusentes = linhas.colunasAusentes || [];
+            state.diagPrevisto = diag;
+          }
         }
         else if (tipo === 'nf_servico'){ state.store.nf_servico = await parseNFServico(f); entry.count = state.store.nf_servico.length; }
         else if (tipo === 'nf_titulo'){  state.store.nf_titulo  = await parseNFTitulo(f);  entry.count = state.store.nf_titulo.length; }
@@ -1387,7 +1108,8 @@ function render(){
   const hint = el('hint');
   if (!pronto){ hint.textContent = 'Suba pelo menos um relatório para conferir.'; return; }
   const faltando = [];
-  if (!state.store.totvs.length) faltando.push('Totvs');
+  if (!state.store.totvs.length) faltando.push('Totvs previsto');
+  if (!state.store.baixas.length) faltando.push('Totvs pago');
   if (!state.store.nf_servico.length) faltando.push('NFs de Serviço');
   if (!state.store.nf_titulo.length) faltando.push('Contas');
   if (!state.store.reembolso.length) faltando.push('Reembolsos');
@@ -1404,12 +1126,15 @@ function montarPayload(){
   const p = {};
   const tiposLidos = new Set(state.files.filter(f => f.ok).map(f => f.tipo));
   if (tiposLidos.has('totvs') || tiposLidos.has('totvs_xlsx')) p.titulos = state.store.totvs;
+  if (tiposLidos.has('baixas')) p.baixas = state.store.baixas;
   if (tiposLidos.has('nf_servico')) p.nf_servico = state.store.nf_servico;
   if (tiposLidos.has('nf_titulo'))  p.nf_titulo  = state.store.nf_titulo;
   if (tiposLidos.has('reembolso'))  p.reembolso  = state.store.reembolso;
   if (state.naturezas) p.naturezas = state.naturezas;
-  if (state.conc){
-    const hist = montarHistorico(state.conc);
+  /* O histórico é alimentado só pelo relatório de baixas — é dele que sai o
+     valor efetivamente pago. O de vencimento não tem o que contribuir aqui. */
+  if (state.store.baixas.length){
+    const hist = montarHistorico({ titulos: state.store.baixas });
     if (hist.length) p.historico = hist;
   }
   return p;
@@ -1496,8 +1221,9 @@ async function fetchStatus(){
 
 function resetTudo(){
   state.files = [];
-  state.store = { totvs:[], nf_servico:[], nf_titulo:[], reembolso:[] };
+  state.store = { totvs:[], baixas:[], nf_servico:[], nf_titulo:[], reembolso:[] };
   state.naturezas = null; state.colunasAusentes = [];
+  state.diagBaixas = null; state.diagPrevisto = null;
   state.conc = null; state.resumo = null; state.aba = 'todos';
   el('file-input').value = '';
   render();
