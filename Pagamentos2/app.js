@@ -804,7 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
   el('modalEdit').onclick = e => { if (e.target === el('modalEdit')) fecharEdicao(); };
   document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharEdicao(); });
 
-  if (!CONFIG.DATA_URL || CONFIG.DATA_URL.indexOf('https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec') === 0){
+  if (!CONFIG.DATA_URL || CONFIG.DATA_URL.indexOf('COLE_A_URL') === 0){
     mostrarErro(new Error('Falta colar a URL do Apps Script em CONFIG.DATA_URL, no topo do app.js.'));
     return;
   }
