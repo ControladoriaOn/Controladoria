@@ -116,6 +116,12 @@
   .file-row.ok i{color:var(--ok)} .file-row.err i{color:var(--danger)}
   .file-row .name{flex:1; font-weight:600; color:var(--plum); word-break:break-all}
   .file-row .meta{color:var(--plum-soft); font-size:12px; text-align:right}
+  .file-del{
+    flex-shrink:0; width:28px; height:28px; display:inline-flex; align-items:center;
+    justify-content:center; border:none; background:none; border-radius:8px;
+    color:#B9A9B9; cursor:pointer; font-size:14px; transition:all .14s;
+  }
+  .file-del:hover{background:var(--danger-soft); color:var(--danger)}
 
   /* ---------- resumo em números ---------- */
   .grid-kpi{display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:12px}
@@ -787,13 +793,36 @@ function renderArquivos(){
   const ordem = { totvs:0, totvs_xlsx:0, nf_servico:1, nf_titulo:2, reembolso:3, naturezas:4, desconhecido:9 };
   [...state.files].sort((a,b) => (ordem[a.tipo]??99) - (ordem[b.tipo]??99)).forEach(f => {
     const rot = TIPO_ROTULO[f.tipo] || TIPO_ROTULO.desconhecido;
+    const btnX = h('button', { class:'file-del', type:'button', title:'Tirar este arquivo da lista' },
+      [ h('i', { class:'fa-solid fa-xmark' }) ]);
+    btnX.addEventListener('click', () => removerArquivo(f));
     const row = h('div', { class:'file-row ' + (f.ok ? 'ok' : 'err') }, [
       h('i', { class: f.ok ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark' }),
       h('div', { class:'name' }, [ f.nome, h('small', { style:'display:block;font-weight:400;color:var(--plum-soft)', text: rot[0] }) ]),
       h('div', { class:'meta', text: f.ok ? (f.count + ' registro(s)') : (f.err || 'não reconhecido') }),
+      btnX,
     ]);
     list.appendChild(row);
   });
+}
+
+/* Tira um arquivo da lista e, junto, os dados que vieram dele. Serve para
+   quando o arquivo errado foi arrastado, ou para trocar só um dos cinco sem
+   ter que recomeçar tudo. */
+function removerArquivo(f){
+  state.files = state.files.filter(x => x !== f);
+  if (f.tipo === 'totvs' || f.tipo === 'totvs_xlsx'){
+    state.store.totvs = []; state.colunasAusentes = []; state.diagPrevisto = null;
+  } else if (f.tipo === 'baixas'){
+    state.store.baixas = []; state.diagBaixas = null;
+  } else if (f.tipo === 'nf_servico'){ state.store.nf_servico = []; }
+  else if (f.tipo === 'nf_titulo'){   state.store.nf_titulo  = []; }
+  else if (f.tipo === 'reembolso'){   state.store.reembolso  = []; }
+  else if (f.tipo === 'naturezas'){   state.naturezas = null; }
+  state.aba = 'todos';
+  recalcular();
+  render();
+  toast('Removido: ' + f.nome);
 }
 
 /* ---------------------------- números ---------------------------- */
@@ -1058,7 +1087,7 @@ async function processFiles(files){
   showOverlay(true, 'Lendo arquivos…');
   try {
     for (const f of files){
-      const tipo = await detectType(f);
+      let tipo = await detectType(f);   // pode mudar para 'baixas' depois de ler o conteúdo
       const entry = { nome: f.name, tipo: tipo, count: 0, ok: tipo !== 'desconhecido', err: null };
       try {
         if (tipo === 'totvs' || tipo === 'totvs_xlsx'){
