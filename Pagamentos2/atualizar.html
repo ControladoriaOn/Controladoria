@@ -339,6 +339,9 @@
     <button class="btn btn-primary" id="btn-enviar">
       <i class="fa-solid fa-cloud-arrow-up"></i> Enviar para a base
     </button>
+    <button class="btn btn-ghost" id="btn-relatorio">
+      <i class="fa-solid fa-file-excel"></i> Relatório em Excel
+    </button>
     <button class="btn btn-ghost" id="btn-json">
       <i class="fa-solid fa-download"></i> Baixar JSON
     </button>
@@ -718,25 +721,46 @@ async function parseReembolso(file){
     };
   });
 }
+/* A aba NATUREZA X FLUXO traz quatro colunas que importam: código e descrição
+   da natureza, mais o código e o nome da conta de fluxo de caixa. As duas
+   últimas são o que o relatório da controladoria buscava por PROCV. */
 async function parseNaturezas(file){
   const buf = await readAsArrayBuffer(file);
   const wb = XLSX.read(buf, { type:'array', cellDates:false });
   const pref = wb.SheetNames.find(n => /natureza\s*x\s*fluxo/i.test(norm(n)));
   const ws = wb.Sheets[pref || wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false });
-  let hi = -1, ci = -1, di = -1;
+
+  let hi = -1, ci = -1, di = -1, cf = -1, ff = -1;
   for (let i = 0; i < Math.min(15, rows.length); i++){
     const nrm = (rows[i]||[]).map(normHdr);
     const c = nrm.findIndex(h => h === 'codigo' || h === 'cod' || (h.indexOf('cod')>=0 && h.indexOf('natureza')>=0));
     const d = nrm.findIndex(h => h.indexOf('desc') === 0);
-    if (c !== -1 && d !== -1){ hi = i; ci = c; di = d; break; }
+    if (c !== -1 && d !== -1){
+      hi = i; ci = c; di = d;
+      cf = nrm.findIndex(h => h.indexOf('cod')>=0 && h.indexOf('fluxo')>=0);
+      ff = nrm.findIndex((h,j) => j !== cf && h.indexOf('fluxo')>=0);
+      break;
+    }
   }
   if (hi === -1) return {};
   const map = {};
+  const naturezasRepetidas = [];
   for (let i = hi+1; i < rows.length; i++){
-    const code = safeStr((rows[i]||[])[ci]), desc = safeStr((rows[i]||[])[di]);
-    if (code && desc && !(code in map)) map[code] = desc;
+    const linha = rows[i] || [];
+    const code = safeStr(linha[ci]), desc = safeStr(linha[di]);
+    if (!code) continue;
+    /* Alguns códigos aparecem duas vezes com fluxos diferentes. Fica a última
+       linha da planilha, que é a mais recente — e a divergência é contada para
+       a tela poder avisar. */
+    if (code in map) naturezasRepetidas.push(code);
+    map[code] = {
+      descricao: desc,
+      conta_fluxo: cf >= 0 ? safeStr(linha[cf]) : '',
+      fluxo_caixa: ff >= 0 ? safeStr(linha[ff]) : '',
+    };
   }
+  map._repetidas = naturezasRepetidas;
   return map;
 }
 </script>
@@ -1109,7 +1133,10 @@ async function processFiles(files){
         else if (tipo === 'nf_servico'){ state.store.nf_servico = await parseNFServico(f); entry.count = state.store.nf_servico.length; }
         else if (tipo === 'nf_titulo'){  state.store.nf_titulo  = await parseNFTitulo(f);  entry.count = state.store.nf_titulo.length; }
         else if (tipo === 'reembolso'){  state.store.reembolso  = await parseReembolso(f); entry.count = state.store.reembolso.length; }
-        else if (tipo === 'naturezas'){  state.naturezas = await parseNaturezas(f); entry.count = Object.keys(state.naturezas||{}).length; }
+        else if (tipo === 'naturezas'){
+          state.naturezas = await parseNaturezas(f);
+          entry.count = Object.keys(state.naturezas||{}).filter(k => k.charAt(0) !== '_').length;
+        }
       } catch (e){
         entry.ok = false; entry.err = e.message || String(e);
       }
@@ -1159,7 +1186,11 @@ function montarPayload(){
   if (tiposLidos.has('nf_servico')) p.nf_servico = state.store.nf_servico;
   if (tiposLidos.has('nf_titulo'))  p.nf_titulo  = state.store.nf_titulo;
   if (tiposLidos.has('reembolso'))  p.reembolso  = state.store.reembolso;
-  if (state.naturezas) p.naturezas = state.naturezas;
+  if (state.naturezas){
+    const limpo = {};
+    Object.keys(state.naturezas).forEach(k => { if (k.charAt(0) !== '_') limpo[k] = state.naturezas[k]; });
+    p.naturezas = limpo;
+  }
   /* O histórico é alimentado só pelo relatório de baixas — é dele que sai o
      valor efetivamente pago. O de vencimento não tem o que contribuir aqui. */
   if (state.store.baixas.length){
@@ -1210,6 +1241,28 @@ async function limparBase(){
   } catch (e){
     toast('Erro ao limpar: ' + (e.message || e));
   } finally { showOverlay(false); }
+}
+
+/* Exporta o recorte que está na tela no formato do relatório que a
+   controladoria usa. Mesma função do painel — mora no conciliacao.js. */
+function exportarRelatorioDaConferencia(){
+  if (!state.conc){ toast('Suba os relatórios primeiro.'); return; }
+  const listas = listasDaAba();
+  const L = listas[state.aba];
+  const linhas = Conc.montarLinhas(state.conc, state.store.baixas)
+    .filter(x => !x.oculto)
+    .filter(x => {
+      if (state.aba === 'todos') return true;
+      if (L.totvs) return L.linhas.indexOf(x.titulo) >= 0;
+      return L.linhas.some(it => it.fluig && x.item && it.fluig === x.item.fluig);
+    });
+  const alvo = linhas.length ? linhas : Conc.montarLinhas(state.conc, state.store.baixas).filter(x => !x.oculto);
+  try {
+    const res = Conc.exportarRelatorio(alvo, state.dataRef, state.naturezas || {}, L.rotulo);
+    toast(res.linhas + ' linha(s) exportada(s).');
+  } catch(e){
+    toast(e.message || String(e));
+  }
 }
 
 function baixarJson(){
@@ -1282,6 +1335,7 @@ document.addEventListener('DOMContentLoaded', () => {
   dz.addEventListener('drop', e => processFiles(Array.from(e.dataTransfer.files || [])));
 
   el('btn-enviar').addEventListener('click', enviar);
+  el('btn-relatorio').addEventListener('click', exportarRelatorioDaConferencia);
   el('btn-json').addEventListener('click', baixarJson);
   el('btn-limpar').addEventListener('click', abrirLimpar);
   el('btn-reset').addEventListener('click', resetTudo);

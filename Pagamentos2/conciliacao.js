@@ -118,9 +118,29 @@ function classificarStatus(status){
 }
 
 /* -------------------------------------------------------------- títulos */
+/* Identidade do título. Lançamento próprio (CIOT e afins) repete o mesmo número
+   todo dia, então ele carrega um id próprio — senão o ajuste feito no de hoje
+   valeria também para o de ontem. */
 function chaveTitulo(t){
+  if (safeStr(t.id_manual)) return 'manual:' + safeStr(t.id_manual);
   return [t.prefixo, t.numero, t.parcela, t.tipo, t.fornecedor_cod, t.loja]
     .map(v => safeStr(v)).join('|');
+}
+
+/* Modelo do CIOT: um título por dia, valor total transferido, tudo fixo menos
+   o valor. Os códigos vêm do relatório que a controladoria já usa. */
+const MODELO_CIOT = {
+  banco: 'ITAU', numero: '1', tipo: 'CIOT',
+  natureza: '11030406', conta_fluxo: '21004', fluxo_caixa: 'Frota Tercerizada',
+  fornecedor: 'EFRETE', bordero: 'Manual', manual: true, origem_manual: 'CIOT',
+};
+function novoCiot(dataISO){
+  return Object.assign({}, MODELO_CIOT, {
+    id_manual: 'CIOT-' + dataISO,
+    vencimento: dataISO, dt_baixa: null,
+    valor: 0, valor_rs: 0, valor_liquido: 0, saldo: 0,
+    historico: 'ADIANTAMENTO CIOT ' + fmtData(dataISO),
+  });
 }
 const estaPago = t => !!t.dt_baixa;
 
@@ -143,6 +163,7 @@ const aguardandoSit = s => s === 'sem_titulo_pendente' || s === 'em_aberto_pende
    a dizer o que o ajuste dizia, o ajuste é dado como absorvido e sai de cena —
    é isso que impede a planilha de acumular mentira com o tempo.
    ============================================================================ */
+const CAMPO_OCULTO = 'oculto';
 const CAMPOS_DATA = ['vencimento','dt_baixa','dt_emissao'];
 const CAMPOS_NUM  = ['valor','valor_rs','valor_liquido','saldo'];
 
@@ -179,7 +200,7 @@ function aplicarAjustes(titulos, ajustes){
         const campo = safeStr(a.campo);
         if (!campo) return;
         // o dado original já diz o que o ajuste dizia → absorvido
-        if (valorIgual(campo, t[campo], a.valor_novo)){
+        if (campo !== CAMPO_OCULTO && valorIgual(campo, t[campo], a.valor_novo)){
           novo._edicoes[campo] = { id: a.id, autor: a.autor, quando: a.quando,
                                    original: t[campo], absorvido: true };
           return;
@@ -188,6 +209,13 @@ function aplicarAjustes(titulos, ajustes){
         if (campo === 'vencimento' && t.dt_baixa){
           novo._edicoes[campo] = { id: a.id, autor: a.autor, quando: a.quando,
                                    original: t[campo], descartado: true };
+          return;
+        }
+        if (campo === CAMPO_OCULTO){
+          // ocultar não é edição de dado: some da prévia e dos totais, mas o
+          // título continua existindo e pode voltar a qualquer momento
+          novo._oculto = safeStr(a.valor_novo) !== '0' && safeStr(a.valor_novo) !== '';
+          novo._ocultoInfo = { id: a.id, autor: a.autor, quando: a.quando, motivo: a.motivo };
           return;
         }
         novo[campo] = converter(campo, a.valor_novo);
@@ -355,14 +383,18 @@ function resumir(conc, dataRef, baixas){
     aPagarHoje: z(), aPagarAmanha: z(),        // soma dos dois acima
     aguardandoHoje: z(), aguardandoAmanha: z(),// recorte sobreposto: falta aprovar
     atrasado: z(), semTituloAprovado: z(), cancelados: z(),
-    divergencias: 0, suspeitos: 0, aproximados: 0, editados: 0,
+    divergencias: 0, suspeitos: 0, aproximados: 0, editados: 0, ocultos: 0,
     soTotvs: z(), historico: z(), temDataRef: false,
   };
   const add = (b, v) => { b.qtd++; b.valor += (Number(v)||0); };
 
   /* Pago — vem do relatório de baixas. A data é a que estiver no arquivo, e a
      tela mostra qual é, em vez de fingir que é sempre ontem. */
-  const bx = baixas || [];
+  /* O CIOT nunca aparece no relatório de baixas do Totvs — ele é lançado aqui.
+     Por isso o Pago soma as duas fontes: o relatório e os lançamentos próprios
+     que já têm data de pagamento. */
+  const manuaisPagos = (conc.titulos || []).filter(t => t.manual && t.dt_baixa && !t._oculto);
+  const bx = (baixas || []).filter(t => !t._oculto).concat(manuaisPagos);
   const porData = {};
   bx.forEach(t => {
     const d = safeStr(t.dt_baixa).slice(0,10);
@@ -378,9 +410,12 @@ function resumir(conc, dataRef, baixas){
   }
 
   conc.titulos.forEach(t => {
+    if (t._oculto){ r.ocultos++; return; }
     if (t._editado) r.editados++;
     if (t.vencimento === dataRef || t.dt_baixa === dataRef) r.temDataRef = true;
     if (estaPago(t)){
+      // manual já pago entrou no bloco do Pago acima; não conta duas vezes
+      if (t.manual) return;
       if (t.dt_baixa === dataRef) add(r.pagoHoje, t.valor_liquido || t.valor_rs);
       add(r.historico, t.valor_liquido || t.valor_rs);
       return;
@@ -393,6 +428,7 @@ function resumir(conc, dataRef, baixas){
   (conc.soTotvsDireto || []).forEach(t => { if (!estaPago(t)) add(r.soTotvs, t.valor_rs); });
 
   conc.itens.forEach(it => {
+    if (it.par && it.par._oculto) return;
     if (it.aviso === 'valor_diverge') r.divergencias++;
     if (it.aviso === 'valor_corrigido' || it.aviso === 'valor_corrigido_sem_par') r.suspeitos++;
     if (it.modoPar === 'aprox') r.aproximados++;
@@ -434,8 +470,12 @@ function montarLinhas(conc, baixas){
     const it = itemPorTitulo.get(t);
     const parcelado = /[A-Za-z]/.test(safeStr(t.parcela));
     return {
-      fonte: ondeVeio,                       // 'previsto' | 'baixa'
+      // lançamento próprio já pago conta como baixa, mesmo sem estar no
+      // relatório do Totvs — é o caso do CIOT
+      fonte: (t.manual && t.dt_baixa) ? 'baixa' : ondeVeio,
       chave: chaveTitulo(t),
+      manual: !!t.manual,
+      id_manual: t.id_manual || '',
       titulo: t, item: it || null,
       origem: it ? it.rotulo : (safeStr(t.id_fluig) || parcelado ? 'Fluig (anterior)' : 'Direto no Totvs'),
       numero: t.numero + (t.parcela ? ('/' + t.parcela) : ''),
@@ -454,6 +494,12 @@ function montarLinhas(conc, baixas){
       editavel: true,
       editado: !!t._editado,
       edicoes: t._edicoes || null,
+      oculto: !!t._oculto,
+      ocultoInfo: t._ocultoInfo || null,
+      estimado: !!(t.manual && !t.dt_baixa),
+      natureza: t.natureza, conta_fluxo: t.conta_fluxo, fluxo_caixa: t.fluxo_caixa,
+      banco: t.banco, bordero: t.bordero,
+      valorPago: t.valor_liquido || t.valor_rs,
     };
   };
 
@@ -477,7 +523,10 @@ function montarLinhas(conc, baixas){
       situacao: it.situacao, aviso: it.aviso, modoPar: '',
       id_fluig: safeStr(it.fluig.id), status: it.fluig.status,
       editavel: false,
-      editado: false, edicoes: null,
+      editado: false, edicoes: null, oculto: false, ocultoInfo: null,
+      estimado: false, manual: false, id_manual: '',
+      natureza: it.fluig.natureza_cod || '', conta_fluxo: '', fluxo_caixa: '',
+      banco: '', bordero: '', valorPago: it.valor,
     });
   });
 
@@ -502,6 +551,122 @@ function montarHistorico(conc){
   }));
 }
 
+/* ============================================================================
+   EXPORTAÇÃO NO FORMATO DO RELATÓRIO DA CONTROLADORIA
+   ----------------------------------------------------------------------------
+   Reproduz o arquivo que a equipe já usa: aba Descritivo, título com a data,
+   doze colunas na ordem conhecida, Courier New 8 centralizado, coluna Banco em
+   laranja e o TOTAL A PAGAR com SUBTOTAL, que continua respeitando o filtro se
+   alguém filtrar a planilha depois.
+
+   Conta Fluxo C e Fluxo Caixa saem com o valor já resolvido pelo mapa de
+   naturezas, em vez do PROCV com link externo do modelo original.
+   ============================================================================ */
+/* Código interno do banco no Protheus, não o número da FEBRABAN: aqui o 001 é
+   a conta do Itaú. Códigos novos aparecem no relatório como estão, para ficar
+   visível que falta traduzir, em vez de sair um nome errado. */
+const BANCOS = { '001':'ITAU' };
+function nomeBanco(cod){
+  const s = safeStr(cod);
+  if (!s) return 'ITAU';
+  return BANCOS[s] || BANCOS[s.replace(/^0+/,'').padStart(3,'0')] || s;
+}
+
+const COLUNAS_RELATORIO = [
+  'Banco','No. Titulo','Tipo','Natureza','Conta Fluxo C','Fluxo Caixa',
+  'Nome Fornece','Vencto Real','Vlr.Titulo','Historico','Saldo','Bordero',
+];
+const LARGURAS_RELATORIO = [10, 12, 7, 12, 16.3, 18.6, 23.1, 12.7, 13.4, 27.7, 14.9, 12.6];
+const FMT_CONTABIL = '_-* #,##0.00_-;\\-* #,##0.00_-;_-* "-"??_-;_-@_-';
+
+/* Uma linha da tela vira uma linha do relatório. */
+function linhaRelatorio(x, naturezas){
+  const nat = safeStr(x.natureza);
+  const info = (naturezas && (naturezas[nat] || naturezas[nat.replace(/^0+/,'')])) || null;
+  const conta = x.conta_fluxo || (info ? info.conta_fluxo : '');
+  const fluxo = x.fluxo_caixa && x.fluxo_caixa !== 'Sim' && x.fluxo_caixa !== 'Nao'
+    ? x.fluxo_caixa : (info ? info.fluxo_caixa : '');
+  const numero = safeStr(x.titulo ? x.titulo.numero : x.numero);
+  return [
+    nomeBanco(x.banco),
+    /^\d+$/.test(numero) ? Number(numero) : numero,
+    safeStr(x.titulo ? x.titulo.tipo : ''),
+    /^\d+$/.test(nat) ? Number(nat) : nat,
+    /^\d+$/.test(safeStr(conta)) ? Number(conta) : safeStr(conta),
+    safeStr(fluxo),
+    safeStr(x.fornecedor),
+    x.vencimento ? new Date(x.vencimento + 'T12:00:00') : '',
+    Number(x.valorTotvs != null ? x.valorTotvs : x.valor) || 0,
+    safeStr(x.detalhe).replace(/[\r\n]+/g, ' '),
+    Number(x.valorPago != null ? x.valorPago : x.valor) || 0,
+    safeStr(x.bordero) || 'Manual',
+  ];
+}
+
+/* Monta e baixa o arquivo. Precisa do XLSX (xlsx-js-style) já carregado. */
+function exportarRelatorio(linhas, dataRef, naturezas, recorte){
+  if (typeof XLSX === 'undefined') throw new Error('Biblioteca de planilha não carregada.');
+  const visiveis = (linhas || []).filter(x => !x.oculto);
+  if (!visiveis.length) throw new Error('Nada para exportar.');
+
+  const titulo = 'RELATÓRIO CONTAS A PAGAR ON TIME - ' + fmtData(dataRef) +
+    (recorte ? ('  ·  ' + recorte) : '');
+  const aoa = [[], [titulo], [], COLUNAS_RELATORIO.slice()];
+  visiveis.forEach(x => aoa.push(linhaRelatorio(x, naturezas)));
+
+  const primeira = 5;                       // linha 5 do Excel
+  const ultima = primeira + visiveis.length - 1;
+  const linhaTotal = ultima + 2;
+  while (aoa.length < linhaTotal - 1) aoa.push([]);
+  const total = [];
+  total[9]  = 'TOTAL A PAGAR';
+  total[10] = { f: 'SUBTOTAL(9,K' + primeira + ':K' + ultima + ')' };
+  aoa.push(total);
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
+  ws['!merges'] = [{ s:{r:1,c:0}, e:{r:1,c:11} }];
+  ws['!cols'] = LARGURAS_RELATORIO.map(w => ({ wch: w }));
+  ws['!autofilter'] = { ref: 'A4:L' + ultima };
+
+  const base = { font:{ name:'Courier New', sz:8 }, alignment:{ horizontal:'center', vertical:'center' } };
+  const clone = extra => JSON.parse(JSON.stringify(Object.assign({}, base, extra)));
+
+  const estilos = {
+    titulo: clone({ font:{ name:'Courier New', sz:8, bold:true } }),
+    cabec:  clone({ font:{ name:'Courier New', sz:8, bold:true } }),
+    banco:  clone({ fill:{ patternType:'solid', fgColor:{ rgb:'FFC000' } } }),
+    normal: clone({}),
+  };
+
+  const setStyle = (addr, s, z) => {
+    if (!ws[addr]) ws[addr] = { t:'z' };
+    ws[addr].s = s;
+    if (z) ws[addr].z = z;
+  };
+  setStyle('A2', estilos.titulo);
+  COLUNAS_RELATORIO.forEach((_, i) => setStyle(XLSX.utils.encode_col(i) + '4', estilos.cabec));
+
+  for (let r = primeira; r <= ultima; r++){
+    for (let c = 0; c < COLUNAS_RELATORIO.length; c++){
+      const addr = XLSX.utils.encode_col(c) + r;
+      const s = (c === 0) ? estilos.banco : estilos.normal;
+      let z = null;
+      if (c === 8 || c === 10) z = FMT_CONTABIL;
+      if (c === 7) z = 'dd/mm/yyyy';
+      setStyle(addr, s, z);
+    }
+  }
+  setStyle('J' + linhaTotal, clone({ font:{ name:'Courier New', sz:8, bold:true } }));
+  setStyle('K' + linhaTotal, clone({ font:{ name:'Courier New', sz:8, bold:true } }), FMT_CONTABIL);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Descritivo');
+  const nome = dataRef.replace(/-/g,'_') + '_RELATORIO_CONTAS_A_PAGAR' +
+    (recorte ? ('_' + norm(recorte).replace(/[^a-z0-9]+/g,'_')) : '') + '.xlsx';
+  XLSX.writeFile(wb, nome);
+  return { linhas: visiveis.length, arquivo: nome };
+}
+
 /* -------------------------------------------------------------- exporta */
 raiz.Conc = {
   safeStr, norm, normHdr, normNum, normNome, nomesBatem,
@@ -510,6 +675,8 @@ raiz.Conc = {
   classificarStatus, definirMapaStatus,
   chaveTitulo, estaPago, SITUACOES, semTituloSit, aguardandoSit, TOL,
   aplicarAjustes, conciliar, resumir, montarLinhas, montarHistorico,
+  exportarRelatorio, linhaRelatorio, nomeBanco, COLUNAS_RELATORIO,
+  MODELO_CIOT, novoCiot, CAMPO_OCULTO,
   CAMPOS_DATA, CAMPOS_NUM,
 };
 

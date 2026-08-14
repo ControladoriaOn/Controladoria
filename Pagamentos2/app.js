@@ -25,6 +25,7 @@ const {
   safeStr, fmtBR, fmtBR0, fmtData, hojeISO, proxDiaUtil, norm,
   chaveTitulo, estaPago, SITUACOES,
   aplicarAjustes, conciliar, resumir, montarLinhas, definirMapaStatus,
+  exportarRelatorio, novoCiot, MODELO_CIOT, CAMPO_OCULTO,
 } = Conc;
 
 /* ------------------------------------------------------------------ DOM */
@@ -90,7 +91,7 @@ const HubLink = {
     const ok = this.veioDoHub();
     if (ok){
       try { sessionStorage.setItem(this.KEY, '1'); } catch(e){}
-      ['btn-hub','link-atualizar','btnNovo'].forEach(id => { const n = el(id); if (n) n.hidden = false; });
+      ['btn-hub','link-atualizar','btnNovo','btnCiot'].forEach(id => { const n = el(id); if (n) n.hidden = false; });
     }
     return ok;
   },
@@ -235,7 +236,7 @@ function mostrarErro(e){
    RECORTES — cada aba é um filtro sobre a mesma lista de linhas
    ============================================================================ */
 function recortes(){
-  const r = state.resumo, L = state.linhas;
+  const r = state.resumo, L = state.linhas.filter(x => !x.oculto);
   const previsto = L.filter(x => x.fonte === 'previsto' && x.situacao !== 'cancelado');
   const emAberto = x => !x.dt_baixa;
 
@@ -273,6 +274,12 @@ function recortes(){
       linhas: previsto.filter(x => emAberto(x) && x.vencimento && x.vencimento < r.dataRef),
       opcional: true,
     },
+    ocultos: {
+      rotulo: 'Ocultos',
+      icone: 'fa-eye-slash', classe: 'mute',
+      linhas: state.linhas.filter(x => x.oculto),
+      opcional: true, semValor: true,
+    },
     excecoes: {
       rotulo: 'Precisa de olho',
       icone: 'fa-flag', classe: 'warn',
@@ -303,7 +310,7 @@ function renderNav(){
   const nav = el('nav');
   nav.innerHTML = '';
   const R = recortes();
-  ['pago','hoje','amanha','atrasado','excecoes'].forEach(k => {
+  ['pago','hoje','amanha','atrasado','excecoes','ocultos'].forEach(k => {
     const rec = R[k];
     if (rec.opcional && !rec.linhas.length) return;
     const b = h('button', { class:'nav-item' + (state.aba === k ? ' active' : ''), type:'button' }, [
@@ -374,6 +381,10 @@ function secaoAvisos(){
     add('danger','fa-scale-unbalanced', r.divergencias + ' com valor diferente entre Fluig e Totvs. ',
       'Vale conferir antes de confiar no total.');
   }
+  if (r.ocultos){
+    add('info','fa-eye-slash', r.ocultos + ' título(s) oculto(s). ',
+      'Ficam fora dos totais, da prévia e do relatório, mas continuam na base — a aba Ocultos lista todos, com o motivo e o botão de trazer de volta.');
+  }
   if (state.orfaos.length){
     add('warn','fa-link-slash', state.orfaos.length + ' ajuste(s) sem título correspondente. ',
       'Foram feitos em títulos que não estão mais na base — provavelmente mudaram de número na origem ou saíram do relatório.');
@@ -434,14 +445,16 @@ function secaoTabela(){
   });
   selOri.onchange = e => { state.filtroOrigem = e.target.value; state.pagina = 1; atualizarTabela(); };
 
-  const btnXls = h('button', { class:'btn btn-ghost btn-sm', type:'button' }, [icone('fa-file-excel'), 'Excel']);
+  const btnXls = h('button', { class:'btn btn-ghost btn-sm', type:'button' }, [icone('fa-table-list'), 'Conferência']);
   btnXls.onclick = () => exportarExcel(L, rec.rotulo);
+  const btnRel = h('button', { class:'btn btn-primary btn-sm', type:'button' }, [icone('fa-file-excel'), 'Relatório']);
+  btnRel.onclick = () => gerarRelatorio(L, rec.rotulo);
 
   card.appendChild(h('div', { class:'card-bar' }, [
     h('div', { class:'card-bar-title' }, [ icone(rec.icone), rec.rotulo ]),
     h('div', { class:'filtros' }, [
       h('div', { class:'busca' }, [ icone('fa-magnifying-glass'), busca ]),
-      selSit, selOri, btnXls,
+      selSit, selOri, btnXls, btnRel,
     ]),
   ]));
 
@@ -536,6 +549,8 @@ function linhaTabela(x, ehPago){
   if (x.aviso === 'valor_corrigido_sem_par') tdSit.appendChild(badge('valor a conferir','b-warn'));
   if (x.modoPar === 'aprox') tdSit.appendChild(badge('casado por semelhança','b-info'));
   if (x.editado) tdSit.appendChild(badge('editado','b-orange'));
+  if (x.estimado) tdSit.appendChild(badge('estimado','b-warn'));
+  if (x.oculto)   tdSit.appendChild(badge('oculto','b-mute'));
 
   const tdData = h('td', { class:'mono' }, [ fmtData(ehPago ? x.dt_baixa : x.vencimento) ]);
   if (x.edicoes && x.edicoes[ehPago ? 'dt_baixa' : 'vencimento'] && !x.edicoes[ehPago?'dt_baixa':'vencimento'].absorvido){
@@ -552,9 +567,22 @@ function linhaTabela(x, ehPago){
 
   const tdAcoes = h('td', {}, []);
   if (state.podeEditar && x.editavel){
+    const bts = [];
+    // lançamento próprio ainda sem pagamento: atalho para confirmar o valor
+    if (x.manual && !x.dt_baixa){
+      const bc = h('button', { class:'btn-icon', type:'button', title:'Confirmar o valor que foi pago' }, [icone('fa-circle-check')]);
+      bc.onclick = () => confirmarPagamento(x);
+      bts.push(bc);
+    }
     const b = h('button', { class:'btn-icon', type:'button', title:'Editar este título' }, [icone('fa-pen')]);
     b.onclick = () => abrirEdicao(x);
-    tdAcoes.appendChild(h('div', { class:'acoes' }, [b]));
+    bts.push(b);
+    const bo = h('button', { class:'btn-icon', type:'button',
+      title: x.oculto ? 'Trazer de volta' : 'Ocultar da prévia e dos totais' },
+      [icone(x.oculto ? 'fa-eye' : 'fa-eye-slash')]);
+    bo.onclick = () => alternarOculto(x);
+    bts.push(bo);
+    tdAcoes.appendChild(h('div', { class:'acoes' }, bts));
   }
 
   return h('tr', { class: x.editado ? 'editada' : '' }, [
@@ -692,27 +720,109 @@ async function desfazerEdicoes(){
   }
 }
 
-/* ------------------------------------------------------ título novo --- */
-async function abrirNovo(){
+/* --------------------------------------------------- ocultar / CIOT --- */
+
+/* Ocultar não apaga: o título continua na base e volta com um clique. Apagar
+   de verdade não resolveria, porque ele reapareceria no próximo relatório do
+   Totvs e alguém teria que apagar de novo todo dia. */
+async function alternarOculto(linha){
   if (!(await Auth.pedir())) return;
-  edicaoAtual = { novo: true };
-  el('me-titulo').textContent = 'Novo título';
-  el('me-sub').textContent = 'Para o pagamento que não passou nem pelo Fluig nem pelo Totvs. Ele fica numa aba própria e o envio de relatório não apaga.';
+  const voltando = linha.oculto;
+  let motivo = '';
+  if (!voltando){
+    motivo = prompt('Por que está ocultando este título? (opcional)') || '';
+  }
+  await gravarComRecarga(
+    { acao:'ajuste', token: state.token, ajustes: [{
+        alvo: linha.chave, campo: CAMPO_OCULTO,
+        valor_novo: voltando ? '0' : '1', valor_antigo: voltando ? '1' : '0',
+        autor: state.autor, motivo: motivo,
+      }] },
+    voltando ? 'Trazendo de volta…' : 'Ocultando…',
+    voltando ? 'Título de volta na lista.' : 'Título ocultado.');
+}
+
+/* O CIOT é lançado como prévia e, no dia seguinte, confirmado com o valor que
+   de fato saiu. Em vez de lançar duas vezes, a mesma linha muda de estado. */
+async function confirmarPagamento(linha){
+  if (!(await Auth.pedir())) return;
+  const t = linha.titulo;
+  const sugerido = String(t.valor_rs || 0).replace('.', ',');
+  const resp = prompt('Valor que foi pago (R$):', sugerido);
+  if (resp === null) return;
+  const valor = Conc.parseBRNumber(resp);
+  if (!valor){ toast('Valor inválido.', true); return; }
+
+  const ontem = (() => {
+    const p = state.dataRef.split('-');
+    const d = new Date(+p[0], +p[1]-1, +p[2]);
+    d.setDate(d.getDate() - 1);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  })();
+  const data = prompt('Data do pagamento (aaaa-mm-dd):', t.vencimento || ontem);
+  if (!data) return;
+
+  const ajustes = [
+    { alvo: linha.chave, campo:'dt_baixa', valor_novo: data, valor_antigo:'', autor: state.autor, motivo:'confirmação de pagamento' },
+    { alvo: linha.chave, campo:'valor_liquido', valor_novo: String(valor), valor_antigo: String(t.valor_liquido||0), autor: state.autor, motivo:'confirmação de pagamento' },
+  ];
+  if (Math.abs(valor - (t.valor_rs||0)) > 0.005){
+    ajustes.push({ alvo: linha.chave, campo:'valor_rs', valor_novo: String(valor),
+      valor_antigo: String(t.valor_rs||0), autor: state.autor, motivo:'confirmação de pagamento' });
+  }
+  await gravarComRecarga({ acao:'ajuste', token: state.token, ajustes: ajustes },
+    'Confirmando…', 'Pagamento confirmado.');
+}
+
+/* Envia, espera a planilha assentar e recarrega — como a resposta do Apps
+   Script não é legível no modo no-cors, a confirmação vem dos dados. */
+async function gravarComRecarga(payload, textoLoader, textoOk){
+  el('load-text').textContent = textoLoader;
+  el('loader').style.display = 'flex';
+  el('loader').classList.remove('out');
+  try {
+    await enviar(payload);
+    await new Promise(r => setTimeout(r, 1800));
+    await carregar();
+    toast(textoOk);
+  } catch(e){
+    esconderLoader();
+    toast('Erro: ' + (e.message || e), true);
+  }
+}
+
+/* ------------------------------------------------------ título novo --- */
+/* modelo: null para título em branco, 'ciot' para o CIOT do dia já preenchido */
+async function abrirNovo(modelo){
+  if (!(await Auth.pedir())) return;
+  const ciot = (modelo === 'ciot');
+  const base = ciot ? novoCiot(state.dataRef) : {};
+  edicaoAtual = { novo: true, ciot: ciot, base: base };
+
+  el('me-titulo').textContent = ciot ? ('CIOT de ' + fmtData(state.dataRef)) : 'Novo título';
+  el('me-sub').textContent = ciot
+    ? 'Um lançamento por dia, com o valor total transferido. Só o valor precisa ser digitado; o resto já vai preenchido. Se ainda for previsão, deixe a data do pagamento em branco.'
+    : 'Para o pagamento que não passou nem pelo Fluig nem pelo Totvs. Fica numa aba própria e o envio de relatório não apaga.';
+
   const box = el('me-campos');
   box.innerHTML = '';
   CAMPOS_EDITAVEIS.forEach(c => {
+    let v = base[c.k];
+    if (v === undefined || v === null) v = (c.k === 'vencimento') ? state.dataRef : (c.tipo === 'number' ? 0 : '');
     const input = h('input', { type:c.tipo, id:'ed-'+c.k, step: c.tipo === 'number' ? '0.01' : null,
-      value: c.k === 'vencimento' ? state.dataRef : (c.tipo === 'number' ? '0' : '') });
+      value: c.tipo === 'number' ? (Number(v)||0) : safeStr(v) });
     box.appendChild(h('div', { class:'campo' + (c.wide ? ' wide' : '') }, [
       h('label', { for:'ed-'+c.k, text:c.rot }), input,
     ]));
   });
   el('me-reset').hidden = true;
   el('modalEdit').classList.add('show');
+  if (ciot) setTimeout(() => { const i = el('ed-valor_rs'); if (i){ i.focus(); i.select(); } }, 80);
 }
 
 async function salvarNovo(){
-  const titulo = { manual:true };
+  const base = (edicaoAtual && edicaoAtual.base) || {};
+  const titulo = Object.assign({}, base, { manual:true });
   CAMPOS_EDITAVEIS.forEach(c => {
     const input = el('ed-' + c.k);
     if (!input) return;
@@ -722,18 +832,34 @@ async function salvarNovo(){
     toast('Favorecido e valor são obrigatórios.', true); return;
   }
   titulo.valor = titulo.valor_rs;
+  if (!titulo.valor_liquido) titulo.valor_liquido = titulo.valor_rs;
+  // id próprio: o CIOT repete o número 1 todo dia
+  if (!titulo.id_manual){
+    titulo.id_manual = (titulo.tipo || 'MAN') + '-' + (titulo.vencimento || state.dataRef) +
+      '-' + Math.random().toString(36).slice(2,6);
+  }
+  if (edicaoAtual && edicaoAtual.ciot) titulo.id_manual = 'CIOT-' + (titulo.vencimento || state.dataRef);
   fecharEdicao();
-  el('load-text').textContent = 'Gravando título…';
-  el('loader').style.display = 'flex';
-  el('loader').classList.remove('out');
+  await gravarComRecarga({ acao:'titulo_manual', token: state.token, titulo: titulo },
+    'Gravando título…', 'Título lançado.');
+}
+
+/* Exporta no formato do relatório que a controladoria já usa. Sai exatamente
+   o que está na tela, inclusive com os filtros aplicados — por isso o recorte
+   vai escrito no cabeçalho e no nome do arquivo. */
+function gerarRelatorio(L, rotulo){
+  const naturezas = (state.dados && state.dados.naturezas) || {};
   try {
-    await enviar({ acao:'titulo_manual', token: state.token, titulo: titulo });
-    await new Promise(r => setTimeout(r, 1800));
-    await carregar();
-    toast('Título lançado.');
+    const res = exportarRelatorio(L, state.dataRef, naturezas, rotulo);
+    const semFluxo = L.filter(x => {
+      const n = safeStr(x.natureza);
+      const info = naturezas[n] || naturezas[n.replace(/^0+/,'')];
+      return !x.conta_fluxo && !(info && info.conta_fluxo);
+    }).length;
+    toast(res.linhas + ' linha(s) no relatório' +
+      (semFluxo ? (' · ' + semFluxo + ' sem conta de fluxo') : '') + '.');
   } catch(e){
-    esconderLoader();
-    toast('Erro ao gravar: ' + (e.message || e), true);
+    toast(e.message || String(e), true);
   }
 }
 
@@ -793,7 +919,9 @@ document.addEventListener('DOMContentLoaded', () => {
     el('loader').classList.remove('out');
     carregar();
   };
-  el('btnNovo').onclick = abrirNovo;
+  el('btnNovo').onclick = () => abrirNovo(null);
+  const bc = el('btnCiot');
+  if (bc) bc.onclick = () => abrirNovo('ciot');
 
   el('btnHamburger').onclick = () => abrirMenu(!el('sidebar').classList.contains('open'));
   el('sidebarOverlay').onclick = () => abrirMenu(false);
