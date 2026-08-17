@@ -517,7 +517,10 @@ function montarLinhas(conc, baixas){
       manual: !!t.manual,
       id_manual: t.id_manual || '',
       titulo: t, item: it || null,
-      origem: it ? it.rotulo : (safeStr(t.id_fluig) || parcelado ? 'Fluig (anterior)' : 'Direto no Totvs'),
+      origem: it ? it.rotulo
+              : (t.origem_manual === 'relatorio' ? 'Relatório do dia'
+              : (t.manual ? (t.origem_manual || 'Lançado à mão')
+              : ((safeStr(t.id_fluig) || parcelado) ? 'Fluig (anterior)' : 'Direto no Totvs'))),
       numero: t.numero + (t.parcela ? ('/' + t.parcela) : ''),
       fornecedor: t.fornecedor,
       detalhe: t.historico,

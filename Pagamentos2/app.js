@@ -15,7 +15,7 @@
 
 const CONFIG = {
   // ⬇️ mesma URL /exec usada no atualizar.html
-  DATA_URL: 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec',
+  DATA_URL: 'COLE_A_URL_DO_APPS_SCRIPT_V2_AQUI',
   RETRIES: 3,
   BACKOFF_MS: 600,
   PAGINA: 60,
@@ -471,8 +471,8 @@ function secaoAvisos(){
     ]));
   };
   if (!state.baixas.length){
-    add('info','fa-circle-info','Sem relatório de baixas. ',
-      'O “Pago” só aparece depois que o relatório do Totvs filtrado por data de baixa for enviado. Um título nunca é baixado no mesmo dia em que é pago, então esse número é sempre do dia anterior.');
+    add('info','fa-circle-info','Ainda sem os pagamentos do dia anterior. ',
+      'O “Pago” aparece quando for enviado o relatório diário da controladoria ou o relatório do Totvs filtrado por data de baixa. Um título nunca é baixado no mesmo dia em que é pago, então esse número é sempre de um dia anterior.');
   }
   if (r.semTituloAprovado.qtd){
     add('warn','fa-triangle-exclamation', r.semTituloAprovado.qtd + ' aprovado(s) sem título no Totvs. ',

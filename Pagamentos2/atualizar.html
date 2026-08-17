@@ -307,8 +307,9 @@
     </button>
     <input type="file" id="file-input" hidden multiple accept=".csv,.xlsx,.xls">
     <div class="dz-hint">
-      Totvs: <code>.csv</code> de títulos, filtrado por vencimento até amanhã<br>
-      Fluig: <code>.xlsx</code> de NFs de Serviço, Contas e Reembolsos · opcional: mapa de naturezas
+      Totvs: <code>.csv</code> por vencimento (previsto) e, se quiser, por data de baixa (pago)<br>
+      Controladoria: o <code>.xlsx</code> do relatório do dia anterior também serve como pago<br>
+      Fluig: <code>.xlsx</code> de NFs de Serviço, Contas e Reembolsos · uma vez só: mapa de naturezas
     </div>
   </section>
 
@@ -390,7 +391,7 @@
    CONFIG — cole aqui a URL /exec do Apps Script V2 (planilha de operação).
    ============================================================================ */
 const CONFIG = {
-  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec',
+  APP_SCRIPT_URL: 'COLE_A_URL_DO_APPS_SCRIPT_V2_AQUI',
 };
 
 /* ============================================================================
@@ -401,7 +402,7 @@ const CONFIG = {
    ============================================================================ */
 const el = id => document.getElementById(id);
 const {
-  safeStr, norm, normHdr, normNum, nomesBatem,
+  safeStr, norm, normHdr, normNum, normNome, nomesBatem,
   parseBRNumber, parseBRDate, fmtBR, fmtBR0, fmtData, hojeISO,
   proxDiaUtil, diaUtilAnterior, vencimentoEfetivo,
   repararAcentos, txt, classificarStatus,
@@ -447,7 +448,7 @@ async function detectType(file){
         if (orig.indexOf('N. TITULO') >= 0) return 'nf_titulo';
         return 'desconhecido';
       }
-      if (nrm[0] === 'banco' && orig.indexOf('No. Titulo') >= 0) return 'totvs_xlsx';
+      if (nrm[0] === 'banco' && orig.indexOf('No. Titulo') >= 0) return 'relatorio';
       const temCod  = nrm.some(h => h === 'codigo' || h === 'cod' || (h.indexOf('cod')===0 && h.indexOf('natureza')>=0));
       const temDesc = nrm.some(h => h.indexOf('desc') === 0);
       if (temCod && temDesc) return 'naturezas';
@@ -569,6 +570,146 @@ async function parseTotvs(file){
     [C.bordero,'Num Bordero'],
   ].filter(x => !x[0]).map(x => x[1]);
   return out;
+}
+
+/* ============================================================================
+   PARSER — RELATÓRIO DIÁRIO DA CONTROLADORIA (xlsx)
+   ----------------------------------------------------------------------------
+   É o arquivo que a equipe já produz todo dia. Aqui ele vale como o pagamento
+   efetivo do dia.
+
+   Três cuidados que o formato exige:
+   · o arquivo costuma ser salvo com o autofiltro ligado, então parte das linhas
+     fica escondida e o TOTAL A PAGAR reflete só o que estava visível — a
+     leitura ignora o filtro e pega tudo, e a tela avisa quando os dois números
+     não batem;
+   · a data que vale é o Vencto Real de cada linha, não a do título nem a do
+     nome do arquivo, então uma planilha com dias diferentes se espalha pelos
+     dias certos;
+   · o valor que vale é o Saldo, que é o que a fórmula do total soma.
+   ============================================================================ */
+const COLS_REL = { banco:0, numero:1, tipo:2, natureza:3, conta:4, fluxo:5,
+                   fornecedor:6, vencto:7, valorTitulo:8, historico:9,
+                   saldo:10, bordero:11 };
+
+async function parseRelatorio(file){
+  const buf = await readAsArrayBuffer(file);
+  const wb = XLSX.read(buf, { type:'array', cellDates:true });
+  const nomeAba = wb.SheetNames.find(n => /descritivo/i.test(norm(n))) || wb.SheetNames[0];
+  const ws = wb.Sheets[nomeAba];
+  /* raw:true é essencial aqui: com o valor formatado, "72.548,98" chega como
+     "72,548.98" (padrão americano da máscara contábil) e a leitura erraria a
+     casa decimal. Assim vêm o número e a data de verdade. */
+  const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:true, blankrows:true });
+
+  let hi = -1;
+  for (let i = 0; i < Math.min(20, rows.length); i++){
+    const linha = (rows[i] || []).map(safeStr);
+    if (normHdr(linha[0]) === 'banco' && linha.some(c => normHdr(c) === 'notitulo')){ hi = i; break; }
+  }
+  if (hi === -1) return [];
+
+  const out = [];
+  const vistos = {};
+  let totalDeclarado = null, paradoPor = null;
+
+  for (let i = hi + 1; i < rows.length; i++){
+    const l = rows[i] || [];
+    const a = safeStr(l[COLS_REL.banco]);
+    const j = safeStr(l[COLS_REL.historico]);
+
+    // o total fecha o bloco; a partir daí vem intercompany, que fica de fora
+    if (norm(j).indexOf('total') === 0){
+      totalDeclarado = parseBRNumber(l[COLS_REL.saldo]);
+      paradoPor = 'total';
+      break;
+    }
+    if (norm(a).indexOf('transferencia') >= 0 || norm(a).indexOf('intercompany') >= 0){
+      paradoPor = 'intercompany';
+      break;
+    }
+    const numero = safeStr(l[COLS_REL.numero]);
+    const forn = txt(l[COLS_REL.fornecedor]);
+    if (!numero && !forn) continue;
+
+    const data = parseBRDate(l[COLS_REL.vencto]);
+    const saldo = parseBRNumber(l[COLS_REL.saldo]);
+    const vlrTit = parseBRNumber(l[COLS_REL.valorTitulo]);
+
+    /* Identidade da linha. O relatório não traz prefixo, loja nem código do
+       fornecedor, então a chave é montada pelo conteúdo. O contador no fim
+       separa linhas idênticas (a fatura da Claro repete várias vezes no mesmo
+       dia) sem depender da ordem em que aparecem. */
+    const base = [data, numero, safeStr(l[COLS_REL.tipo]), normNome(forn), saldo.toFixed(2)].join('~');
+    vistos[base] = (vistos[base] || 0) + 1;
+
+    out.push({
+      numero: numero, id_fluig: '',
+      id_manual: 'REL~' + base + '~' + vistos[base],
+      origem_manual: 'relatorio',
+      parcela: '', prefixo: '',
+      tipo: safeStr(l[COLS_REL.tipo]),
+      natureza: safeStr(l[COLS_REL.natureza]),
+      fornecedor_cod: '', loja: '',
+      fornecedor: forn,
+      dt_emissao: null,
+      vencimento: data,
+      dt_baixa: data,                    // o relatório vale como pagamento efetivo
+      valor: vlrTit || saldo,
+      valor_rs: vlrTit || saldo,
+      valor_liquido: saldo,
+      saldo: 0,
+      historico: txt(l[COLS_REL.historico]),
+      forma_pgto: '',
+      banco: safeStr(l[COLS_REL.banco]),
+      bordero: safeStr(l[COLS_REL.bordero]),
+      fluxo_caixa: safeStr(l[COLS_REL.fluxo]),
+      conta_fluxo: safeStr(l[COLS_REL.conta]),
+      manual: true,
+    });
+  }
+
+  out.totalDeclarado = totalDeclarado;
+  out.paradoPor = paradoPor;
+  out.aba = nomeAba;
+  return out;
+}
+
+/* Confere o que foi lido do relatório da controladoria contra o total que
+   estava escrito nele. Os dois números divergem quando o arquivo foi salvo com
+   o filtro ligado — e aí o total da planilha é só parte do dia. */
+function diagnosticarRelatorio(linhas){
+  const d = { total: linhas.length, alertas: [], datas: [], soma: 0,
+              totalDeclarado: linhas.totalDeclarado, paradoPor: linhas.paradoPor };
+  const porData = {};
+  linhas.forEach(l => {
+    d.soma += Number(l.valor_liquido) || 0;
+    const dt = safeStr(l.dt_baixa).slice(0,10);
+    if (dt) porData[dt] = (porData[dt] || 0) + 1;
+    else d.semData = (d.semData || 0) + 1;
+  });
+  d.datas = Object.keys(porData).sort();
+
+  if (d.semData) d.alertas.push(d.semData + ' linha(s) sem Vencto Real — ficam de fora, porque não dá para saber de que dia são.');
+  if (d.datas.length > 1) d.alertas.push('o arquivo tem pagamentos de mais de um dia (' + d.datas.map(fmtData).join(', ') + '); cada linha entra no dia dela.');
+  if (d.totalDeclarado != null && Math.abs(d.totalDeclarado - d.soma) > 0.05){
+    d.alertas.push('o TOTAL A PAGAR escrito na planilha é ' + fmtBR(d.totalDeclarado) +
+      ', mas a soma de todas as linhas dá ' + fmtBR(d.soma) +
+      ' — provavelmente o arquivo foi salvo com o filtro ligado. Estou considerando todas as linhas.');
+  }
+  if (d.paradoPor === 'intercompany') d.alertas.push('o bloco de transferência intercompany foi ignorado, como combinado.');
+
+  // valor do título muito diferente do saldo costuma ser erro de digitação
+  const suspeitas = linhas.filter(l => {
+    const t = Number(l.valor_rs) || 0, s = Number(l.valor_liquido) || 0;
+    return t > 0 && s > 0 && (t / s > 5 || s / t > 5);
+  });
+  if (suspeitas.length){
+    d.alertas.push(suspeitas.length + ' linha(s) com Vlr.Titulo muito diferente do Saldo (ex.: ' +
+      suspeitas[0].fornecedor + ', ' + fmtBR(suspeitas[0].valor_rs) + ' contra ' + fmtBR(suspeitas[0].valor_liquido) +
+      '). Importei o Saldo, que é o que o total soma.');
+  }
+  return d;
 }
 
 /* ============================================================================
@@ -772,10 +913,10 @@ async function parseNaturezas(file){
    ============================================================================ */
 const state = {
   files: [],                 // [{nome, tipo, count, ok, err}]
-  store: { totvs:[], baixas:[], nf_servico:[], nf_titulo:[], reembolso:[] },
+  store: { totvs:[], baixas:[], relatorio:[], nf_servico:[], nf_titulo:[], reembolso:[] },
   naturezas: null,
   colunasAusentes: [],
-  diagBaixas: null, diagPrevisto: null,
+  diagBaixas: null, diagPrevisto: null, diagRelatorio: null,
   conc: null, resumo: null,
   aba: 'todos',
   dataRef: hojeISO(),
@@ -783,6 +924,7 @@ const state = {
 const TIPO_ROTULO = {
   totvs:      ['Totvs · previsto (por vencimento)','totvs'],
   baixas:     ['Totvs · pago (por data de baixa)','baixas'],
+  relatorio:  ['Relatório da controladoria (pago)','relatorio'],
   totvs_xlsx: ['Totvs · previsto (xlsx)','totvs'],
   nf_servico: ['NFs de Serviço (Fluig)','nf_servico'],
   nf_titulo:  ['Contas (Fluig)','nf_titulo'],
@@ -841,6 +983,8 @@ function removerArquivo(f){
     state.store.totvs = []; state.colunasAusentes = []; state.diagPrevisto = null;
   } else if (f.tipo === 'baixas'){
     state.store.baixas = []; state.diagBaixas = null;
+  } else if (f.tipo === 'relatorio'){
+    state.store.relatorio = []; state.diagRelatorio = null;
   } else if (f.tipo === 'nf_servico'){ state.store.nf_servico = []; }
   else if (f.tipo === 'nf_titulo'){   state.store.nf_titulo  = []; }
   else if (f.tipo === 'reembolso'){   state.store.reembolso  = []; }
@@ -923,6 +1067,34 @@ function renderConferencia(){
 
   /* "Tem certeza que é esse relatório?" — o que a tela entendeu de cada
      arquivo do Totvs, com o que destoou do esperado. */
+  if (state.diagRelatorio){
+    const d = state.diagRelatorio;
+    notes.appendChild(h('div', { class: d.alertas.length ? 'note warn' : 'note info' }, [
+      h('i', { class: d.alertas.length ? 'fa-solid fa-circle-question' : 'fa-solid fa-circle-check' }),
+      h('div', {}, [
+        h('strong', { text: 'Relatório da controladoria: ' }),
+        d.total + ' linha(s), R$ ' + fmtBR(d.soma) +
+        (d.datas.length ? (' em ' + d.datas.map(fmtData).join(', ')) : '') + '. ',
+        d.alertas.length ? h('span', { text: d.alertas.join(' ') }) : null,
+      ]),
+    ]));
+  }
+  // as duas fontes de Pago no mesmo dia somariam em dobro sem ninguém ver
+  if (state.store.baixas.length && state.store.relatorio.length){
+    const dias = {};
+    state.store.baixas.forEach(t => { if (t.dt_baixa) dias[t.dt_baixa] = (dias[t.dt_baixa]||{}); });
+    const cruza = state.store.relatorio.some(t => t.dt_baixa && dias[t.dt_baixa]);
+    if (cruza){
+      notes.appendChild(h('div', { class:'note danger' }, [
+        h('i', { class:'fa-solid fa-clone' }),
+        h('div', {}, [
+          h('strong', { text: 'Duas fontes de pago para o mesmo dia. ' }),
+          'Chegaram o relatório de baixas do Totvs e o relatório da controladoria cobrindo a mesma data, e os dois estão sendo somados. Tire um dos dois pelo X na lista de arquivos, senão o total do Pago sai dobrado.',
+        ]),
+      ]));
+    }
+  }
+
   [[state.diagBaixas, 'pago (por data de baixa)'], [state.diagPrevisto, 'previsto (por vencimento)']]
   .forEach(function(par){
     const d = par[0]; if (!d) return;
@@ -1087,7 +1259,7 @@ function tabelaTotvs(linhas){
    ============================================================================ */
 function recalcular(){
   const temAlgo = state.store.totvs.length || state.store.baixas.length
-               || state.store.nf_servico.length
+               || state.store.relatorio.length || state.store.nf_servico.length
                || state.store.nf_titulo.length || state.store.reembolso.length;
   if (!temAlgo){ state.conc = null; state.resumo = null; return; }
 
@@ -1095,7 +1267,10 @@ function recalcular(){
   // a tela avisa em vez de adivinhar uma data por conta própria.
   state.dataRef = hojeISO();
   state.conc = conciliar(state.store);
-  state.resumo = resumir(state.conc, state.dataRef, state.store.baixas);
+  // Pago vem das duas fontes: o relatório de baixas do Totvs e o relatório
+  // diário da controladoria, que vale como pagamento efetivo
+  state.pagos = state.store.baixas.concat(state.store.relatorio);
+  state.resumo = resumir(state.conc, state.dataRef, state.pagos);
 }
 /* Data mais presente entre os títulos em aberto — usada só para explicar,
    no aviso, de que dia o arquivo parece ser. */
@@ -1132,6 +1307,13 @@ async function processFiles(files){
             state.diagPrevisto = diag;
           }
         }
+        else if (tipo === 'relatorio'){
+          const linhas = await parseRelatorio(f);
+          state.store.relatorio = linhas;
+          state.diagRelatorio = diagnosticarRelatorio(linhas);
+          entry.count = linhas.length;
+          if (!entry.count){ entry.ok = false; entry.err = 'nenhuma linha reconhecida'; }
+        }
         else if (tipo === 'nf_servico'){ state.store.nf_servico = await parseNFServico(f); entry.count = state.store.nf_servico.length; }
         else if (tipo === 'nf_titulo'){  state.store.nf_titulo  = await parseNFTitulo(f);  entry.count = state.store.nf_titulo.length; }
         else if (tipo === 'reembolso'){  state.store.reembolso  = await parseReembolso(f); entry.count = state.store.reembolso.length; }
@@ -1167,7 +1349,7 @@ function render(){
   if (!pronto){ hint.textContent = 'Suba pelo menos um relatório para conferir.'; return; }
   const faltando = [];
   if (!state.store.totvs.length) faltando.push('Totvs previsto');
-  if (!state.store.baixas.length) faltando.push('Totvs pago');
+  if (!state.store.baixas.length && !state.store.relatorio.length) faltando.push('pago do dia anterior');
   if (!state.store.nf_servico.length) faltando.push('NFs de Serviço');
   if (!state.store.nf_titulo.length) faltando.push('Contas');
   if (!state.store.reembolso.length) faltando.push('Reembolsos');
@@ -1184,7 +1366,9 @@ function montarPayload(){
   const p = {};
   const tiposLidos = new Set(state.files.filter(f => f.ok).map(f => f.tipo));
   if (tiposLidos.has('totvs') || tiposLidos.has('totvs_xlsx')) p.titulos = state.store.totvs;
-  if (tiposLidos.has('baixas')) p.baixas = state.store.baixas;
+  if (tiposLidos.has('baixas') || tiposLidos.has('relatorio')){
+    p.baixas = state.store.baixas.concat(state.store.relatorio);
+  }
   if (tiposLidos.has('nf_servico')) p.nf_servico = state.store.nf_servico;
   if (tiposLidos.has('nf_titulo'))  p.nf_titulo  = state.store.nf_titulo;
   if (tiposLidos.has('reembolso'))  p.reembolso  = state.store.reembolso;
@@ -1195,8 +1379,9 @@ function montarPayload(){
   }
   /* O histórico é alimentado só pelo relatório de baixas — é dele que sai o
      valor efetivamente pago. O de vencimento não tem o que contribuir aqui. */
-  if (state.store.baixas.length){
-    const hist = montarHistorico({ titulos: state.store.baixas });
+  const pagos = state.store.baixas.concat(state.store.relatorio);
+  if (pagos.length){
+    const hist = montarHistorico({ titulos: pagos });
     if (hist.length) p.historico = hist;
   }
   return p;
@@ -1251,14 +1436,14 @@ function exportarRelatorioDaConferencia(){
   if (!state.conc){ toast('Suba os relatórios primeiro.'); return; }
   const listas = listasDaAba();
   const L = listas[state.aba];
-  const linhas = Conc.montarLinhas(state.conc, state.store.baixas)
+  const linhas = Conc.montarLinhas(state.conc, state.pagos || [])
     .filter(x => !x.oculto)
     .filter(x => {
       if (state.aba === 'todos') return true;
       if (L.totvs) return L.linhas.indexOf(x.titulo) >= 0;
       return L.linhas.some(it => it.fluig && x.item && it.fluig === x.item.fluig);
     });
-  const alvo = linhas.length ? linhas : Conc.montarLinhas(state.conc, state.store.baixas).filter(x => !x.oculto);
+  const alvo = linhas.length ? linhas : Conc.montarLinhas(state.conc, state.pagos || []).filter(x => !x.oculto);
   try {
     const res = Conc.exportarRelatorio(alvo, state.dataRef, state.naturezas || {}, L.rotulo);
     toast(res.linhas + ' linha(s) exportada(s).');
@@ -1306,9 +1491,9 @@ async function fetchStatus(){
 
 function resetTudo(){
   state.files = [];
-  state.store = { totvs:[], baixas:[], nf_servico:[], nf_titulo:[], reembolso:[] };
+  state.store = { totvs:[], baixas:[], relatorio:[], nf_servico:[], nf_titulo:[], reembolso:[] };
   state.naturezas = null; state.colunasAusentes = [];
-  state.diagBaixas = null; state.diagPrevisto = null;
+  state.diagBaixas = null; state.diagPrevisto = null; state.diagRelatorio = null;
   state.conc = null; state.resumo = null; state.aba = 'todos';
   el('file-input').value = '';
   render();
