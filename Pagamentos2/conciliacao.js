@@ -73,11 +73,49 @@ function hojeISO(){
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
-function proxDiaUtil(iso){
-  const p = String(iso).split('-');
-  const d = new Date(+p[0], +p[1]-1, +p[2]);
-  do { d.setDate(d.getDate()+1); } while (d.getDay()===0 || d.getDay()===6);
+/* ---------------------------------------------------------- dias úteis
+   Pagamento só acontece em dia útil. Os feriados vêm da aba Feriados da
+   planilha, que o Arthur edita uma vez por ano — sem isso o painel apontaria
+   a previsão para um dia em que ninguém paga. */
+let FERIADOS = {};
+function definirFeriados(lista){
+  FERIADOS = {};
+  (lista || []).forEach(f => {
+    const d = (typeof f === 'string') ? f : (f && (f.data || f.dia));
+    const iso = safeStr(d).slice(0,10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) FERIADOS[iso] = (f && f.descricao) || 'feriado';
+  });
+}
+function ehFeriado(iso){ return !!FERIADOS[safeStr(iso).slice(0,10)]; }
+
+function isoDe_(d){
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function dataDe_(iso){
+  const p = String(iso).split('-');
+  return new Date(+p[0], +p[1]-1, +p[2]);
+}
+function ehDiaUtil(iso){
+  const d = dataDe_(iso);
+  return d.getDay() !== 0 && d.getDay() !== 6 && !ehFeriado(iso);
+}
+function proxDiaUtil(iso){
+  const d = dataDe_(iso);
+  do { d.setDate(d.getDate()+1); } while (!ehDiaUtil(isoDe_(d)));
+  return isoDe_(d);
+}
+function diaUtilAnterior(iso){
+  const d = dataDe_(iso);
+  do { d.setDate(d.getDate()-1); } while (!ehDiaUtil(isoDe_(d)));
+  return isoDe_(d);
+}
+/* Título que vence em sábado, domingo ou feriado é pago no próximo dia útil —
+   é o que a controladoria faz na prática. A data original continua guardada
+   para a tela poder mostrar de onde ele veio. */
+function vencimentoEfetivo(iso){
+  const s = safeStr(iso).slice(0,10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  return ehDiaUtil(s) ? s : proxDiaUtil(s);
 }
 
 /* ---------------------------------------------------- acentos quebrados */
@@ -412,7 +450,8 @@ function resumir(conc, dataRef, baixas){
   conc.titulos.forEach(t => {
     if (t._oculto){ r.ocultos++; return; }
     if (t._editado) r.editados++;
-    if (t.vencimento === dataRef || t.dt_baixa === dataRef) r.temDataRef = true;
+    const venc = vencimentoEfetivo(t.vencimento);
+    if (venc === dataRef || t.dt_baixa === dataRef) r.temDataRef = true;
     if (estaPago(t)){
       // manual já pago entrou no bloco do Pago acima; não conta duas vezes
       if (t.manual) return;
@@ -420,10 +459,10 @@ function resumir(conc, dataRef, baixas){
       add(r.historico, t.valor_liquido || t.valor_rs);
       return;
     }
-    if (!t.vencimento) return;
-    if (t.vencimento === dataRef) add(r.abertoHoje, t.valor_rs);
-    else if (t.vencimento === amanha) add(r.abertoAmanha, t.valor_rs);
-    else if (t.vencimento < dataRef) add(r.atrasado, t.valor_rs);
+    if (!venc) return;
+    if (venc === dataRef) add(r.abertoHoje, t.valor_rs);
+    else if (venc === amanha) add(r.abertoAmanha, t.valor_rs);
+    else if (venc < dataRef) add(r.atrasado, t.valor_rs);
   });
   (conc.soTotvsDireto || []).forEach(t => { if (!estaPago(t)) add(r.soTotvs, t.valor_rs); });
 
@@ -436,14 +475,15 @@ function resumir(conc, dataRef, baixas){
 
     // no "a pagar" só entra o que ainda NÃO existe como título — o que já
     // existe já foi contado do lado do Totvs, somar de novo duplicaria
+    const vi = vencimentoEfetivo(it.vencimento);
     if (semTituloSit(it.situacao)){
       if (it.situacao === 'sem_titulo_aprovado') add(r.semTituloAprovado, it.valor);
-      if (it.vencimento === dataRef) add(r.foraTotvsHoje, it.valor);
-      else if (it.vencimento === amanha) add(r.foraTotvsAmanha, it.valor);
+      if (vi === dataRef) add(r.foraTotvsHoje, it.valor);
+      else if (vi === amanha) add(r.foraTotvsAmanha, it.valor);
     }
     if (aguardandoSit(it.situacao)){
-      if (it.vencimento === dataRef) add(r.aguardandoHoje, it.valor);
-      else if (it.vencimento === amanha) add(r.aguardandoAmanha, it.valor);
+      if (vi === dataRef) add(r.aguardandoHoje, it.valor);
+      else if (vi === amanha) add(r.aguardandoAmanha, it.valor);
     }
   });
 
@@ -481,7 +521,9 @@ function montarLinhas(conc, baixas){
       numero: t.numero + (t.parcela ? ('/' + t.parcela) : ''),
       fornecedor: t.fornecedor,
       detalhe: t.historico,
-      vencimento: t.vencimento,
+      vencimento: vencimentoEfetivo(t.vencimento) || t.vencimento,
+      vencimentoOriginal: t.vencimento,
+      empurrado: !!(t.vencimento && vencimentoEfetivo(t.vencimento) !== t.vencimento),
       dt_baixa: t.dt_baixa,
       valor: (ondeVeio === 'baixa') ? (t.valor_liquido || t.valor_rs) : t.valor_rs,
       valorTotvs: t.valor_rs,
@@ -517,7 +559,9 @@ function montarLinhas(conc, baixas){
       numero: it.numero || ('#' + it.fluig.id),
       fornecedor: it.fornecedor,
       detalhe: it.fluig.solicitante ? ('solicitado por ' + it.fluig.solicitante) : '',
-      vencimento: it.vencimento,
+      vencimento: vencimentoEfetivo(it.vencimento) || it.vencimento,
+      vencimentoOriginal: it.vencimento,
+      empurrado: !!(it.vencimento && vencimentoEfetivo(it.vencimento) !== it.vencimento),
       dt_baixa: null,
       valor: it.valor, valorTotvs: null, valorFluig: it.valor,
       situacao: it.situacao, aviso: it.aviso, modoPar: '',
@@ -595,7 +639,7 @@ function linhaRelatorio(x, naturezas){
     /^\d+$/.test(safeStr(conta)) ? Number(conta) : safeStr(conta),
     safeStr(fluxo),
     safeStr(x.fornecedor),
-    x.vencimento ? new Date(x.vencimento + 'T12:00:00') : '',
+    (x.vencimentoOriginal || x.vencimento) ? new Date((x.vencimentoOriginal || x.vencimento) + 'T12:00:00') : '',
     Number(x.valorTotvs != null ? x.valorTotvs : x.valor) || 0,
     safeStr(x.detalhe).replace(/[\r\n]+/g, ' '),
     Number(x.valorPago != null ? x.valorPago : x.valor) || 0,
@@ -667,15 +711,38 @@ function exportarRelatorio(linhas, dataRef, naturezas, recorte){
   return { linhas: visiveis.length, arquivo: nome };
 }
 
+/* ============================================================================
+   TENDÊNCIA DO PAGO
+   Últimos dias úteis a partir do histórico já empilhado. Serve para o número do
+   Pago deixar de ser um valor solto e ganhar contexto.
+   ============================================================================ */
+function serieDiaria(baixas, ateISO, dias){
+  const n = dias || 10;
+  const porData = {};
+  (baixas || []).filter(t => !t._oculto).forEach(t => {
+    const d = safeStr(t.dt_baixa).slice(0,10);
+    if (!d) return;
+    porData[d] = (porData[d] || 0) + (Number(t.valor_liquido || t.valor_rs) || 0);
+  });
+  const saida = [];
+  let cursor = ehDiaUtil(ateISO) ? ateISO : diaUtilAnterior(ateISO);
+  for (let i = 0; i < n; i++){
+    saida.unshift({ data: cursor, valor: porData[cursor] || 0, temDado: cursor in porData });
+    cursor = diaUtilAnterior(cursor);
+  }
+  return saida;
+}
+
 /* -------------------------------------------------------------- exporta */
 raiz.Conc = {
   safeStr, norm, normHdr, normNum, normNome, nomesBatem,
-  parseBRNumber, parseBRDate, fmtBR, fmtBR0, fmtData, hojeISO, proxDiaUtil,
+  parseBRNumber, parseBRDate, fmtBR, fmtBR0, fmtData, hojeISO,
+  proxDiaUtil, diaUtilAnterior, ehDiaUtil, ehFeriado, definirFeriados, vencimentoEfetivo,
   repararAcentos, txt,
   classificarStatus, definirMapaStatus,
   chaveTitulo, estaPago, SITUACOES, semTituloSit, aguardandoSit, TOL,
   aplicarAjustes, conciliar, resumir, montarLinhas, montarHistorico,
-  exportarRelatorio, linhaRelatorio, nomeBanco, COLUNAS_RELATORIO,
+  exportarRelatorio, linhaRelatorio, nomeBanco, COLUNAS_RELATORIO, serieDiaria,
   MODELO_CIOT, novoCiot, CAMPO_OCULTO,
   CAMPOS_DATA, CAMPOS_NUM,
 };

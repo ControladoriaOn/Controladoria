@@ -26,6 +26,7 @@ const {
   chaveTitulo, estaPago, SITUACOES,
   aplicarAjustes, conciliar, resumir, montarLinhas, definirMapaStatus,
   exportarRelatorio, novoCiot, MODELO_CIOT, CAMPO_OCULTO,
+  definirFeriados, diaUtilAnterior, ehDiaUtil, ehFeriado, serieDiaria,
 } = Conc;
 
 /* ------------------------------------------------------------------ DOM */
@@ -180,12 +181,15 @@ async function enviar(payload){
    CARGA E PREPARO
    ============================================================================ */
 async function carregar(primeira){
-  if (!primeira) el('load-text').textContent = 'Atualizando…';
+  const etapa = t => { const n = el('load-text'); if (n) n.textContent = t; };
+  etapa(primeira ? 'Lendo a base…' : 'Atualizando…');
   try {
     const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') + 'v=' + Date.now();
     state.dados = await buscarJson(url);
     if (state.dados && state.dados.erro) throw new Error(state.dados.erro);
+    etapa('Cruzando Fluig e Totvs…');
     preparar();
+    etapa('Montando o dia…');
     render();
     esconderLoader();
   } catch(e){
@@ -196,6 +200,8 @@ async function carregar(primeira){
 function preparar(){
   const d = state.dados || {};
   if (d.config_status) definirMapaStatus(d.config_status);
+  // feriados antes de qualquer conta: eles mudam o que é "amanhã"
+  definirFeriados(d.feriados || []);
 
   // ajustes manuais entram por cima dos dados crus, dos dois relatórios
   const aj = d.ajustes || [];
@@ -217,10 +223,22 @@ function preparar(){
 function esconderLoader(){
   const l = el('loader');
   l.classList.add('out');
-  setTimeout(() => { l.style.display = 'none'; }, 450);
+  setTimeout(() => { l.style.display = 'none'; }, 360);
+}
+/* Reabre o loader para uma gravação. O esqueleto só faz sentido na primeira
+   carga; depois disso ele só atrapalharia. */
+function abrirLoader(texto){
+  const l = el('loader');
+  const esq = l.querySelector('.esqueleto');
+  if (esq) esq.style.display = 'none';
+  el('load-text').textContent = texto || 'Carregando…';
+  l.style.display = 'flex';
+  l.classList.remove('out');
 }
 function mostrarErro(e){
   const l = el('loader');
+  l.classList.remove('out');
+  l.style.display = 'flex';
   l.innerHTML = '';
   l.appendChild(h('div', { class:'load-logo' }, ['ON', h('span', { text:'TIME' })]));
   l.appendChild(h('div', { class:'load-text', style:'color:var(--danger);font-weight:600',
@@ -304,6 +322,26 @@ function render(){
   const avisos = secaoAvisos();
   if (avisos) c.appendChild(avisos);
   c.appendChild(secaoTabela());
+  animarValores();
+}
+
+/* Os valores sobem contando até o número. Uma vez por carga, curto, e
+   respeitando quem pediu menos animação no sistema. */
+function animarValores(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.querySelectorAll('.marco-valor[data-valor]').forEach(nó => {
+    const alvo = Number(nó.getAttribute('data-valor')) || 0;
+    if (!alvo) return;
+    const inicio = performance.now(), dur = 620;
+    const passo = agora => {
+      const t = Math.min(1, (agora - inicio) / dur);
+      const suave = 1 - Math.pow(1 - t, 3);
+      nó.textContent = 'R$ ' + fmtBR0(alvo * suave);
+      if (t < 1) requestAnimationFrame(passo);
+      else nó.textContent = 'R$ ' + fmtBR0(alvo);
+    };
+    requestAnimationFrame(passo);
+  });
 }
 
 function renderNav(){
@@ -342,22 +380,85 @@ function renderStamp(){
     ':' + String(d.getMinutes()).padStart(2,'0') + (horas > 5 ? ' · há um tempo' : '');
 }
 
+/* Os três números não são três coisas iguais: são o mesmo dinheiro em três
+   momentos. Por isso a tela desenha uma linha do tempo — ontem fechado à
+   esquerda, hoje em destaque no centro, amanhã em esboço à direita. */
 function secaoKPIs(){
-  const R = recortes();
+  const R = recortes(), r = state.resumo;
   const sec = h('div', { class:'section' });
-  const grid = h('div', { class:'kpi-grid' });
-  ['pago','hoje','amanha'].forEach(k => {
+  const linha = h('div', { class:'timeline' });
+
+  const marco = (k, classe, extras) => {
     const rec = R[k];
-    const card = h('div', { class:'kpi clicavel ' + rec.classe + (state.aba === k ? ' ativo' : '') }, [
-      h('div', { class:'k-label', text: rec.rotulo }),
-      h('div', { class:'k-value', text: 'R$ ' + fmtBR0(rec.valor) }),
-      h('div', { class:'k-sub', text: rec.sub }),
+    const card = h('div', {
+      class:'marco ' + classe + ' ' + rec.classe + (state.aba === k ? ' ativo' : ''),
+      role:'button', tabindex:'0',
+    }, [
+      h('div', { class:'marco-topo' }, [
+        h('span', { class:'marco-quando', text: rec.rotulo }),
+        rec.qtd ? h('span', { class:'marco-qtd', text: rec.qtd + (rec.qtd === 1 ? ' título' : ' títulos') }) : null,
+      ]),
+      h('div', { class:'marco-valor', 'data-valor': Number(rec.valor)||0 }, [ 'R$ ' + fmtBR0(rec.valor) ]),
+      h('div', { class:'marco-sub', text: rec.sub }),
     ]);
-    card.onclick = () => { state.aba = k; state.pagina = 1; render(); };
-    grid.appendChild(card);
-  });
-  sec.appendChild(grid);
+    (extras || []).forEach(e => e && card.appendChild(e));
+    const ir = () => { state.aba = k; state.pagina = 1; render(); };
+    card.onclick = ir;
+    card.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); ir(); } };
+    return card;
+  };
+
+  // ontem: minigráfico dos últimos dias úteis, para o número ter contexto
+  const serie = serieDiaria(state.baixas, r.dataPago || r.dataRef, 10);
+  linha.appendChild(marco('pago', 'passado', [ serie.some(p => p.temDado) ? sparkline(serie) : null ]));
+  linha.appendChild(h('div', { class:'timeline-seta' }, [ icone('fa-chevron-right') ]));
+
+  // hoje: quanto do previsto já virou pagamento
+  const prevHoje = R.hoje.valor + R.pago.valor;
+  const frac = prevHoje > 0 ? Math.min(1, R.pago.valor / prevHoje) : 0;
+  const barra = h('div', { class:'marco-barra', title:'proporção já paga em relação ao previsto' }, [
+    h('span', { style:'width:' + Math.round(frac*100) + '%' }),
+  ]);
+  linha.appendChild(marco('hoje', 'presente', [
+    r.aguardandoHoje.qtd
+      ? h('div', { class:'marco-alerta' }, [ icone('fa-hourglass-half'),
+          h('span', { text: 'R$ ' + fmtBR0(r.aguardandoHoje.valor) + ' aguardando aprovação' }) ])
+      : null,
+    barra,
+  ]));
+  linha.appendChild(h('div', { class:'timeline-seta' }, [ icone('fa-chevron-right') ]));
+  linha.appendChild(marco('amanha', 'futuro', []));
+
+  sec.appendChild(linha);
   return sec;
+}
+
+/* Minigráfico de barras dos últimos dias úteis pagos. SVG puro: sem
+   dependência e sem custo de renderização. */
+function sparkline(serie){
+  const w = 132, hh = 30, gap = 2;
+  const max = Math.max.apply(null, serie.map(p => p.valor).concat([1]));
+  const bw = (w - gap * (serie.length - 1)) / serie.length;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 ' + w + ' ' + hh);
+  svg.setAttribute('class', 'spark');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  serie.forEach((p, i) => {
+    const altura = Math.max(1.5, (p.valor / max) * hh);
+    const rect = document.createElementNS(ns, 'rect');
+    rect.setAttribute('x', (i * (bw + gap)).toFixed(2));
+    rect.setAttribute('y', (hh - altura).toFixed(2));
+    rect.setAttribute('width', bw.toFixed(2));
+    rect.setAttribute('height', altura.toFixed(2));
+    rect.setAttribute('rx', '1.5');
+    rect.setAttribute('class', i === serie.length - 1 ? 'spark-hoje' : 'spark-dia');
+    const t = document.createElementNS(ns, 'title');
+    t.textContent = fmtData(p.data) + ' · R$ ' + fmtBR(p.valor);
+    rect.appendChild(t);
+    svg.appendChild(rect);
+  });
+  return h('div', { class:'marco-spark' }, [ svg ]);
 }
 
 function secaoAvisos(){
@@ -553,6 +654,11 @@ function linhaTabela(x, ehPago){
   if (x.oculto)   tdSit.appendChild(badge('oculto','b-mute'));
 
   const tdData = h('td', { class:'mono' }, [ fmtData(ehPago ? x.dt_baixa : x.vencimento) ]);
+  if (!ehPago && x.empurrado){
+    tdData.appendChild(h('span', { class:'antes', style:'text-decoration:none',
+      title:'venceu em dia sem pagamento e foi para o próximo dia útil',
+      text: 'venc. ' + fmtData(x.vencimentoOriginal) }));
+  }
   if (x.edicoes && x.edicoes[ehPago ? 'dt_baixa' : 'vencimento'] && !x.edicoes[ehPago?'dt_baixa':'vencimento'].absorvido){
     tdData.appendChild(h('span', { class:'antes', text: fmtData(x.edicoes[ehPago?'dt_baixa':'vencimento'].original) }));
   }
@@ -686,9 +792,7 @@ async function salvarEdicao(){
   if (!ajustes.length){ toast('Nada mudou.'); fecharEdicao(); return; }
 
   fecharEdicao();
-  el('load-text').textContent = 'Salvando alteração…';
-  el('loader').style.display = 'flex';
-  el('loader').classList.remove('out');
+  abrirLoader('Salvando alteração…');
   try {
     await enviar({ acao:'ajuste', token: state.token, ajustes: ajustes });
     await new Promise(r => setTimeout(r, 1800));
@@ -706,9 +810,7 @@ async function desfazerEdicoes(){
   if (!edicaoAtual) return;
   const alvo = edicaoAtual.chave;
   fecharEdicao();
-  el('load-text').textContent = 'Desfazendo…';
-  el('loader').style.display = 'flex';
-  el('loader').classList.remove('out');
+  abrirLoader('Desfazendo…');
   try {
     await enviar({ acao:'desfazer', token: state.token, id: 'alvo:' + alvo });
     await new Promise(r => setTimeout(r, 1800));
@@ -753,12 +855,7 @@ async function confirmarPagamento(linha){
   const valor = Conc.parseBRNumber(resp);
   if (!valor){ toast('Valor inválido.', true); return; }
 
-  const ontem = (() => {
-    const p = state.dataRef.split('-');
-    const d = new Date(+p[0], +p[1]-1, +p[2]);
-    d.setDate(d.getDate() - 1);
-    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  })();
+  const ontem = diaUtilAnterior(state.dataRef);
   const data = prompt('Data do pagamento (aaaa-mm-dd):', t.vencimento || ontem);
   if (!data) return;
 
@@ -777,9 +874,7 @@ async function confirmarPagamento(linha){
 /* Envia, espera a planilha assentar e recarrega — como a resposta do Apps
    Script não é legível no modo no-cors, a confirmação vem dos dados. */
 async function gravarComRecarga(payload, textoLoader, textoOk){
-  el('load-text').textContent = textoLoader;
-  el('loader').style.display = 'flex';
-  el('loader').classList.remove('out');
+  abrirLoader(textoLoader);
   try {
     await enviar(payload);
     await new Promise(r => setTimeout(r, 1800));
@@ -914,11 +1009,7 @@ document.addEventListener('DOMContentLoaded', () => {
     el('dataRef').value = state.dataRef;
     preparar(); render();
   };
-  el('btnRecarregar').onclick = () => {
-    el('loader').style.display = 'flex';
-    el('loader').classList.remove('out');
-    carregar();
-  };
+  el('btnRecarregar').onclick = () => { abrirLoader('Atualizando…'); carregar(); };
   el('btnNovo').onclick = () => abrirNovo(null);
   const bc = el('btnCiot');
   if (bc) bc.onclick = () => abrirNovo('ciot');

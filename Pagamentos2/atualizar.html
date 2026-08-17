@@ -402,7 +402,8 @@ const CONFIG = {
 const el = id => document.getElementById(id);
 const {
   safeStr, norm, normHdr, normNum, nomesBatem,
-  parseBRNumber, parseBRDate, fmtBR, fmtBR0, fmtData, hojeISO, proxDiaUtil,
+  parseBRNumber, parseBRDate, fmtBR, fmtBR0, fmtData, hojeISO,
+  proxDiaUtil, diaUtilAnterior, vencimentoEfetivo,
   repararAcentos, txt, classificarStatus,
   chaveTitulo, estaPago, SITUACOES, semTituloSit, aguardandoSit,
   conciliar, resumir, montarHistorico,
@@ -591,9 +592,9 @@ function diagnosticarTotvs(linhas){
   d.datasBaixa = Object.keys(datas).sort();
 
   const hoje = hojeISO();
-  const p = hoje.split('-'); const x = new Date(+p[0], +p[1]-1, +p[2]);
-  x.setDate(x.getDate()-1);
-  const ontem = x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+  // dia útil anterior, não "hoje menos um": senão toda segunda a tela acusaria
+  // que as baixas de sexta não são de ontem
+  const ontem = Conc.diaUtilAnterior(hoje);
 
   if (d.papel === 'baixas'){
     if (prop < 1){
@@ -602,7 +603,8 @@ function diagnosticarTotvs(linhas){
     if (d.datasBaixa.length > 1){
       d.alertas.push('as baixas são de mais de um dia: ' + d.datasBaixa.map(fmtData).join(', ') + '.');
     } else if (d.datasBaixa.length === 1 && d.datasBaixa[0] !== ontem){
-      d.alertas.push('as baixas são de ' + fmtData(d.datasBaixa[0]) + ', e não de ontem (' + fmtData(ontem) + ').');
+      d.alertas.push('as baixas são de ' + fmtData(d.datasBaixa[0]) +
+        ', e não do último dia útil (' + fmtData(ontem) + ').');
     }
   } else {
     const vencs = {};
@@ -1283,6 +1285,7 @@ async function fetchStatus(){
     const res = await fetch(CONFIG.APP_SCRIPT_URL + '?check=1&v=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const j = await res.json();
+    if (j.feriados) Conc.definirFeriados(j.feriados);
     const c = j.contagem || {};
     const total = (c.titulos||0) + (c.nf_servico||0) + (c.nf_titulo||0) + (c.reembolso||0);
     if (j.lastUpdated){
