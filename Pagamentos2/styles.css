@@ -37,7 +37,7 @@ body{
 
 /* ------------------------------------------------------------- sidebar */
 .sidebar{
-  width:var(--sidebar-w); flex-shrink:0; z-index:100;
+  width:var(--sidebar-w); flex-shrink:0; z-index:100; position:relative;
   background:linear-gradient(170deg,var(--plum-deep) 0%,var(--plum) 55%,var(--plum-light) 100%);
   color:rgba(255,255,255,.9); padding:24px 18px;
   display:flex; flex-direction:column; overflow-y:auto;
@@ -117,6 +117,36 @@ body{
   backdrop-filter:blur(2px);z-index:110}
 .sidebar-overlay.visible{display:block}
 
+/* ---- recolhida: vira uma faixa de ícones, e o estado fica gravado ---- */
+.btn-recolher{
+  position:absolute;top:16px;right:12px;width:26px;height:26px;border-radius:7px;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.6);cursor:pointer;font-size:11px;display:grid;place-items:center;
+  transition:all .15s;z-index:2;
+}
+.btn-recolher:hover{background:rgba(255,110,0,.22);color:#fff;border-color:rgba(255,110,0,.4)}
+body.recolhida .sidebar{width:72px;padding:24px 10px}
+body.recolhida .btn-recolher{right:50%;transform:translateX(50%);top:12px}
+body.recolhida .btn-recolher i{transform:rotate(180deg)}
+body.recolhida .logo{justify-content:center;padding-top:34px;gap:0}
+body.recolhida .logo-text,
+body.recolhida .side-card,
+body.recolhida .stamp-text,
+body.recolhida .nav-item span:not(.cnt),
+body.recolhida .btn-hub span{display:none}
+body.recolhida .nav-item{justify-content:center;padding:11px 0;position:relative}
+body.recolhida .nav-item .cnt{
+  position:absolute;top:2px;right:6px;font-size:9px;padding:0 4px;line-height:14px;
+}
+body.recolhida .btn-hub{padding:11px 0;justify-content:center}
+body.recolhida .stamp{justify-content:center}
+@media (max-width:1024px){
+  body.recolhida .sidebar{width:min(280px,84vw);padding:24px 18px}
+  body.recolhida .logo-text,body.recolhida .side-card,body.recolhida .stamp-text,
+  body.recolhida .nav-item span:not(.cnt),body.recolhida .btn-hub span{display:''}
+  .btn-recolher{display:none}
+}
+
 /* -------------------------------------------------------------- header */
 .main{flex:1;display:flex;flex-direction:column;overflow-y:auto}
 header{
@@ -135,16 +165,9 @@ header{
 }
 .page-title i{color:var(--orange)}
 .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.date-pick{
-  display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 12px;
-  background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);
-  transition:border-color .15s;
-}
-.date-pick:hover,.date-pick:focus-within{border-color:var(--orange)}
-.date-pick i{color:var(--orange);font-size:15px}
-.date-pick input{
-  border:none;background:transparent;outline:none;cursor:pointer;
-  font:700 13px var(--font-body);color:var(--ink);
+.header-data{
+  font-size:13px;font-weight:600;color:var(--muted);text-transform:capitalize;
+  white-space:nowrap;
 }
 .btn{
   display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:11px;
@@ -222,8 +245,26 @@ header{
 .marco.futuro{animation-delay:.14s}
 
 .marco.passado{background:linear-gradient(180deg,#fff 0%,var(--surface-soft) 100%)}
-.marco.presente{padding:24px 26px; border-color:#E0D6E0;
-  box-shadow:0 2px 4px rgba(45,27,45,.05), 0 16px 40px -20px rgba(45,27,45,.28)}
+.marco.presente{
+  padding:26px 28px; overflow:hidden; border-color:transparent;
+  background:linear-gradient(150deg,#2A0B2A 0%,#3D1238 58%,#2A0B2A 100%);
+  box-shadow:0 20px 48px -22px rgba(42,11,42,.7);
+}
+/* a luzinha laranja no canto, que dá o brilho do cartão */
+.marco.presente::after{
+  content:''; position:absolute; width:300px; height:300px; top:-130px; right:-100px;
+  border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle,rgba(255,110,0,.42),transparent 68%); filter:blur(34px);
+}
+.marco.presente::before{background:var(--orange)}
+.marco.presente .marco-quando{color:rgba(255,255,255,.62)}
+.marco.presente .marco-qtd{color:rgba(255,255,255,.45)}
+.marco.presente .marco-valor{color:var(--orange)}
+.marco.presente .marco-sub{color:rgba(255,255,255,.6)}
+.marco.presente .marco-barra{background:rgba(255,255,255,.14)}
+.marco.presente .marco-alerta{background:rgba(255,255,255,.1); color:#FFD9A8}
+.marco.presente:hover{box-shadow:0 26px 56px -22px rgba(42,11,42,.78)}
+.marco.presente.ativo{box-shadow:0 0 0 3px rgba(255,110,0,.35), 0 20px 48px -22px rgba(42,11,42,.7)}
 .marco.futuro{background:repeating-linear-gradient(135deg,#fff,#fff 9px,rgba(246,242,246,.7) 9px,rgba(246,242,246,.7) 18px)}
 .marco.futuro .marco-valor{color:var(--plum-soft)}
 
@@ -319,6 +360,12 @@ td.mono{font-family:var(--font-mono);white-space:nowrap}
 .acoes{display:flex;gap:2px;justify-content:flex-end}
 .empty{padding:40px 20px;text-align:center;color:var(--plum-soft);font-size:13px}
 .empty i{display:block;font-size:26px;color:var(--border);margin-bottom:10px}
+.paginacao{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  padding:10px 20px;font-size:12.5px;font-weight:600;color:var(--muted);
+}
+.paginacao.topo{border-bottom:1px solid var(--border-soft);background:var(--surface-soft)}
+.paginacao.baixo{border-top:1px solid var(--border-soft)}
 .rodape{
   padding:12px 20px;border-top:1px solid var(--border);background:var(--surface-soft);
   font-size:12.5px;font-weight:600;color:var(--muted);
@@ -342,34 +389,59 @@ td.mono{font-family:var(--font-mono);white-space:nowrap}
 .note.danger{background:var(--danger-soft);color:#7F1D1D}
 
 /* -------------------------------------------------------------- loader */
-/* Carregamento discreto: o esqueleto do painel já aparece e vai se preenchendo,
-   o que dá sensação de instantâneo. Nada de animação longa — esta tela abre
-   várias vezes por dia. */
-#loader{position:fixed;inset:0;z-index:9000;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:14px;background:var(--bg);
-  transition:opacity .32s ease, visibility .32s}
+/* ---------------------------------------------------------- carregamento
+   Painel roxo escuro com o mascote, barra e porcentagem, o esqueleto do painel
+   em volta e luzes respirando ao fundo. Aparece várias vezes por dia, então é
+   bonito mas curto: nada trava esperando animação terminar. */
+#loader{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;
+  justify-content:center;background:var(--bg);overflow:hidden;
+  transition:opacity .34s ease, visibility .34s}
 #loader.out{opacity:0;visibility:hidden;pointer-events:none}
-.load-mascote{position:relative;width:52px;height:52px;display:grid;place-items:center}
-.load-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,110,0,.16);
-  border-top-color:var(--orange);animation:spin .82s linear infinite}
-.load-mascote img{width:30px;height:30px;border-radius:8px;object-fit:cover}
-.load-logo{font-family:var(--font-display);font-size:23px;font-weight:700;
-  color:var(--plum);letter-spacing:-.02em;line-height:1}
-.load-logo span{color:var(--orange)}
-.load-text{font-size:12.5px;color:var(--muted);font-weight:500;min-height:18px;
-  transition:opacity .2s}
+.load-fundo{position:absolute;inset:0;pointer-events:none}
+.luz{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;
+  animation:respira 7s ease-in-out infinite}
+.luz-a{width:430px;height:430px;top:-130px;right:-90px;
+  background:radial-gradient(circle,rgba(255,110,0,.5),transparent 70%)}
+.luz-b{width:480px;height:480px;bottom:-170px;left:-120px;
+  background:radial-gradient(circle,rgba(92,26,92,.45),transparent 70%);animation-delay:1.6s}
+.luz-c{width:300px;height:300px;top:44%;left:52%;
+  background:radial-gradient(circle,rgba(255,138,46,.3),transparent 70%);animation-delay:3.2s}
+@keyframes respira{0%,100%{transform:scale(1);opacity:.38}50%{transform:scale(1.16);opacity:.62}}
 
-/* esqueleto que aparece por baixo enquanto os dados não chegam */
-.esqueleto{width:min(1100px,92vw);display:grid;gap:12px;margin-top:6px}
-.esq-linha{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:12px}
-.esq-bloco{height:118px;border-radius:var(--radius);border:1px solid var(--border);
+.load-palco{position:relative;width:min(1100px,92vw);display:grid;gap:14px}
+.load-card{
+  position:relative;overflow:hidden;border-radius:var(--radius);
+  padding:34px 26px;display:flex;flex-direction:column;align-items:center;gap:14px;
+  background:linear-gradient(150deg,#2A0B2A 0%,#3D1238 55%,#2A0B2A 100%);
+  box-shadow:0 24px 60px -24px rgba(42,11,42,.75);
+}
+.load-brilho{position:absolute;width:340px;height:340px;top:-150px;right:-110px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,110,0,.5),transparent 68%);filter:blur(38px);
+  animation:respira 5.5s ease-in-out infinite}
+.load-mascote{position:relative;width:78px;height:78px;display:grid;place-items:center}
+.load-ring{position:absolute;inset:0;border-radius:50%;border:2.5px solid rgba(255,255,255,.14);
+  border-top-color:var(--orange);animation:spin .9s linear infinite}
+.load-mascote img{width:56px;height:56px;border-radius:50%;object-fit:cover}
+.load-text{font-family:var(--font-display);font-size:16px;font-weight:600;color:#fff;
+  text-align:center;min-height:22px}
+.load-barra{width:min(340px,72%);height:6px;border-radius:99px;
+  background:rgba(255,255,255,.12);overflow:hidden}
+.load-barra span{display:block;height:100%;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,#FF8A2E,var(--orange));transition:width .35s ease}
+.load-pct{font-family:var(--font-mono);font-size:11.5px;color:rgba(255,255,255,.6)}
+
+.esq-linha{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:14px}
+.esq-bloco{height:116px;border-radius:var(--radius);border:1px solid var(--border);
   background:linear-gradient(100deg,var(--surface) 30%,var(--surface-soft) 50%,var(--surface) 70%);
-  background-size:220% 100%;animation:brilho 1.25s ease-in-out infinite}
-.esq-tabela{height:190px;border-radius:var(--radius);border:1px solid var(--border);
+  background-size:220% 100%;animation:brilho 1.3s ease-in-out infinite}
+.esq-tabela{height:180px;border-radius:var(--radius);border:1px solid var(--border);
   background:linear-gradient(100deg,var(--surface) 30%,var(--surface-soft) 50%,var(--surface) 70%);
-  background-size:220% 100%;animation:brilho 1.25s ease-in-out infinite .15s}
-@keyframes brilho{0%{background-position:180% 0} 100%{background-position:-60% 0}}
-@media (max-width:640px){ .esq-linha{grid-template-columns:1fr} .esq-bloco{height:78px} }
+  background-size:220% 100%;animation:brilho 1.3s ease-in-out infinite .15s}
+@keyframes brilho{0%{background-position:180% 0}100%{background-position:-60% 0}}
+@media (max-width:640px){
+  .esq-linha{grid-template-columns:1fr} .esq-bloco{height:70px} .esq-tabela{height:120px}
+  .load-card{padding:26px 18px}
+}
 
 /* -------------------------------------------------- modal / toast */
 .modal{position:fixed;inset:0;z-index:3000;display:none;align-items:center;

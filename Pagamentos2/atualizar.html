@@ -156,6 +156,61 @@
 
   /* ---------- tabela ---------- */
   .tbl-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
+  .roteiro{
+    border:1px solid var(--border); border-radius:var(--radius-sm);
+    overflow:hidden; margin-bottom:14px; background:var(--surface);
+  }
+  .roteiro.ok{border-color:#CBE7D7}
+  .roteiro-cab{
+    width:100%; display:flex; align-items:center; gap:10px; padding:12px 16px;
+    background:var(--warn-soft); border:none; font-family:inherit; font-size:13px;
+    font-weight:700; color:#7C2D12; cursor:pointer; text-align:left;
+  }
+  .roteiro.ok .roteiro-cab{background:var(--ok-soft); color:var(--ok)}
+  .roteiro-cab .roteiro-seta{margin-left:auto; transition:transform .2s}
+  .roteiro-cab.aberto .roteiro-seta{transform:rotate(180deg)}
+  .roteiro-corpo{display:none}
+  .roteiro-corpo.aberto{display:block}
+  .roteiro-item{
+    display:flex; align-items:flex-start; gap:10px; padding:11px 16px;
+    border-top:1px solid var(--border-soft); font-size:12.5px; line-height:1.5;
+  }
+  .roteiro-item.feito{opacity:.5}
+  .roteiro-item.erro{border-left:3px solid var(--danger)}
+  .roteiro-item.atencao{border-left:3px solid var(--warn)}
+  .roteiro-item.ok{border-left:3px solid var(--ok)}
+  .roteiro-check{
+    background:none; border:none; cursor:pointer; color:var(--plum-soft);
+    font-size:15px; padding:0; margin-top:1px;
+  }
+  .roteiro-check:hover{color:var(--orange)}
+  .roteiro-texto{flex:1}
+  .conf-barra{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:12px 20px; border-bottom:1px solid var(--border-soft);
+  }
+  .busca{position:relative; flex:1; min-width:180px}
+  .busca i{position:absolute; left:11px; top:50%; transform:translateY(-50%);
+    color:#B9A9B9; font-size:13px; pointer-events:none}
+  .busca input{
+    width:100%; padding:9px 12px 9px 32px; background:var(--bg);
+    border:1px solid var(--border); border-radius:9px; font-family:inherit;
+    font-size:13px; color:var(--plum-deep); outline:none; transition:all .15s;
+  }
+  .busca input:focus{border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.1); background:#fff}
+  .chips-linha{display:flex; gap:6px; flex-wrap:wrap}
+  .paginacao{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    flex-wrap:wrap; padding:10px 20px; font-size:12.5px; font-weight:600; color:var(--plum-soft);
+  }
+  .paginacao.topo{border-bottom:1px solid var(--border-soft); background:var(--surface-soft)}
+  .paginacao.baixo{border-top:1px solid var(--border-soft)}
+  .conf-total{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 20px; border-top:1px solid var(--border);
+    background:var(--surface-soft); font-size:13px; color:var(--plum-soft);
+  }
+  .conf-total strong{font-family:var(--font-display); font-size:16px; color:var(--plum-deep)}
   table{width:100%; border-collapse:separate; border-spacing:0; text-align:left}
   th{
     padding:11px 14px; font-size:10.5px; font-weight:700; letter-spacing:.05em;
@@ -205,6 +260,10 @@
     border:1px solid transparent; cursor:pointer; transition:all .15s;
   }
   .btn:disabled{opacity:.45; cursor:not-allowed}
+  .btn-tag{
+    margin-left:8px; padding:1px 7px; border-radius:999px; font-size:11px;
+    font-weight:700; background:rgba(255,255,255,.25);
+  }
   .btn-primary{
     background:linear-gradient(135deg,#FF8A2E 0%,var(--orange) 55%,var(--orange-deep) 100%);
     color:#fff; box-shadow:0 8px 20px -10px rgba(255,110,0,.65);
@@ -917,8 +976,11 @@ const state = {
   naturezas: null,
   colunasAusentes: [],
   diagBaixas: null, diagPrevisto: null, diagRelatorio: null,
-  conc: null, resumo: null,
+  conc: null, resumo: null, pagos: [],
   aba: 'todos',
+  busca: '', filtroTipo: '', pagina: 1,
+  conferidos: {},              // pontos do roteiro já marcados como vistos
+  roteiroAberto: false,
   dataRef: hojeISO(),
 };
 const TIPO_ROTULO = {
@@ -1042,6 +1104,67 @@ function listasDaAba(){
     antigos:     { rotulo:'De solicitação antiga', icone:'fa-clock-rotate-left', linhas: c.soTotvsAntigo, totvs:true },
   };
 }
+/* Cada aviso vira um ponto do roteiro: o que é, quantos são e para onde ir.
+   O id é estável, então marcar como conferido sobrevive a redesenhos da tela. */
+function montarPontos(){
+  const p = [], r = state.resumo, c = state.conc;
+  if (!c) return p;
+  const add = (id, nivel, titulo, detalhe, aba) => p.push({ id, nivel, titulo, detalhe, aba });
+
+  [[state.diagRelatorio, 'Relatório da controladoria'],
+   [state.diagBaixas, 'Relatório de pagos do Totvs'],
+   [state.diagPrevisto, 'Relatório de previsão do Totvs']]
+  .forEach(function(par, i){
+    const d = par[0]; if (!d) return;
+    const resumo = (d.total || 0) + ' linha(s)' +
+      (d.soma ? (', R$ ' + fmtBR(d.soma)) : '') +
+      (d.datasBaixa && d.datasBaixa.length ? (' em ' + d.datasBaixa.map(fmtData).join(', ')) : '') +
+      (d.datas && d.datas.length ? (' em ' + d.datas.map(fmtData).join(', ')) : '') + '. ';
+    add('arq' + i, d.alertas.length ? 'atencao' : 'ok', par[1] + ':',
+        resumo + d.alertas.join(' '));
+  });
+
+  if (state.colunasAusentes && state.colunasAusentes.length){
+    add('cols', 'atencao', 'Colunas que não vieram no relatório do Totvs:',
+      state.colunasAusentes.join(', ') + '. A tela se virou com o que existe, mas vale incluir na próxima geração.');
+  }
+  if (state.store.baixas.length && state.store.relatorio.length){
+    const dias = {};
+    state.store.baixas.forEach(t => { if (t.dt_baixa) dias[t.dt_baixa] = 1; });
+    if (state.store.relatorio.some(t => t.dt_baixa && dias[t.dt_baixa])){
+      add('dupla', 'erro', 'Duas fontes de pago para o mesmo dia.',
+        'Chegaram o relatório de baixas do Totvs e o da controladoria cobrindo a mesma data, e os dois estão sendo somados. Tire um deles pelo X na lista de arquivos.');
+    }
+  }
+  if (r && r.suspeitos){
+    const semPar = c.itens.filter(i => i.aviso === 'valor_corrigido_sem_par').length;
+    add('centavos', semPar ? 'atencao' : 'ok', r.suspeitos + ' valor(es) corrigido(s).',
+      'O Fluig exportou o número com os centavos colados (93382 no lugar de 933,82); a tela dividiu por cem.' +
+      (semPar ? (' ' + semPar + ' sem título no Totvs para confirmar.') : ''), 'divergentes');
+  }
+  if (r && r.aproximados){
+    add('aprox', 'atencao', r.aproximados + ' casado(s) por semelhança.',
+      'O título veio sem o IDFluig, então o casamento foi por número ou por favorecido e valor. É onde pode haver engano.', 'divergentes');
+  }
+  if (r && !r.temDataRef){
+    const dp = dataPredominante();
+    add('semhoje', 'erro', 'Nenhum título de hoje (' + fmtData(r.dataRef) + ').',
+      dp ? ('O relatório parece ser de ' + fmtData(dp) + '. Confira se baixou o arquivo do dia.')
+         : 'Confira se o relatório é o do dia.');
+  }
+  const divVal = c.itens.filter(i => i.aviso === 'valor_diverge').length;
+  if (divVal){
+    add('diverge', 'erro', divVal + ' com valor diferente entre Fluig e Totvs.',
+      'Casaram por favorecido e vencimento, mas o valor não bate.', 'divergentes');
+  }
+  const semTit = c.itens.filter(i => i.situacao === 'sem_titulo_aprovado').length;
+  if (semTit){
+    add('semtitulo', 'atencao', semTit + ' aprovado(s) sem título no Totvs.',
+      'Foram liberados no Fluig e ainda não apareceram no relatório — ou não foram lançados, ou o filtro de vencimento deixou de fora.', 'semTitulo');
+  }
+  return p;
+}
+
 function renderConferencia(){
   const wrap = el('conf-wrap');
   if (!state.conc){ wrap.hidden = true; return; }
@@ -1057,133 +1180,156 @@ function renderConferencia(){
       L.rotulo,
       h('span', { class:'cnt', text: String(L.linhas.length) }),
     ]);
-    b.addEventListener('click', () => { state.aba = k; renderConferencia(); });
+    b.addEventListener('click', () => {
+      state.aba = k; state.pagina = 1; state.filtroTipo = ''; renderConferencia();
+    });
     tabs.appendChild(b);
   });
 
-  // avisos
+  // roteiro de conferência: uma linha só, que abre nos pontos que pedem atenção
   const notes = el('conf-notes'); notes.textContent = '';
-  const r = state.resumo;
-
-  /* "Tem certeza que é esse relatório?" — o que a tela entendeu de cada
-     arquivo do Totvs, com o que destoou do esperado. */
-  if (state.diagRelatorio){
-    const d = state.diagRelatorio;
-    notes.appendChild(h('div', { class: d.alertas.length ? 'note warn' : 'note info' }, [
-      h('i', { class: d.alertas.length ? 'fa-solid fa-circle-question' : 'fa-solid fa-circle-check' }),
-      h('div', {}, [
-        h('strong', { text: 'Relatório da controladoria: ' }),
-        d.total + ' linha(s), R$ ' + fmtBR(d.soma) +
-        (d.datas.length ? (' em ' + d.datas.map(fmtData).join(', ')) : '') + '. ',
-        d.alertas.length ? h('span', { text: d.alertas.join(' ') }) : null,
-      ]),
-    ]));
-  }
-  // as duas fontes de Pago no mesmo dia somariam em dobro sem ninguém ver
-  if (state.store.baixas.length && state.store.relatorio.length){
-    const dias = {};
-    state.store.baixas.forEach(t => { if (t.dt_baixa) dias[t.dt_baixa] = (dias[t.dt_baixa]||{}); });
-    const cruza = state.store.relatorio.some(t => t.dt_baixa && dias[t.dt_baixa]);
-    if (cruza){
-      notes.appendChild(h('div', { class:'note danger' }, [
-        h('i', { class:'fa-solid fa-clone' }),
-        h('div', {}, [
-          h('strong', { text: 'Duas fontes de pago para o mesmo dia. ' }),
-          'Chegaram o relatório de baixas do Totvs e o relatório da controladoria cobrindo a mesma data, e os dois estão sendo somados. Tire um dos dois pelo X na lista de arquivos, senão o total do Pago sai dobrado.',
-        ]),
-      ]));
-    }
-  }
-
-  [[state.diagBaixas, 'pago (por data de baixa)'], [state.diagPrevisto, 'previsto (por vencimento)']]
-  .forEach(function(par){
-    const d = par[0]; if (!d) return;
-    const box = h('div', { class: d.alertas.length ? 'note warn' : 'note info' }, [
-      h('i', { class: d.alertas.length ? 'fa-solid fa-circle-question' : 'fa-solid fa-circle-check' }),
-      h('div', {}, [
-        h('strong', { text: 'Entendi como relatório de ' + par[1] + ': ' }),
-        d.total + ' títulos, ' + d.comBaixa + ' com data de baixa' +
-        (d.datasBaixa && d.datasBaixa.length ? (' em ' + d.datasBaixa.map(fmtData).join(', ')) : '') + '. ',
-        d.alertas.length ? h('span', { text: 'Confira: ' + d.alertas.join(' ') }) : null,
-      ]),
+  const pontos = montarPontos();
+  if (pontos.length){
+    const abertos = pontos.filter(p => !state.conferidos[p.id]).length;
+    const cab = h('button', { class:'roteiro-cab', type:'button' }, [
+      h('i', { class:'fa-solid ' + (abertos ? 'fa-clipboard-list' : 'fa-clipboard-check') }),
+      h('span', { text: abertos
+        ? (abertos + (abertos === 1 ? ' ponto para conferir' : ' pontos para conferir'))
+        : 'Tudo conferido' }),
+      h('span', { class:'roteiro-seta' }, [ h('i', { class:'fa-solid fa-chevron-down' }) ]),
     ]);
-    notes.appendChild(box);
-  });
-
-  if (state.colunasAusentes && state.colunasAusentes.length){
-    const temValor = state.colunasAusentes.indexOf('Val Liq Baix') >= 0;
-    notes.appendChild(h('div', { class:'note warn' }, [
-      h('i', { class:'fa-solid fa-table-columns' }),
-      h('div', {}, [
-        h('strong', { text: 'O relatório do Totvs veio sem: ' + state.colunasAusentes.join(', ') + '. ' }),
-        'A tela se virou com as colunas que existem' +
-        (temValor ? ', mas o histórico está gravando o valor do título no lugar do valor efetivamente baixado. ' : '. ') +
-        'Vale incluir essas colunas na próxima geração do relatório.',
-      ]),
-    ]));
-  }
-  if (r && r.suspeitos){
-    const semPar = state.conc.itens.filter(i => i.aviso === 'valor_corrigido_sem_par').length;
-    notes.appendChild(h('div', { class:'note info' }, [
-      h('i', { class:'fa-solid fa-wand-magic-sparkles' }),
-      h('div', {}, [
-        h('strong', { text: r.suspeitos + ' valor(es) corrigido(s). ' }),
-        'Nessas linhas o Fluig exportou o número com os centavos colados (93382 no lugar de 933,82). ' +
-        'A tela dividiu por cem e mostra embaixo o número como veio da planilha.' +
-        (semPar ? (' ' + semPar + ' desses não têm título no Totvs para confirmar a correção — valem uma olhada.') : ''),
-      ]),
-    ]));
-  }
-  if (r && r.aproximados){
-    notes.appendChild(h('div', { class:'note warn' }, [
-      h('i', { class:'fa-solid fa-link-slash' }),
-      h('div', {}, [
-        h('strong', { text: r.aproximados + ' casado(s) por semelhança. ' }),
-        'O título no Totvs veio sem o IDFluig, então o casamento foi por número ou por favorecido e valor. ' +
-        'É o único ponto onde pode haver engano — confira essas linhas.',
-      ]),
-    ]));
-  }
-  if (r && !r.temDataRef){
-    const dp = dataPredominante();
-    notes.appendChild(h('div', { class:'note danger' }, [
-      h('i', { class:'fa-solid fa-calendar-xmark' }),
-      h('div', {}, [
-        h('strong', { text: 'Nenhum título de hoje (' + fmtData(r.dataRef) + ') neste arquivo. ' }),
-        dp ? ('O relatório parece ser de ' + fmtData(dp) + '. Confira se baixou o arquivo do dia — os números acima vão sair zerados.')
-           : 'Confira se o relatório é o do dia.',
-      ]),
-    ]));
-  }
-  const divVal = state.conc.itens.filter(i => i.aviso === 'valor_diverge').length;
-  if (divVal){
-    notes.appendChild(h('div', { class:'note danger' }, [
-      h('i', { class:'fa-solid fa-scale-unbalanced' }),
-      h('div', {}, [
-        h('strong', { text: divVal + ' com valor diferente entre Fluig e Totvs. ' }),
-        'Casaram por favorecido e vencimento, mas o valor não bate. Vale olhar antes de confiar no total.',
-      ]),
-    ]));
-  }
-  const semTit = state.conc.itens.filter(i => i.situacao === 'sem_titulo_aprovado').length;
-  if (semTit){
-    notes.appendChild(h('div', { class:'note info' }, [
-      h('i', { class:'fa-solid fa-circle-info' }),
-      h('div', {}, [
-        h('strong', { text: semTit + ' aprovado(s) sem título no Totvs. ' }),
-        'Foram liberados no Fluig mas ainda não apareceram no relatório do Totvs — ou ainda não foram lançados, ou o filtro de vencimento do relatório deixou de fora.',
-      ]),
-    ]));
+    const corpo = h('div', { class:'roteiro-corpo' + (state.roteiroAberto ? ' aberto' : '') });
+    pontos.forEach(pt => {
+      const feito = !!state.conferidos[pt.id];
+      const item = h('div', { class:'roteiro-item ' + pt.nivel + (feito ? ' feito' : '') });
+      const marca = h('button', { class:'roteiro-check', type:'button',
+        title: feito ? 'marcar como pendente' : 'marcar como conferido' },
+        [ h('i', { class:'fa-solid ' + (feito ? 'fa-square-check' : 'fa-square') }) ]);
+      marca.addEventListener('click', e => {
+        e.stopPropagation();
+        state.conferidos[pt.id] = !feito;
+        renderConferencia();
+      });
+      item.appendChild(marca);
+      item.appendChild(h('div', { class:'roteiro-texto' }, [
+        h('strong', { text: pt.titulo }), ' ', pt.detalhe,
+      ]));
+      if (pt.aba){
+        const ir = h('button', { class:'btn btn-ghost btn-sm', type:'button', text:'ver' });
+        ir.addEventListener('click', () => {
+          state.aba = pt.aba; state.pagina = 1; state.filtroTipo = ''; renderConferencia();
+        });
+        item.appendChild(ir);
+      }
+      corpo.appendChild(item);
+    });
+    cab.addEventListener('click', () => {
+      state.roteiroAberto = !state.roteiroAberto;
+      renderConferencia();
+    });
+    if (state.roteiroAberto) cab.classList.add('aberto');
+    notes.appendChild(h('div', { class:'roteiro' + (abertos ? '' : ' ok') }, [ cab, corpo ]));
   }
 
-  // tabela
+  // barra de busca e filtro por tipo
   const L = listas[state.aba];
   const box = el('conf-table'); box.textContent = '';
-  if (!L.linhas.length){
-    box.appendChild(h('div', { class:'empty', text:'Nada nesta lista.' }));
+
+  const barra = h('div', { class:'conf-barra' });
+  const busca = h('input', { type:'text', placeholder:'favorecido, número, histórico…', value: state.busca });
+  busca.addEventListener('input', deb(e => {
+    state.busca = e.target.value; state.pagina = 1; renderConferencia();
+  }, 220));
+  barra.appendChild(h('div', { class:'busca' }, [ h('i', { class:'fa-solid fa-magnifying-glass' }), busca ]));
+
+  const tipos = {};
+  L.linhas.forEach(x => {
+    const t = safeStr(L.totvs ? x.tipo : (x.par && x.par.tipo)) || '—';
+    tipos[t] = (tipos[t] || 0) + 1;
+  });
+  const nomes = Object.keys(tipos).sort();
+  if (nomes.length > 1){
+    const chips = h('div', { class:'chips-linha' });
+    const mk = (v, rot, qtd) => {
+      const b = h('button', { class:'chip' + (state.filtroTipo === v ? ' active' : ''), type:'button' },
+        [ rot, h('span', { class:'cnt', text:String(qtd) }) ]);
+      b.addEventListener('click', () => { state.filtroTipo = v; state.pagina = 1; renderConferencia(); });
+      return b;
+    };
+    chips.appendChild(mk('', 'Todos', L.linhas.length));
+    nomes.forEach(t => chips.appendChild(mk(t, t, tipos[t])));
+    barra.appendChild(chips);
+  }
+  box.appendChild(barra);
+
+  const filtradas = filtrarLinhas(L.linhas, !!L.totvs);
+  if (!filtradas.length){
+    box.appendChild(h('div', { class:'empty', text: L.linhas.length ? 'Nada com esse filtro.' : 'Nada nesta lista.' }));
     return;
   }
-  box.appendChild(L.totvs ? tabelaTotvs(L.linhas) : tabelaItens(L.linhas));
+  const topo = controlePagina(filtradas, 'topo');
+  if (topo) box.appendChild(topo);
+  box.appendChild(L.totvs ? tabelaTotvs(filtradas) : tabelaItens(filtradas));
+  const baixo = controlePagina(filtradas, 'baixo');
+  if (baixo) box.appendChild(baixo);
+
+  const soma = filtradas.reduce((s, x) => s + (Number(L.totvs ? x.valor_rs : x.valor) || 0), 0);
+  box.appendChild(h('div', { class:'conf-total' }, [
+    h('span', { text: filtradas.length + ' de ' + L.linhas.length + ' linha(s)' }),
+    h('strong', { text: 'R$ ' + fmtBR(soma) }),
+  ]));
+}
+
+function deb(fn, ms){
+  let t;
+  return function(){ const a = arguments; clearTimeout(t); t = setTimeout(() => fn.apply(null, a), ms); };
+}
+
+/* Com mais de mil títulos a tela virava um rolo sem fim. Agora pagina de cem em
+   cem, com o controle nas duas pontas, e tem busca e filtro por tipo. */
+const POR_PAGINA = 100;
+
+function filtrarLinhas(linhas, ehTotvs){
+  let L = linhas.slice();
+  const b = norm(state.busca);
+  if (b){
+    L = L.filter(x => {
+      const alvo = ehTotvs
+        ? [x.fornecedor, x.numero, x.historico, x.id_fluig]
+        : [x.fornecedor, x.numero, x.fluig && x.fluig.solicitante, x.fluig && x.fluig.id];
+      return alvo.some(v => norm(v).indexOf(b) >= 0);
+    });
+  }
+  if (state.filtroTipo){
+    L = L.filter(x => {
+      const t = ehTotvs ? safeStr(x.tipo) : safeStr(x.par && x.par.tipo);
+      return (t || '—') === state.filtroTipo;
+    });
+  }
+  return L;
+}
+
+function paginar(L){
+  const ini = (state.pagina - 1) * POR_PAGINA;
+  return L.slice(ini, ini + POR_PAGINA);
+}
+
+function controlePagina(L, onde){
+  const tot = Math.ceil(L.length / POR_PAGINA) || 1;
+  if (tot <= 1) return null;
+  const nav = h('div', { class:'paginacao ' + onde });
+  const mk = (rot, alvo, off) => {
+    const b = h('button', { class:'btn btn-ghost btn-sm', type:'button', text:rot });
+    b.disabled = off;
+    b.addEventListener('click', () => { state.pagina = alvo; renderConferencia(); });
+    return b;
+  };
+  nav.appendChild(h('span', { text:'página ' + state.pagina + ' de ' + tot + ' · ' + L.length + ' linhas' }));
+  nav.appendChild(h('div', { style:'display:flex;gap:6px' }, [
+    mk('Anterior', state.pagina - 1, state.pagina <= 1),
+    mk('Próxima',  state.pagina + 1, state.pagina >= tot),
+  ]));
+  return nav;
 }
 
 function tabelaItens(linhas){
@@ -1193,7 +1339,7 @@ function tabelaItens(linhas){
     h('th', { text:'Situação' }),
   ])]);
   const tbody = h('tbody');
-  linhas.slice(0, 400).forEach(it => {
+  paginar(linhas).forEach(it => {
     const sit = SITUACOES[it.situacao] || ['—','b-mute'];
     const tdSit = h('td', {}, [ badge(sit[0], sit[1]) ]);
     if (it.modoPar === 'aprox') tdSit.appendChild(badge('casado por semelhança','b-info'));
@@ -1220,11 +1366,7 @@ function tabelaItens(linhas){
       tdSit,
     ]));
   });
-  const tbl = h('table', {}, [ thead, tbody ]);
-  if (linhas.length > 400){
-    return h('div', {}, [ tbl, h('div', { class:'empty', text:'mostrando 400 de ' + linhas.length + ' — o envio leva todos' }) ]);
-  }
-  return tbl;
+  return h('table', {}, [ thead, tbody ]);
 }
 
 function tabelaTotvs(linhas){
@@ -1233,7 +1375,7 @@ function tabelaTotvs(linhas){
     h('th', { text:'Vencimento' }), h('th', { text:'Valor' }), h('th', { text:'Situação' }),
   ])]);
   const tbody = h('tbody');
-  linhas.slice(0, 400).forEach(t => {
+  paginar(linhas).forEach(t => {
     tbody.appendChild(h('tr', {}, [
       h('td', {}, [ badge(t.tipo || '?', 'b-mute') ]),
       h('td', { class:'mono', text: t.numero + (t.parcela ? ('/' + t.parcela) : '') }),
@@ -1246,11 +1388,7 @@ function tabelaTotvs(linhas){
       h('td', {}, [ estaPago(t) ? badge('Pago ' + fmtData(t.dt_baixa), 'b-ok') : badge('Em aberto', 'b-orange') ]),
     ]));
   });
-  const tbl = h('table', {}, [ thead, tbody ]);
-  if (linhas.length > 400){
-    return h('div', {}, [ tbl, h('div', { class:'empty', text:'mostrando 400 de ' + linhas.length + ' — o envio leva todos' }) ]);
-  }
-  return tbl;
+  return h('table', {}, [ thead, tbody ]);
 }
 </script>
 <script>
@@ -1344,6 +1482,14 @@ function render(){
   el('actions-wrap').hidden = !state.files.length;
   el('btn-enviar').disabled = !pronto;
   el('btn-json').disabled = !pronto;
+
+  const btn = el('btn-enviar');
+  const pontos = state.conc ? montarPontos() : [];
+  const abertos = pontos.filter(p => !state.conferidos[p.id] && p.nivel !== 'ok').length;
+  btn.textContent = '';
+  btn.appendChild(h('i', { class:'fa-solid fa-cloud-arrow-up' }));
+  btn.appendChild(document.createTextNode(' Enviar para a base'));
+  if (abertos) btn.appendChild(h('span', { class:'btn-tag', text: abertos + ' a conferir' }));
 
   const hint = el('hint');
   if (!pronto){ hint.textContent = 'Suba pelo menos um relatório para conferir.'; return; }

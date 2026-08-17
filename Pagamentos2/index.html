@@ -19,23 +19,35 @@
 <body>
 
 <div id="loader">
-  <div class="load-mascote">
-    <div class="load-ring"></div>
-    <img src="../logo-mascote.jpg" alt="" onerror="this.style.display='none'">
+  <div class="load-fundo" aria-hidden="true">
+    <span class="luz luz-a"></span><span class="luz luz-b"></span><span class="luz luz-c"></span>
   </div>
-  <div class="load-logo">ON<span>TIME</span></div>
-  <div class="load-text" id="load-text">Lendo a base…</div>
-  <div class="esqueleto" aria-hidden="true">
-    <div class="esq-linha">
+  <div class="load-palco">
+    <div class="esq-linha" aria-hidden="true">
       <div class="esq-bloco"></div><div class="esq-bloco"></div><div class="esq-bloco"></div>
     </div>
-    <div class="esq-tabela"></div>
+    <div class="load-card">
+      <div class="load-brilho" aria-hidden="true"></div>
+      <div class="load-mascote">
+        <div class="load-ring"></div>
+        <img src="../logo-mascote.jpg" alt="" onerror="this.style.display='none'">
+      </div>
+      <div class="load-text" id="load-text">Lendo a base…</div>
+      <div class="load-barra"><span id="load-barra-fill"></span></div>
+      <div class="load-pct" id="load-pct">0%</div>
+    </div>
+    <div class="esq-tabela" aria-hidden="true"></div>
   </div>
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay" role="presentation"></div>
 
 <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+  <button class="btn-recolher" id="btnRecolher" type="button"
+          title="Recolher a barra lateral" aria-label="Recolher a barra lateral">
+    <i class="fa-solid fa-angles-left"></i>
+  </button>
+
   <div class="logo">
     <div class="logo-mark">
       <img src="../logo-mascote.jpg" alt="Mascote"
@@ -86,68 +98,14 @@
       <h1 class="page-title"><i class="fa-solid fa-chart-line"></i> Pagamentos</h1>
     </div>
     <div class="header-right">
-      <div class="date-pick">
-        <i class="fa-solid fa-calendar-day"></i>
-        <input type="date" id="dataRef" aria-label="Dia de referência">
-      </div>
-      <button class="btn btn-ghost" id="btnHoje" type="button">Hoje</button>
+      <span class="header-data" id="headerData"></span>
       <button class="btn btn-ghost" id="btnRecarregar" type="button" title="Recarregar dados">
         <i class="fa-solid fa-rotate"></i>
-      </button>
-      <button class="btn btn-ghost" id="btnCiot" type="button" hidden>
-        <i class="fa-solid fa-truck-fast"></i> CIOT do dia
-      </button>
-      <button class="btn btn-primary" id="btnNovo" type="button" hidden>
-        <i class="fa-solid fa-plus"></i> Novo título
       </button>
     </div>
   </header>
 
   <div class="content" id="content"></div>
-</div>
-
-<div class="modal" id="modalEdit">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3><i class="fa-solid fa-pen-to-square"></i> <span id="me-titulo">Editar título</span></h3>
-      <p id="me-sub"></p>
-    </div>
-    <div class="modal-body"><div class="campos" id="me-campos"></div></div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="me-cancel" type="button">Cancelar</button>
-      <button class="btn btn-danger" id="me-reset" type="button" hidden>
-        <i class="fa-solid fa-rotate-left"></i> Desfazer edições
-      </button>
-      <button class="btn btn-primary" id="me-salvar" type="button">
-        <i class="fa-solid fa-check"></i> Salvar
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="modal" id="modalSenha">
-  <div class="modal-box sm">
-    <div class="modal-head">
-      <h3><i class="fa-solid fa-lock"></i> Senha de edição</h3>
-      <p>Pedida uma vez por aba. Fica só nesta sessão do navegador.</p>
-    </div>
-    <div class="modal-body">
-      <div class="campos">
-        <div class="campo wide">
-          <label for="ms-nome">Seu nome</label>
-          <input type="text" id="ms-nome" placeholder="quem está editando" autocomplete="name">
-        </div>
-        <div class="campo wide">
-          <label for="ms-senha">Senha</label>
-          <input type="password" id="ms-senha" autocomplete="current-password">
-        </div>
-      </div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" id="ms-cancel" type="button">Cancelar</button>
-      <button class="btn btn-primary" id="ms-ok" type="button">Entrar</button>
-    </div>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>

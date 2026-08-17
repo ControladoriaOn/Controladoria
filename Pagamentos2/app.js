@@ -60,11 +60,9 @@ const state = {
   conc: null, resumo: null, linhas: [],
   dataRef: hojeISO(),
   aba: 'hoje',          // pago | hoje | amanha | atrasado | excecoes
-  busca: '', filtroSit: '', filtroOrigem: '',
+  busca: '', filtroSit: '', filtroOrigem: '', filtroTipo: '',
   ordem: { col:'vencimento', dir:'asc' },
   pagina: 1,
-  podeEditar: false,
-  autor: '', token: '',
   orfaos: [],
 };
 
@@ -92,62 +90,9 @@ const HubLink = {
     const ok = this.veioDoHub();
     if (ok){
       try { sessionStorage.setItem(this.KEY, '1'); } catch(e){}
-      ['btn-hub','link-atualizar','btnNovo','btnCiot'].forEach(id => { const n = el(id); if (n) n.hidden = false; });
+      ['btn-hub','link-atualizar'].forEach(id => { const n = el(id); if (n) n.hidden = false; });
     }
     return ok;
-  },
-};
-
-/* --------------------------------------------- senha + nome do autor ---
-   Ficam só na aba aberta. A senha é conferida do lado do servidor a cada
-   gravação; aqui ela é apenas guardada. */
-const Auth = {
-  K_TOKEN:'pgv2_token', K_NOME:'pgv2_autor',
-  carregar(){
-    try {
-      state.token = sessionStorage.getItem(this.K_TOKEN) || '';
-      state.autor = localStorage.getItem(this.K_NOME) || '';
-    } catch(e){}
-  },
-  guardar(nome, token){
-    state.autor = nome; state.token = token;
-    try {
-      sessionStorage.setItem(this.K_TOKEN, token);
-      localStorage.setItem(this.K_NOME, nome);
-    } catch(e){}
-  },
-  limpar(){
-    state.token = '';
-    try { sessionStorage.removeItem(this.K_TOKEN); } catch(e){}
-  },
-  /* Devolve uma promessa que só resolve quando houver senha. */
-  pedir(){
-    return new Promise(resolve => {
-      if (state.token && state.autor) return resolve(true);
-      const m = el('modalSenha');
-      el('ms-nome').value = state.autor || '';
-      el('ms-senha').value = '';
-      m.classList.add('show');
-      setTimeout(() => (state.autor ? el('ms-senha') : el('ms-nome')).focus(), 60);
-
-      const fechar = ok => {
-        m.classList.remove('show');
-        el('ms-ok').onclick = null; el('ms-cancel').onclick = null; m.onkeydown = null;
-        resolve(ok);
-      };
-      el('ms-ok').onclick = () => {
-        const nome = el('ms-nome').value.trim();
-        const senha = el('ms-senha').value.trim();
-        if (!nome || !senha){ toast('Preencha nome e senha.', true); return; }
-        Auth.guardar(nome, senha);
-        fechar(true);
-      };
-      el('ms-cancel').onclick = () => fechar(false);
-      m.onkeydown = e => {
-        if (e.key === 'Escape') fechar(false);
-        if (e.key === 'Enter') el('ms-ok').click();
-      };
-    });
   },
 };
 
@@ -167,30 +112,36 @@ async function buscarJson(url, tentativas){
   throw erro;
 }
 
-/* Gravações vão como no-cors: a resposta não é legível, então a tela recarrega
-   os dados logo depois para mostrar o que de fato ficou gravado. */
-async function enviar(payload){
-  await fetch(CONFIG.DATA_URL, {
-    method:'POST', mode:'no-cors',
-    headers:{ 'Content-Type':'application/json' },
-    body: JSON.stringify(payload),
-  });
-}
-
 /* ============================================================================
    CARGA E PREPARO
    ============================================================================ */
+/* A barra mostra progresso de verdade, não um número inventado: cada etapa
+   avança um pedaço, e o último passo fecha em 100%. */
+function etapaLoader(texto, pct){
+  const t = el('load-text'), f = el('load-barra-fill'), p = el('load-pct');
+  if (t) t.textContent = texto;
+  if (f) f.style.width = pct + '%';
+  if (p) p.textContent = pct + '%';
+}
+const respira = ms => new Promise(r => setTimeout(r, ms));
+
 async function carregar(primeira){
-  const etapa = t => { const n = el('load-text'); if (n) n.textContent = t; };
-  etapa(primeira ? 'Lendo a base…' : 'Atualizando…');
+  etapaLoader(primeira ? 'Lendo a base…' : 'Atualizando…', 12);
   try {
     const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') + 'v=' + Date.now();
     state.dados = await buscarJson(url);
     if (state.dados && state.dados.erro) throw new Error(state.dados.erro);
-    etapa('Cruzando Fluig e Totvs…');
+
+    etapaLoader('Cruzando Fluig e Totvs…', 55);
+    await respira(60);
     preparar();
-    etapa('Montando o dia…');
+
+    etapaLoader('Calculando totais e somas…', 84);
+    await respira(60);
     render();
+
+    etapaLoader('Pronto', 100);
+    await respira(180);
     esconderLoader();
   } catch(e){
     mostrarErro(e);
@@ -229,9 +180,7 @@ function esconderLoader(){
    carga; depois disso ele só atrapalharia. */
 function abrirLoader(texto){
   const l = el('loader');
-  const esq = l.querySelector('.esqueleto');
-  if (esq) esq.style.display = 'none';
-  el('load-text').textContent = texto || 'Carregando…';
+  etapaLoader(texto || 'Carregando…', 8);
   l.style.display = 'flex';
   l.classList.remove('out');
 }
@@ -285,10 +234,10 @@ function recortes(){
       linhas: previsto.filter(x => emAberto(x) && x.vencimento === r.amanha),
     },
     atrasado: {
-      rotulo: 'Vencido em aberto',
+      rotulo: 'Vencidos sem baixa',
       icone: 'fa-triangle-exclamation', classe: 'danger',
       valor: r.atrasado.valor, qtd: r.atrasado.qtd,
-      sub: 'venceu antes de ' + fmtData(r.dataRef) + ' e não foi baixado',
+      sub: 'venceram antes de ' + fmtData(r.dataRef) + ' e continuam sem baixa',
       linhas: previsto.filter(x => emAberto(x) && x.vencimento && x.vencimento < r.dataRef),
       opcional: true,
     },
@@ -319,8 +268,6 @@ function render(){
   const c = el('content');
   c.innerHTML = '';
   c.appendChild(secaoKPIs());
-  const avisos = secaoAvisos();
-  if (avisos) c.appendChild(avisos);
   c.appendChild(secaoTabela());
   animarValores();
 }
@@ -461,38 +408,6 @@ function sparkline(serie){
   return h('div', { class:'marco-spark' }, [ svg ]);
 }
 
-function secaoAvisos(){
-  const r = state.resumo, sec = h('div', { class:'section' });
-  let tem = false;
-  const add = (cls, ic, forte, resto) => {
-    tem = true;
-    sec.appendChild(h('div', { class:'note ' + cls }, [
-      icone(ic), h('div', {}, [ h('strong', { text: forte }), resto ]),
-    ]));
-  };
-  if (!state.baixas.length){
-    add('info','fa-circle-info','Ainda sem os pagamentos do dia anterior. ',
-      'O “Pago” aparece quando for enviado o relatório diário da controladoria ou o relatório do Totvs filtrado por data de baixa. Um título nunca é baixado no mesmo dia em que é pago, então esse número é sempre de um dia anterior.');
-  }
-  if (r.semTituloAprovado.qtd){
-    add('warn','fa-triangle-exclamation', r.semTituloAprovado.qtd + ' aprovado(s) sem título no Totvs. ',
-      'Foram liberados no Fluig e ainda não apareceram no relatório — ou não foram lançados, ou o filtro de vencimento deixou de fora.');
-  }
-  if (r.divergencias){
-    add('danger','fa-scale-unbalanced', r.divergencias + ' com valor diferente entre Fluig e Totvs. ',
-      'Vale conferir antes de confiar no total.');
-  }
-  if (r.ocultos){
-    add('info','fa-eye-slash', r.ocultos + ' título(s) oculto(s). ',
-      'Ficam fora dos totais, da prévia e do relatório, mas continuam na base — a aba Ocultos lista todos, com o motivo e o botão de trazer de volta.');
-  }
-  if (state.orfaos.length){
-    add('warn','fa-link-slash', state.orfaos.length + ' ajuste(s) sem título correspondente. ',
-      'Foram feitos em títulos que não estão mais na base — provavelmente mudaram de número na origem ou saíram do relatório.');
-  }
-  return tem ? sec : null;
-}
-
 /* --------------------------------------------------------------- tabela */
 function linhasVisiveis(){
   const rec = recortes()[state.aba];
@@ -507,6 +422,7 @@ function linhasVisiveis(){
 
   if (state.filtroSit)    L = L.filter(x => x.situacao === state.filtroSit);
   if (state.filtroOrigem) L = L.filter(x => x.origem === state.filtroOrigem);
+  if (state.filtroTipo)   L = L.filter(x => (safeStr(x.titulo ? x.titulo.tipo : '') || '—') === state.filtroTipo);
 
   const { col, dir } = state.ordem;
   L.sort((x, y) => {
@@ -539,6 +455,7 @@ function secaoTabela(){
   selSit.onchange = e => { state.filtroSit = e.target.value; state.pagina = 1; atualizarTabela(); };
 
   const selOri = h('select', { class:'filtro' }, [ h('option', { value:'', text:'Todas as origens' }) ]);
+  // (chips de tipo entram logo abaixo da barra)
   const oris = {};
   rec.linhas.forEach(x => { oris[x.origem] = (oris[x.origem]||0)+1; });
   Object.keys(oris).sort().forEach(o => {
@@ -559,7 +476,30 @@ function secaoTabela(){
     ]),
   ]));
 
+  /* Chips por tipo de título, montados a partir do que existe no recorte —
+     mesma mecânica da ferramenta antiga. */
+  const tipos = {};
+  rec.linhas.forEach(x => {
+    const t = safeStr(x.titulo ? x.titulo.tipo : '') || '—';
+    tipos[t] = (tipos[t] || 0) + 1;
+  });
+  const nomes = Object.keys(tipos).sort();
+  if (nomes.length > 1){
+    const chips = h('div', { class:'chips' });
+    const mkChip = (valor, rotulo, qtd) => {
+      const b = h('button', { class:'chip' + (state.filtroTipo === valor ? ' active' : ''), type:'button' },
+        [ rotulo, h('span', { class:'cnt', text: String(qtd) }) ]);
+      b.onclick = () => { state.filtroTipo = valor; state.pagina = 1; render(); };
+      return b;
+    };
+    chips.appendChild(mkChip('', 'Todos', rec.linhas.length));
+    nomes.forEach(t => chips.appendChild(mkChip(t, t, tipos[t])));
+    card.appendChild(chips);
+  }
+
   const wrap = h('div', { class:'tbl-wrap', id:'tbl-wrap' });
+  const topo = paginacao(L, 'topo');
+  if (topo) wrap.appendChild(topo);
   wrap.appendChild(tabela(L));
   card.appendChild(wrap);
 
@@ -578,6 +518,8 @@ function atualizarTabela(){
   const wrap = el('tbl-wrap');
   if (!wrap) return render();
   wrap.innerHTML = '';
+  const topo = paginacao(L, 'topo');
+  if (topo) wrap.appendChild(topo);
   wrap.appendChild(tabela(L));
   const total = L.reduce((s, x) => s + (Number(x.valor)||0), 0);
   const rod = el('tbl-rodape');
@@ -600,6 +542,26 @@ function thOrd(rot, col){
   return th;
 }
 
+/* Anterior/próxima aparece nas duas pontas da tabela: com muitas linhas,
+   rolar até o fim só para virar a página é irritante. */
+function paginacao(L, onde){
+  const tot = Math.ceil(L.length / CONFIG.PAGINA) || 1;
+  if (tot <= 1) return null;
+  const nav = h('div', { class:'paginacao ' + onde });
+  const mk = (rot, alvo, off) => {
+    const b = h('button', { class:'btn btn-ghost btn-sm', type:'button', text:rot });
+    b.disabled = off;
+    b.onclick = () => { state.pagina = alvo; atualizarTabela(); };
+    return b;
+  };
+  nav.appendChild(h('span', { text:'página ' + state.pagina + ' de ' + tot }));
+  nav.appendChild(h('div', { style:'display:flex;gap:6px' }, [
+    mk('Anterior', state.pagina - 1, state.pagina <= 1),
+    mk('Próxima',  state.pagina + 1, state.pagina >= tot),
+  ]));
+  return nav;
+}
+
 function tabela(L){
   if (!L.length){
     return h('div', { class:'empty' }, [ icone('fa-inbox'), 'Nada nesta lista.' ]);
@@ -612,34 +574,14 @@ function tabela(L){
     thOrd(ehPago ? 'Baixa' : 'Vencimento', ehPago ? 'dt_baixa' : 'vencimento'),
     thOrd('Valor','valor'),
     h('th', { text:'Situação' }),
-    h('th', { text:'' }),
   ])]);
 
   const tbody = h('tbody');
   const ini = (state.pagina - 1) * CONFIG.PAGINA;
   L.slice(ini, ini + CONFIG.PAGINA).forEach(x => tbody.appendChild(linhaTabela(x, ehPago)));
   const tbl = h('table', {}, [ thead, tbody ]);
-
-  if (L.length > CONFIG.PAGINA){
-    const box = h('div');
-    box.appendChild(tbl);
-    const tot = Math.ceil(L.length / CONFIG.PAGINA);
-    const nav = h('div', { class:'rodape' });
-    const info = h('span', { text: 'página ' + state.pagina + ' de ' + tot });
-    const bts = h('div', { style:'display:flex;gap:6px' });
-    const mk = (rot, alvo, off) => {
-      const b = h('button', { class:'btn btn-ghost btn-sm', type:'button', text:rot });
-      b.disabled = off;
-      b.onclick = () => { state.pagina = alvo; atualizarTabela(); };
-      return b;
-    };
-    bts.appendChild(mk('Anterior', state.pagina-1, state.pagina <= 1));
-    bts.appendChild(mk('Próxima', state.pagina+1, state.pagina >= tot));
-    nav.appendChild(info); nav.appendChild(bts);
-    box.appendChild(nav);
-    return box;
-  }
-  return tbl;
+  const rodape = paginacao(L, 'baixo');
+  return rodape ? h('div', {}, [ tbl, rodape ]) : tbl;
 }
 
 function linhaTabela(x, ehPago){
@@ -671,25 +613,9 @@ function linhaTabela(x, ehPago){
       text: 'Fluig: ' + fmtBR(x.valorFluig) }));
   }
 
+  /* O painel é só leitura: ajuste, inclusão e exclusão acontecem na tela de
+     conferência, que é onde os dados entram e são checados antes de publicar. */
   const tdAcoes = h('td', {}, []);
-  if (state.podeEditar && x.editavel){
-    const bts = [];
-    // lançamento próprio ainda sem pagamento: atalho para confirmar o valor
-    if (x.manual && !x.dt_baixa){
-      const bc = h('button', { class:'btn-icon', type:'button', title:'Confirmar o valor que foi pago' }, [icone('fa-circle-check')]);
-      bc.onclick = () => confirmarPagamento(x);
-      bts.push(bc);
-    }
-    const b = h('button', { class:'btn-icon', type:'button', title:'Editar este título' }, [icone('fa-pen')]);
-    b.onclick = () => abrirEdicao(x);
-    bts.push(b);
-    const bo = h('button', { class:'btn-icon', type:'button',
-      title: x.oculto ? 'Trazer de volta' : 'Ocultar da prévia e dos totais' },
-      [icone(x.oculto ? 'fa-eye' : 'fa-eye-slash')]);
-    bo.onclick = () => alternarOculto(x);
-    bts.push(bo);
-    tdAcoes.appendChild(h('div', { class:'acoes' }, bts));
-  }
 
   return h('tr', { class: x.editado ? 'editada' : '' }, [
     h('td', {}, [ badge(x.origem, x.origem === 'Direto no Totvs' ? 'b-mute' : 'b-info') ]),
@@ -698,264 +624,13 @@ function linhaTabela(x, ehPago){
       x.fornecedor || '—',
       h('small', { text: [x.status, x.detalhe].filter(Boolean).join(' · ').slice(0, 70) }),
     ])]),
-    tdData, tdValor, tdSit, tdAcoes,
+    tdData, tdValor, tdSit,
   ]);
 }
 
 function debounce(fn, ms){
   let t;
   return function(){ const a = arguments; clearTimeout(t); t = setTimeout(() => fn.apply(null, a), ms); };
-}
-
-/* ============================================================================
-   EDIÇÃO DO TÍTULO
-   ----------------------------------------------------------------------------
-   Nada é escrito por cima do dado original: cada campo alterado vira uma linha
-   na aba Ajustes, e o painel aplica isso por cima a cada carregamento. Por isso
-   a edição sobrevive a quantos envios de relatório forem feitos no mesmo dia.
-   ============================================================================ */
-const CAMPOS_EDITAVEIS = [
-  { k:'vencimento',    rot:'Vencimento',        tipo:'date' },
-  { k:'dt_baixa',      rot:'Data da baixa',     tipo:'date' },
-  { k:'valor_rs',      rot:'Valor (R$)',        tipo:'number' },
-  { k:'valor_liquido', rot:'Valor pago (R$)',   tipo:'number' },
-  { k:'fornecedor',    rot:'Favorecido',        tipo:'text', wide:true },
-  { k:'numero',        rot:'Número do título',  tipo:'text' },
-  { k:'parcela',       rot:'Parcela',           tipo:'text' },
-  { k:'prefixo',       rot:'Prefixo',           tipo:'text' },
-  { k:'tipo',          rot:'Tipo',              tipo:'text' },
-  { k:'natureza',      rot:'Natureza',          tipo:'text' },
-  { k:'banco',         rot:'Banco',             tipo:'text' },
-  { k:'bordero',       rot:'Borderô',           tipo:'text' },
-  { k:'historico',     rot:'Histórico',         tipo:'text', wide:true },
-];
-
-let edicaoAtual = null;
-
-async function abrirEdicao(linha){
-  if (!(await Auth.pedir())) return;
-  const t = linha.titulo;
-  edicaoAtual = { linha: linha, chave: linha.chave, orig: t };
-
-  el('me-titulo').textContent = 'Editar título ' + linha.numero;
-  el('me-sub').textContent = (linha.fornecedor || '') +
-    (linha.id_fluig ? (' · solicitação Fluig #' + linha.id_fluig) : '') +
-    ' — a alteração fica registrada com seu nome e não altera o Totvs.';
-
-  const box = el('me-campos');
-  box.innerHTML = '';
-  CAMPOS_EDITAVEIS.forEach(c => {
-    const valor = t[c.k];
-    const ed = linha.edicoes && linha.edicoes[c.k];
-    const input = h('input', {
-      type: c.tipo, id: 'ed-' + c.k, step: c.tipo === 'number' ? '0.01' : null,
-      value: c.tipo === 'number' ? (Number(valor)||0) : safeStr(valor),
-    });
-    input.oninput = () => input.classList.add('mudou');
-    const campo = h('div', { class:'campo' + (c.wide ? ' wide' : '') }, [
-      h('label', { for:'ed-'+c.k, text:c.rot }),
-      input,
-      (ed && !ed.absorvido && !ed.descartado)
-        ? h('span', { class:'orig', text:'antes: ' + safeStr(ed.original) + ' · ' + safeStr(ed.autor) })
-        : null,
-    ]);
-    box.appendChild(campo);
-  });
-  const motivo = h('input', { type:'text', id:'ed-motivo', placeholder:'opcional — por que está mudando' });
-  box.appendChild(h('div', { class:'campo wide' }, [ h('label', { text:'Motivo' }), motivo ]));
-
-  el('me-reset').hidden = !linha.editado;
-  el('modalEdit').classList.add('show');
-}
-
-function fecharEdicao(){
-  el('modalEdit').classList.remove('show');
-  edicaoAtual = null;
-}
-
-async function salvarEdicao(){
-  if (!edicaoAtual) return;
-  const t = edicaoAtual.orig;
-  const ajustes = [];
-  CAMPOS_EDITAVEIS.forEach(c => {
-    const input = el('ed-' + c.k);
-    if (!input) return;
-    const novo = input.value;
-    const atual = c.tipo === 'number' ? String(Number(t[c.k])||0) : safeStr(t[c.k]);
-    if (safeStr(novo) === atual) return;
-    ajustes.push({
-      alvo: edicaoAtual.chave, campo: c.k,
-      valor_novo: novo, valor_antigo: atual,
-      autor: state.autor, motivo: el('ed-motivo').value.trim(),
-    });
-  });
-  if (!ajustes.length){ toast('Nada mudou.'); fecharEdicao(); return; }
-
-  fecharEdicao();
-  abrirLoader('Salvando alteração…');
-  try {
-    await enviar({ acao:'ajuste', token: state.token, ajustes: ajustes });
-    await new Promise(r => setTimeout(r, 1800));
-    await carregar();
-    const conferido = state.linhas.some(x => x.chave === ajustes[0].alvo && x.editado);
-    if (conferido) toast(ajustes.length + ' campo(s) alterado(s).');
-    else { Auth.limpar(); toast('Não gravou. Confira a senha de edição.', true); }
-  } catch(e){
-    esconderLoader();
-    toast('Erro ao salvar: ' + (e.message || e), true);
-  }
-}
-
-async function desfazerEdicoes(){
-  if (!edicaoAtual) return;
-  const alvo = edicaoAtual.chave;
-  fecharEdicao();
-  abrirLoader('Desfazendo…');
-  try {
-    await enviar({ acao:'desfazer', token: state.token, id: 'alvo:' + alvo });
-    await new Promise(r => setTimeout(r, 1800));
-    await carregar();
-    toast('Edições desfeitas.');
-  } catch(e){
-    esconderLoader();
-    toast('Erro ao desfazer: ' + (e.message || e), true);
-  }
-}
-
-/* --------------------------------------------------- ocultar / CIOT --- */
-
-/* Ocultar não apaga: o título continua na base e volta com um clique. Apagar
-   de verdade não resolveria, porque ele reapareceria no próximo relatório do
-   Totvs e alguém teria que apagar de novo todo dia. */
-async function alternarOculto(linha){
-  if (!(await Auth.pedir())) return;
-  const voltando = linha.oculto;
-  let motivo = '';
-  if (!voltando){
-    motivo = prompt('Por que está ocultando este título? (opcional)') || '';
-  }
-  await gravarComRecarga(
-    { acao:'ajuste', token: state.token, ajustes: [{
-        alvo: linha.chave, campo: CAMPO_OCULTO,
-        valor_novo: voltando ? '0' : '1', valor_antigo: voltando ? '1' : '0',
-        autor: state.autor, motivo: motivo,
-      }] },
-    voltando ? 'Trazendo de volta…' : 'Ocultando…',
-    voltando ? 'Título de volta na lista.' : 'Título ocultado.');
-}
-
-/* O CIOT é lançado como prévia e, no dia seguinte, confirmado com o valor que
-   de fato saiu. Em vez de lançar duas vezes, a mesma linha muda de estado. */
-async function confirmarPagamento(linha){
-  if (!(await Auth.pedir())) return;
-  const t = linha.titulo;
-  const sugerido = String(t.valor_rs || 0).replace('.', ',');
-  const resp = prompt('Valor que foi pago (R$):', sugerido);
-  if (resp === null) return;
-  const valor = Conc.parseBRNumber(resp);
-  if (!valor){ toast('Valor inválido.', true); return; }
-
-  const ontem = diaUtilAnterior(state.dataRef);
-  const data = prompt('Data do pagamento (aaaa-mm-dd):', t.vencimento || ontem);
-  if (!data) return;
-
-  const ajustes = [
-    { alvo: linha.chave, campo:'dt_baixa', valor_novo: data, valor_antigo:'', autor: state.autor, motivo:'confirmação de pagamento' },
-    { alvo: linha.chave, campo:'valor_liquido', valor_novo: String(valor), valor_antigo: String(t.valor_liquido||0), autor: state.autor, motivo:'confirmação de pagamento' },
-  ];
-  if (Math.abs(valor - (t.valor_rs||0)) > 0.005){
-    ajustes.push({ alvo: linha.chave, campo:'valor_rs', valor_novo: String(valor),
-      valor_antigo: String(t.valor_rs||0), autor: state.autor, motivo:'confirmação de pagamento' });
-  }
-  await gravarComRecarga({ acao:'ajuste', token: state.token, ajustes: ajustes },
-    'Confirmando…', 'Pagamento confirmado.');
-}
-
-/* Envia, espera a planilha assentar e recarrega — como a resposta do Apps
-   Script não é legível no modo no-cors, a confirmação vem dos dados. */
-async function gravarComRecarga(payload, textoLoader, textoOk){
-  abrirLoader(textoLoader);
-  try {
-    await enviar(payload);
-    await new Promise(r => setTimeout(r, 1800));
-    await carregar();
-    toast(textoOk);
-  } catch(e){
-    esconderLoader();
-    toast('Erro: ' + (e.message || e), true);
-  }
-}
-
-/* ------------------------------------------------------ título novo --- */
-/* modelo: null para título em branco, 'ciot' para o CIOT do dia já preenchido */
-async function abrirNovo(modelo){
-  if (!(await Auth.pedir())) return;
-  const ciot = (modelo === 'ciot');
-  const base = ciot ? novoCiot(state.dataRef) : {};
-  edicaoAtual = { novo: true, ciot: ciot, base: base };
-
-  el('me-titulo').textContent = ciot ? ('CIOT de ' + fmtData(state.dataRef)) : 'Novo título';
-  el('me-sub').textContent = ciot
-    ? 'Um lançamento por dia, com o valor total transferido. Só o valor precisa ser digitado; o resto já vai preenchido. Se ainda for previsão, deixe a data do pagamento em branco.'
-    : 'Para o pagamento que não passou nem pelo Fluig nem pelo Totvs. Fica numa aba própria e o envio de relatório não apaga.';
-
-  const box = el('me-campos');
-  box.innerHTML = '';
-  CAMPOS_EDITAVEIS.forEach(c => {
-    let v = base[c.k];
-    if (v === undefined || v === null) v = (c.k === 'vencimento') ? state.dataRef : (c.tipo === 'number' ? 0 : '');
-    const input = h('input', { type:c.tipo, id:'ed-'+c.k, step: c.tipo === 'number' ? '0.01' : null,
-      value: c.tipo === 'number' ? (Number(v)||0) : safeStr(v) });
-    box.appendChild(h('div', { class:'campo' + (c.wide ? ' wide' : '') }, [
-      h('label', { for:'ed-'+c.k, text:c.rot }), input,
-    ]));
-  });
-  el('me-reset').hidden = true;
-  el('modalEdit').classList.add('show');
-  if (ciot) setTimeout(() => { const i = el('ed-valor_rs'); if (i){ i.focus(); i.select(); } }, 80);
-}
-
-async function salvarNovo(){
-  const base = (edicaoAtual && edicaoAtual.base) || {};
-  const titulo = Object.assign({}, base, { manual:true });
-  CAMPOS_EDITAVEIS.forEach(c => {
-    const input = el('ed-' + c.k);
-    if (!input) return;
-    titulo[c.k] = c.tipo === 'number' ? (Number(input.value)||0) : input.value.trim();
-  });
-  if (!titulo.fornecedor || !titulo.valor_rs){
-    toast('Favorecido e valor são obrigatórios.', true); return;
-  }
-  titulo.valor = titulo.valor_rs;
-  if (!titulo.valor_liquido) titulo.valor_liquido = titulo.valor_rs;
-  // id próprio: o CIOT repete o número 1 todo dia
-  if (!titulo.id_manual){
-    titulo.id_manual = (titulo.tipo || 'MAN') + '-' + (titulo.vencimento || state.dataRef) +
-      '-' + Math.random().toString(36).slice(2,6);
-  }
-  if (edicaoAtual && edicaoAtual.ciot) titulo.id_manual = 'CIOT-' + (titulo.vencimento || state.dataRef);
-  fecharEdicao();
-  await gravarComRecarga({ acao:'titulo_manual', token: state.token, titulo: titulo },
-    'Gravando título…', 'Título lançado.');
-}
-
-/* Exporta no formato do relatório que a controladoria já usa. Sai exatamente
-   o que está na tela, inclusive com os filtros aplicados — por isso o recorte
-   vai escrito no cabeçalho e no nome do arquivo. */
-function gerarRelatorio(L, rotulo){
-  const naturezas = (state.dados && state.dados.naturezas) || {};
-  try {
-    const res = exportarRelatorio(L, state.dataRef, naturezas, rotulo);
-    const semFluxo = L.filter(x => {
-      const n = safeStr(x.natureza);
-      const info = naturezas[n] || naturezas[n.replace(/^0+/,'')];
-      return !x.conta_fluxo && !(info && info.conta_fluxo);
-    }).length;
-    toast(res.linhas + ' linha(s) no relatório' +
-      (semFluxo ? (' · ' + semFluxo + ' sem conta de fluxo') : '') + '.');
-  } catch(e){
-    toast(e.message || String(e), true);
-  }
 }
 
 /* --------------------------------------------------------- exportação */
@@ -996,32 +671,27 @@ const fecharMenu = () => { if (window.innerWidth <= 1024) abrirMenu(false); };
    INÍCIO
    ============================================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  state.podeEditar = HubLink.init();
-  Auth.carregar();
+  HubLink.init();
 
-  el('dataRef').value = state.dataRef;
-  el('dataRef').onchange = e => {
-    state.dataRef = e.target.value || hojeISO();
-    preparar(); render();
-  };
-  el('btnHoje').onclick = () => {
-    state.dataRef = hojeISO();
-    el('dataRef').value = state.dataRef;
-    preparar(); render();
-  };
+  // o painel é sempre do dia de hoje — sem seletor de data
+  state.dataRef = hojeISO();
+  const dt = new Date();
+  el('headerData').textContent = dt.toLocaleDateString('pt-BR',
+    { weekday:'long', day:'numeric', month:'long' });
+
   el('btnRecarregar').onclick = () => { abrirLoader('Atualizando…'); carregar(); };
-  el('btnNovo').onclick = () => abrirNovo(null);
-  const bc = el('btnCiot');
-  if (bc) bc.onclick = () => abrirNovo('ciot');
-
   el('btnHamburger').onclick = () => abrirMenu(!el('sidebar').classList.contains('open'));
   el('sidebarOverlay').onclick = () => abrirMenu(false);
 
-  el('me-cancel').onclick = fecharEdicao;
-  el('me-reset').onclick = desfazerEdicoes;
-  el('me-salvar').onclick = () => (edicaoAtual && edicaoAtual.novo) ? salvarNovo() : salvarEdicao();
-  el('modalEdit').onclick = e => { if (e.target === el('modalEdit')) fecharEdicao(); };
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharEdicao(); });
+  // estado da barra lateral fica gravado: ela abre como você deixou
+  const btnRec = el('btnRecolher');
+  try {
+    if (localStorage.getItem('pgv2_sidebar') === 'recolhida') document.body.classList.add('recolhida');
+  } catch(e){}
+  if (btnRec) btnRec.onclick = () => {
+    const rec = document.body.classList.toggle('recolhida');
+    try { localStorage.setItem('pgv2_sidebar', rec ? 'recolhida' : 'aberta'); } catch(e){}
+  };
 
   if (!CONFIG.DATA_URL || CONFIG.DATA_URL.indexOf('COLE_A_URL') === 0){
     mostrarErro(new Error('Falta colar a URL do Apps Script em CONFIG.DATA_URL, no topo do app.js.'));
