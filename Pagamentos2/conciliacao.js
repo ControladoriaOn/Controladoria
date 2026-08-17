@@ -190,6 +190,22 @@ const SITUACOES = {
   sem_titulo_aprovado: ['Aprovado, sem título',       'b-danger'],
   cancelado:           ['Cancelado',                  'b-mute'],
 };
+/* Enquanto a solicitação não vira título, o Totvs ainda não deu um tipo a ela.
+   Usamos o tipo que ela vai receber, pela categoria e pelo tipo de solicitação
+   do Fluig — assim o filtro por tipo funciona também nessas linhas. */
+function tipoPresumido(item){
+  if (!item) return '';
+  if (item.cat === 'nf_servico') return 'NF';
+  if (item.cat === 'nf_titulo')  return 'BOL';
+  if (item.cat === 'reembolso'){
+    const s = norm(item.fluig && item.fluig.tipo_solicitacao);
+    if (s.indexOf('adiantamento') >= 0 || s.indexOf('antecipa') >= 0) return 'PA';
+    if (s.indexOf('prestacao') >= 0) return 'PC';
+    return 'RB';
+  }
+  return '';
+}
+
 const semTituloSit  = s => s === 'sem_titulo_pendente' || s === 'sem_titulo_aprovado';
 const aguardandoSit = s => s === 'sem_titulo_pendente' || s === 'em_aberto_pendente';
 
@@ -517,6 +533,7 @@ function montarLinhas(conc, baixas){
       manual: !!t.manual,
       id_manual: t.id_manual || '',
       titulo: t, item: it || null,
+      tipo: safeStr(t.tipo) || tipoPresumido(it),
       origem: it ? it.rotulo
               : (t.origem_manual === 'relatorio' ? 'Relatório do dia'
               : (t.manual ? (t.origem_manual || 'Lançado à mão')
@@ -568,6 +585,7 @@ function montarLinhas(conc, baixas){
       dt_baixa: null,
       valor: it.valor, valorTotvs: null, valorFluig: it.valor,
       situacao: it.situacao, aviso: it.aviso, modoPar: '',
+      tipo: tipoPresumido(it),
       id_fluig: safeStr(it.fluig.id), status: it.fluig.status,
       editavel: false,
       editado: false, edicoes: null, oculto: false, ocultoInfo: null,
@@ -743,7 +761,7 @@ raiz.Conc = {
   proxDiaUtil, diaUtilAnterior, ehDiaUtil, ehFeriado, definirFeriados, vencimentoEfetivo,
   repararAcentos, txt,
   classificarStatus, definirMapaStatus,
-  chaveTitulo, estaPago, SITUACOES, semTituloSit, aguardandoSit, TOL,
+  chaveTitulo, estaPago, SITUACOES, semTituloSit, aguardandoSit, tipoPresumido, TOL,
   aplicarAjustes, conciliar, resumir, montarLinhas, montarHistorico,
   exportarRelatorio, linhaRelatorio, nomeBanco, COLUNAS_RELATORIO, serieDiaria,
   MODELO_CIOT, novoCiot, CAMPO_OCULTO,

@@ -322,6 +322,29 @@
   }
   .cf-opt:hover{border-color:var(--orange); background:var(--orange-soft)}
   .cf-opt input{margin-top:3px; accent-color:var(--orange)}
+  .campos{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:13px}
+  .campo{display:flex; flex-direction:column; gap:5px}
+  .campo.wide{grid-column:1/-1}
+  .campo label{font-size:10.5px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--plum-soft)}
+  .campo input{
+    padding:10px 12px; background:var(--bg); border:1px solid var(--border);
+    border-radius:9px; font-family:inherit; font-size:13px; color:var(--plum-deep);
+    outline:none; transition:all .15s; width:100%;
+  }
+  .campo input:focus{border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.1); background:#fff}
+  .campo .orig{font-size:10.5px; color:#A89CB0}
+  .acoes-linha{display:flex; gap:2px; justify-content:flex-end}
+  .btn-icon{
+    width:28px; height:28px; padding:0; display:inline-flex; align-items:center;
+    justify-content:center; border-radius:7px; background:none; border:1px solid transparent;
+    color:#B9A9B9; cursor:pointer; font-size:12.5px; transition:all .14s;
+  }
+  .btn-icon:hover{background:var(--orange-soft); color:var(--orange-deep)}
+  tr.editada td{background:rgba(255,110,0,.05)}
+  tr.oculta td{opacity:.5}
+  .antes{display:block; font-weight:400; color:#A89CB0; font-size:10.5px;
+    margin-top:2px; text-decoration:line-through}
   .cf-foot{
     padding:14px 20px; background:var(--surface-soft); border-top:1px solid var(--border-soft);
     display:flex; justify-content:flex-end; gap:10px;
@@ -399,6 +422,12 @@
     <button class="btn btn-primary" id="btn-enviar">
       <i class="fa-solid fa-cloud-arrow-up"></i> Enviar para a base
     </button>
+    <button class="btn btn-ghost" id="btn-ciot">
+      <i class="fa-solid fa-truck-fast"></i> CIOT do dia
+    </button>
+    <button class="btn btn-ghost" id="btn-novo">
+      <i class="fa-solid fa-plus"></i> Novo título
+    </button>
     <button class="btn btn-ghost" id="btn-relatorio">
       <i class="fa-solid fa-file-excel"></i> Relatório em Excel
     </button>
@@ -439,6 +468,48 @@
     <div class="cf-foot">
       <button class="btn btn-ghost" id="ml-cancel">Cancelar</button>
       <button class="btn btn-danger" id="ml-do" disabled><i class="fa-solid fa-trash"></i> Limpar</button>
+    </div>
+  </div>
+</div>
+
+<div class="cf-overlay" id="modalEdit">
+  <div class="cf-modal" style="max-width:660px" role="dialog" aria-modal="true">
+    <div class="cf-body">
+      <h3 class="cf-title"><i class="fa-solid fa-pen-to-square"></i> <span id="me-titulo">Editar título</span></h3>
+      <p class="cf-text" id="me-sub"></p>
+      <div class="campos" id="me-campos"></div>
+    </div>
+    <div class="cf-foot">
+      <button class="btn btn-ghost" id="me-cancel" type="button">Cancelar</button>
+      <button class="btn btn-danger" id="me-reset" type="button" hidden>
+        <i class="fa-solid fa-rotate-left"></i> Desfazer edições
+      </button>
+      <button class="btn btn-primary" id="me-salvar" type="button">
+        <i class="fa-solid fa-check"></i> Salvar
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="cf-overlay" id="modalSenha">
+  <div class="cf-modal" role="dialog" aria-modal="true">
+    <div class="cf-body">
+      <h3 class="cf-title"><i class="fa-solid fa-lock"></i> Senha de edição</h3>
+      <p class="cf-text">Pedida uma vez por aba. Fica só nesta sessão do navegador.</p>
+      <div class="campos">
+        <div class="campo wide">
+          <label for="ms-nome">Seu nome</label>
+          <input type="text" id="ms-nome" placeholder="quem está editando" autocomplete="name">
+        </div>
+        <div class="campo wide">
+          <label for="ms-senha">Senha</label>
+          <input type="password" id="ms-senha" autocomplete="current-password">
+        </div>
+      </div>
+    </div>
+    <div class="cf-foot">
+      <button class="btn btn-ghost" id="ms-cancel" type="button">Cancelar</button>
+      <button class="btn btn-primary" id="ms-ok" type="button">Entrar</button>
     </div>
   </div>
 </div>
@@ -981,6 +1052,8 @@ const state = {
   busca: '', filtroTipo: '', pagina: 1,
   conferidos: {},              // pontos do roteiro já marcados como vistos
   roteiroAberto: false,
+  base: null, ajustes: [], orfaos: [],
+  autor: '', token: '',
   dataRef: hojeISO(),
 };
 const TIPO_ROTULO = {
@@ -1280,6 +1353,32 @@ function renderConferencia(){
   ]));
 }
 
+/* Monta o objeto que a edição espera a partir de um título cru. */
+function linhaDoTitulo(t){
+  if (!t) return null;
+  return {
+    titulo: t, chave: Conc.chaveTitulo(t),
+    numero: t.numero + (t.parcela ? ('/' + t.parcela) : ''),
+    fornecedor: t.fornecedor, id_fluig: t.id_fluig,
+    editado: !!t._editado, edicoes: t._edicoes || null, oculto: !!t._oculto,
+  };
+}
+
+function acoesLinha(l){
+  const box = h('div', { class:'acoes-linha' });
+  if (!l) return box;
+  const bEd = h('button', { class:'btn-icon', type:'button', title:'Editar este título' },
+    [ h('i', { class:'fa-solid fa-pen' }) ]);
+  bEd.addEventListener('click', () => abrirEdicao(l));
+  box.appendChild(bEd);
+  const bOc = h('button', { class:'btn-icon', type:'button',
+    title: l.oculto ? 'Trazer de volta' : 'Ocultar dos totais e do relatório' },
+    [ h('i', { class:'fa-solid ' + (l.oculto ? 'fa-eye' : 'fa-eye-slash') }) ]);
+  bOc.addEventListener('click', () => alternarOculto(l));
+  box.appendChild(bOc);
+  return box;
+}
+
 function deb(fn, ms){
   let t;
   return function(){ const a = arguments; clearTimeout(t); t = setTimeout(() => fn.apply(null, a), ms); };
@@ -1336,7 +1435,7 @@ function tabelaItens(linhas){
   const thead = h('thead', {}, [ h('tr', {}, [
     h('th', { text:'Origem' }), h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
     h('th', { text:'Vencimento' }), h('th', { text:'Valor Fluig' }), h('th', { text:'Valor Totvs' }),
-    h('th', { text:'Situação' }),
+    h('th', { text:'Situação' }), h('th', { text:'' }),
   ])]);
   const tbody = h('tbody');
   paginar(linhas).forEach(it => {
@@ -1364,6 +1463,7 @@ function tabelaItens(linhas){
       })(),
       h('td', { class:'num', text: it.par ? fmtBR(it.par.valor_rs) : '—' }),
       tdSit,
+      h('td', {}, [ acoesLinha(it.par ? linhaDoTitulo(it.par) : null) ]),
     ]));
   });
   return h('table', {}, [ thead, tbody ]);
@@ -1373,10 +1473,11 @@ function tabelaTotvs(linhas){
   const thead = h('thead', {}, [ h('tr', {}, [
     h('th', { text:'Tipo' }), h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
     h('th', { text:'Vencimento' }), h('th', { text:'Valor' }), h('th', { text:'Situação' }),
+    h('th', { text:'' }),
   ])]);
   const tbody = h('tbody');
   paginar(linhas).forEach(t => {
-    tbody.appendChild(h('tr', {}, [
+    tbody.appendChild(h('tr', { class: (t._oculto ? 'oculta ' : '') + (t._editado ? 'editada' : '') }, [
       h('td', {}, [ badge(t.tipo || '?', 'b-mute') ]),
       h('td', { class:'mono', text: t.numero + (t.parcela ? ('/' + t.parcela) : '') }),
       h('td', {}, [ h('div', { class:'forn' }, [
@@ -1386,6 +1487,7 @@ function tabelaTotvs(linhas){
       h('td', { class:'mono', text: fmtData(t.vencimento) }),
       h('td', { class:'num', text: fmtBR(t.valor_rs) }),
       h('td', {}, [ estaPago(t) ? badge('Pago ' + fmtData(t.dt_baixa), 'b-ok') : badge('Em aberto', 'b-orange') ]),
+      h('td', {}, [ acoesLinha(linhaDoTitulo(t)) ]),
     ]));
   });
   return h('table', {}, [ thead, tbody ]);
@@ -1404,10 +1506,21 @@ function recalcular(){
   // A referência é o dia de hoje, sempre. Se o arquivo não tiver nada de hoje,
   // a tela avisa em vez de adivinhar uma data por conta própria.
   state.dataRef = hojeISO();
-  state.conc = conciliar(state.store);
+  // ajustes manuais entram por cima do dado cru, nas duas pontas
+  const aj = state.ajustes || [];
+  const rTit = Conc.aplicarAjustes(state.store.totvs, aj);
+  const rBx  = Conc.aplicarAjustes(state.store.baixas.concat(state.store.relatorio), aj);
+  state.orfaos = rTit.orfaos;
+
+  state.conc = conciliar({
+    totvs: rTit.titulos,
+    nf_servico: state.store.nf_servico,
+    nf_titulo:  state.store.nf_titulo,
+    reembolso:  state.store.reembolso,
+  });
   // Pago vem das duas fontes: o relatório de baixas do Totvs e o relatório
   // diário da controladoria, que vale como pagamento efetivo
-  state.pagos = state.store.baixas.concat(state.store.relatorio);
+  state.pagos = rBx.titulos;
   state.resumo = resumir(state.conc, state.dataRef, state.pagos);
 }
 /* Data mais presente entre os títulos em aberto — usada só para explicar,
@@ -1503,6 +1616,238 @@ function render(){
     ? ('Sem: ' + faltando.join(', ') + ' — dá pra enviar assim mesmo, mas a conferência fica parcial.')
     : ('Tudo lido · referência ' + fmtData(state.dataRef) +
        (state.resumo && state.resumo.historico.qtd ? (' · ' + state.resumo.historico.qtd + ' para o histórico') : '') + '.');
+}
+
+/* ============================================================================
+   EDIÇÃO — é aqui que o trabalho acontece
+   ----------------------------------------------------------------------------
+   Nada é escrito por cima do dado original: cada campo alterado vira uma linha
+   na aba Ajustes, e as duas telas aplicam isso por cima a cada carga. Por isso
+   a correção sobrevive a quantos envios de relatório forem feitos no dia.
+   ============================================================================ */
+const CAMPOS_EDITAVEIS = [
+  { k:'vencimento',    rot:'Vencimento',       tipo:'date' },
+  { k:'dt_baixa',      rot:'Data do pagamento',tipo:'date' },
+  { k:'valor_rs',      rot:'Valor (R$)',       tipo:'number' },
+  { k:'valor_liquido', rot:'Valor pago (R$)',  tipo:'number' },
+  { k:'fornecedor',    rot:'Favorecido',       tipo:'text', wide:true },
+  { k:'numero',        rot:'Número do título', tipo:'text' },
+  { k:'parcela',       rot:'Parcela',          tipo:'text' },
+  { k:'prefixo',       rot:'Prefixo',          tipo:'text' },
+  { k:'tipo',          rot:'Tipo',             tipo:'text' },
+  { k:'natureza',      rot:'Natureza',         tipo:'text' },
+  { k:'banco',         rot:'Banco',            tipo:'text' },
+  { k:'bordero',       rot:'Borderô',          tipo:'text' },
+  { k:'historico',     rot:'Histórico',        tipo:'text', wide:true },
+];
+
+/* Senha e nome ficam só na aba aberta; a senha é conferida no servidor. */
+const Auth = {
+  K_TOKEN:'pgv2_token', K_NOME:'pgv2_autor',
+  carregar(){
+    try {
+      state.token = sessionStorage.getItem(this.K_TOKEN) || '';
+      state.autor = localStorage.getItem(this.K_NOME) || '';
+    } catch(e){}
+  },
+  guardar(nome, token){
+    state.autor = nome; state.token = token;
+    try {
+      sessionStorage.setItem(this.K_TOKEN, token);
+      localStorage.setItem(this.K_NOME, nome);
+    } catch(e){}
+  },
+  limpar(){
+    state.token = '';
+    try { sessionStorage.removeItem(this.K_TOKEN); } catch(e){}
+  },
+  pedir(){
+    return new Promise(resolve => {
+      if (state.token && state.autor) return resolve(true);
+      const m = el('modalSenha');
+      el('ms-nome').value = state.autor || '';
+      el('ms-senha').value = '';
+      m.classList.add('show');
+      setTimeout(() => (state.autor ? el('ms-senha') : el('ms-nome')).focus(), 60);
+      const fechar = ok => {
+        m.classList.remove('show');
+        el('ms-ok').onclick = null; el('ms-cancel').onclick = null; m.onkeydown = null;
+        resolve(ok);
+      };
+      el('ms-ok').onclick = () => {
+        const nome = el('ms-nome').value.trim(), senha = el('ms-senha').value.trim();
+        if (!nome || !senha){ toast('Preencha nome e senha.'); return; }
+        Auth.guardar(nome, senha); fechar(true);
+      };
+      el('ms-cancel').onclick = () => fechar(false);
+      m.onkeydown = e => {
+        if (e.key === 'Escape') fechar(false);
+        if (e.key === 'Enter') el('ms-ok').click();
+      };
+    });
+  },
+};
+
+let edicaoAtual = null;
+
+function fecharEdicao(){ el('modalEdit').classList.remove('show'); edicaoAtual = null; }
+
+function montarCampos(base, edicoes){
+  const box = el('me-campos');
+  box.textContent = '';
+  CAMPOS_EDITAVEIS.forEach(c => {
+    let v = base[c.k];
+    if (v === undefined || v === null) v = (c.tipo === 'number' ? 0 : '');
+    const input = h('input', { type:c.tipo, id:'ed-'+c.k,
+      step: c.tipo === 'number' ? '0.01' : null,
+      value: c.tipo === 'number' ? (Number(v)||0) : safeStr(v) });
+    const ed = edicoes && edicoes[c.k];
+    box.appendChild(h('div', { class:'campo' + (c.wide ? ' wide' : '') }, [
+      h('label', { for:'ed-'+c.k, text:c.rot }), input,
+      (ed && !ed.absorvido && !ed.descartado)
+        ? h('span', { class:'orig', text:'antes: ' + safeStr(ed.original) + ' · ' + safeStr(ed.autor) })
+        : null,
+    ]));
+  });
+  box.appendChild(h('div', { class:'campo wide' }, [
+    h('label', { text:'Motivo' }),
+    h('input', { type:'text', id:'ed-motivo', placeholder:'opcional — por que está mudando' }),
+  ]));
+}
+
+async function abrirEdicao(linha){
+  if (!(await Auth.pedir())) return;
+  const t = linha.titulo;
+  edicaoAtual = { chave: linha.chave, orig: t };
+  el('me-titulo').textContent = 'Editar ' + linha.numero;
+  el('me-sub').textContent = (linha.fornecedor || '') +
+    (linha.id_fluig ? (' · Fluig #' + linha.id_fluig) : '') +
+    ' — a alteração fica registrada com seu nome e não altera o Totvs.';
+  montarCampos(t, linha.edicoes);
+  el('me-reset').hidden = !linha.editado;
+  el('modalEdit').classList.add('show');
+}
+
+async function abrirNovo(modelo){
+  if (!(await Auth.pedir())) return;
+  const ciot = (modelo === 'ciot');
+  const base = ciot ? Conc.novoCiot(state.dataRef) : { vencimento: state.dataRef };
+  edicaoAtual = { novo:true, ciot:ciot, base:base };
+  el('me-titulo').textContent = ciot ? ('CIOT de ' + fmtData(state.dataRef)) : 'Novo título';
+  el('me-sub').textContent = ciot
+    ? 'Um lançamento por dia, com o valor total transferido. Só o valor precisa ser digitado. Se ainda for previsão, deixe a data do pagamento em branco.'
+    : 'Para o pagamento que não passou nem pelo Fluig nem pelo Totvs. Fica numa aba própria e o envio de relatório não apaga.';
+  montarCampos(base, null);
+  el('me-reset').hidden = true;
+  el('modalEdit').classList.add('show');
+  if (ciot) setTimeout(() => { const i = el('ed-valor_rs'); if (i){ i.focus(); i.select(); } }, 80);
+}
+
+/* Traz o que já está na base para a tela. É isto que permite abrir a
+   conferência no meio da tarde, ver o dia como o painel está mostrando e
+   corrigir algo sem precisar subir arquivo de novo. */
+async function carregarBase(){
+  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0) return;
+  try {
+    const res = await fetch(CONFIG.APP_SCRIPT_URL + '?v=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const d = await res.json();
+    if (d.erro) throw new Error(d.erro);
+    state.base = d;
+    if (d.config_status) Conc.definirMapaStatus(d.config_status);
+    Conc.definirFeriados(d.feriados || []);
+    // o que veio da base só entra onde não houver arquivo recém-arrastado
+    const lidos = new Set(state.files.filter(f => f.ok).map(f => f.tipo));
+    if (!lidos.has('totvs') && !lidos.has('totvs_xlsx')) state.store.totvs = d.titulos || [];
+    if (!lidos.has('baixas') && !lidos.has('relatorio')) state.store.baixas = d.baixas || [];
+    if (!lidos.has('nf_servico')) state.store.nf_servico = d.nf_servico || [];
+    if (!lidos.has('nf_titulo'))  state.store.nf_titulo  = d.nf_titulo  || [];
+    if (!lidos.has('reembolso'))  state.store.reembolso  = d.reembolso  || [];
+    state.ajustes = d.ajustes || [];
+    if (d.naturezas && !state.naturezas) state.naturezas = d.naturezas;
+    recalcular();
+    render();
+  } catch(e){
+    // a tela funciona sem a base; é só não ter o que corrigir
+  }
+}
+
+/* Grava o ajuste e recarrega a base, para a tela mostrar o que de fato ficou.
+   A resposta do Apps Script não é legível no modo no-cors, então a confirmação
+   vem dos dados, não do retorno da chamada. */
+async function gravarAjuste(payload, textoOk){
+  showOverlay(true, 'Salvando…');
+  try {
+    await fetch(CONFIG.APP_SCRIPT_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(payload),
+    });
+    await new Promise(r => setTimeout(r, 1800));
+    await carregarBase();
+    toast(textoOk);
+  } catch(e){
+    toast('Erro ao salvar: ' + (e.message || e));
+  } finally {
+    showOverlay(false);
+  }
+}
+
+async function salvarEdicao(){
+  if (!edicaoAtual) return;
+  if (edicaoAtual.novo) return salvarNovo();
+  const t = edicaoAtual.orig, ajustes = [];
+  CAMPOS_EDITAVEIS.forEach(c => {
+    const input = el('ed-' + c.k);
+    if (!input) return;
+    const novo = input.value;
+    const atual = c.tipo === 'number' ? String(Number(t[c.k])||0) : safeStr(t[c.k]);
+    if (safeStr(novo) === atual) return;
+    ajustes.push({ alvo: edicaoAtual.chave, campo: c.k, valor_novo: novo,
+      valor_antigo: atual, autor: state.autor, motivo: el('ed-motivo').value.trim() });
+  });
+  if (!ajustes.length){ toast('Nada mudou.'); fecharEdicao(); return; }
+  fecharEdicao();
+  await gravarAjuste({ acao:'ajuste', token: state.token, ajustes: ajustes },
+    ajustes.length + ' campo(s) alterado(s).');
+}
+
+async function salvarNovo(){
+  const base = (edicaoAtual && edicaoAtual.base) || {};
+  const titulo = Object.assign({}, base, { manual:true });
+  CAMPOS_EDITAVEIS.forEach(c => {
+    const input = el('ed-' + c.k);
+    if (!input) return;
+    titulo[c.k] = c.tipo === 'number' ? (Number(input.value)||0) : input.value.trim();
+  });
+  if (!titulo.fornecedor || !titulo.valor_rs){ toast('Favorecido e valor são obrigatórios.'); return; }
+  titulo.valor = titulo.valor_rs;
+  if (!titulo.valor_liquido) titulo.valor_liquido = titulo.valor_rs;
+  titulo.id_manual = edicaoAtual.ciot
+    ? ('CIOT-' + (titulo.vencimento || state.dataRef))
+    : ((titulo.tipo || 'MAN') + '-' + (titulo.vencimento || state.dataRef) + '-' + Math.random().toString(36).slice(2,6));
+  fecharEdicao();
+  await gravarAjuste({ acao:'titulo_manual', token: state.token, titulo: titulo }, 'Título lançado.');
+}
+
+async function desfazerEdicoes(){
+  if (!edicaoAtual) return;
+  const alvo = edicaoAtual.chave;
+  fecharEdicao();
+  await gravarAjuste({ acao:'desfazer', token: state.token, id:'alvo:' + alvo }, 'Edições desfeitas.');
+}
+
+/* Ocultar não apaga: o título continua na base e volta com um clique. Apagar de
+   verdade não resolveria, porque ele voltaria no próximo relatório do Totvs. */
+async function alternarOculto(linha){
+  if (!(await Auth.pedir())) return;
+  const voltando = linha.oculto;
+  const motivo = voltando ? '' : (prompt('Por que está ocultando este título? (opcional)') || '');
+  await gravarAjuste({ acao:'ajuste', token: state.token, ajustes: [{
+      alvo: linha.chave, campo:'oculto',
+      valor_novo: voltando ? '0' : '1', valor_antigo: voltando ? '1' : '0',
+      autor: state.autor, motivo: motivo,
+    }] }, voltando ? 'Título de volta.' : 'Título ocultado.');
 }
 
 /* ============================================================================
@@ -1669,6 +2014,12 @@ document.addEventListener('DOMContentLoaded', () => {
   dz.addEventListener('drop', e => processFiles(Array.from(e.dataTransfer.files || [])));
 
   el('btn-enviar').addEventListener('click', enviar);
+  el('btn-ciot').addEventListener('click', () => abrirNovo('ciot'));
+  el('btn-novo').addEventListener('click', () => abrirNovo(null));
+  el('me-cancel').addEventListener('click', fecharEdicao);
+  el('me-reset').addEventListener('click', desfazerEdicoes);
+  el('me-salvar').addEventListener('click', salvarEdicao);
+  el('modalEdit').addEventListener('click', e => { if (e.target === el('modalEdit')) fecharEdicao(); });
   el('btn-relatorio').addEventListener('click', exportarRelatorioDaConferencia);
   el('btn-json').addEventListener('click', baixarJson);
   el('btn-limpar').addEventListener('click', abrirLimpar);
@@ -1677,10 +2028,14 @@ document.addEventListener('DOMContentLoaded', () => {
   el('ml-check').addEventListener('change', e => { el('ml-do').disabled = !e.target.checked; });
   el('ml-do').addEventListener('click', limparBase);
   el('modal-limpar').addEventListener('click', e => { if (e.target === el('modal-limpar')) fecharLimpar(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharLimpar(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape'){ fecharLimpar(); fecharEdicao(); }
+  });
 
+  Auth.carregar();
   render();
   fetchStatus();
+  carregarBase();
 });
 </script>
 </body>

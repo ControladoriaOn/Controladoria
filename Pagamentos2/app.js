@@ -26,7 +26,7 @@ const {
   chaveTitulo, estaPago, SITUACOES,
   aplicarAjustes, conciliar, resumir, montarLinhas, definirMapaStatus,
   exportarRelatorio, novoCiot, MODELO_CIOT, CAMPO_OCULTO,
-  definirFeriados, diaUtilAnterior, ehDiaUtil, ehFeriado, serieDiaria,
+  definirFeriados, diaUtilAnterior, ehDiaUtil, ehFeriado,
 } = Conc;
 
 /* ------------------------------------------------------------------ DOM */
@@ -59,7 +59,7 @@ const state = {
   baixas: [],
   conc: null, resumo: null, linhas: [],
   dataRef: hojeISO(),
-  aba: 'hoje',          // pago | hoje | amanha | atrasado | excecoes
+  aba: 'hoje',          // pago | hoje | amanha | ocultos
   busca: '', filtroSit: '', filtroOrigem: '', filtroTipo: '',
   ordem: { col:'vencimento', dir:'asc' },
   pagina: 1,
@@ -233,26 +233,10 @@ function recortes(){
            + r.foraTotvsAmanha.qtd + ' só no Fluig',
       linhas: previsto.filter(x => emAberto(x) && x.vencimento === r.amanha),
     },
-    atrasado: {
-      rotulo: 'Vencidos sem baixa',
-      icone: 'fa-triangle-exclamation', classe: 'danger',
-      valor: r.atrasado.valor, qtd: r.atrasado.qtd,
-      sub: 'venceram antes de ' + fmtData(r.dataRef) + ' e continuam sem baixa',
-      linhas: previsto.filter(x => emAberto(x) && x.vencimento && x.vencimento < r.dataRef),
-      opcional: true,
-    },
     ocultos: {
       rotulo: 'Ocultos',
       icone: 'fa-eye-slash', classe: 'mute',
       linhas: state.linhas.filter(x => x.oculto),
-      opcional: true, semValor: true,
-    },
-    excecoes: {
-      rotulo: 'Precisa de olho',
-      icone: 'fa-flag', classe: 'warn',
-      linhas: previsto.filter(x =>
-        x.situacao === 'sem_titulo_aprovado' || x.aviso === 'valor_diverge' ||
-        x.aviso === 'valor_corrigido_sem_par' || x.modoPar === 'aprox'),
       opcional: true, semValor: true,
     },
   };
@@ -295,7 +279,7 @@ function renderNav(){
   const nav = el('nav');
   nav.innerHTML = '';
   const R = recortes();
-  ['pago','hoje','amanha','atrasado','excecoes','ocultos'].forEach(k => {
+  ['pago','hoje','amanha','ocultos'].forEach(k => {
     const rec = R[k];
     if (rec.opcional && !rec.linhas.length) return;
     const b = h('button', { class:'nav-item' + (state.aba === k ? ' active' : ''), type:'button' }, [
@@ -328,84 +312,60 @@ function renderStamp(){
 }
 
 /* Os três números não são três coisas iguais: são o mesmo dinheiro em três
-   momentos. Por isso a tela desenha uma linha do tempo — ontem fechado à
-   esquerda, hoje em destaque no centro, amanhã em esboço à direita. */
+   momentos. A ordem é sempre ontem, hoje e amanhã — uma linha do tempo não se
+   embaralha. O que se move é o destaque: o cartão escolhido cresce e ganha o
+   fundo escuro, os outros recuam. */
 function secaoKPIs(){
   const R = recortes(), r = state.resumo;
   const sec = h('div', { class:'section' });
   const linha = h('div', { class:'timeline' });
 
-  const marco = (k, classe, extras) => {
+  ['pago','hoje','amanha'].forEach((k, i) => {
     const rec = R[k];
+    const ativo = state.aba === k;
     const card = h('div', {
-      class:'marco ' + classe + ' ' + rec.classe + (state.aba === k ? ' ativo' : ''),
-      role:'button', tabindex:'0',
+      class:'marco ' + rec.classe + (ativo ? ' destaque' : ' recuado'),
+      role:'button', tabindex:'0', 'aria-pressed': ativo ? 'true' : 'false',
     }, [
       h('div', { class:'marco-topo' }, [
         h('span', { class:'marco-quando', text: rec.rotulo }),
-        rec.qtd ? h('span', { class:'marco-qtd', text: rec.qtd + (rec.qtd === 1 ? ' título' : ' títulos') }) : null,
       ]),
       h('div', { class:'marco-valor', 'data-valor': Number(rec.valor)||0 }, [ 'R$ ' + fmtBR0(rec.valor) ]),
+      h('div', { class:'marco-qtd', text: rec.qtd ? (rec.qtd + (rec.qtd === 1 ? ' título' : ' títulos')) : 'nenhum título' }),
       h('div', { class:'marco-sub', text: rec.sub }),
     ]);
-    (extras || []).forEach(e => e && card.appendChild(e));
-    const ir = () => { state.aba = k; state.pagina = 1; render(); };
+
+    // só o cartão do dia mostra o quanto do previsto já saiu
+    if (k === 'hoje'){
+      const prev = R.hoje.valor + R.pago.valor;
+      const frac = prev > 0 ? Math.min(1, R.pago.valor / prev) : 0;
+      if (r.aguardandoHoje.qtd){
+        card.appendChild(h('div', { class:'marco-alerta' }, [
+          icone('fa-hourglass-half'),
+          h('span', { text: 'R$ ' + fmtBR0(r.aguardandoHoje.valor) + ' aguardando aprovação' }),
+        ]));
+      }
+      card.appendChild(h('div', { class:'marco-barra', title:'proporção já paga em relação ao previsto' },
+        [ h('span', { style:'width:' + Math.round(frac*100) + '%' }) ]));
+    }
+
+    const ir = () => { if (state.aba !== k){ state.aba = k; state.pagina = 1; state.filtroTipo = ''; render(); } };
     card.onclick = ir;
     card.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); ir(); } };
-    return card;
-  };
+    linha.appendChild(card);
+    if (i < 2) linha.appendChild(h('div', { class:'timeline-seta' }, [ icone('fa-chevron-right') ]));
+  });
 
-  // ontem: minigráfico dos últimos dias úteis, para o número ter contexto
-  const serie = serieDiaria(state.baixas, r.dataPago || r.dataRef, 10);
-  linha.appendChild(marco('pago', 'passado', [ serie.some(p => p.temDado) ? sparkline(serie) : null ]));
-  linha.appendChild(h('div', { class:'timeline-seta' }, [ icone('fa-chevron-right') ]));
-
-  // hoje: quanto do previsto já virou pagamento
-  const prevHoje = R.hoje.valor + R.pago.valor;
-  const frac = prevHoje > 0 ? Math.min(1, R.pago.valor / prevHoje) : 0;
-  const barra = h('div', { class:'marco-barra', title:'proporção já paga em relação ao previsto' }, [
-    h('span', { style:'width:' + Math.round(frac*100) + '%' }),
-  ]);
-  linha.appendChild(marco('hoje', 'presente', [
-    r.aguardandoHoje.qtd
-      ? h('div', { class:'marco-alerta' }, [ icone('fa-hourglass-half'),
-          h('span', { text: 'R$ ' + fmtBR0(r.aguardandoHoje.valor) + ' aguardando aprovação' }) ])
-      : null,
-    barra,
-  ]));
-  linha.appendChild(h('div', { class:'timeline-seta' }, [ icone('fa-chevron-right') ]));
-  linha.appendChild(marco('amanha', 'futuro', []));
+  // a coluna do cartão em destaque fica maior; a transição do grid é o que dá
+  // o movimento de carrossel
+  const pesos = { pago:['1.35fr','1fr','1fr'], hoje:['1fr','1.35fr','1fr'], amanha:['1fr','1fr','1.35fr'] };
+  const p = pesos[state.aba] || pesos.hoje;
+  linha.style.setProperty('--c1', p[0]);
+  linha.style.setProperty('--c2', p[1]);
+  linha.style.setProperty('--c3', p[2]);
 
   sec.appendChild(linha);
   return sec;
-}
-
-/* Minigráfico de barras dos últimos dias úteis pagos. SVG puro: sem
-   dependência e sem custo de renderização. */
-function sparkline(serie){
-  const w = 132, hh = 30, gap = 2;
-  const max = Math.max.apply(null, serie.map(p => p.valor).concat([1]));
-  const bw = (w - gap * (serie.length - 1)) / serie.length;
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', '0 0 ' + w + ' ' + hh);
-  svg.setAttribute('class', 'spark');
-  svg.setAttribute('preserveAspectRatio', 'none');
-  serie.forEach((p, i) => {
-    const altura = Math.max(1.5, (p.valor / max) * hh);
-    const rect = document.createElementNS(ns, 'rect');
-    rect.setAttribute('x', (i * (bw + gap)).toFixed(2));
-    rect.setAttribute('y', (hh - altura).toFixed(2));
-    rect.setAttribute('width', bw.toFixed(2));
-    rect.setAttribute('height', altura.toFixed(2));
-    rect.setAttribute('rx', '1.5');
-    rect.setAttribute('class', i === serie.length - 1 ? 'spark-hoje' : 'spark-dia');
-    const t = document.createElementNS(ns, 'title');
-    t.textContent = fmtData(p.data) + ' · R$ ' + fmtBR(p.valor);
-    rect.appendChild(t);
-    svg.appendChild(rect);
-  });
-  return h('div', { class:'marco-spark' }, [ svg ]);
 }
 
 /* --------------------------------------------------------------- tabela */
@@ -422,7 +382,7 @@ function linhasVisiveis(){
 
   if (state.filtroSit)    L = L.filter(x => x.situacao === state.filtroSit);
   if (state.filtroOrigem) L = L.filter(x => x.origem === state.filtroOrigem);
-  if (state.filtroTipo)   L = L.filter(x => (safeStr(x.titulo ? x.titulo.tipo : '') || '—') === state.filtroTipo);
+  if (state.filtroTipo)   L = L.filter(x => (safeStr(x.tipo) || '—') === state.filtroTipo);
 
   const { col, dir } = state.ordem;
   L.sort((x, y) => {
@@ -480,14 +440,15 @@ function secaoTabela(){
      mesma mecânica da ferramenta antiga. */
   const tipos = {};
   rec.linhas.forEach(x => {
-    const t = safeStr(x.titulo ? x.titulo.tipo : '') || '—';
+    const t = safeStr(x.tipo) || '—';
     tipos[t] = (tipos[t] || 0) + 1;
   });
   const nomes = Object.keys(tipos).sort();
   if (nomes.length > 1){
     const chips = h('div', { class:'chips' });
     const mkChip = (valor, rotulo, qtd) => {
-      const b = h('button', { class:'chip' + (state.filtroTipo === valor ? ' active' : ''), type:'button' },
+      const cor = valor ? (' t-' + norm(valor).replace(/[^a-z0-9]/g,'') ) : '';
+      const b = h('button', { class:'chip' + cor + (state.filtroTipo === valor ? ' active' : ''), type:'button' },
         [ rotulo, h('span', { class:'cnt', text: String(qtd) }) ]);
       b.onclick = () => { state.filtroTipo = valor; state.pagina = 1; render(); };
       return b;
@@ -586,12 +547,10 @@ function tabela(L){
 
 function linhaTabela(x, ehPago){
   const sit = SITUACOES[x.situacao] || ['—','b-mute'];
+  /* As marcas de conferência (valor diverge, casado por semelhança) vivem na
+     tela de conferência. Aqui fica só o que muda a leitura do dia. */
   const tdSit = h('td', {}, [ badge(sit[0], sit[1]) ]);
-  if (x.aviso === 'valor_diverge') tdSit.appendChild(badge('valor diverge','b-danger'));
-  if (x.aviso === 'valor_corrigido') tdSit.appendChild(badge('valor corrigido','b-info'));
-  if (x.aviso === 'valor_corrigido_sem_par') tdSit.appendChild(badge('valor a conferir','b-warn'));
-  if (x.modoPar === 'aprox') tdSit.appendChild(badge('casado por semelhança','b-info'));
-  if (x.editado) tdSit.appendChild(badge('editado','b-orange'));
+  if (x.editado)  tdSit.appendChild(badge('editado','b-orange'));
   if (x.estimado) tdSit.appendChild(badge('estimado','b-warn'));
   if (x.oculto)   tdSit.appendChild(badge('oculto','b-mute'));
 
