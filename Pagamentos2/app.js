@@ -15,7 +15,7 @@
 
 const CONFIG = {
   // ⬇️ mesma URL /exec usada no atualizar.html
-  DATA_URL: 'COLE_A_URL_DO_APPS_SCRIPT_V2_AQUI',
+  DATA_URL: 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec',
   RETRIES: 3,
   BACKOFF_MS: 600,
   PAGINA: 60,
