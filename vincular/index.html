@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comprovantes por Arquivo</title>
+<script>try{var _t=localStorage.getItem('tema_vinculo')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');if(_t==='dark')document.documentElement.classList.add('dark');}catch(e){}</script>
+<link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+:root{
+  --orange:#FF6E00; --orange-deep:#C75200; --orange-soft:#FFF0E4; --orange-line:#F4D6B9;
+  --ink:#3C003C; --plum:#3C003C; --plum-deep:#280026; --plum-2:#5A0F55;
+  --muted:#7C667B; --line:#ECE2EC; --field:#FBF7FA; --bg:#F4EFEE; --surface:#FFFFFF;
+  --green:#15803D; --green-bg:#E4F6E9; --red:#B42318; --red-bg:#FBE9E7; --gray-bg:#F1EAF1;
+  --warn:#8A5300; --warn-bg:#FEF3DC; --warn-line:#F4DCA6;
+  --sh-sm:0 1px 2px rgba(52,0,46,.05), 0 1px 3px rgba(52,0,46,.04);
+  --sh-md:0 2px 6px rgba(52,0,46,.05), 0 16px 36px -16px rgba(52,0,46,.18);
+  --sh-lg:0 30px 70px -20px rgba(40,0,36,.45);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1); --ease-out-expo:cubic-bezier(.16,1,.3,1); --ease-smooth:cubic-bezier(.4,0,.2,1);
+}
+html.dark{
+  --ink:#F0E7F0; --bg:#141018; --surface:#221A29; --line:#352B3F; --muted:#A593AE;
+  --gray-bg:#2C2335; --field:#1C1622; --orange-soft:#3A2718; --orange-deep:#FF9A52; --orange-line:#5A3D22;
+  --green:#5FD18C; --green-bg:#16321F; --red:#F0A0A0; --red-bg:#3A1C1C;
+  --plum:#3C003C; --plum-deep:#2A0028; --plum-2:#5A1457;
+  --warn:#E8C77A; --warn-bg:#3A2E15; --warn-line:#5A4A20;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:28px 20px 76px}
+
+header{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(135deg,var(--plum-deep),var(--plum) 50%,var(--plum-2));color:#fff;border-radius:22px;padding:22px 24px 26px;box-shadow:var(--sh-md);border:1px solid rgba(255,255,255,.06);animation:slideDown .55s var(--ease-out-expo) backwards}
+header::after{content:"";position:absolute;top:-45%;right:-4%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,110,0,.34),transparent 62%);pointer-events:none}
+header::before{content:"";position:absolute;left:22px;right:22px;bottom:10px;height:2px;background-image:radial-gradient(circle,rgba(255,255,255,.55) 1px,transparent 1.5px);background-size:8px 2px;background-repeat:repeat-x;opacity:.45;pointer-events:none}
+.hb{display:flex;align-items:center;gap:15px;min-width:0;position:relative;z-index:1}
+.mascwrap{flex:0 0 auto;display:inline-flex;padding:3px;border-radius:14px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22)}
+.mascote{width:46px;height:46px;border-radius:11px;object-fit:cover;display:block;animation:respira 6.5s var(--ease-smooth) 1.2s infinite}
+.eyebrow{margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+header h1{margin:0;font-size:25px;font-weight:700;font-family:'Fraunces',serif;line-height:1.05}
+.sub{margin:7px 0 0;color:#E7D3E7;font-size:13.5px;max-width:52ch}
+.ha{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:14px;box-shadow:var(--sh-sm);animation:slideUp .42s var(--ease-out-expo) backwards}
+.card:nth-of-type(1){animation-delay:.05s}.card:nth-of-type(2){animation-delay:.10s}
+.card:nth-of-type(3){animation-delay:.15s}.card:nth-of-type(4){animation-delay:.20s}.card:nth-of-type(5){animation-delay:.25s}
+.sh{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.no{flex:0 0 auto;width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--plum);color:#fff;font-family:'Fraunces',serif;font-weight:700;font-size:17px;box-shadow:0 5px 14px -5px rgba(60,0,60,.55)}
+html.dark .no{background:linear-gradient(180deg,#5A1457,#3C003C);box-shadow:none}
+.st{margin:0;flex:1;font-weight:700;font-size:15.5px}
+
+.row{display:flex;flex-wrap:wrap;gap:12px}
+.fld{flex:1;min-width:130px}
+label.lbl{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600}
+select{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:var(--field);font:600 14px 'Manrope',sans-serif;color:var(--ink)}
+select:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,110,0,.16)}
+.hint{font-size:12.5px;color:var(--muted);margin:13px 0 0;line-height:1.55}
+.hint b{color:var(--ink)}
+
+.zone{display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px dashed var(--orange-line);border-radius:14px;background:var(--orange-soft);padding:22px 18px;text-align:center;color:var(--orange-deep);font-weight:700;font-size:14px;cursor:pointer;outline:none;transition:border-color .15s,background .15s}
+.zone:hover,.zone:focus,.zone.drag{border-color:var(--orange)}
+.zone.drag{background:#FFE6D2}
+html.dark .zone.drag{background:#43301C}
+.zone .ico{font-size:26px;line-height:1}
+.zone .s{font-weight:500;color:var(--muted);font-size:12.5px}
+
+.info{margin-top:12px;font-size:13px;padding:10px 13px;border-radius:10px;font-weight:600}
+.info.ok{background:var(--green-bg);color:var(--green)}
+.info.erro{background:var(--red-bg);color:var(--red);animation:shake .5s var(--ease-smooth)}
+.info.aviso{background:var(--warn-bg);color:var(--warn)}
+
+.alertbar{display:flex;align-items:flex-start;gap:12px;margin-top:14px;padding:14px 16px;border-radius:14px;background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn);font-size:13.5px;box-shadow:var(--sh-sm);animation:slideUp .4s var(--ease-out-expo) backwards}
+.alertbar .ai{flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:var(--warn);color:var(--warn-bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-family:'Fraunces',serif}
+.alertbar b{display:block;margin-bottom:3px}
+.alertbar .t{flex:1;min-width:0}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;position:sticky;top:0;background:var(--surface)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{animation:slideUp .35s var(--ease-out-expo) backwards}
+.tw{max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.fname{font-family:'JetBrains Mono',monospace;font-size:12px;word-break:break-all}
+
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
+.badge.none{background:var(--gray-bg);color:var(--muted)}
+.badge.ok{background:var(--orange-soft);color:var(--orange-deep)}
+.badge.done{background:var(--green-bg);color:var(--green)}
+.badge.err{background:var(--red-bg);color:var(--red);cursor:help}
+.badge.up{background:#FEF1D6;color:#A8650C}
+html.dark .badge.up{background:#3A2E15;color:#E8C77A}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:12px;border:none;cursor:pointer;font:700 14px 'Manrope',sans-serif;position:relative;overflow:hidden;transition:transform .12s,filter .15s,border-color .15s,color .15s;text-decoration:none}
+.btn.primary{background:linear-gradient(180deg,#FF7F1F,#FF6E00);color:#fff;box-shadow:0 8px 22px -8px rgba(255,110,0,.5)}
+.btn.primary:hover{filter:brightness(1.05);transform:translateY(-1px)}
+.btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+.btn.ghost:hover{border-color:var(--orange);color:var(--orange-deep)}
+.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none;filter:none}
+.btn.sm{padding:9px 14px;border-radius:10px;font-size:13px}
+.btn.big{font-size:16px;padding:15px 22px}
+.btn.onband{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.28);color:#fff}
+.btn.onband:hover{background:rgba(255,255,255,.18);color:#fff}
+.btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);transform:scale(0);animation:ripple .6s var(--ease-smooth);pointer-events:none}
+.btn.ghost .ripple,.btn.onband .ripple{background:rgba(255,110,0,.22)}
+.acts{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+.barbg{height:10px;background:var(--gray-bg);border-radius:999px;overflow:hidden}
+#bar,#sbar{height:100%;width:0;background:linear-gradient(90deg,#FF8A2B,#FF6E00);border-radius:999px;transition:width .25s}
+#progTxt{font-size:12.5px;color:var(--muted);margin-top:8px;font-weight:600}
+#doneMsg{margin-top:14px;font-size:13.5px;background:var(--green-bg);color:var(--green);padding:12px 14px;border-radius:11px;font-weight:600}
+#doneMsg.ruim{background:var(--warn-bg);color:var(--warn)}
+
+.overlay{position:fixed;inset:0;background:rgba(40,0,38,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50;animation:fade .3s var(--ease-smooth)}
+.loadbox{position:relative;background:var(--surface);border-radius:22px;padding:30px 32px;width:min(430px,92vw);text-align:center;box-shadow:var(--sh-lg);border:1px solid var(--line);animation:scaleIn .4s var(--ease-spring)}
+.loadbox::before{content:"";position:absolute;left:20px;right:20px;top:12px;height:2px;background-image:radial-gradient(circle,var(--line) 1px,transparent 1.5px);background-size:8px 2px;background-repeat:repeat-x}
+.spin{width:46px;height:46px;border-radius:50%;border:4px solid var(--orange-soft);border-top-color:var(--orange);margin:0 auto 16px;animation:spin .8s linear infinite}
+.lt{margin:0 0 14px;font-weight:700;font-size:18px;font-family:'Fraunces',serif}
+.ltx{margin:12px 0 0;font-size:13.5px;font-weight:700}
+.lh{margin:6px 0 0;font-size:12px;color:var(--muted)}
+.check{width:56px;height:56px;border-radius:50%;background:var(--green-bg);color:var(--green);font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;animation:pop .5s var(--ease-spring)}
+.check.ruim{background:var(--warn-bg);color:var(--warn);font-family:'Fraunces',serif}
+.warnbox{margin:0 0 16px;font-size:13.5px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:12px;padding:12px 14px;text-align:left}
+.okbox{margin:0 0 16px;font-size:13.5px;color:var(--green);background:var(--green-bg);border-radius:12px;padding:12px 14px}
+#doneState .btn{width:100%}
+#doneState .btn + .btn{margin-top:10px}
+
+.orbs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.5}
+.orb.a{width:46vmax;height:46vmax;top:-16vmax;left:-12vmax;background:radial-gradient(circle,rgba(255,110,0,.28),transparent 64%);animation:d1 26s ease-in-out infinite}
+.orb.b{width:42vmax;height:42vmax;bottom:-18vmax;right:-14vmax;background:radial-gradient(circle,rgba(60,0,60,.28),transparent 64%);animation:d2 32s ease-in-out infinite}
+.orb.c{width:28vmax;height:28vmax;top:40vh;right:14vw;background:radial-gradient(circle,rgba(255,150,70,.20),transparent 66%);animation:d3 38s ease-in-out infinite}
+html.dark .orb.a{background:radial-gradient(circle,rgba(255,120,40,.18),transparent 64%)}
+html.dark .orb.b{background:radial-gradient(circle,rgba(120,40,120,.32),transparent 64%)}
+html.dark .orb.c{background:radial-gradient(circle,rgba(150,60,150,.18),transparent 66%)}
+.grain{position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.045;mix-blend-mode:multiply;background-size:180px 180px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+html.dark .grain{opacity:.06;mix-blend-mode:screen}
+
+@keyframes slideUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes ripple{to{transform:scale(2.6);opacity:0}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+@keyframes respira{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+@keyframes d1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(13vw,15vh) scale(1.06)}}
+@keyframes d2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-14vw,-12vh) scale(1.05)}}
+@keyframes d3{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-11vw,9vh) scale(1.07)}66%{transform:translate(6vw,-10vh) scale(.96)}}
+*{transition:background-color .35s var(--ease-smooth),color .25s var(--ease-smooth),border-color .35s var(--ease-smooth)}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;animation-delay:0!important}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="orbs" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="wrap">
+  <header>
+    <div class="hb">
+      <span class="mascwrap"><img class="mascote" src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt=""></span>
+      <div>
+        <p class="eyebrow">Financeiro OnTime</p>
+        <h1>Comprovantes por Arquivo</h1>
+        <p class="sub">A planilha já diz qual PDF cobre cada rota. Aqui é só subir os arquivos e receber a planilha com os links.</p>
+      </div>
+    </div>
+    <div class="ha">
+      <button class="btn onband sm" id="btnTema" type="button" title="Alternar tema">🌙</button>
+      <button class="btn onband sm" id="btnLimpar" type="button">🧹 Limpar tudo</button>
+    </div>
+  </header>
+
+  <div class="alertbar" id="netAlert" hidden="">
+    <span class="ai">!</span>
+    <div class="t"><b>O navegador está bloqueando a resposta do Drive</b>
+    <span id="netMsg">Os arquivos até sobem, mas o link não volta pra planilha. Desative o bloqueador de anúncios nesta página e teste de novo.</span></div>
+    <button class="btn ghost sm" id="btnTestar" type="button">Testar</button>
+  </div>
+
+  <section class="card">
+    <div class="sh"><span class="no">1</span><p class="st">Período · quinzena</p></div>
+    <div class="row">
+      <div class="fld"><label class="lbl" for="ano">Ano</label><select id="ano"></select></div>
+      <div class="fld"><label class="lbl" for="mes">Mês</label><select id="mes"></select></div>
+      <div class="fld"><label class="lbl" for="quinzena">Quinzena</label><select id="quinzena">
+        <option value="1">1ª quinzena</option><option value="2">2ª quinzena</option></select></div>
+    </div>
+    <p class="hint">Os arquivos vão pra subpasta <b id="folderEx">—</b>. Ao ler a planilha eu já sugiro o período pela coluna de data — confira antes de enviar.</p>
+  </section>
+
+  <section class="card">
+    <div class="sh"><span class="no">2</span><p class="st">Planilha com a coluna Arquivo</p></div>
+    <div class="zone" id="zPlan" tabindex="0">
+      <span class="ico">📄</span>
+      <span>Arraste a planilha aqui ou clique pra escolher (.xlsx)</span>
+      <span class="s">Precisa ter as colunas ID rota, Arquivo e Link.</span>
+      <input type="file" id="inPlan" accept=".xlsx,.xls" hidden="">
+    </div>
+    <div id="planInfo" class="info" hidden=""></div>
+  </section>
+
+  <section class="card">
+    <div class="sh"><span class="no">3</span><p class="st">Os arquivos citados na planilha</p></div>
+    <div class="zone" id="zFiles" tabindex="0">
+      <span class="ico">📎</span>
+      <span>Arraste os PDFs aqui ou clique pra escolher (em lote)</span>
+      <span class="s">O nome tem que bater com a coluna Arquivo. Aceita imagem também.</span>
+      <input type="file" id="inFiles" accept="application/pdf,image/*" multiple="" hidden="">
+    </div>
+    <div id="fileInfo" class="info" hidden=""></div>
+  </section>
+
+  <section class="card" id="confCard" hidden="">
+    <div class="sh"><span class="no">✓</span><p class="st">Conferência</p></div>
+    <div class="tw"><table>
+      <thead><tr><th>Arquivo</th><th>Rotas</th><th>Situação</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table></div>
+    <div id="extras" class="info aviso" hidden=""></div>
+  </section>
+
+  <section class="card">
+    <div class="sh"><span class="no">4</span><p class="st">Enviar e baixar</p></div>
+    <div class="acts">
+      <button class="btn primary" id="btnEnviar" disabled="">Enviar</button>
+      <button class="btn ghost" id="btnBaixar" disabled="">Baixar planilha com links</button>
+      <button class="btn ghost" id="btnRecuperar" type="button">Recuperar links do Drive</button>
+    </div>
+    <p class="hint">Cada rota recebe a própria cópia no Drive, nomeada com o ID — é o que mantém a busca por ID funcionando na ferramenta de pedágios. Se o envio falhar no meio, <b>Recuperar links do Drive</b> completa a planilha sem reenviar nada.</p>
+    <div id="recInfo" class="info" hidden=""></div>
+    <div id="progWrap" hidden="" style="margin-top:16px"><div class="barbg"><div id="bar"></div></div><div id="progTxt"></div></div>
+    <div id="doneMsg" hidden=""></div>
+  </section>
+</div>
+
+<div class="overlay" id="sendOverlay" hidden="">
+  <div class="loadbox">
+    <div id="sendingState">
+      <div class="spin"></div>
+      <p class="lt">Enviando…</p>
+      <div class="barbg"><div id="sbar"></div></div>
+      <p class="ltx" id="sendTxt">Preparando…</p>
+      <p class="lh">Não feche esta aba até terminar.</p>
+    </div>
+    <div id="doneState" hidden="">
+      <div class="check" id="doneIcon">✓</div>
+      <p class="lt" id="doneTitle">Enviado!</p>
+      <p class="warnbox" id="doneWarn"></p>
+      <button class="btn primary big" id="btnBaixarOv" type="button">Baixar planilha</button>
+      <button class="btn ghost" id="btnRecOv" type="button" hidden="">Recuperar links do Drive</button>
+      <button class="btn ghost" id="btnFechar" type="button" hidden="">Fechar</button>
+      <p class="lh" id="doneHint">Esta tela fica aqui até você baixar a planilha.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== ponte com o Apps Script (mesma API dos comprovantes de pedágio) ===== */
+var API_URL = 'https://script.google.com/macros/s/AKfycbz0oEfvSev744cn4mJgxQxpYkFTXmGwLiv99lBdKStiK8ANudQAwgqq7tyZoFU1FnDCJQ/exec';
+var TIMEOUT_MS = 60000;
+
+function amigavel(err){
+  var m = String((err && err.message) || err || '');
+  if(/TEMPO_ESGOTADO/.test(m)) return 'O Drive não respondeu a tempo.';
+  if(/BLOQUEADO/.test(m)) return 'O navegador bloqueou a resposta do Drive. Quase sempre é bloqueador de anúncios ou bloqueio de cookies de terceiros nesta página.';
+  return m || 'Erro desconhecido.';
+}
+function umaVez(corpo){
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, TIMEOUT_MS) : null;
+  var opts = { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: corpo };
+  if(ctrl) opts.signal = ctrl.signal;
+  return fetch(API_URL, opts).then(function(r){
+    if(timer) clearTimeout(timer);
+    return r.text().then(function(txt){
+      if(!r.ok) throw new Error('BLOQUEADO: o servidor respondeu ' + r.status + '.');
+      var res; try{ res = JSON.parse(txt); }catch(e){ throw new Error('BLOQUEADO: a resposta não veio em JSON.'); }
+      if(res && res.__erro) throw new Error(res.__erro);
+      return res;
+    });
+  }, function(err){
+    if(timer) clearTimeout(timer);
+    if(err && err.name === 'AbortError') throw new Error('TEMPO_ESGOTADO');
+    throw new Error('BLOQUEADO: ' + String((err && err.message) || err));
+  });
+}
+// Retenta com espera crescente. O upload é idempotente lá no Apps Script
+// (apaga o arquivo antigo do mesmo ID antes de gravar), então não duplica.
+function api(acao, dados, max){
+  var corpo = JSON.stringify(Object.assign({ acao: acao }, dados || {}));
+  max = max || 3;
+  function tenta(n){
+    return umaVez(corpo).catch(function(err){
+      if(n >= max) throw new Error(amigavel(err));
+      return new Promise(function(r){ setTimeout(r, 700 * n); }).then(function(){ return tenta(n + 1); });
+    });
+  }
+  return tenta(1);
+}
+function checar(){
+  return api('', {}, 1).then(function(r){ return { ok: !!(r && r.ok) }; })
+                       .catch(function(e){ return { ok:false, msg:String((e && e.message) || e) }; });
+}
+</script>
+
+<script>
+(function(){
+const $ = function(id){ return document.getElementById(id); };
+const esc = function(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+
+let wb=null, ws=null, aba='', rng=null;
+let cId=-1, cArq=-1, cLink=-1, cDt=-1, headerRow=0;
+let linhas=[];       // { r, id, arq, chave, link, enviado, recuperado }
+let grupos={};       // chave -> { chave, nome, linhas:[], file:null }
+let extras=[];       // arquivos entregues que ninguém cita
+let nomeOriginal='planilha.xlsx';
+let pendente=false, baixou=false;
+
+const LS='vinculo_links_v1';
+function salvarLink(p,id,url){ try{ var m=JSON.parse(localStorage.getItem(LS)||'{}'); (m[p]=m[p]||{})[id]=url; localStorage.setItem(LS,JSON.stringify(m)); }catch(e){} }
+function lidos(p){ try{ return JSON.parse(localStorage.getItem(LS)||'{}')[p]||{}; }catch(e){ return {}; } }
+
+/* ---------- período (não deixa escolher quinzena que ainda não começou) ---------- */
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const hoje=new Date();
+function montaAnos(){
+  const y=hoje.getFullYear(); const s=$('ano'); s.innerHTML='';
+  [y-1,y].forEach(function(a){ const o=document.createElement('option'); o.value=String(a); o.textContent=a; if(a===y)o.selected=true; s.appendChild(o); });
+}
+function montaMeses(){
+  const s=$('mes'), ant=s.value, ano=Number($('ano').value);
+  const limite=(ano===hoje.getFullYear())?(hoje.getMonth()+1):12;
+  s.innerHTML='';
+  for(let m=1;m<=limite;m++){ const o=document.createElement('option'); o.value=String(m).padStart(2,'0'); o.textContent=MESES[m-1]; s.appendChild(o); }
+  s.value = (ant && Number(ant)<=limite) ? ant : String(Math.min(hoje.getMonth()+1,limite)).padStart(2,'0');
+  montaQuinzenas();
+}
+function montaQuinzenas(){
+  const s=$('quinzena'), ant=s.value, ano=Number($('ano').value), mes=Number($('mes').value);
+  const atual=(ano===hoje.getFullYear() && mes===hoje.getMonth()+1);
+  const podeSegunda = !atual || hoje.getDate()>=16;
+  s.innerHTML='<option value="1">1ª quinzena</option>'+(podeSegunda?'<option value="2">2ª quinzena</option>':'');
+  s.value=(ant==='2'&&podeSegunda)?'2':'1';
+  exemplo();
+}
+function pasta(){ return $('ano').value+'-'+$('mes').value+' - '+$('quinzena').value+'ª quinzena'; }
+function exemplo(){ $('folderEx').textContent=pasta(); }
+$('ano').addEventListener('change',montaMeses);
+$('mes').addEventListener('change',montaQuinzenas);
+$('quinzena').addEventListener('change',exemplo);
+
+/* ---------- util ---------- */
+function normH(s){ return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' '); }
+// nome de arquivo: só letras e números. Assim "26151548101(4)_parte_003.pdf"
+// casa com "26151548101_4__parte_003.pdf" (parênteses viram underscore em alguns downloads).
+function normArq(s){ return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+function ext(n){ const m=String(n).match(/\.([^.]+)$/); return m?m[1].toLowerCase():'pdf'; }
+function cel(r,c){ return ws[XLSX.utils.encode_cell({r:r,c:c})]; }
+function txt(c){ return c && c.v!=null ? String(c.v).trim() : ''; }
+function b64(file){ return new Promise(function(res,rej){ const rd=new FileReader(); rd.onload=function(){ res(String(rd.result).split(',')[1]); }; rd.onerror=function(){ rej(new Error('Não consegui ler "'+file.name+'".')); }; rd.readAsDataURL(file); }); }
+function alargar(c){ const g=XLSX.utils.decode_range(ws['!ref']||'A1'); if(c>g.e.c){ g.e.c=c; ws['!ref']=XLSX.utils.encode_range(g); } }
+function setInfo(el,kind,msg){ const e=$(el); e.hidden=false; e.className='info '+kind; e.textContent=msg; }
+
+/* ---------- 2. ler a planilha ---------- */
+function acharColunas(s){
+  if(!s || !s['!ref']) return null;
+  const g=XLSX.utils.decode_range(s['!ref']);
+  for(let r=g.s.r; r<=Math.min(g.s.r+7,g.e.r); r++){
+    let a=-1,b=-1,c=-1,d=-1;
+    for(let k=g.s.c;k<=g.e.c;k++){
+      const cl=s[XLSX.utils.encode_cell({r:r,c:k})]; const h=normH(cl?cl.v:'');
+      if(h==='id rota'||h==='id da rota'||h==='idrota') a=k;
+      else if(h==='arquivo') b=k;
+      else if(h==='link') c=k;
+      else if(h==='dt'||h==='data') d=k;
+    }
+    if(a>=0&&b>=0&&c>=0) return { headerRow:r, cId:a, cArq:b, cLink:c, cDt:d, rng:g };
+  }
+  return null;
+}
+function lerPlanilha(file){
+  if(!file) return;
+  if(!/\.(xlsx|xls)$/i.test(file.name||'')){ setInfo('planInfo','erro','O arquivo precisa ser .xlsx ou .xls.'); return; }
+  nomeOriginal=file.name;
+  const rd=new FileReader();
+  rd.onload=function(ev){
+    try{
+      // cellStyles preserva formatos e estilos da planilha original ao regravar
+      wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellStyles:true});
+      let achou=null;
+      for(const nome of wb.SheetNames){ const inf=acharColunas(wb.Sheets[nome]); if(inf){ achou=inf; aba=nome; break; } }
+      if(!achou){ setInfo('planInfo','erro','Não achei as colunas "ID rota", "Arquivo" e "Link" em nenhuma aba.'); linhas=[]; grupos={}; render(); return; }
+      ws=wb.Sheets[aba]; headerRow=achou.headerRow; cId=achou.cId; cArq=achou.cArq; cLink=achou.cLink; cDt=achou.cDt; rng=achou.rng;
+
+      linhas=[]; grupos={};
+      for(let r=headerRow+1;r<=rng.e.r;r++){
+        const id=txt(cel(r,cId)), arq=txt(cel(r,cArq));
+        if(!id||!arq) continue;
+        const l={ r:r, id:id, arq:arq, chave:normArq(arq), link:txt(cel(r,cLink)), enviado:false, recuperado:false };
+        linhas.push(l);
+        const g=grupos[l.chave]||(grupos[l.chave]={chave:l.chave,nome:arq,linhas:[],file:null});
+        g.linhas.push(l);
+      }
+      if(!linhas.length){ setInfo('planInfo','erro','A planilha não tem nenhuma linha com ID rota e Arquivo preenchidos.'); render(); return; }
+
+      sugerirPeriodo();
+      const salvos=lidos(pasta()); let volta=0;
+      linhas.forEach(function(l){ if(!l.link && salvos[l.id]){ l.link=salvos[l.id]; l.recuperado=true; volta++; } });
+      if(volta) $('btnBaixar').disabled=false;
+
+      const nGrupos=Object.keys(grupos).length;
+      setInfo('planInfo','ok', linhas.length+' rota(s) na aba "'+aba+'", em '+nGrupos+' arquivo(s) distinto(s)'+(volta?' · '+volta+' link(s) recuperado(s) deste navegador':'')+'.');
+      // re-casa com arquivos que já estavam na tela
+      recasar(); render();
+    }catch(e){ setInfo('planInfo','erro','Erro ao ler a planilha: '+e.message); }
+  };
+  rd.readAsArrayBuffer(file);
+}
+// sugere ano/mês/quinzena pela coluna de data, sem passar do período atual
+function sugerirPeriodo(){
+  if(cDt<0) return;
+  const cont={};
+  linhas.forEach(function(l){
+    const c=cel(l.r,cDt); if(!c||c.v==null) return;
+    let a,m,d;
+    if(typeof c.v==='number'){ const p=XLSX.SSF.parse_date_code(c.v); if(!p) return; a=p.y; m=p.m; d=p.d; }
+    else if(c.v instanceof Date){ a=c.v.getFullYear(); m=c.v.getMonth()+1; d=c.v.getDate(); }
+    else return;
+    const k=a+'|'+m+'|'+(d<=15?1:2); cont[k]=(cont[k]||0)+1;
+  });
+  let melhor='',max=-1;
+  Object.keys(cont).forEach(function(k){ if(cont[k]>max){ max=cont[k]; melhor=k; } });
+  if(!melhor) return;
+  const p=melhor.split('|');
+  if(!Array.prototype.some.call($('ano').options,function(o){ return o.value===p[0]; })){
+    const o=document.createElement('option'); o.value=p[0]; o.textContent=p[0]; $('ano').appendChild(o);
+  }
+  $('ano').value=p[0]; montaMeses();
+  const mm=String(p[1]).padStart(2,'0');
+  if(Array.prototype.some.call($('mes').options,function(o){ return o.value===mm; })){
+    $('mes').value=mm; montaQuinzenas();
+    if(Array.prototype.some.call($('quinzena').options,function(o){ return o.value===p[2]; })) $('quinzena').value=p[2];
+  }
+  exemplo();
+}
+
+/* ---------- 3. receber os arquivos ---------- */
+let entregues=[];   // File[] — guardados pra re-casar se a planilha trocar
+function receber(fs){
+  const lista=[].slice.call(fs||[]); if(!lista.length) return;
+  lista.forEach(function(f){ entregues=entregues.filter(function(x){ return normArq(x.name)!==normArq(f.name); }); entregues.push(f); });
+  recasar(); render();
+}
+function recasar(){
+  extras=[];
+  Object.keys(grupos).forEach(function(k){ grupos[k].file=null; });
+  entregues.forEach(function(f){
+    const k=normArq(f.name);
+    if(grupos[k]) grupos[k].file=f; else extras.push(f.name);
+  });
+}
+
+/* ---------- conferência ---------- */
+function render(){
+  const chaves=Object.keys(grupos);
+  $('confCard').hidden = chaves.length===0;
+  const tb=$('tb'); tb.innerHTML='';
+  let prontos=0, faltando=0;
+  chaves.forEach(function(k,i){
+    const g=grupos[k];
+    const todasComLink=g.linhas.every(function(l){ return !!l.link; });
+    let st;
+    if(todasComLink) st='<span class="badge done">link pronto ✓</span>';
+    else if(g.file){ st='<span class="badge ok">arquivo pronto</span>'; prontos++; }
+    else { st='<span class="badge none">falta o arquivo</span>'; faltando++; }
+    const tr=document.createElement('tr');
+    tr.id='g-'+k; tr.style.animationDelay=(Math.min(i,14)*0.03)+'s';
+    tr.innerHTML='<td class="fname">'+esc(g.nome)+'</td><td>'+g.linhas.length+'</td><td class="s">'+st+'</td>';
+    tb.appendChild(tr);
+  });
+  if(extras.length){
+    setInfo('extras','aviso', extras.length+' arquivo(s) que você mandou não aparece(m) na planilha: '+extras.join(', '));
+    $('extras').hidden=false;
+  } else $('extras').hidden=true;
+
+  if(chaves.length){
+    const rotasProntas=chaves.reduce(function(s,k){ return s+((grupos[k].file&&!grupos[k].linhas.every(function(l){return !!l.link;}))?grupos[k].linhas.length:0); },0);
+    setInfo('fileInfo', faltando?'aviso':'ok',
+      prontos+' de '+chaves.length+' arquivo(s) casado(s) · '+rotasProntas+' rota(s) pronta(s) pra enviar'+(faltando?' · '+faltando+' arquivo(s) ainda faltando':'') + '.');
+    $('btnEnviar').disabled = rotasProntas===0;
+  }
+  if(linhas.some(function(l){ return !!l.link; })) $('btnBaixar').disabled=false;
+}
+function marcar(id,html){ const tr=document.getElementById('lin-'+id); if(tr) tr.innerHTML=html; }
+function statusGrupo(k,html){ const tr=document.getElementById('g-'+k); if(tr){ const c=tr.querySelector('.s'); if(c) c.innerHTML=html; } }
+
+/* ---------- dropzones ---------- */
+function liga(zoneId,inputId,cb,filtro){
+  const z=$(zoneId), inp=$(inputId);
+  z.addEventListener('click',function(){ inp.click(); });
+  z.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); inp.click(); } });
+  ['dragover','dragenter'].forEach(function(ev){ z.addEventListener(ev,function(e){ e.preventDefault(); z.classList.add('drag'); }); });
+  ['dragleave','drop'].forEach(function(ev){ z.addEventListener(ev,function(e){ e.preventDefault(); z.classList.remove('drag'); }); });
+  z.addEventListener('drop',function(e){ cb(filtro?[].slice.call(e.dataTransfer.files).filter(filtro):e.dataTransfer.files); });
+  inp.addEventListener('click',function(e){ e.stopPropagation(); });
+  inp.addEventListener('change',function(e){ cb(e.target.files); e.target.value=''; });
+}
+liga('zPlan','inPlan',function(fs){ lerPlanilha([].slice.call(fs)[0]); });
+liga('zFiles','inFiles',receber);
+
+/* ---------- aviso de bloqueio ---------- */
+function avisar(msg){
+  $('netAlert').hidden=false;
+  $('netMsg').textContent=msg+' Os arquivos até sobem, mas o link não volta pra planilha. Desative o bloqueador de anúncios nesta página e teste de novo.';
+}
+function testar(silencioso){
+  const b=$('btnTestar'); b.disabled=true; b.textContent='…';
+  return checar().then(function(r){
+    b.disabled=false; b.textContent='Testar';
+    if(r.ok){ $('netAlert').hidden=true; if(!silencioso) alert('Conexão com o Drive funcionando normalmente.'); }
+    else avisar(r.msg);
+    return r;
+  });
+}
+$('btnTestar').addEventListener('click',function(){ testar(false); });
+
+/* ---------- enviar ---------- */
+$('btnEnviar').addEventListener('click',enviar);
+async function enviar(){
+  const periodo=pasta();
+  const alvos=[];
+  Object.keys(grupos).forEach(function(k){
+    const g=grupos[k]; if(!g.file) return;
+    g.linhas.forEach(function(l){ if(!l.link) alvos.push({g:g,l:l}); });
+  });
+  if(!alvos.length){ alert('Nenhuma rota pronta pra enviar.'); return; }
+
+  if(!confirm('CONFIRME A QUINZENA\n\nVocê vai enviar '+alvos.length+' comprovante(s) para:\n\n'+periodo+'\n\nSe estiver errado, cancele e ajuste o passo 1.')) return;
+
+  $('btnEnviar').disabled=true;
+  const t=await checar();
+  if(!t.ok){
+    avisar(t.msg); $('btnEnviar').disabled=false;
+    if(!confirm('O navegador está bloqueando a resposta do Drive.\n\n'+t.msg+'\n\nSe enviar assim, os arquivos podem subir mas os links não voltam pra planilha.\n\nTentar mesmo assim?')) return;
+    $('btnEnviar').disabled=true;
+  } else $('netAlert').hidden=true;
+
+  $('progWrap').hidden=false; $('doneMsg').hidden=true; $('doneMsg').className='';
+  $('bar').style.width='0'; $('sbar').style.width='0';
+  $('sendTxt').textContent='Preparando… (0 / '+alvos.length+')';
+  $('doneIcon').className='check'; $('doneIcon').textContent='✓';
+  $('sendingState').hidden=false; $('doneState').hidden=true; $('sendOverlay').hidden=false;
+
+  let ok=0, erros=0, ultimo='';
+  const cache={};   // cada arquivo é lido UMA vez, mesmo servindo várias rotas
+  for(let i=0;i<alvos.length;i++){
+    const g=alvos[i].g, l=alvos[i].l;
+    statusGrupo(g.chave,'<span class="badge up">enviando…</span>');
+    try{
+      if(!cache[g.chave]) cache[g.chave]=await b64(g.file);
+      const dados=cache[g.chave];
+      const resp=await api('upload',{
+        id:l.id, periodo:periodo,
+        filename:l.id+'.'+ext(g.file.name),
+        mimeType:g.file.type||'application/pdf',
+        dataBase64:dados
+      },3);
+      if(resp && resp.ok){
+        gravarLink(l,resp.url); salvarLink(periodo,l.id,resp.url);
+        l.enviado=true; ok++; $('btnBaixar').disabled=false;
+      }else{ erros++; ultimo=(resp&&resp.msg)||'O Drive recusou o arquivo.'; }
+    }catch(e){
+      erros++; ultimo=String((e&&e.message)||e);
+      delete cache[g.chave];   // deixa a próxima tentativa reler o arquivo
+    }
+    const pct=Math.round(((i+1)/alvos.length)*100);
+    $('bar').style.width=pct+'%'; $('sbar').style.width=pct+'%';
+    $('progTxt').textContent=(i+1)+' / '+alvos.length+' processado(s)';
+    $('sendTxt').textContent='Enviando '+Math.min(i+2,alvos.length)+' de '+alvos.length+'…';
+  }
+  render();
+
+  $('btnEnviar').disabled=false;
+  $('doneMsg').hidden=false; $('doneMsg').className=erros?'ruim':'';
+  $('doneMsg').textContent=ok+' enviado(s)'+(erros?' · '+erros+' com erro. Motivo: '+ultimo:'')+(ok?' Baixe a planilha ao lado.':'');
+
+  $('sendingState').hidden=true; $('doneState').hidden=false;
+  if(ok>0){
+    pendente=true; baixou=false;
+    $('doneTitle').textContent=ok+' comprovante(s) enviado(s)!'+(erros?' · '+erros+' com erro':'');
+    $('doneWarn').textContent=erros
+      ? 'Baixe a planilha com os '+ok+' links que deram certo. Depois use "Recuperar links do Drive" pra completar os que falharam.'
+      : 'Agora baixe a planilha — é nela que ficam os links. Sem ela você perde o trabalho.';
+    $('doneWarn').className='warnbox';
+    $('btnBaixarOv').hidden=false; $('btnBaixarOv').textContent='Baixar planilha'; $('btnBaixarOv').className='btn primary big';
+    $('btnRecOv').hidden=!erros; $('btnRecOv').className='btn ghost';
+    $('btnFechar').hidden=true; $('doneHint').hidden=false;
+  }else{
+    pendente=false;
+    $('doneIcon').className='check ruim'; $('doneIcon').textContent='!';
+    $('doneTitle').textContent='Nenhum link foi gravado';
+    $('doneWarn').textContent='Motivo: '+ultimo+' Os arquivos podem ter chegado no Drive mesmo assim — clique abaixo pra procurar os links lá.';
+    $('doneWarn').className='warnbox';
+    $('btnBaixarOv').hidden=true;
+    $('btnRecOv').hidden=false; $('btnRecOv').className='btn primary big';
+    $('btnFechar').hidden=false; $('btnFechar').className='btn ghost'; $('doneHint').hidden=true;
+  }
+}
+
+// grava o link na célula, preservando o resto da planilha
+function gravarLink(l,url){
+  alargar(cLink);
+  ws[XLSX.utils.encode_cell({r:l.r,c:cLink})]={
+    t:'s', v:url, l:{Target:url},
+    s:{ font:{ color:{rgb:'0563C1'}, underline:true }, alignment:{ vertical:'center' } }
+  };
+  l.link=url;
+}
+
+/* ---------- recuperar links do Drive ---------- */
+function recuperar(){
+  if(!linhas.length){ setInfo('recInfo','erro','Carregue a planilha primeiro (passo 2).'); return; }
+  const ids=linhas.map(function(l){ return l.id; });
+  setInfo('recInfo','aviso','Procurando '+ids.length+' ID(s) no Drive…');
+  $('btnRecuperar').disabled=true;
+  api('conferir',{ids:ids},3).then(function(res){
+    $('btnRecuperar').disabled=false;
+    const alvo=pasta(), mapa={};
+    (res.encontrados||[]).forEach(function(it){
+      const h=(it.hits||[]).filter(function(x){ return x.quinzena===alvo; })[0]||(it.hits||[])[0];
+      if(h) mapa[it.id]=h;
+    });
+    let achou=0, sem=0;
+    linhas.forEach(function(l){
+      const h=mapa[l.id];
+      if(h){ gravarLink(l,'https://drive.google.com/file/d/'+h.fileId+'/view?usp=drivesdk'); l.recuperado=true; salvarLink(alvo,l.id,l.link); achou++; }
+      else if(!l.link) sem++;
+    });
+    if(achou){ $('btnBaixar').disabled=false; pendente=true; baixou=false; }
+    setInfo('recInfo',achou?'ok':'erro', achou
+      ? achou+' link(s) recuperado(s)'+(sem?' · '+sem+' rota(s) ainda sem comprovante no Drive':'')+'. Agora é só baixar a planilha.'
+      : 'Nenhum comprovante desses IDs foi encontrado no Drive.');
+    render();
+  }).catch(function(e){
+    $('btnRecuperar').disabled=false;
+    setInfo('recInfo','erro','Não consegui consultar o Drive: '+String((e&&e.message)||e));
+  });
+}
+$('btnRecuperar').addEventListener('click',recuperar);
+$('btnRecOv').addEventListener('click',function(){ $('sendOverlay').hidden=true; recuperar(); $('btnRecuperar').scrollIntoView({behavior:'smooth',block:'center'}); });
+
+/* ---------- baixar (mesma planilha, só com a coluna Link preenchida) ---------- */
+function baixar(){
+  if(!wb) return;
+  const out=XLSX.write(wb,{bookType:'xlsx',type:'array',cellStyles:true});
+  const blob=new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=nomeOriginal.replace(/\.(xlsx|xls)$/i,'')+' - com links.xlsx';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },4000);
+  pendente=false; baixou=true;
+  if(!$('sendOverlay').hidden && !$('doneState').hidden){
+    $('doneTitle').textContent='Planilha baixada!';
+    $('doneWarn').textContent='Tudo certo. Pode fechar a aba com segurança.';
+    $('doneWarn').className='okbox';
+    $('btnBaixarOv').textContent='Baixar de novo'; $('btnBaixarOv').className='btn ghost';
+    $('btnFechar').hidden=false; $('btnFechar').className='btn primary big';
+    $('doneHint').hidden=true;
+  }
+}
+$('btnBaixar').addEventListener('click',baixar);
+$('btnBaixarOv').addEventListener('click',baixar);
+$('btnFechar').addEventListener('click',function(){ $('sendOverlay').hidden=true; });
+
+/* ---------- limpar ---------- */
+$('btnLimpar').addEventListener('click',function(){
+  if((linhas.length||entregues.length) && !confirm('Limpar a planilha e os arquivos carregados?')) return;
+  wb=ws=null; aba=''; linhas=[]; grupos={}; entregues=[]; extras=[];
+  cId=cArq=cLink=cDt=-1; nomeOriginal='planilha.xlsx'; pendente=false; baixou=false;
+  ['inPlan','inFiles'].forEach(function(i){ $(i).value=''; });
+  ['planInfo','fileInfo','recInfo','extras','doneMsg'].forEach(function(i){ $(i).hidden=true; $(i).textContent=''; });
+  $('confCard').hidden=true; $('tb').innerHTML='';
+  $('progWrap').hidden=true; $('bar').style.width='0';
+  $('btnEnviar').disabled=true; $('btnBaixar').disabled=true;
+});
+
+window.addEventListener('beforeunload',function(e){
+  if(linhas.length||entregues.length||(pendente&&!baixou)){
+    e.preventDefault(); e.returnValue='Você tem trabalho não enviado ou não baixado. Sair mesmo?'; return e.returnValue;
+  }
+});
+
+// ripple
+document.addEventListener('click',function(e){
+  const b=e.target&&e.target.closest?e.target.closest('.btn'):null; if(!b) return;
+  const r=b.getBoundingClientRect(), d=Math.max(r.width,r.height);
+  const s=document.createElement('span'); s.className='ripple';
+  s.style.width=s.style.height=d+'px'; s.style.left=(e.clientX-r.left-d/2)+'px'; s.style.top=(e.clientY-r.top-d/2)+'px';
+  b.appendChild(s); setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); },650);
+},true);
+
+// tema
+(function(){
+  const K='tema_vinculo', root=document.documentElement, b=$('btnTema');
+  function ico(){ b.textContent=root.classList.contains('dark')?'☀️':'🌙'; }
+  ico();
+  b.addEventListener('click',function(){
+    const d=!root.classList.contains('dark');
+    root.classList.toggle('dark',d);
+    try{ localStorage.setItem(K,d?'dark':'light'); }catch(e){}
+    ico();
+  });
+})();
+
+montaAnos(); montaMeses();
+setTimeout(function(){ testar(true); },900);
+})();
+</script>
+</body></html>
