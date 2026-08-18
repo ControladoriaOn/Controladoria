@@ -2,8 +2,7 @@
 <html lang="pt-BR"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Comprovantes por Arquivo</title>
-<script>try{var _t=localStorage.getItem('tema_vinculo')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');if(_t==='dark')document.documentElement.classList.add('dark');}catch(e){}</script>
+<title>Comprovantes de Faturas</title>
 <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
@@ -21,13 +20,6 @@
   --sh-lg:0 30px 70px -20px rgba(40,0,36,.45);
   --ease-spring:cubic-bezier(.34,1.56,.64,1); --ease-out-expo:cubic-bezier(.16,1,.3,1); --ease-smooth:cubic-bezier(.4,0,.2,1);
 }
-html.dark{
-  --ink:#F0E7F0; --bg:#141018; --surface:#221A29; --line:#352B3F; --muted:#A593AE;
-  --gray-bg:#2C2335; --field:#1C1622; --orange-soft:#3A2718; --orange-deep:#FF9A52; --orange-line:#5A3D22;
-  --green:#5FD18C; --green-bg:#16321F; --red:#F0A0A0; --red-bg:#3A1C1C;
-  --plum:#3C003C; --plum-deep:#2A0028; --plum-2:#5A1457;
-  --warn:#E8C77A; --warn-bg:#3A2E15; --warn-line:#5A4A20;
-}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:880px;margin:0 auto;padding:28px 20px 76px}
@@ -40,7 +32,7 @@ header::before{content:"";position:absolute;left:22px;right:22px;bottom:10px;hei
 .mascote{width:46px;height:46px;border-radius:11px;object-fit:cover;display:block;animation:respira 6.5s var(--ease-smooth) 1.2s infinite}
 .eyebrow{margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
 header h1{margin:0;font-size:25px;font-weight:700;font-family:'Fraunces',serif;line-height:1.05}
-.sub{margin:7px 0 0;color:#E7D3E7;font-size:13.5px;max-width:52ch}
+.sub{margin:7px 0 0;color:#E7D3E7;font-size:13.5px;max-width:54ch}
 .ha{display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:14px;box-shadow:var(--sh-sm);animation:slideUp .42s var(--ease-out-expo) backwards}
@@ -48,7 +40,6 @@ header h1{margin:0;font-size:25px;font-weight:700;font-family:'Fraunces',serif;l
 .card:nth-of-type(3){animation-delay:.15s}.card:nth-of-type(4){animation-delay:.20s}.card:nth-of-type(5){animation-delay:.25s}
 .sh{display:flex;align-items:center;gap:12px;margin-bottom:16px}
 .no{flex:0 0 auto;width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--plum);color:#fff;font-family:'Fraunces',serif;font-weight:700;font-size:17px;box-shadow:0 5px 14px -5px rgba(60,0,60,.55)}
-html.dark .no{background:linear-gradient(180deg,#5A1457,#3C003C);box-shadow:none}
 .st{margin:0;flex:1;font-weight:700;font-size:15.5px}
 
 .row{display:flex;flex-wrap:wrap;gap:12px}
@@ -58,11 +49,11 @@ select{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:1
 select:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,110,0,.16)}
 .hint{font-size:12.5px;color:var(--muted);margin:13px 0 0;line-height:1.55}
 .hint b{color:var(--ink)}
+.pastanome{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--orange-deep)}
 
 .zone{display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px dashed var(--orange-line);border-radius:14px;background:var(--orange-soft);padding:22px 18px;text-align:center;color:var(--orange-deep);font-weight:700;font-size:14px;cursor:pointer;outline:none;transition:border-color .15s,background .15s}
 .zone:hover,.zone:focus,.zone.drag{border-color:var(--orange)}
 .zone.drag{background:#FFE6D2}
-html.dark .zone.drag{background:#43301C}
 .zone .ico{font-size:26px;line-height:1}
 .zone .s{font-weight:500;color:var(--muted);font-size:12.5px}
 
@@ -90,7 +81,6 @@ tbody tr{animation:slideUp .35s var(--ease-out-expo) backwards}
 .badge.done{background:var(--green-bg);color:var(--green)}
 .badge.err{background:var(--red-bg);color:var(--red);cursor:help}
 .badge.up{background:#FEF1D6;color:#A8650C}
-html.dark .badge.up{background:#3A2E15;color:#E8C77A}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:12px;border:none;cursor:pointer;font:700 14px 'Manrope',sans-serif;position:relative;overflow:hidden;transition:transform .12s,filter .15s,border-color .15s,color .15s;text-decoration:none}
 .btn.primary{background:linear-gradient(180deg,#FF7F1F,#FF6E00);color:#fff;box-shadow:0 8px 22px -8px rgba(255,110,0,.5)}
@@ -131,12 +121,8 @@ html.dark .badge.up{background:#3A2E15;color:#E8C77A}
 .orb.a{width:46vmax;height:46vmax;top:-16vmax;left:-12vmax;background:radial-gradient(circle,rgba(255,110,0,.28),transparent 64%);animation:d1 26s ease-in-out infinite}
 .orb.b{width:42vmax;height:42vmax;bottom:-18vmax;right:-14vmax;background:radial-gradient(circle,rgba(60,0,60,.28),transparent 64%);animation:d2 32s ease-in-out infinite}
 .orb.c{width:28vmax;height:28vmax;top:40vh;right:14vw;background:radial-gradient(circle,rgba(255,150,70,.20),transparent 66%);animation:d3 38s ease-in-out infinite}
-html.dark .orb.a{background:radial-gradient(circle,rgba(255,120,40,.18),transparent 64%)}
-html.dark .orb.b{background:radial-gradient(circle,rgba(120,40,120,.32),transparent 64%)}
-html.dark .orb.c{background:radial-gradient(circle,rgba(150,60,150,.18),transparent 66%)}
 .grain{position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.045;mix-blend-mode:multiply;background-size:180px 180px;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
-html.dark .grain{opacity:.06;mix-blend-mode:screen}
 
 @keyframes slideUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
@@ -150,7 +136,6 @@ html.dark .grain{opacity:.06;mix-blend-mode:screen}
 @keyframes d1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(13vw,15vh) scale(1.06)}}
 @keyframes d2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-14vw,-12vh) scale(1.05)}}
 @keyframes d3{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-11vw,9vh) scale(1.07)}66%{transform:translate(6vw,-10vh) scale(.96)}}
-*{transition:background-color .35s var(--ease-smooth),color .25s var(--ease-smooth),border-color .35s var(--ease-smooth)}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;animation-delay:0!important}}
 [hidden]{display:none!important}
 </style>
@@ -165,32 +150,33 @@ html.dark .grain{opacity:.06;mix-blend-mode:screen}
       <span class="mascwrap"><img class="mascote" src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt=""></span>
       <div>
         <p class="eyebrow">Financeiro OnTime</p>
-        <h1>Comprovantes por Arquivo</h1>
-        <p class="sub">A planilha já diz qual PDF cobre cada rota. Aqui é só subir os arquivos e receber a planilha com os links.</p>
+        <h1>Comprovantes de Faturas</h1>
+        <p class="sub">A planilha já diz qual arquivo cobre cada rota. Aqui é só subir os arquivos e receber a planilha com os links.</p>
       </div>
     </div>
     <div class="ha">
-      <button class="btn onband sm" id="btnTema" type="button" title="Alternar tema">🌙</button>
-      <button class="btn onband sm" id="btnLimpar" type="button">🧹 Limpar tudo</button>
+      <button class="btn onband sm" id="btnLimpar" type="button">Limpar tudo</button>
     </div>
   </header>
 
   <div class="alertbar" id="netAlert" hidden="">
     <span class="ai">!</span>
-    <div class="t"><b>O navegador está bloqueando a resposta do Drive</b>
-    <span id="netMsg">Os arquivos até sobem, mas o link não volta pra planilha. Desative o bloqueador de anúncios nesta página e teste de novo.</span></div>
+    <div class="t"><b id="netTitulo">O navegador está bloqueando a resposta do Drive</b>
+    <span id="netMsg"></span></div>
     <button class="btn ghost sm" id="btnTestar" type="button">Testar</button>
   </div>
 
   <section class="card">
-    <div class="sh"><span class="no">1</span><p class="st">Período · quinzena</p></div>
+    <div class="sh"><span class="no">1</span><p class="st">Competência</p></div>
     <div class="row">
+      <div class="fld"><label class="lbl" for="tipo">Tipo</label><select id="tipo">
+        <option value="mensal">Mensal</option><option value="quinzenal">Quinzenal</option></select></div>
       <div class="fld"><label class="lbl" for="ano">Ano</label><select id="ano"></select></div>
       <div class="fld"><label class="lbl" for="mes">Mês</label><select id="mes"></select></div>
-      <div class="fld"><label class="lbl" for="quinzena">Quinzena</label><select id="quinzena">
+      <div class="fld" id="fldQz" hidden=""><label class="lbl" for="quinzena">Quinzena</label><select id="quinzena">
         <option value="1">1ª quinzena</option><option value="2">2ª quinzena</option></select></div>
     </div>
-    <p class="hint">Os arquivos vão pra subpasta <b id="folderEx">—</b>. Ao ler a planilha eu já sugiro o período pela coluna de data — confira antes de enviar.</p>
+    <p class="hint">Os arquivos vão pra subpasta <span class="pastanome" id="folderEx">—</span>. Ao ler a planilha eu já sugiro a competência pela coluna de data — confira antes de enviar.</p>
   </section>
 
   <section class="card">
@@ -208,8 +194,8 @@ html.dark .grain{opacity:.06;mix-blend-mode:screen}
     <div class="sh"><span class="no">3</span><p class="st">Os arquivos citados na planilha</p></div>
     <div class="zone" id="zFiles" tabindex="0">
       <span class="ico">📎</span>
-      <span>Arraste os PDFs aqui ou clique pra escolher (em lote)</span>
-      <span class="s">O nome tem que bater com a coluna Arquivo. Aceita imagem também.</span>
+      <span>Arraste os arquivos aqui ou clique pra escolher (em lote)</span>
+      <span class="s">O nome tem que bater com a coluna Arquivo. Aceita PDF e imagem.</span>
       <input type="file" id="inFiles" accept="application/pdf,image/*" multiple="" hidden="">
     </div>
     <div id="fileInfo" class="info" hidden=""></div>
@@ -231,7 +217,7 @@ html.dark .grain{opacity:.06;mix-blend-mode:screen}
       <button class="btn ghost" id="btnBaixar" disabled="">Baixar planilha com links</button>
       <button class="btn ghost" id="btnRecuperar" type="button">Recuperar links do Drive</button>
     </div>
-    <p class="hint">Cada rota recebe a própria cópia no Drive, nomeada com o ID — é o que mantém a busca por ID funcionando na ferramenta de pedágios. Se o envio falhar no meio, <b>Recuperar links do Drive</b> completa a planilha sem reenviar nada.</p>
+    <p class="hint">Cada arquivo sobe uma vez só, e todas as rotas que ele cobre recebem o mesmo link. Se o envio falhar no meio, <b>Recuperar links do Drive</b> completa a planilha sem reenviar nada.</p>
     <div id="recInfo" class="info" hidden=""></div>
     <div id="progWrap" hidden="" style="margin-top:16px"><div class="barbg"><div id="bar"></div></div><div id="progTxt"></div></div>
     <div id="doneMsg" hidden=""></div>
@@ -260,9 +246,14 @@ html.dark .grain{opacity:.06;mix-blend-mode:screen}
 </div>
 
 <script>
-/* ===== ponte com o Apps Script (mesma API dos comprovantes de pedágio) ===== */
-var API_URL = 'https://script.google.com/macros/s/AKfycbz0oEfvSev744cn4mJgxQxpYkFTXmGwLiv99lBdKStiK8ANudQAwgqq7tyZoFU1FnDCJQ/exec';
-var TIMEOUT_MS = 60000;
+/* =============================================================================
+ * COLE AQUI a URL /exec da implantação do Codigo-faturas.gs
+ * (Apps Script > Implantar > Nova implantação > App da Web > Copiar URL)
+ * ========================================================================== */
+var API_URL = 'https://script.google.com/macros/s/AKfycbz3q3r0Vwr5C-sM83Vqyn-xjOpWNijQY8_YXljWzSAHRL-s6QTFr5J7xxEuJzh4ayz_/exec';
+
+var TIMEOUT_MS = 90000;   // PDF é mais pesado que foto: dá mais fôlego ao Drive
+function configurada(){ return /^https:\/\/script\.google\.com\//.test(API_URL); }
 
 function amigavel(err){
   var m = String((err && err.message) || err || '');
@@ -289,9 +280,10 @@ function umaVez(corpo){
     throw new Error('BLOQUEADO: ' + String((err && err.message) || err));
   });
 }
-// Retenta com espera crescente. O upload é idempotente lá no Apps Script
-// (apaga o arquivo antigo do mesmo ID antes de gravar), então não duplica.
+// Retenta com espera crescente. O upload é idempotente no Apps Script
+// (manda o arquivo antigo de mesmo nome pra lixeira antes de gravar).
 function api(acao, dados, max){
+  if(!configurada()) return Promise.reject(new Error('A ferramenta ainda não foi ligada ao Apps Script (API_URL).'));
   var corpo = JSON.stringify(Object.assign({ acao: acao }, dados || {}));
   max = max || 3;
   function tenta(n){
@@ -303,6 +295,7 @@ function api(acao, dados, max){
   return tenta(1);
 }
 function checar(){
+  if(!configurada()) return Promise.resolve({ ok:false, cfg:true });
   return api('', {}, 1).then(function(r){ return { ok: !!(r && r.ok) }; })
                        .catch(function(e){ return { ok:false, msg:String((e && e.message) || e) }; });
 }
@@ -315,21 +308,23 @@ const esc = function(s){ return String(s==null?'':s).replace(/[&<>"]/g, function
 
 let wb=null, ws=null, aba='', rng=null;
 let cId=-1, cArq=-1, cLink=-1, cDt=-1, headerRow=0;
-let linhas=[];       // { r, id, arq, chave, link, enviado, recuperado }
-let grupos={};       // chave -> { chave, nome, linhas:[], file:null }
-let extras=[];       // arquivos entregues que ninguém cita
+let linhas=[];      // { r, id, arq, chave, link }
+let grupos={};      // chave -> { chave, nome, linhas:[], file:null }
+let entregues=[];   // arquivos que você arrastou
+let extras=[];
 let nomeOriginal='planilha.xlsx';
 let pendente=false, baixou=false;
 
-const LS='vinculo_links_v1';
-function salvarLink(p,id,url){ try{ var m=JSON.parse(localStorage.getItem(LS)||'{}'); (m[p]=m[p]||{})[id]=url; localStorage.setItem(LS,JSON.stringify(m)); }catch(e){} }
+const LS='faturas_links_v1';
+function salvarLink(p,k,url){ try{ var m=JSON.parse(localStorage.getItem(LS)||'{}'); (m[p]=m[p]||{})[k]=url; localStorage.setItem(LS,JSON.stringify(m)); }catch(e){} }
 function lidos(p){ try{ return JSON.parse(localStorage.getItem(LS)||'{}')[p]||{}; }catch(e){ return {}; } }
 
-/* ---------- período (não deixa escolher quinzena que ainda não começou) ---------- */
+/* ---------- competência ---------- */
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const hoje=new Date();
+function mensal(){ return $('tipo').value==='mensal'; }
 function montaAnos(){
-  const y=hoje.getFullYear(); const s=$('ano'); s.innerHTML='';
+  const y=hoje.getFullYear(), s=$('ano'); s.innerHTML='';
   [y-1,y].forEach(function(a){ const o=document.createElement('option'); o.value=String(a); o.textContent=a; if(a===y)o.selected=true; s.appendChild(o); });
 }
 function montaMeses(){
@@ -337,43 +332,48 @@ function montaMeses(){
   const limite=(ano===hoje.getFullYear())?(hoje.getMonth()+1):12;
   s.innerHTML='';
   for(let m=1;m<=limite;m++){ const o=document.createElement('option'); o.value=String(m).padStart(2,'0'); o.textContent=MESES[m-1]; s.appendChild(o); }
-  s.value = (ant && Number(ant)<=limite) ? ant : String(Math.min(hoje.getMonth()+1,limite)).padStart(2,'0');
+  s.value=(ant && Number(ant)<=limite)?ant:String(Math.min(hoje.getMonth()+1,limite)).padStart(2,'0');
   montaQuinzenas();
 }
+// não deixa escolher quinzena que ainda nem começou
 function montaQuinzenas(){
   const s=$('quinzena'), ant=s.value, ano=Number($('ano').value), mes=Number($('mes').value);
   const atual=(ano===hoje.getFullYear() && mes===hoje.getMonth()+1);
-  const podeSegunda = !atual || hoje.getDate()>=16;
+  const podeSegunda=!atual || hoje.getDate()>=16;
   s.innerHTML='<option value="1">1ª quinzena</option>'+(podeSegunda?'<option value="2">2ª quinzena</option>':'');
   s.value=(ant==='2'&&podeSegunda)?'2':'1';
   exemplo();
 }
-function pasta(){ return $('ano').value+'-'+$('mes').value+' - '+$('quinzena').value+'ª quinzena'; }
+function pasta(){
+  const base=$('ano').value+'-'+$('mes').value;
+  return mensal() ? (base+' - Mensal') : (base+' - '+$('quinzena').value+'ª quinzena');
+}
 function exemplo(){ $('folderEx').textContent=pasta(); }
+function trocaTipo(){ $('fldQz').hidden=mensal(); exemplo(); }
+$('tipo').addEventListener('change',trocaTipo);
 $('ano').addEventListener('change',montaMeses);
 $('mes').addEventListener('change',montaQuinzenas);
 $('quinzena').addEventListener('change',exemplo);
 
 /* ---------- util ---------- */
 function normH(s){ return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' '); }
-// nome de arquivo: só letras e números. Assim "26151548101(4)_parte_003.pdf"
-// casa com "26151548101_4__parte_003.pdf" (parênteses viram underscore em alguns downloads).
-function normArq(s){ return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
-function ext(n){ const m=String(n).match(/\.([^.]+)$/); return m?m[1].toLowerCase():'pdf'; }
+// nome sem extensão, só letras e números — assim "…(4)_parte_003.pdf" casa com
+// "…_4__parte_003.pdf", que é como alguns downloads renomeiam o arquivo.
+function normArq(s){ return String(s==null?'':s).replace(/\.[^.]+$/,'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,''); }
 function cel(r,c){ return ws[XLSX.utils.encode_cell({r:r,c:c})]; }
 function txt(c){ return c && c.v!=null ? String(c.v).trim() : ''; }
 function b64(file){ return new Promise(function(res,rej){ const rd=new FileReader(); rd.onload=function(){ res(String(rd.result).split(',')[1]); }; rd.onerror=function(){ rej(new Error('Não consegui ler "'+file.name+'".')); }; rd.readAsDataURL(file); }); }
 function alargar(c){ const g=XLSX.utils.decode_range(ws['!ref']||'A1'); if(c>g.e.c){ g.e.c=c; ws['!ref']=XLSX.utils.encode_range(g); } }
 function setInfo(el,kind,msg){ const e=$(el); e.hidden=false; e.className='info '+kind; e.textContent=msg; }
 
-/* ---------- 2. ler a planilha ---------- */
+/* ---------- 2. planilha ---------- */
 function acharColunas(s){
   if(!s || !s['!ref']) return null;
   const g=XLSX.utils.decode_range(s['!ref']);
-  for(let r=g.s.r; r<=Math.min(g.s.r+7,g.e.r); r++){
+  for(let r=g.s.r;r<=Math.min(g.s.r+7,g.e.r);r++){
     let a=-1,b=-1,c=-1,d=-1;
     for(let k=g.s.c;k<=g.e.c;k++){
-      const cl=s[XLSX.utils.encode_cell({r:r,c:k})]; const h=normH(cl?cl.v:'');
+      const cl=s[XLSX.utils.encode_cell({r:r,c:k})], h=normH(cl?cl.v:'');
       if(h==='id rota'||h==='id da rota'||h==='idrota') a=k;
       else if(h==='arquivo') b=k;
       else if(h==='link') c=k;
@@ -390,70 +390,82 @@ function lerPlanilha(file){
   const rd=new FileReader();
   rd.onload=function(ev){
     try{
-      // cellStyles preserva formatos e estilos da planilha original ao regravar
+      // cellStyles preserva formatos e estilos originais na hora de regravar
       wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellStyles:true});
-      let achou=null;
-      for(const nome of wb.SheetNames){ const inf=acharColunas(wb.Sheets[nome]); if(inf){ achou=inf; aba=nome; break; } }
-      if(!achou){ setInfo('planInfo','erro','Não achei as colunas "ID rota", "Arquivo" e "Link" em nenhuma aba.'); linhas=[]; grupos={}; render(); return; }
-      ws=wb.Sheets[aba]; headerRow=achou.headerRow; cId=achou.cId; cArq=achou.cArq; cLink=achou.cLink; cDt=achou.cDt; rng=achou.rng;
+      let inf=null;
+      for(const nome of wb.SheetNames){ const t=acharColunas(wb.Sheets[nome]); if(t){ inf=t; aba=nome; break; } }
+      if(!inf){ setInfo('planInfo','erro','Não achei as colunas "ID rota", "Arquivo" e "Link" em nenhuma aba.'); linhas=[]; grupos={}; render(); return; }
+      ws=wb.Sheets[aba]; headerRow=inf.headerRow; cId=inf.cId; cArq=inf.cArq; cLink=inf.cLink; cDt=inf.cDt; rng=inf.rng;
 
       linhas=[]; grupos={};
       for(let r=headerRow+1;r<=rng.e.r;r++){
         const id=txt(cel(r,cId)), arq=txt(cel(r,cArq));
         if(!id||!arq) continue;
-        const l={ r:r, id:id, arq:arq, chave:normArq(arq), link:txt(cel(r,cLink)), enviado:false, recuperado:false };
+        const l={ r:r, id:id, arq:arq, chave:normArq(arq), link:txt(cel(r,cLink)) };
         linhas.push(l);
         const g=grupos[l.chave]||(grupos[l.chave]={chave:l.chave,nome:arq,linhas:[],file:null});
         g.linhas.push(l);
       }
       if(!linhas.length){ setInfo('planInfo','erro','A planilha não tem nenhuma linha com ID rota e Arquivo preenchidos.'); render(); return; }
 
-      sugerirPeriodo();
+      sugerirCompetencia();
+
       const salvos=lidos(pasta()); let volta=0;
-      linhas.forEach(function(l){ if(!l.link && salvos[l.id]){ l.link=salvos[l.id]; l.recuperado=true; volta++; } });
+      Object.keys(grupos).forEach(function(k){
+        if(!salvos[k]) return;
+        grupos[k].linhas.forEach(function(l){ if(!l.link){ gravarLink(l,salvos[k]); volta++; } });
+      });
       if(volta) $('btnBaixar').disabled=false;
 
-      const nGrupos=Object.keys(grupos).length;
-      setInfo('planInfo','ok', linhas.length+' rota(s) na aba "'+aba+'", em '+nGrupos+' arquivo(s) distinto(s)'+(volta?' · '+volta+' link(s) recuperado(s) deste navegador':'')+'.');
-      // re-casa com arquivos que já estavam na tela
+      setInfo('planInfo','ok', linhas.length+' rota(s) na aba "'+aba+'", em '+Object.keys(grupos).length+
+        ' arquivo(s) distinto(s)'+(volta?' · '+volta+' link(s) recuperado(s) deste navegador':'')+'.');
       recasar(); render();
     }catch(e){ setInfo('planInfo','erro','Erro ao ler a planilha: '+e.message); }
   };
   rd.readAsArrayBuffer(file);
 }
-// sugere ano/mês/quinzena pela coluna de data, sem passar do período atual
-function sugerirPeriodo(){
+// Sugere pela coluna de data: se as datas do mês caem só numa metade, sugere
+// aquela quinzena; se espalham pelas duas, sugere Mensal.
+function sugerirCompetencia(){
   if(cDt<0) return;
-  const cont={};
+  const porMes={};
   linhas.forEach(function(l){
     const c=cel(l.r,cDt); if(!c||c.v==null) return;
     let a,m,d;
     if(typeof c.v==='number'){ const p=XLSX.SSF.parse_date_code(c.v); if(!p) return; a=p.y; m=p.m; d=p.d; }
     else if(c.v instanceof Date){ a=c.v.getFullYear(); m=c.v.getMonth()+1; d=c.v.getDate(); }
     else return;
-    const k=a+'|'+m+'|'+(d<=15?1:2); cont[k]=(cont[k]||0)+1;
+    const k=a+'|'+String(m).padStart(2,'0');
+    const o=porMes[k]||(porMes[k]={n:0,q1:0,q2:0});
+    o.n++; if(d<=15) o.q1++; else o.q2++;
   });
   let melhor='',max=-1;
-  Object.keys(cont).forEach(function(k){ if(cont[k]>max){ max=cont[k]; melhor=k; } });
+  Object.keys(porMes).forEach(function(k){ if(porMes[k].n>max){ max=porMes[k].n; melhor=k; } });
   if(!melhor) return;
-  const p=melhor.split('|');
-  if(!Array.prototype.some.call($('ano').options,function(o){ return o.value===p[0]; })){
-    const o=document.createElement('option'); o.value=p[0]; o.textContent=p[0]; $('ano').appendChild(o);
+  const p=melhor.split('|'), o=porMes[melhor];
+  const duasMetades=(o.q1>0 && o.q2>0);
+  $('tipo').value=duasMetades?'mensal':'quinzenal'; trocaTipo();
+  if(!Array.prototype.some.call($('ano').options,function(x){ return x.value===p[0]; })){
+    const op=document.createElement('option'); op.value=p[0]; op.textContent=p[0]; $('ano').appendChild(op);
   }
   $('ano').value=p[0]; montaMeses();
-  const mm=String(p[1]).padStart(2,'0');
-  if(Array.prototype.some.call($('mes').options,function(o){ return o.value===mm; })){
-    $('mes').value=mm; montaQuinzenas();
-    if(Array.prototype.some.call($('quinzena').options,function(o){ return o.value===p[2]; })) $('quinzena').value=p[2];
+  if(Array.prototype.some.call($('mes').options,function(x){ return x.value===p[1]; })){
+    $('mes').value=p[1]; montaQuinzenas();
+    if(!duasMetades){
+      const q=(o.q1>=o.q2)?'1':'2';
+      if(Array.prototype.some.call($('quinzena').options,function(x){ return x.value===q; })) $('quinzena').value=q;
+    }
   }
   exemplo();
 }
 
-/* ---------- 3. receber os arquivos ---------- */
-let entregues=[];   // File[] — guardados pra re-casar se a planilha trocar
+/* ---------- 3. arquivos ---------- */
 function receber(fs){
   const lista=[].slice.call(fs||[]); if(!lista.length) return;
-  lista.forEach(function(f){ entregues=entregues.filter(function(x){ return normArq(x.name)!==normArq(f.name); }); entregues.push(f); });
+  lista.forEach(function(f){
+    entregues=entregues.filter(function(x){ return normArq(x.name)!==normArq(f.name); });
+    entregues.push(f);
+  });
   recasar(); render();
 }
 function recasar(){
@@ -466,64 +478,65 @@ function recasar(){
 }
 
 /* ---------- conferência ---------- */
+function grupoComLink(g){ return g.linhas.every(function(l){ return !!l.link; }); }
 function render(){
   const chaves=Object.keys(grupos);
-  $('confCard').hidden = chaves.length===0;
+  $('confCard').hidden=chaves.length===0;
   const tb=$('tb'); tb.innerHTML='';
-  let prontos=0, faltando=0;
+  let prontos=0, faltam=0, rotasProntas=0;
   chaves.forEach(function(k,i){
-    const g=grupos[k];
-    const todasComLink=g.linhas.every(function(l){ return !!l.link; });
-    let st;
-    if(todasComLink) st='<span class="badge done">link pronto ✓</span>';
-    else if(g.file){ st='<span class="badge ok">arquivo pronto</span>'; prontos++; }
-    else { st='<span class="badge none">falta o arquivo</span>'; faltando++; }
+    const g=grupos[k]; let st;
+    if(grupoComLink(g)) st='<span class="badge done">link pronto ✓</span>';
+    else if(g.file){ st='<span class="badge ok">arquivo pronto</span>'; prontos++; rotasProntas+=g.linhas.length; }
+    else { st='<span class="badge none">falta o arquivo</span>'; faltam++; }
     const tr=document.createElement('tr');
     tr.id='g-'+k; tr.style.animationDelay=(Math.min(i,14)*0.03)+'s';
     tr.innerHTML='<td class="fname">'+esc(g.nome)+'</td><td>'+g.linhas.length+'</td><td class="s">'+st+'</td>';
     tb.appendChild(tr);
   });
-  if(extras.length){
-    setInfo('extras','aviso', extras.length+' arquivo(s) que você mandou não aparece(m) na planilha: '+extras.join(', '));
-    $('extras').hidden=false;
-  } else $('extras').hidden=true;
-
+  if(extras.length) setInfo('extras','aviso', extras.length+' arquivo(s) que você mandou não aparece(m) na planilha: '+extras.join(', '));
+  else $('extras').hidden=true;
   if(chaves.length){
-    const rotasProntas=chaves.reduce(function(s,k){ return s+((grupos[k].file&&!grupos[k].linhas.every(function(l){return !!l.link;}))?grupos[k].linhas.length:0); },0);
-    setInfo('fileInfo', faltando?'aviso':'ok',
-      prontos+' de '+chaves.length+' arquivo(s) casado(s) · '+rotasProntas+' rota(s) pronta(s) pra enviar'+(faltando?' · '+faltando+' arquivo(s) ainda faltando':'') + '.');
-    $('btnEnviar').disabled = rotasProntas===0;
+    setInfo('fileInfo', faltam?'aviso':'ok',
+      prontos+' de '+chaves.length+' arquivo(s) casado(s) · cobrem '+rotasProntas+' rota(s)'+(faltam?' · '+faltam+' arquivo(s) ainda faltando':'')+'.');
   }
+  $('btnEnviar').disabled = prontos===0;
   if(linhas.some(function(l){ return !!l.link; })) $('btnBaixar').disabled=false;
 }
-function marcar(id,html){ const tr=document.getElementById('lin-'+id); if(tr) tr.innerHTML=html; }
 function statusGrupo(k,html){ const tr=document.getElementById('g-'+k); if(tr){ const c=tr.querySelector('.s'); if(c) c.innerHTML=html; } }
+function badgeErro(msg){ return '<span class="badge err" title="'+esc(msg)+'">erro</span>'; }
 
 /* ---------- dropzones ---------- */
-function liga(zoneId,inputId,cb,filtro){
+function liga(zoneId,inputId,cb){
   const z=$(zoneId), inp=$(inputId);
   z.addEventListener('click',function(){ inp.click(); });
   z.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); inp.click(); } });
   ['dragover','dragenter'].forEach(function(ev){ z.addEventListener(ev,function(e){ e.preventDefault(); z.classList.add('drag'); }); });
   ['dragleave','drop'].forEach(function(ev){ z.addEventListener(ev,function(e){ e.preventDefault(); z.classList.remove('drag'); }); });
-  z.addEventListener('drop',function(e){ cb(filtro?[].slice.call(e.dataTransfer.files).filter(filtro):e.dataTransfer.files); });
+  z.addEventListener('drop',function(e){ cb(e.dataTransfer.files); });
   inp.addEventListener('click',function(e){ e.stopPropagation(); });
   inp.addEventListener('change',function(e){ cb(e.target.files); e.target.value=''; });
 }
 liga('zPlan','inPlan',function(fs){ lerPlanilha([].slice.call(fs)[0]); });
 liga('zFiles','inFiles',receber);
 
-/* ---------- aviso de bloqueio ---------- */
-function avisar(msg){
+/* ---------- aviso de conexão ---------- */
+function avisar(msg,cfg){
   $('netAlert').hidden=false;
-  $('netMsg').textContent=msg+' Os arquivos até sobem, mas o link não volta pra planilha. Desative o bloqueador de anúncios nesta página e teste de novo.';
+  if(cfg){
+    $('netTitulo').textContent='A ferramenta ainda não está ligada ao Drive';
+    $('netMsg').textContent='Falta colar a URL da implantação do Apps Script na constante API_URL, no topo do arquivo.';
+  }else{
+    $('netTitulo').textContent='O navegador está bloqueando a resposta do Drive';
+    $('netMsg').textContent=msg+' Os arquivos até sobem, mas o link não volta pra planilha. Desative o bloqueador de anúncios nesta página e teste de novo.';
+  }
 }
 function testar(silencioso){
   const b=$('btnTestar'); b.disabled=true; b.textContent='…';
   return checar().then(function(r){
     b.disabled=false; b.textContent='Testar';
     if(r.ok){ $('netAlert').hidden=true; if(!silencioso) alert('Conexão com o Drive funcionando normalmente.'); }
-    else avisar(r.msg);
+    else avisar(r.msg,r.cfg);
     return r;
   });
 }
@@ -533,19 +546,18 @@ $('btnTestar').addEventListener('click',function(){ testar(false); });
 $('btnEnviar').addEventListener('click',enviar);
 async function enviar(){
   const periodo=pasta();
-  const alvos=[];
-  Object.keys(grupos).forEach(function(k){
-    const g=grupos[k]; if(!g.file) return;
-    g.linhas.forEach(function(l){ if(!l.link) alvos.push({g:g,l:l}); });
-  });
-  if(!alvos.length){ alert('Nenhuma rota pronta pra enviar.'); return; }
+  const alvos=Object.keys(grupos).map(function(k){ return grupos[k]; })
+                   .filter(function(g){ return g.file && !grupoComLink(g); });
+  if(!alvos.length){ alert('Nenhum arquivo pronto pra enviar.'); return; }
+  const rotas=alvos.reduce(function(s,g){ return s+g.linhas.length; },0);
 
-  if(!confirm('CONFIRME A QUINZENA\n\nVocê vai enviar '+alvos.length+' comprovante(s) para:\n\n'+periodo+'\n\nSe estiver errado, cancele e ajuste o passo 1.')) return;
+  if(!confirm('CONFIRME A COMPETÊNCIA\n\nVocê vai enviar '+alvos.length+' arquivo(s), cobrindo '+rotas+' rota(s), para:\n\n'+periodo+'\n\nSe estiver errado, cancele e ajuste o passo 1.')) return;
 
   $('btnEnviar').disabled=true;
   const t=await checar();
   if(!t.ok){
-    avisar(t.msg); $('btnEnviar').disabled=false;
+    avisar(t.msg,t.cfg); $('btnEnviar').disabled=false;
+    if(t.cfg) return;
     if(!confirm('O navegador está bloqueando a resposta do Drive.\n\n'+t.msg+'\n\nSe enviar assim, os arquivos podem subir mas os links não voltam pra planilha.\n\nTentar mesmo assim?')) return;
     $('btnEnviar').disabled=true;
   } else $('netAlert').hidden=true;
@@ -556,46 +568,46 @@ async function enviar(){
   $('doneIcon').className='check'; $('doneIcon').textContent='✓';
   $('sendingState').hidden=false; $('doneState').hidden=true; $('sendOverlay').hidden=false;
 
-  let ok=0, erros=0, ultimo='';
-  const cache={};   // cada arquivo é lido UMA vez, mesmo servindo várias rotas
+  let ok=0, erros=0, rotasOk=0, ultimo='';
   for(let i=0;i<alvos.length;i++){
-    const g=alvos[i].g, l=alvos[i].l;
+    const g=alvos[i];
     statusGrupo(g.chave,'<span class="badge up">enviando…</span>');
     try{
-      if(!cache[g.chave]) cache[g.chave]=await b64(g.file);
-      const dados=cache[g.chave];
-      const resp=await api('upload',{
-        id:l.id, periodo:periodo,
-        filename:l.id+'.'+ext(g.file.name),
-        mimeType:g.file.type||'application/pdf',
-        dataBase64:dados
-      },3);
+      const dados=await b64(g.file);
+      // grava com o nome que está na planilha — é a referência que vale
+      const resp=await api('upload',{ periodo:periodo, filename:g.nome, mimeType:g.file.type||'application/pdf', dataBase64:dados },3);
       if(resp && resp.ok){
-        gravarLink(l,resp.url); salvarLink(periodo,l.id,resp.url);
-        l.enviado=true; ok++; $('btnBaixar').disabled=false;
-      }else{ erros++; ultimo=(resp&&resp.msg)||'O Drive recusou o arquivo.'; }
+        g.linhas.forEach(function(l){ gravarLink(l,resp.url); });
+        salvarLink(periodo,g.chave,resp.url);
+        ok++; rotasOk+=g.linhas.length;
+        $('btnBaixar').disabled=false;
+        statusGrupo(g.chave,'<span class="badge done">enviado ✓</span>');
+      }else{
+        erros++; ultimo=(resp&&resp.msg)||'O Drive recusou o arquivo.';
+        statusGrupo(g.chave,badgeErro(ultimo));
+      }
     }catch(e){
       erros++; ultimo=String((e&&e.message)||e);
-      delete cache[g.chave];   // deixa a próxima tentativa reler o arquivo
+      statusGrupo(g.chave,badgeErro(ultimo));
     }
     const pct=Math.round(((i+1)/alvos.length)*100);
     $('bar').style.width=pct+'%'; $('sbar').style.width=pct+'%';
-    $('progTxt').textContent=(i+1)+' / '+alvos.length+' processado(s)';
+    $('progTxt').textContent=(i+1)+' / '+alvos.length+' arquivo(s) processado(s)';
     $('sendTxt').textContent='Enviando '+Math.min(i+2,alvos.length)+' de '+alvos.length+'…';
   }
-  render();
 
   $('btnEnviar').disabled=false;
   $('doneMsg').hidden=false; $('doneMsg').className=erros?'ruim':'';
-  $('doneMsg').textContent=ok+' enviado(s)'+(erros?' · '+erros+' com erro. Motivo: '+ultimo:'')+(ok?' Baixe a planilha ao lado.':'');
+  $('doneMsg').textContent=ok+' arquivo(s) enviado(s), cobrindo '+rotasOk+' rota(s)'+
+    (erros?' · '+erros+' com erro. Motivo: '+ultimo:'')+(ok?' Baixe a planilha ao lado.':'');
 
   $('sendingState').hidden=true; $('doneState').hidden=false;
   if(ok>0){
     pendente=true; baixou=false;
-    $('doneTitle').textContent=ok+' comprovante(s) enviado(s)!'+(erros?' · '+erros+' com erro':'');
+    $('doneTitle').textContent=ok+' arquivo(s) enviado(s)!'+(erros?' · '+erros+' com erro':'');
     $('doneWarn').textContent=erros
-      ? 'Baixe a planilha com os '+ok+' links que deram certo. Depois use "Recuperar links do Drive" pra completar os que falharam.'
-      : 'Agora baixe a planilha — é nela que ficam os links. Sem ela você perde o trabalho.';
+      ? 'Baixe a planilha com os links que deram certo. Depois use "Recuperar links do Drive" pra completar os que falharam.'
+      : 'Agora baixe a planilha — é nela que ficam os links das '+rotasOk+' rotas. Sem ela você perde o trabalho.';
     $('doneWarn').className='warnbox';
     $('btnBaixarOv').hidden=false; $('btnBaixarOv').textContent='Baixar planilha'; $('btnBaixarOv').className='btn primary big';
     $('btnRecOv').hidden=!erros; $('btnRecOv').className='btn ghost';
@@ -612,7 +624,7 @@ async function enviar(){
   }
 }
 
-// grava o link na célula, preservando o resto da planilha
+// escreve o link na célula sem tocar no resto da planilha
 function gravarLink(l,url){
   alargar(cLink);
   ws[XLSX.utils.encode_cell({r:l.r,c:cLink})]={
@@ -622,29 +634,33 @@ function gravarLink(l,url){
   l.link=url;
 }
 
-/* ---------- recuperar links do Drive ---------- */
+/* ---------- recuperar links ---------- */
 function recuperar(){
   if(!linhas.length){ setInfo('recInfo','erro','Carregue a planilha primeiro (passo 2).'); return; }
-  const ids=linhas.map(function(l){ return l.id; });
-  setInfo('recInfo','aviso','Procurando '+ids.length+' ID(s) no Drive…');
+  const chaves=Object.keys(grupos);
+  const nomes=chaves.map(function(k){ return grupos[k].nome; });
+  setInfo('recInfo','aviso','Procurando '+nomes.length+' arquivo(s) no Drive…');
   $('btnRecuperar').disabled=true;
-  api('conferir',{ids:ids},3).then(function(res){
+  api('procurar',{nomes:nomes},3).then(function(res){
     $('btnRecuperar').disabled=false;
     const alvo=pasta(), mapa={};
     (res.encontrados||[]).forEach(function(it){
-      const h=(it.hits||[]).filter(function(x){ return x.quinzena===alvo; })[0]||(it.hits||[])[0];
-      if(h) mapa[it.id]=h;
+      const h=(it.hits||[]).filter(function(x){ return x.competencia===alvo; })[0]||(it.hits||[])[0];
+      if(h) mapa[normArq(it.nome)]=h;
     });
-    let achou=0, sem=0;
-    linhas.forEach(function(l){
-      const h=mapa[l.id];
-      if(h){ gravarLink(l,'https://drive.google.com/file/d/'+h.fileId+'/view?usp=drivesdk'); l.recuperado=true; salvarLink(alvo,l.id,l.link); achou++; }
-      else if(!l.link) sem++;
+    let achou=0, rotas=0, sem=0;
+    chaves.forEach(function(k){
+      const h=mapa[k];
+      if(h){
+        const url='https://drive.google.com/file/d/'+h.fileId+'/view?usp=drivesdk';
+        grupos[k].linhas.forEach(function(l){ gravarLink(l,url); rotas++; });
+        salvarLink(alvo,k,url); achou++;
+      } else if(!grupoComLink(grupos[k])) sem++;
     });
     if(achou){ $('btnBaixar').disabled=false; pendente=true; baixou=false; }
     setInfo('recInfo',achou?'ok':'erro', achou
-      ? achou+' link(s) recuperado(s)'+(sem?' · '+sem+' rota(s) ainda sem comprovante no Drive':'')+'. Agora é só baixar a planilha.'
-      : 'Nenhum comprovante desses IDs foi encontrado no Drive.');
+      ? achou+' arquivo(s) recuperado(s), cobrindo '+rotas+' rota(s)'+(sem?' · '+sem+' ainda sem comprovante no Drive':'')+'. Agora é só baixar a planilha.'
+      : 'Nenhum desses arquivos foi encontrado no Drive.');
     render();
   }).catch(function(e){
     $('btnRecuperar').disabled=false;
@@ -654,7 +670,7 @@ function recuperar(){
 $('btnRecuperar').addEventListener('click',recuperar);
 $('btnRecOv').addEventListener('click',function(){ $('sendOverlay').hidden=true; recuperar(); $('btnRecuperar').scrollIntoView({behavior:'smooth',block:'center'}); });
 
-/* ---------- baixar (mesma planilha, só com a coluna Link preenchida) ---------- */
+/* ---------- baixar ---------- */
 function baixar(){
   if(!wb) return;
   const out=XLSX.write(wb,{bookType:'xlsx',type:'array',cellStyles:true});
@@ -696,7 +712,6 @@ window.addEventListener('beforeunload',function(e){
   }
 });
 
-// ripple
 document.addEventListener('click',function(e){
   const b=e.target&&e.target.closest?e.target.closest('.btn'):null; if(!b) return;
   const r=b.getBoundingClientRect(), d=Math.max(r.width,r.height);
@@ -705,20 +720,7 @@ document.addEventListener('click',function(e){
   b.appendChild(s); setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); },650);
 },true);
 
-// tema
-(function(){
-  const K='tema_vinculo', root=document.documentElement, b=$('btnTema');
-  function ico(){ b.textContent=root.classList.contains('dark')?'☀️':'🌙'; }
-  ico();
-  b.addEventListener('click',function(){
-    const d=!root.classList.contains('dark');
-    root.classList.toggle('dark',d);
-    try{ localStorage.setItem(K,d?'dark':'light'); }catch(e){}
-    ico();
-  });
-})();
-
-montaAnos(); montaMeses();
+montaAnos(); montaMeses(); trocaTipo();
 setTimeout(function(){ testar(true); },900);
 })();
 </script>
