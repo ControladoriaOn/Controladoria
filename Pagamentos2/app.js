@@ -248,12 +248,55 @@ function recortes(){
 function render(){
   renderStamp();
   const c = el('content');
+  const primeira = state.animarProxima;
+  document.body.classList.toggle('entrando', !!primeira);
   c.innerHTML = '';
   c.appendChild(secaoKPIs());
   c.appendChild(secaoTabela());
-  // a contagem só roda quando a página abre ou é recarregada: repetir isso a
-  // cada clique de cartão ou de filtro cansa rápido
-  if (state.animarProxima){ animarValores(); state.animarProxima = false; }
+  // a contagem só roda quando a página abre ou é recarregada
+  if (primeira){
+    animarValores();
+    state.animarProxima = false;
+    setTimeout(() => document.body.classList.remove('entrando'), 700);
+  }
+}
+
+/* Trocar de cartão não redesenha a página: os cartões já existentes só mudam de
+   classe — e o CSS cuida da transição — e a tabela é substituída no lugar. */
+function trocarAba(k){
+  if (state.aba === k) return;
+  state.aba = k;
+  state.pagina = 1;
+  state.filtroTipo = '';
+
+  const R = recortes();
+  const linha = document.querySelector('.timeline');
+  const cards = document.querySelectorAll('.timeline .marco');
+  ['pago','hoje','amanha'].forEach((chave, i) => {
+    const card = cards[i];
+    if (!card) return;
+    const ativo = (chave === k);
+    card.classList.toggle('destaque', ativo);
+    card.classList.toggle('recuado', !ativo);
+    card.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+  });
+  if (linha){
+    const pesos = { pago:['1.35fr','1fr','1fr'], hoje:['1fr','1.35fr','1fr'], amanha:['1fr','1fr','1.35fr'] };
+    const p = pesos[k] || pesos.hoje;
+    linha.style.setProperty('--c1', p[0]);
+    linha.style.setProperty('--c2', p[1]);
+    linha.style.setProperty('--c3', p[2]);
+  }
+  trocarTabela();
+}
+
+/* Redesenha só o bloco da tabela, mantendo os cartões intactos. */
+function trocarTabela(){
+  const c = el('content');
+  const atual = c.lastElementChild;
+  const nova = secaoTabela();
+  if (atual) c.replaceChild(nova, atual);
+  else c.appendChild(nova);
 }
 
 /* Os valores sobem contando até o número. Uma vez por carga, curto, e
@@ -326,7 +369,7 @@ function secaoKPIs(){
         [ h('span', { style:'width:' + Math.round(frac*100) + '%' }) ]));
     }
 
-    const ir = () => { if (state.aba !== k){ state.aba = k; state.pagina = 1; state.filtroTipo = ''; render(); } };
+    const ir = () => trocarAba(k);
     card.onclick = ir;
     card.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); ir(); } };
     linha.appendChild(card);
@@ -428,7 +471,7 @@ function secaoTabela(){
       const cor = valor ? (' t-' + norm(valor).replace(/[^a-z0-9]/g,'') ) : '';
       const b = h('button', { class:'chip' + cor + (state.filtroTipo === valor ? ' active' : ''), type:'button' },
         [ rotulo, h('span', { class:'cnt', text: String(qtd) }) ]);
-      b.onclick = () => { state.filtroTipo = valor; state.pagina = 1; render(); };
+      b.onclick = () => { state.filtroTipo = valor; state.pagina = 1; trocarTabela(); };
       return b;
     };
     chips.appendChild(mkChip('', 'Todos', rec.linhas.length));
@@ -453,7 +496,7 @@ function secaoTabela(){
   if (ocultos.length){
     const link = h('button', { type:'button',
       text: state.verOcultos ? 'esconder' : 'ver quais são' });
-    link.onclick = () => { state.verOcultos = !state.verOcultos; render(); };
+    link.onclick = () => { state.verOcultos = !state.verOcultos; trocarTabela(); };
     card.appendChild(h('div', { class:'ocultos-linha' }, [
       icone('fa-eye-slash'),
       h('span', { text: ocultos.length + (ocultos.length === 1 ? ' título oculto' : ' títulos ocultos') +
