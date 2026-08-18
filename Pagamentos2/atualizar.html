@@ -1067,12 +1067,12 @@ async function parseNaturezas(file){
    ============================================================================ */
 const state = {
   files: [],                 // [{nome, tipo, count, ok, err}]
-  store: { totvs:[], baixas:[], relatorio:[], nf_servico:[], nf_titulo:[], reembolso:[] },
+  store: { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[] },
   naturezas: null,
   colunasAusentes: [],
   diagBaixas: null, diagPrevisto: null, diagRelatorio: null,
   conc: null, resumo: null, pagos: [],
-  aba: 'todos',
+  aba: 'aPagarHoje',
   busca: '', filtroTipo: '', pagina: 1,
   conferidos: {},              // pontos do roteiro já marcados como vistos
   roteiroAberto: false,
@@ -1148,7 +1148,7 @@ function removerArquivo(f){
   else if (f.tipo === 'nf_titulo'){   state.store.nf_titulo  = []; }
   else if (f.tipo === 'reembolso'){   state.store.reembolso  = []; }
   else if (f.tipo === 'naturezas'){   state.naturezas = null; }
-  state.aba = 'todos';
+  state.aba = 'aPagarHoje';
   recalcular();
   render();
   toast('Removido: ' + f.nome);
@@ -1188,9 +1188,37 @@ function renderResumo(){
 
 /* ---------------------------- conferência ---------------------------- */
 function listasDaAba(){
-  const c = state.conc;
-  const porSit = s => c.itens.filter(i => i.situacao === s);
-  return {
+  const c = state.conc, r = state.resumo;
+
+  /* Os mesmos recortes do painel, para conferir e corrigir exatamente o que vai
+     aparecer lá. É onde o trabalho acontece: quase toda edição é no que vence
+     hoje. Estas abas usam a lista unificada — um título por linha, venha ele do
+     Totvs, do Fluig ou de lançamento próprio. */
+  const uni = Conc.montarLinhas(c, state.pagos || []);
+  const previsto = uni.filter(x => x.fonte === 'previsto' && x.situacao !== 'cancelado' && !x.dt_baixa);
+  const emAprovacao = s => s === 'sem_titulo_pendente' || s === 'em_aberto_pendente';
+
+  const listas = {
+    pagoEm: {
+      rotulo: r.dataPago ? ('Pago em ' + fmtData(r.dataPago)) : 'Pago',
+      icone:'fa-circle-check', unificada:true,
+      linhas: uni.filter(x => x.fonte === 'baixa' && (!r.dataPago || x.dt_baixa === r.dataPago)),
+    },
+    aPagarHoje: {
+      rotulo:'A pagar hoje', icone:'fa-calendar-day', unificada:true,
+      linhas: previsto.filter(x => x.vencimento === r.dataRef),
+    },
+    aPagarAmanha: {
+      rotulo:'A pagar amanhã', icone:'fa-calendar-plus', unificada:true,
+      linhas: previsto.filter(x => x.vencimento === r.amanha),
+    },
+    faltaAprovar: {
+      rotulo:'Falta aprovar', icone:'fa-hourglass-half', unificada:true,
+      linhas: previsto.filter(x => emAprovacao(x.situacao)),
+    },
+  };
+
+  return Object.assign(listas, {
     todos:       { rotulo:'Tudo',                 icone:'fa-list',            linhas: c.itens },
     pendentes:   { rotulo:'Falta aprovar',        icone:'fa-hourglass-half',  linhas: c.itens.filter(i => aguardandoSit(i.situacao)) },
     casados:     { rotulo:'Casados com o Totvs',  icone:'fa-link',            linhas: c.itens.filter(i => i.par) },
@@ -1198,7 +1226,7 @@ function listasDaAba(){
     divergentes: { rotulo:'Divergências',         icone:'fa-scale-unbalanced', linhas: c.itens.filter(i => i.aviso) },
     direto:      { rotulo:'Lançado direto',       icone:'fa-database',        linhas: c.soTotvsDireto, totvs:true },
     antigos:     { rotulo:'De solicitação antiga', icone:'fa-clock-rotate-left', linhas: c.soTotvsAntigo, totvs:true },
-  };
+  });
 }
 /* Cada aviso vira um ponto do roteiro: o que é, quantos são e para onde ir.
    O id é estável, então marcar como conferido sobrevive a redesenhos da tela. */
@@ -1340,7 +1368,8 @@ function renderConferencia(){
 
   const tipos = {};
   L.linhas.forEach(x => {
-    const t = safeStr(L.totvs ? x.tipo : ((x.par && x.par.tipo) || Conc.tipoPresumido(x))) || '—';
+    const t = safeStr(L.unificada ? x.tipo
+      : (L.totvs ? x.tipo : ((x.par && x.par.tipo) || Conc.tipoPresumido(x)))) || '—';
     tipos[t] = (tipos[t] || 0) + 1;
   });
   const nomes = Object.keys(tipos).sort();
@@ -1359,18 +1388,20 @@ function renderConferencia(){
   }
   box.appendChild(barra);
 
-  const filtradas = filtrarLinhas(L.linhas, !!L.totvs);
+  const filtradas = filtrarLinhas(L.linhas, !!L.totvs, !!L.unificada);
   if (!filtradas.length){
     box.appendChild(h('div', { class:'empty', text: L.linhas.length ? 'Nada com esse filtro.' : 'Nada nesta lista.' }));
     return;
   }
   const topo = controlePagina(filtradas, 'topo');
   if (topo) box.appendChild(topo);
-  box.appendChild(L.totvs ? tabelaTotvs(filtradas) : tabelaItens(filtradas));
+  box.appendChild(L.unificada ? tabelaUnificada(filtradas, state.aba === 'pagoEm')
+    : (L.totvs ? tabelaTotvs(filtradas) : tabelaItens(filtradas)));
   const baixo = controlePagina(filtradas, 'baixo');
   if (baixo) box.appendChild(baixo);
 
-  const soma = filtradas.reduce((s, x) => s + (Number(L.totvs ? x.valor_rs : x.valor) || 0), 0);
+  const soma = filtradas.reduce((s, x) =>
+    s + (Number(L.unificada ? x.valor : (L.totvs ? x.valor_rs : x.valor)) || 0), 0);
   box.appendChild(h('div', { class:'conf-total' }, [
     h('span', { text: filtradas.length + ' de ' + L.linhas.length + ' linha(s)' }),
     h('strong', { text: 'R$ ' + fmtBR(soma) }),
@@ -1412,20 +1443,21 @@ function deb(fn, ms){
    cem, com o controle nas duas pontas, e tem busca e filtro por tipo. */
 const POR_PAGINA = 100;
 
-function filtrarLinhas(linhas, ehTotvs){
+function filtrarLinhas(linhas, ehTotvs, unificada){
   let L = linhas.slice();
   const b = norm(state.busca);
   if (b){
     L = L.filter(x => {
-      const alvo = ehTotvs
-        ? [x.fornecedor, x.numero, x.historico, x.id_fluig]
-        : [x.fornecedor, x.numero, x.fluig && x.fluig.solicitante, x.fluig && x.fluig.id];
+      const alvo = unificada ? [x.fornecedor, x.numero, x.detalhe, x.id_fluig]
+        : (ehTotvs ? [x.fornecedor, x.numero, x.historico, x.id_fluig]
+                   : [x.fornecedor, x.numero, x.fluig && x.fluig.aprovador, x.fluig && x.fluig.id]);
       return alvo.some(v => norm(v).indexOf(b) >= 0);
     });
   }
   if (state.filtroTipo){
     L = L.filter(x => {
-      const t = ehTotvs ? safeStr(x.tipo) : safeStr((x.par && x.par.tipo) || Conc.tipoPresumido(x));
+      const t = unificada ? safeStr(x.tipo)
+        : (ehTotvs ? safeStr(x.tipo) : safeStr((x.par && x.par.tipo) || Conc.tipoPresumido(x)));
       return (t || '—') === state.filtroTipo;
     });
   }
@@ -1455,6 +1487,48 @@ function controlePagina(L, onde){
   return nav;
 }
 
+/* Uma linha por pagamento, venha ele do Totvs, do Fluig ou de lançamento
+   próprio. É a mesma leitura do painel, só que aqui dá para editar. */
+function tabelaUnificada(linhas, ehPago){
+  const thead = h('thead', {}, [ h('tr', {}, [
+    h('th', { text:'Origem' }), h('th', { text:'Tipo' }), h('th', { text:'Número' }),
+    h('th', { text:'Favorecido' }), h('th', { text: ehPago ? 'Baixa' : 'Vencimento' }),
+    h('th', { text:'Valor' }), h('th', { text:'Situação' }), h('th', { text:'' }),
+  ])]);
+  const tbody = h('tbody');
+  paginar(linhas).forEach(x => {
+    const sit = SITUACOES[x.situacao] || ['—','b-mute'];
+    const tdSit = h('td', {}, [ badge(sit[0], sit[1]) ]);
+    if (x.aviso === 'valor_diverge') tdSit.appendChild(badge('valor diverge','b-danger'));
+    if (x.aviso === 'valor_corrigido') tdSit.appendChild(badge('valor corrigido','b-info'));
+    if (x.aviso === 'valor_corrigido_sem_par') tdSit.appendChild(badge('valor a conferir','b-warn'));
+    if (x.modoPar === 'aprox') tdSit.appendChild(badge('casado por semelhança','b-info'));
+    if (x.editado) tdSit.appendChild(badge('editado','b-orange'));
+    if (x.estimado) tdSit.appendChild(badge('estimado','b-warn'));
+    if (x.oculto)  tdSit.appendChild(badge('oculto','b-mute'));
+
+    const tdValor = h('td', { class:'num' }, [ fmtBR(x.valor) ]);
+    if (x.valorFluig != null && x.valorTotvs != null && Math.abs(x.valorFluig - x.valorTotvs) > 0.05){
+      tdValor.appendChild(h('span', { class:'antes', style:'text-decoration:none',
+        text:'Fluig: ' + fmtBR(x.valorFluig) }));
+    }
+    const tipo = safeStr(x.tipo) || '—';
+    tbody.appendChild(h('tr', { class:(x.oculto ? 'oculta ' : '') + (x.editado ? 'editada' : '') }, [
+      h('td', {}, [ badge(x.origem, 'b-mute') ]),
+      h('td', {}, [ badge(tipo, 'b-info') ]),
+      h('td', { class:'mono', text: x.numero }),
+      h('td', {}, [ h('div', { class:'forn' }, [
+        x.fornecedor || '—',
+        h('small', { text: [x.status, x.detalhe].filter(Boolean).join(' · ').slice(0, 68) }),
+      ])]),
+      h('td', { class:'mono', text: fmtData(ehPago ? x.dt_baixa : x.vencimento) }),
+      tdValor, tdSit,
+      h('td', {}, [ acoesLinha(x.titulo ? linhaDoTitulo(x.titulo) : null) ]),
+    ]));
+  });
+  return h('table', {}, [ thead, tbody ]);
+}
+
 function tabelaItens(linhas){
   const thead = h('thead', {}, [ h('tr', {}, [
     h('th', { text:'Origem' }), h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
@@ -1474,7 +1548,8 @@ function tabelaItens(linhas){
       h('td', { class:'mono', text: it.numero || ('#' + (it.fluig.id||'')) }),
       h('td', {}, [ h('div', { class:'forn' }, [
         it.fornecedor || '—',
-        h('small', { text: (it.fluig.status || '') + (it.fluig.solicitante ? (' · ' + it.fluig.solicitante) : '') }),
+        h('small', { text: (it.fluig.status || '') +
+          (it.fluig.aprovador ? (' · aprovador: ' + it.fluig.aprovador) : '') }),
       ])]),
       h('td', { class:'mono', text: fmtData(it.vencimento) }),
       (function(){
@@ -1523,7 +1598,8 @@ function tabelaTotvs(linhas){
    ============================================================================ */
 function recalcular(){
   const temAlgo = state.store.totvs.length || state.store.baixas.length
-               || state.store.relatorio.length || state.store.nf_servico.length
+               || state.store.relatorio.length || state.store.manuais.length
+               || state.store.nf_servico.length
                || state.store.nf_titulo.length || state.store.reembolso.length;
   if (!temAlgo){ state.conc = null; state.resumo = null; return; }
 
@@ -1532,7 +1608,8 @@ function recalcular(){
   state.dataRef = hojeISO();
   // ajustes manuais entram por cima do dado cru, nas duas pontas
   const aj = state.ajustes || [];
-  const rTit = Conc.aplicarAjustes(state.store.totvs, aj);
+  // os lançamentos próprios entram junto dos títulos do relatório
+  const rTit = Conc.aplicarAjustes(state.store.totvs.concat(state.store.manuais), aj);
   const rBx  = Conc.aplicarAjustes(state.store.baixas.concat(state.store.relatorio), aj);
   state.orfaos = rTit.orfaos;
 
@@ -1782,7 +1859,15 @@ async function carregarBase(){
     Conc.definirFeriados(d.feriados || []);
     // o que veio da base só entra onde não houver arquivo recém-arrastado
     const lidos = new Set(state.files.filter(f => f.ok).map(f => f.tipo));
-    if (!lidos.has('totvs') && !lidos.has('totvs_xlsx')) state.store.totvs = d.titulos || [];
+    const daBase = d.titulos || [];
+    const ehManual = t => !!(t.manual || t.id_manual);
+    /* Os lançamentos próprios (CIOT e afins) vivem em aba separada e não vêm de
+       relatório nenhum, então são sempre recarregados — senão o CIOT lançado
+       agora sumiria da tela só porque havia um arquivo do Totvs arrastado. */
+    state.store.manuais = daBase.filter(ehManual);
+    if (!lidos.has('totvs') && !lidos.has('totvs_xlsx')){
+      state.store.totvs = daBase.filter(t => !ehManual(t));
+    }
     if (!lidos.has('baixas') && !lidos.has('relatorio')) state.store.baixas = d.baixas || [];
     if (!lidos.has('nf_servico')) state.store.nf_servico = d.nf_servico || [];
     if (!lidos.has('nf_titulo'))  state.store.nf_titulo  = d.nf_titulo  || [];
@@ -2006,10 +2091,10 @@ async function fetchStatus(){
 
 function resetTudo(){
   state.files = [];
-  state.store = { totvs:[], baixas:[], relatorio:[], nf_servico:[], nf_titulo:[], reembolso:[] };
+  state.store = { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[] };
   state.naturezas = null; state.colunasAusentes = [];
   state.diagBaixas = null; state.diagPrevisto = null; state.diagRelatorio = null;
-  state.conc = null; state.resumo = null; state.aba = 'todos';
+  state.conc = null; state.resumo = null; state.aba = 'aPagarHoje';
   el('file-input').value = '';
   render();
   toast('Recomeçando');

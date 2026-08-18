@@ -578,7 +578,7 @@ function montarLinhas(conc, baixas){
       origem: it.rotulo,
       numero: it.numero || ('#' + it.fluig.id),
       fornecedor: it.fornecedor,
-      detalhe: it.fluig.solicitante ? ('solicitado por ' + it.fluig.solicitante) : '',
+      detalhe: it.fluig.aprovador ? ('aprovador: ' + it.fluig.aprovador) : '',
       vencimento: vencimentoEfetivo(it.vencimento) || it.vencimento,
       vencimentoOriginal: it.vencimento,
       empurrado: !!(it.vencimento && vencimentoEfetivo(it.vencimento) !== it.vencimento),
