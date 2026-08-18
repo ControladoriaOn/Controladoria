@@ -215,7 +215,10 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 .q-var{font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:10px}
 .q-var.up{color:var(--green);background:var(--green-light)}
 .q-var.down{color:var(--red);background:var(--red-light)}
-.debt-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+.debt-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;margin-bottom:20px}
+.charts-2eq.debt-tables table{font-size:11px}
+.charts-2eq.debt-tables thead th{padding:8px 6px;font-size:9.5px}
+.charts-2eq.debt-tables tbody td{padding:7px 6px}
 .debt-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .debt-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
 .debt-card:nth-child(1)::after{background:var(--red)}
@@ -372,7 +375,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
   .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
   .kpi-3    { grid-template-columns: repeat(3, 1fr) !important; }
   .q-grid   { grid-template-columns: repeat(4, 1fr) !important; }
-  .debt-grid{ grid-template-columns: repeat(5, 1fr) !important; }
+  .debt-grid{ grid-template-columns: repeat(7, 1fr) !important; }
   .charts-2col { grid-template-columns: 3fr 2fr !important; }
   .charts-2eq  { grid-template-columns: 1fr 1fr !important; }
 
@@ -763,7 +766,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 
 <div id="section-endividamento" class="dash-section">
-<div class="sec-header"><div class="sec-header-icon">💳</div><h2>Endividamento e Créditos Fiscais</h2><div class="sec-tag">Saldos 2022–2025</div></div>
+<div class="sec-header"><div class="sec-header-icon">💳</div><h2>Endividamento e Créditos Fiscais</h2><div class="sec-tag">Saldos 2022 – Jul/2026</div></div>
 <div class="debt-grid" id="debt-grid"><div class="debt-card"><div class="debt-year">DEZ / 2022</div><div class="debt-total" style="color:var(--red)">R$ 18.671K</div><div class="debt-sub">Base de referência</div></div><div class="debt-card"><div class="debt-year">DEZ / 2023</div><div class="debt-total" style="color:#ea580c">R$ 15.173K</div><div class="debt-sub"><span style="color:var(--green)">▼ Redução: R$ 3.498K</span></div></div><div class="debt-card"><div class="debt-year">DEZ / 2024</div><div class="debt-total" style="color:#ca8a04">R$ 11.303K</div><div class="debt-sub"><span style="color:var(--green)">▼ Redução: R$ 3.870K</span></div></div><div class="debt-card"><div class="debt-year">DEZ / 2025</div><div class="debt-total" style="color:var(--green)">R$ 9.654K</div><div class="debt-sub"><span style="color:var(--green)">▼ Redução: R$ 1.649K</span></div></div><div class="debt-card"><div class="debt-year">1T / 2026</div><div class="debt-total" style="color:#0891b2">R$ 8.849K</div><div class="debt-sub"><span style="color:var(--muted)"></span></div></div></div>
 <div class="gap-highlight">
 <div>
@@ -778,18 +781,18 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 </div>
 </div>
 <div class="charts-2eq">
-<div class="chart-card"><div class="chart-title">Evolução do Endividamento Total</div><div class="chart-sub">R$ mil · 2022 – 1T/2026</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartDivida" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div></div>
+<div class="chart-card"><div class="chart-title">Evolução do Endividamento Total</div><div class="chart-sub">R$ mil · 2022 – Jul/2026</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartDivida" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div></div>
 <div class="chart-card"><div class="chart-title">Composição do Endividamento por Categoria</div><div class="chart-sub">R$ mil · Empilhado</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartDividaComp" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px; cursor: default;" width="0"></canvas></div></div>
 </div>
-<div class="charts-2eq">
-<div class="table-card" style="margin-bottom:0"><div class="table-title">Abertura do Endividamento por Categoria</div><div class="table-sub">R$ mil</div><table><thead><tr><th>Categoria</th><th>Dez/22</th><th>Dez/23</th><th>Dez/24</th><th>Dez/25</th><th>1T/2026</th><th>Redução</th></tr></thead><tbody id="divida-body"><tr><td>Tributário</td><td class="editable" data-edit-key="div_trib" data-edit-idx="0">14.394</td><td class="editable" data-edit-key="div_trib" data-edit-idx="1">10.327</td><td class="editable" data-edit-key="div_trib" data-edit-idx="2">8.018</td><td class="editable" data-edit-key="div_trib" data-edit-idx="3">6.935</td><td class="editable" data-edit-key="div_trib_1t">6.275</td><td class="c-pos">▼ -7.459</td></tr><tr><td>Trabalhista e Cível</td><td class="editable" data-edit-key="div_trab" data-edit-idx="0">1.783</td><td class="editable" data-edit-key="div_trab" data-edit-idx="1">2.619</td><td class="editable" data-edit-key="div_trab" data-edit-idx="2">1.400</td><td class="editable" data-edit-key="div_trab" data-edit-idx="3">1.225</td><td class="editable" data-edit-key="div_trab_1t">1.225</td><td class="c-pos">▼ -558</td></tr><tr><td>Fornecedores (ECT)</td><td class="editable" data-edit-key="div_forn" data-edit-idx="0">2.344</td><td class="editable" data-edit-key="div_forn" data-edit-idx="1">2.134</td><td class="editable" data-edit-key="div_forn" data-edit-idx="2">1.885</td><td class="editable" data-edit-key="div_forn" data-edit-idx="3">1.494</td><td class="editable" data-edit-key="div_forn_1t">1.349</td><td class="c-pos">▼ -850</td></tr><tr><td>BNDES</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="0">150</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="1">93</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="2">0</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="3">0</td><td class="editable" data-edit-key="div_bndes_1t">0</td><td class="c-pos">▼ -150</td></tr><tr class="t-total"><td>TOTAL</td><td>18.671</td><td>15.173</td><td>11.303</td><td>9.654</td><td>8.849</td><td class="c-pos">▼ -9.017</td></tr></tbody></table></div>
-<div class="table-card" style="margin-bottom:0"><div class="table-title">Créditos Fiscais — PIS/COFINS</div><div class="table-sub">R$ mil</div><table><thead><tr><th>Categoria</th><th>Dez/21</th><th>Dez/22</th><th>Dez/23</th><th>Dez/24</th><th>Dez/25</th><th>1T/2026</th></tr></thead><tbody id="creditos-body"><tr><td>Saldo PIS/Cofins</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="0">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="1">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="2">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="3">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="4">1.000</td><td class="editable" data-edit-key="pis_cofins_1t">1.000</td></tr><tr class="t-ebitda"><td>Compensações</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="0">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="1">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="2">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="3">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="4">1.000</td><td class="editable" data-edit-key="compensacoes_1t">405</td></tr></tbody></table></div>
+<div class="charts-2eq debt-tables">
+<div class="table-card" style="margin-bottom:0"><div class="table-title">Abertura do Endividamento por Categoria</div><div class="table-sub">R$ mil</div><table><thead><tr><th>Categoria</th><th>Dez/22</th><th>Dez/23</th><th>Dez/24</th><th>Dez/25</th><th>1T/2026</th><th>2T/2026</th><th>Jul/2026</th><th>Redução</th></tr></thead><tbody id="divida-body"><tr><td>Tributário</td><td class="editable" data-edit-key="div_trib" data-edit-idx="0">14.394</td><td class="editable" data-edit-key="div_trib" data-edit-idx="1">10.327</td><td class="editable" data-edit-key="div_trib" data-edit-idx="2">8.018</td><td class="editable" data-edit-key="div_trib" data-edit-idx="3">6.935</td><td class="editable" data-edit-key="div_trib_1t">6.275</td><td class="editable" data-edit-key="div_trib_2t">0</td><td class="editable" data-edit-key="div_trib_jul">0</td><td class="c-pos">▼ -7.459</td></tr><tr><td>Trabalhista e Cível</td><td class="editable" data-edit-key="div_trab" data-edit-idx="0">1.783</td><td class="editable" data-edit-key="div_trab" data-edit-idx="1">2.619</td><td class="editable" data-edit-key="div_trab" data-edit-idx="2">1.400</td><td class="editable" data-edit-key="div_trab" data-edit-idx="3">1.225</td><td class="editable" data-edit-key="div_trab_1t">1.225</td><td class="editable" data-edit-key="div_trab_2t">0</td><td class="editable" data-edit-key="div_trab_jul">0</td><td class="c-pos">▼ -558</td></tr><tr><td>Fornecedores (ECT)</td><td class="editable" data-edit-key="div_forn" data-edit-idx="0">2.344</td><td class="editable" data-edit-key="div_forn" data-edit-idx="1">2.134</td><td class="editable" data-edit-key="div_forn" data-edit-idx="2">1.885</td><td class="editable" data-edit-key="div_forn" data-edit-idx="3">1.494</td><td class="editable" data-edit-key="div_forn_1t">1.349</td><td class="editable" data-edit-key="div_forn_2t">0</td><td class="editable" data-edit-key="div_forn_jul">0</td><td class="c-pos">▼ -850</td></tr><tr><td>BNDES</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="0">150</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="1">93</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="2">0</td><td class="editable" data-edit-key="div_bndes" data-edit-idx="3">0</td><td class="editable" data-edit-key="div_bndes_1t">0</td><td class="editable" data-edit-key="div_bndes_2t">0</td><td class="editable" data-edit-key="div_bndes_jul">0</td><td class="c-pos">▼ -150</td></tr><tr class="t-total"><td>TOTAL</td><td>18.671</td><td>15.173</td><td>11.303</td><td>9.654</td><td>8.849</td><td>0</td><td>0</td><td class="c-pos">▼ -9.017</td></tr></tbody></table></div>
+<div class="table-card" style="margin-bottom:0"><div class="table-title">Créditos Fiscais — PIS/COFINS</div><div class="table-sub">R$ mil</div><table><thead><tr><th>Categoria</th><th>Dez/21</th><th>Dez/22</th><th>Dez/23</th><th>Dez/24</th><th>Dez/25</th><th>1T/2026</th><th>2T/2026</th><th>Jul/2026</th></tr></thead><tbody id="creditos-body"><tr><td>Saldo PIS/Cofins</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="0">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="1">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="2">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="3">1.000</td><td class="editable" data-edit-key="pis_cofins" data-edit-idx="4">1.000</td><td class="editable" data-edit-key="pis_cofins_1t">1.000</td><td class="editable" data-edit-key="pis_cofins_2t">0</td><td class="editable" data-edit-key="pis_cofins_jul">0</td></tr><tr class="t-ebitda"><td>Compensações</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="0">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="1">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="2">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="3">1.000</td><td class="editable" data-edit-key="compensacoes" data-edit-idx="4">1.000</td><td class="editable" data-edit-key="compensacoes_1t">405</td><td class="editable" data-edit-key="compensacoes_2t">0</td><td class="editable" data-edit-key="compensacoes_jul">0</td></tr></tbody></table></div>
 </div>
 </div>
 
 <div id="section-caixa" class="dash-section">
 <div class="sec-header"><div class="sec-header-icon">💰</div><h2>Fluxo de Caixa — Realizado 2025 + Projeção 2026</h2><div class="sec-tag">Caixa e Contas a Receber</div></div>
-<div class="kpi-grid kpi-3" id="caixa-kpis"><div class="kpi-card k-purple"><div class="kpi-label">Jan/2025 · Posição Inicial</div><div class="kpi-value">R$ 11.611K</div><div class="kpi-sub">Contas a Receber: R$ 9.622K</div></div><div class="kpi-card k-orange"><div class="kpi-label">Dez/2025 · Posição Final</div><div class="kpi-value">R$ 20.799K</div><div class="kpi-sub">Contas a Receber: R$ 16.956K</div></div><div class="kpi-card k-green"><div class="kpi-label">2026 · Projeção</div><div class="kpi-value" style="color:var(--green)">R$ 23.497K</div><div class="kpi-sub">Contas a Receber: R$ 22.472K</div></div></div>
+<div class="kpi-grid" id="caixa-kpis"><div class="kpi-card k-purple"><div class="kpi-label">Jan/2025 · Posição Inicial</div><div class="kpi-value">R$ 11.611K</div><div class="kpi-sub">Contas a Receber: R$ 9.622K</div></div><div class="kpi-card k-orange"><div class="kpi-label">Dez/2025 · Posição Final</div><div class="kpi-value">R$ 20.799K</div><div class="kpi-sub">Contas a Receber: R$ 16.956K</div></div><div class="kpi-card k-green"><div class="kpi-label">2026 · Projeção</div><div class="kpi-value" style="color:var(--green)">R$ 23.497K</div><div class="kpi-sub">Contas a Receber: R$ 22.472K</div></div></div>
 <div class="charts-2eq">
 <div class="chart-card"><div class="chart-title">Posição de Caixa e Recebíveis</div><div class="chart-sub">R$ mil</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartCaixa" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px; cursor: default;" width="0"></canvas></div></div>
 <div class="chart-card"><div class="chart-title">Variação Líquida de Caixa</div><div class="chart-sub">R$ mil · Incrementos</div><div style="position:relative;width:100%;height:250px;"><canvas id="chartCaixaVar" height="0" style="display: block; box-sizing: border-box; height: 0px; width: 0px;" width="0"></canvas></div></div>
@@ -797,7 +800,7 @@ tr.t-ll td{font-weight:800;color:var(--purple-dark);background:rgba(22,163,74,0.
 <div class="table-card">
 <div class="table-title">Posição de Caixa e Contas a Receber</div>
 <div class="table-sub">R$ mil</div>
-<table><thead><tr><th>Componente</th><th id="cx-th-0" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(0,this)">Jan/2025</th><th id="cx-th-1" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(1,this)">Dez/2025</th><th>Var. 2025</th><th id="cx-th-2" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(2,this)">Dez/2026 (Proj.)</th><th id="cx-th-3" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(3,this)">Dez/2026 (Proj.)</th><th>Var. 2026</th></tr></thead><tbody id="caixa-body"><tr><td>Contas a Receber</td><td class="editable" data-edit-key="c_receber" data-edit-idx="0">9.622</td><td class="editable" data-edit-key="c_receber" data-edit-idx="1">16.956</td><td class="c-pos">▲ +7.334 (+76,2%)</td><td class="editable" data-edit-key="c_receber_1t">19.340</td><td class="editable" data-edit-key="c_receber" data-edit-idx="2">22.472</td><td class="c-pos">▲ +5.516 (+32,5%)</td></tr><tr><td>Caixa Disponível</td><td class="editable" data-edit-key="caixa" data-edit-idx="0">1.989</td><td class="editable" data-edit-key="caixa" data-edit-idx="1">3.843</td><td class="c-pos">▲ +1.854 (+93,2%)</td><td class="editable" data-edit-key="caixa_1t">2.009</td><td class="editable" data-edit-key="caixa" data-edit-idx="2">1.025</td><td class="c-neg">▼ -2.818 (-73,3%)</td></tr><tr class="t-total"><td>TOTAL</td><td>11.611</td><td>20.799</td><td class="c-pos">▲ +9.188 (+79,1%)</td><td>21.349</td><td>23.497</td><td class="c-pos">▲ +2.698 (+13,0%)</td></tr></tbody></table>
+<table><thead><tr><th>Componente</th><th id="cx-th-0" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(0,this)">Jan/2025</th><th id="cx-th-1" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(1,this)">Dez/2025</th><th>Var. 2025</th><th id="cx-th-2" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(2,this)">1T/2026</th><th id="cx-th-3" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(3,this)">2T/2026</th><th id="cx-th-4" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(4,this)">Jul/2026</th><th id="cx-th-5" class="cx-editable-th" title="Clique para editar" onclick="openCaixaLabelEditor(5,this)">Dez/2026 (Proj.)</th><th>Var. 2026</th></tr></thead><tbody id="caixa-body"><tr><td>Contas a Receber</td><td class="editable" data-edit-key="c_receber" data-edit-idx="0">9.622</td><td class="editable" data-edit-key="c_receber" data-edit-idx="1">16.956</td><td class="c-pos">▲ +7.334 (+76,2%)</td><td class="editable" data-edit-key="c_receber_1t">19.340</td><td class="editable" data-edit-key="c_receber_2t">0</td><td class="editable" data-edit-key="c_receber_jul">0</td><td class="editable" data-edit-key="c_receber" data-edit-idx="2">22.472</td><td class="c-pos">▲ +5.516 (+32,5%)</td></tr><tr><td>Caixa Disponível</td><td class="editable" data-edit-key="caixa" data-edit-idx="0">1.989</td><td class="editable" data-edit-key="caixa" data-edit-idx="1">3.843</td><td class="c-pos">▲ +1.854 (+93,2%)</td><td class="editable" data-edit-key="caixa_1t">2.009</td><td class="editable" data-edit-key="caixa_2t">0</td><td class="editable" data-edit-key="caixa_jul">0</td><td class="editable" data-edit-key="caixa" data-edit-idx="2">1.025</td><td class="c-neg">▼ -2.818 (-73,3%)</td></tr><tr class="t-total"><td>TOTAL</td><td>11.611</td><td>20.799</td><td class="c-pos">▲ +9.188 (+79,1%)</td><td>21.349</td><td>0</td><td>0</td><td>23.497</td><td class="c-pos">▲ +2.698 (+13,0%)</td></tr></tbody></table>
 </div>
 </div>
 
@@ -921,7 +924,7 @@ const dlBar={align:'end',anchor:'end',clip:false,color:OT.purple,font:{weight:'b
 const dlBarK={align:'end',anchor:'end',clip:false,color:OT.purple,font:{weight:'bold',size:10},formatter:v=>Math.round(v).toLocaleString('pt-BR')};
 const dl25=(color)=>({align:'bottom',anchor:'end',color:color||OT.muted,font:{weight:'600',size:9,style:'italic'},formatter:v=>Math.round(v).toLocaleString('pt-BR'),clip:false});
 const dlLineHide={display:false};
-const state={"rec_2025":[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14505,14753],"imp_2025":[839,832,785,824,884,906,1123,1194,1342,1746,1876,1920],"cvar_2025":[4038,3829,3823,3577,3934,4179,5394,5479,6243,7024,7329,7672],"cfix_2025":[1297,1342,1471,1556,1562,1630,1865,2244,2519,3088,3919,3722],"ebt_2025":[269,460,183,130,226,349,528,621,827,732,749,1002],"ll_2025":[87,280,18,-26,104,249,390,467,656,494,485,742],"gae_2025":6675,"resfin_2025":1963,"ircs_2025":559,"outros_2025":274,"rec_2026":[15184,14489,15945,16251,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026":[2033,1898,2150,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026":[743,521,808,947,983,993,959,971,1043,1041,1055,1125],"ll_2026":[451,310,565,705,587,597,571,580,636,634,645,698],"gae_2026":7290,"resfin_2026":2502,"ircs_2026":3400,"outros_2026":100,"rec_2023":60548,"rec_2024":71088,"liq_2023":53606,"liq_2024":63528,"ebitda_2023":-1912,"ebitda_2024":3208,"ll_2023":-4435,"ll_2024":0,"tri_rec_2024":[15487,17160,17580,20861],"tri_ebitda_2024":[504,774,921,1023],"div_trib":[14394,10327,8018,6935],"div_trab":[1783,2619,1400,1225],"div_forn":[2344,2134,1885,1494],"div_bndes":[150,93,0,0],"pis_cofins":[1000,1000,1000,1000,1000],"compensacoes":[1000,1000,1000,1000,1000],"c_receber":[9622,16956,22472],"caixa":[1989,3843,1025],"caixa_month_labels":["Jan/2025","Dez/2025","Dez/2026 (Proj.)"],"rec_2026_orc":[15184,14489,15945,16251,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026_orc":[2033,1898,2150,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026_orc":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_orc":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_orc":[743,521,808,947,983,993,959,971,1043,1041,1055,1125],"ll_2026_orc":[451,310,565,705,587,597,571,580,636,634,645,698],"rec_2026_real":[15184,14489,15945,16251,0,0,0,0,0,0,0,0],"imp_2026_real":[2033,1898,2150,2048,0,0,0,0,0,0,0,0],"cvar_2026_real":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_real":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_real":[743,521,808,947,0,0,0,0,0,0,0,0],"ll_2026_real":[451,310,565,705,0,0,0,0,0,0,0,0],"div_trib_1t":6275,"div_trab_1t":1225,"div_forn_1t":1349,"div_bndes_1t":0,"pis_cofins_1t":1000,"compensacoes_1t":405,"c_receber_1t":19340,"caixa_1t":2009,"proj_mes_status":[true,true,true,true,false,false,false,false,false,false,false,false]};
+const state={"rec_2025":[6956,6954,6770,6622,7151,7565,9443,10165,11525,13209,14505,14753],"imp_2025":[839,832,785,824,884,906,1123,1194,1342,1746,1876,1920],"cvar_2025":[4038,3829,3823,3577,3934,4179,5394,5479,6243,7024,7329,7672],"cfix_2025":[1297,1342,1471,1556,1562,1630,1865,2244,2519,3088,3919,3722],"ebt_2025":[269,460,183,130,226,349,528,621,827,732,749,1002],"ll_2025":[87,280,18,-26,104,249,390,467,656,494,485,742],"gae_2025":6675,"resfin_2025":1963,"ircs_2025":559,"outros_2025":274,"rec_2026":[15184,14489,15945,16251,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026":[2033,1898,2150,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026":[743,521,808,947,983,993,959,971,1043,1041,1055,1125],"ll_2026":[451,310,565,705,587,597,571,580,636,634,645,698],"gae_2026":7290,"resfin_2026":2502,"ircs_2026":3400,"outros_2026":100,"rec_2023":60548,"rec_2024":71088,"liq_2023":53606,"liq_2024":63528,"ebitda_2023":-1912,"ebitda_2024":3208,"ll_2023":-4435,"ll_2024":0,"tri_rec_2024":[15487,17160,17580,20861],"tri_ebitda_2024":[504,774,921,1023],"div_trib":[14394,10327,8018,6935],"div_trab":[1783,2619,1400,1225],"div_forn":[2344,2134,1885,1494],"div_bndes":[150,93,0,0],"pis_cofins":[1000,1000,1000,1000,1000],"compensacoes":[1000,1000,1000,1000,1000],"c_receber":[9622,16956,22472],"caixa":[1989,3843,1025],"caixa_month_labels":["Jan/2025","Dez/2025","1T/2026","2T/2026","Jul/2026","Dez/2026 (Proj.)"],"rec_2026_orc":[15184,14489,15945,16251,15466,15512,15512,15562,15847,15847,15905,16188],"imp_2026_orc":[2033,1898,2150,2048,2048,2055,2055,2062,2088,2088,2093,2119],"cvar_2026_orc":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_orc":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_orc":[743,521,808,947,983,993,959,971,1043,1041,1055,1125],"ll_2026_orc":[451,310,565,705,587,597,571,580,636,634,645,698],"rec_2026_real":[15184,14489,15945,16251,0,0,0,0,0,0,0,0],"imp_2026_real":[2033,1898,2150,2048,0,0,0,0,0,0,0,0],"cvar_2026_real":[9396,8951,9502,9588,9588,9620,9620,9656,9826,9826,9866,10037],"cfix_2026_real":[3923,3735,3962,3998,3998,4011,4011,4022,4096,4096,4112,4188],"ebt_2026_real":[743,521,808,947,0,0,0,0,0,0,0,0],"ll_2026_real":[451,310,565,705,0,0,0,0,0,0,0,0],"div_trib_1t":6275,"div_trab_1t":1225,"div_forn_1t":1349,"div_bndes_1t":0,"pis_cofins_1t":1000,"compensacoes_1t":405,"c_receber_1t":19340,"caixa_1t":2009,"div_trib_2t":0,"div_trab_2t":0,"div_forn_2t":0,"div_bndes_2t":0,"pis_cofins_2t":0,"compensacoes_2t":0,"c_receber_2t":0,"caixa_2t":0,"div_trib_jul":0,"div_trab_jul":0,"div_forn_jul":0,"div_bndes_jul":0,"pis_cofins_jul":0,"compensacoes_jul":0,"c_receber_jul":0,"caixa_jul":0,"proj_mes_status":[true,true,true,true,false,false,false,false,false,false,false,false]};
 
 // ════════════════ MIGRAÇÃO SG&A / RESULTADO FINANCEIRO ════════════════
 // Antes, gae_* e resfin_* eram UM número anual. Agora são 12 meses, para
@@ -1047,8 +1050,14 @@ function restoreMesBadges(){
 }
 
 function restoreCaixaLabels(){
-  if(!state.caixa_month_labels)return;
-  ['cx-th-0','cx-th-1','cx-th-2','cx-th-3'].forEach((id,i)=>{
+  const CX_DEF=['Jan/2025','Dez/2025','1T/2026','2T/2026','Jul/2026','Dez/2026 (Proj.)'];
+  if(!state.caixa_month_labels||state.caixa_month_labels.length<6){
+    const old=state.caixa_month_labels||[];
+    state.caixa_month_labels=CX_DEF.slice();
+    if(old.length===3){state.caixa_month_labels[0]=old[0];state.caixa_month_labels[1]=old[1];state.caixa_month_labels[5]=old[2];}
+    else old.forEach((v,i)=>{if(i<6&&v)state.caixa_month_labels[i]=v;});
+  }
+  ['cx-th-0','cx-th-1','cx-th-2','cx-th-3','cx-th-4','cx-th-5'].forEach((id,i)=>{
     const el=document.getElementById(id);
     if(el&&state.caixa_month_labels[i])el.textContent=state.caixa_month_labels[i];
   });
@@ -1173,7 +1182,7 @@ async function printActiveSection(){
       body.__pdf_render__ .kpi-grid     { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; margin: 0 0 8px 0 !important; }
       body.__pdf_render__ .kpi-3        { grid-template-columns: repeat(3, 1fr) !important; }
       body.__pdf_render__ .q-grid       { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; margin: 0 0 8px 0 !important; }
-      body.__pdf_render__ .debt-grid    { display: grid !important; grid-template-columns: repeat(5, 1fr) !important; gap: 6px !important; margin: 0 0 8px 0 !important; }
+      body.__pdf_render__ .debt-grid    { display: grid !important; grid-template-columns: repeat(7, 1fr) !important; gap: 5px !important; margin: 0 0 8px 0 !important; }
       body.__pdf_render__ .charts-2col  { display: grid !important; grid-template-columns: 3fr 2fr !important; gap: 8px !important; margin: 0 0 8px 0 !important; }
       body.__pdf_render__ .charts-2eq   { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; margin: 0 0 8px 0 !important; }
       body.__pdf_render__ .gap-highlight{ flex-direction: row !important; }
@@ -1541,15 +1550,16 @@ function renderTables(){
 
   const debtGrid=document.getElementById('debt-grid');
   debtGrid.innerHTML='';
-  const debtYears=['DEZ / 2022','DEZ / 2023','DEZ / 2024','DEZ / 2025','1T / 2026'];
-  const debtColors=['var(--red)','#ea580c','#ca8a04','var(--green)','#0891b2'];
-  const tot1tDebt2=(state.div_trib_1t||0)+(state.div_trab_1t||0)+(state.div_forn_1t||0)+(state.div_bndes_1t||0);
-  for(let i=0;i<5;i++){
+  const debtYears=['DEZ / 2022','DEZ / 2023','DEZ / 2024','DEZ / 2025','1T / 2026','2T / 2026','JUL / 2026'];
+  const debtColors=['var(--red)','#ea580c','#ca8a04','var(--green)','#0891b2','#0891b2','var(--orange)'];
+  const debtSum=sfx=>(state['div_trib'+sfx]||0)+(state['div_trab'+sfx]||0)+(state['div_forn'+sfx]||0)+(state['div_bndes'+sfx]||0);
+  const debtVals=[...d.div_total,debtSum('_1t'),debtSum('_2t'),debtSum('_jul')];
+  for(let i=0;i<7;i++){
     let sub;
     if(i===0)sub='Base de referência';
-    else if(i<4)sub=`<span style="color:var(--green)">▼ Redução: R$ ${fmtK(d.div_total[i-1]-d.div_total[i])}K</span>`;
-    else sub='<span style="color:var(--muted)"></span>';
-    const val=i<4?d.div_total[i]:tot1tDebt2;
+    else if(debtVals[i]>0&&debtVals[i-1]>0){const dl=debtVals[i-1]-debtVals[i];sub=`<span style="color:${dl>=0?'var(--green)':'var(--red)'}">${dl>=0?'▼ Redução':'▲ Aumento'}: R$ ${fmtK(Math.abs(dl))}K</span>`;}
+    else sub='<span style="color:var(--muted)">— a preencher</span>';
+    const val=debtVals[i];
     debtGrid.innerHTML+=`<div class="debt-card"><div class="debt-year">${debtYears[i]}</div><div class="debt-total" style="color:${debtColors[i]}">R$ ${fmtK(val)}K</div><div class="debt-sub">${sub}</div></div>`;
   }
 
@@ -1561,13 +1571,13 @@ function renderTables(){
     const reducao=vals[0]-vals[3];
     const v1t=state[key1t]||0;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${l}</td>${vals.map((v,i)=>`<td class="editable" data-edit-key="${key}" data-edit-idx="${i}">${fmtK(v)}</td>`).join('')}<td class="editable" data-edit-key="${key1t}">${fmtK(v1t)}</td><td class="c-pos">▼ ${fmtKsign(-reducao)}</td>`;
+    tr.innerHTML=`<td>${l}</td>${vals.map((v,i)=>`<td class="editable" data-edit-key="${key}" data-edit-idx="${i}">${fmtK(v)}</td>`).join('')}<td class="editable" data-edit-key="${key1t}">${fmtK(v1t)}</td><td class="editable" data-edit-key="${key}_2t">${fmtK(state[key+'_2t']||0)}</td><td class="editable" data-edit-key="${key}_jul">${fmtK(state[key+'_jul']||0)}</td><td class="c-pos">▼ ${fmtKsign(-reducao)}</td>`;
     divBody.appendChild(tr);
   });
   const trTot=document.createElement('tr');
   trTot.className='t-total';
-  const tot1tDebt=(state.div_trib_1t||0)+(state.div_trab_1t||0)+(state.div_forn_1t||0)+(state.div_bndes_1t||0);
-  trTot.innerHTML=`<td>TOTAL</td>${d.div_total.map(v=>`<td>${fmtK(v)}</td>`).join('')}<td>${fmtK(tot1tDebt)}</td><td class="c-pos">▼ ${fmtKsign(-(d.div_total[0]-d.div_total[3]))}</td>`;
+  const tot1tDebt=debtSum('_1t');
+  trTot.innerHTML=`<td>TOTAL</td>${d.div_total.map(v=>`<td>${fmtK(v)}</td>`).join('')}<td>${fmtK(tot1tDebt)}</td><td>${fmtK(debtSum('_2t'))}</td><td>${fmtK(debtSum('_jul'))}</td><td class="c-pos">▼ ${fmtKsign(-(d.div_total[0]-d.div_total[3]))}</td>`;
   divBody.appendChild(trTot);
 
   const credBody=document.getElementById('creditos-body');
@@ -1577,12 +1587,14 @@ function renderTables(){
     const tr=document.createElement('tr');
     if(rc)tr.className=rc;
     const v1t=state[key1t]||0;
-    tr.innerHTML=`<td>${l}</td>${vals.map((v,i)=>`<td class="editable" data-edit-key="${key}" data-edit-idx="${i}">${fmtK(v)}</td>`).join('')}<td class="editable" data-edit-key="${key1t}">${fmtK(v1t)}</td>`;
+    tr.innerHTML=`<td>${l}</td>${vals.map((v,i)=>`<td class="editable" data-edit-key="${key}" data-edit-idx="${i}">${fmtK(v)}</td>`).join('')}<td class="editable" data-edit-key="${key1t}">${fmtK(v1t)}</td><td class="editable" data-edit-key="${key}_2t">${fmtK(state[key+'_2t']||0)}</td><td class="editable" data-edit-key="${key}_jul">${fmtK(state[key+'_jul']||0)}</td>`;
     credBody.appendChild(tr);
   });
 
   const caixaKpis=document.getElementById('caixa-kpis');
-  caixaKpis.innerHTML=`<div class="kpi-card k-purple"><div class="kpi-label">Jan/2025 · Posição Inicial</div><div class="kpi-value">R$ ${fmtK(d.caixa_total[0])}K</div><div class="kpi-sub">Contas a Receber: R$ ${fmtK(state.c_receber[0])}K</div></div><div class="kpi-card k-orange"><div class="kpi-label">Dez/2025 · Posição Final</div><div class="kpi-value">R$ ${fmtK(d.caixa_total[1])}K</div><div class="kpi-sub">Contas a Receber: R$ ${fmtK(state.c_receber[1])}K</div></div><div class="kpi-card k-green"><div class="kpi-label">2026 · Projeção</div><div class="kpi-value" style="color:var(--green)">R$ ${fmtK(d.caixa_total[2])}K</div><div class="kpi-sub">Contas a Receber: R$ ${fmtK(state.c_receber[2])}K</div></div>`;
+  const cxJulTot=(state.c_receber_jul||0)+(state.caixa_jul||0);
+  const cxLbl=state.caixa_month_labels||[];
+  caixaKpis.innerHTML=`<div class="kpi-card k-purple"><div class="kpi-label">${cxLbl[0]||'Jan/2025'} · Posição Inicial</div><div class="kpi-value">R$ ${fmtK(d.caixa_total[0])}K</div><div class="kpi-sub">Contas a Receber: R$ ${fmtK(state.c_receber[0])}K</div></div><div class="kpi-card k-orange"><div class="kpi-label">${cxLbl[1]||'Dez/2025'} · Posição Final</div><div class="kpi-value">R$ ${fmtK(d.caixa_total[1])}K</div><div class="kpi-sub">Contas a Receber: R$ ${fmtK(state.c_receber[1])}K</div></div><div class="kpi-card k-purple"><div class="kpi-label">${cxLbl[4]||'Jul/2026'} · Posição Atual</div><div class="kpi-value" style="color:#0891b2">R$ ${fmtK(cxJulTot)}K</div><div class="kpi-sub">Contas a Receber: R$ ${fmtK(state.c_receber_jul||0)}K</div></div><div class="kpi-card k-green"><div class="kpi-label">2026 · Projeção</div><div class="kpi-value" style="color:var(--green)">R$ ${fmtK(d.caixa_total[2])}K</div><div class="kpi-sub">Contas a Receber: R$ ${fmtK(state.c_receber[2])}K</div></div>`;
 
   const caixaBody=document.getElementById('caixa-body');
   caixaBody.innerHTML='';
@@ -1591,13 +1603,15 @@ function renderTables(){
   caixaRows.forEach(([l,v,key,key1t])=>{
     const v1t=state[key1t]||0;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${l}</td><td class="editable" data-edit-key="${key}" data-edit-idx="0">${fmtK(v[0])}</td><td class="editable" data-edit-key="${key}" data-edit-idx="1">${fmtK(v[1])}</td>${fmtVar(v[1]-v[0],v[0])}<td class="editable" data-edit-key="${key1t}">${fmtK(v1t)}</td><td class="editable" data-edit-key="${key}" data-edit-idx="2">${fmtK(v[2])}</td>${fmtVar(v[2]-v[1],v[1])}`;
+    tr.innerHTML=`<td>${l}</td><td class="editable" data-edit-key="${key}" data-edit-idx="0">${fmtK(v[0])}</td><td class="editable" data-edit-key="${key}" data-edit-idx="1">${fmtK(v[1])}</td>${fmtVar(v[1]-v[0],v[0])}<td class="editable" data-edit-key="${key1t}">${fmtK(v1t)}</td><td class="editable" data-edit-key="${key}_2t">${fmtK(state[key+'_2t']||0)}</td><td class="editable" data-edit-key="${key}_jul">${fmtK(state[key+'_jul']||0)}</td><td class="editable" data-edit-key="${key}" data-edit-idx="2">${fmtK(v[2])}</td>${fmtVar(v[2]-v[1],v[1])}`;
     caixaBody.appendChild(tr);
   });
   const trTotCx=document.createElement('tr');
   trTotCx.className='t-total';
   const cxTot1t=(state.c_receber_1t||0)+(state.caixa_1t||0);
-  trTotCx.innerHTML=`<td>TOTAL</td><td>${fmtK(d.caixa_total[0])}</td><td>${fmtK(d.caixa_total[1])}</td>${fmtVar(d.caixa_total[1]-d.caixa_total[0],d.caixa_total[0])}<td>${fmtK(cxTot1t)}</td><td>${fmtK(d.caixa_total[2])}</td>${fmtVar(d.caixa_total[2]-d.caixa_total[1],d.caixa_total[1])}`;
+  const cxTot2t=(state.c_receber_2t||0)+(state.caixa_2t||0);
+  const cxTotJul=(state.c_receber_jul||0)+(state.caixa_jul||0);
+  trTotCx.innerHTML=`<td>TOTAL</td><td>${fmtK(d.caixa_total[0])}</td><td>${fmtK(d.caixa_total[1])}</td>${fmtVar(d.caixa_total[1]-d.caixa_total[0],d.caixa_total[0])}<td>${fmtK(cxTot1t)}</td><td>${fmtK(cxTot2t)}</td><td>${fmtK(cxTotJul)}</td><td>${fmtK(d.caixa_total[2])}</td>${fmtVar(d.caixa_total[2]-d.caixa_total[1],d.caixa_total[1])}`;
   caixaBody.appendChild(trTotCx);
 }
 let charts={};
@@ -1678,38 +1692,48 @@ function initCharts(){
     {label:'Margem %',data:margens,type:'line',borderColor:OT.purple,backgroundColor:'transparent',borderWidth:2.5,pointRadius:5,pointBackgroundColor:OT.purple,yAxisID:'y2',datalabels:dlLineHide}
   ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:{x:sc.x,y:sc.y,y2:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v.toFixed(1)+'%',color:OT.purpleM}}}}});
 
-  const tot1tD=(state.div_trib_1t||0)+(state.div_trab_1t||0)+(state.div_forn_1t||0)+(state.div_bndes_1t||0);
-  charts.divida=new Chart('chartDivida',{type:'line',data:{labels:['Dez/22','Dez/23','Dez/24','Dez/25','1T/26'],datasets:[
-    {label:'Endividamento Total (R$ mil)',data:[...d.div_total,tot1tD],borderColor:OT.red,backgroundColor:'rgba(220,38,38,0.1)',borderWidth:2.5,fill:true,tension:0.3,
-      pointRadius:[6,6,6,6,8],pointBackgroundColor:[OT.red,OT.red,OT.red,OT.red,'#0891b2'],pointBorderColor:['transparent','transparent','transparent','transparent','#fff'],pointBorderWidth:[0,0,0,0,2],
-      datalabels:{align:'top',color:[OT.red,OT.red,OT.red,OT.red,'#0891b2'],font:{weight:'bold'},formatter:v=>v>0?(v/1000).toFixed(1):'—'}}
+  const DEBT_SUM=sfx=>(state['div_trib'+sfx]||0)+(state['div_trab'+sfx]||0)+(state['div_forn'+sfx]||0)+(state['div_bndes'+sfx]||0);
+  const DEBT_LABELS=['Dez/22','Dez/23','Dez/24','Dez/25','1T/26','2T/26','Jul/26'];
+  const DEBT_PTC=[OT.red,OT.red,OT.red,OT.red,'#0891b2','#0891b2',OT.orange];
+  const debtSerie=()=>[...d.div_total,DEBT_SUM('_1t'),DEBT_SUM('_2t'),DEBT_SUM('_jul')].map(v=>v>0?v:null);
+  charts.divida=new Chart('chartDivida',{type:'line',data:{labels:DEBT_LABELS,datasets:[
+    {label:'Endividamento Total (R$ mil)',data:debtSerie(),borderColor:OT.red,backgroundColor:'rgba(220,38,38,0.1)',borderWidth:2.5,fill:true,tension:0.3,
+      pointRadius:[6,6,6,6,7,7,9],pointBackgroundColor:DEBT_PTC,pointBorderColor:['transparent','transparent','transparent','transparent','#fff','#fff','#fff'],pointBorderWidth:[0,0,0,0,2,2,2],
+      datalabels:{align:'top',color:DEBT_PTC,font:{weight:'bold'},formatter:v=>v>0?(v/1000).toFixed(1):'—'}}
   ]},options:{responsive:true,layout:{padding:{top:32}},plugins:{legend:{display:false},tooltip:tip},scales:sc}});
 
-  charts.dividaComp=new Chart('chartDividaComp',{type:'bar',data:{labels:['Dez/22','Dez/23','Dez/24','Dez/25','1T/26'],datasets:[
-    {label:'Tributário',data:[...state.div_trib,state.div_trib_1t||0],backgroundColor:OT.redA,datalabels:{display:false}},
-    {label:'Trabalhista/Cível',data:[...state.div_trab,state.div_trab_1t||0],backgroundColor:'rgba(234,88,12,0.75)',datalabels:{display:false}},
-    {label:'Fornecedores (ECT)',data:[...state.div_forn,state.div_forn_1t||0],backgroundColor:OT.orangeA,datalabels:{display:false}},
-    {label:'BNDES',data:[...state.div_bndes,state.div_bndes_1t||0],backgroundColor:OT.blueA,datalabels:{display:false}},
+  charts.dividaComp=new Chart('chartDividaComp',{type:'bar',data:{labels:DEBT_LABELS,datasets:[
+    {label:'Tributário',data:[...state.div_trib,state.div_trib_1t||0,state.div_trib_2t||0,state.div_trib_jul||0],backgroundColor:OT.redA,datalabels:{display:false}},
+    {label:'Trabalhista/Cível',data:[...state.div_trab,state.div_trab_1t||0,state.div_trab_2t||0,state.div_trab_jul||0],backgroundColor:'rgba(234,88,12,0.75)',datalabels:{display:false}},
+    {label:'Fornecedores (ECT)',data:[...state.div_forn,state.div_forn_1t||0,state.div_forn_2t||0,state.div_forn_jul||0],backgroundColor:OT.orangeA,datalabels:{display:false}},
+    {label:'BNDES',data:[...state.div_bndes,state.div_bndes_1t||0,state.div_bndes_2t||0,state.div_bndes_jul||0],backgroundColor:OT.blueA,datalabels:{display:false}},
   ]},options:{responsive:true,plugins:{legend:leg(),tooltip:tip},scales:{x:{...sc.x,stacked:true},y:{...sc.y,stacked:true}}}});
 
-  charts.caixa=new Chart('chartCaixa',{type:'bar',data:{labels:['Jan/2025','Dez/2025','1T/2026','Dez/2026 (Proj.)'],datasets:[
-    {label:'Contas a Receber',data:[state.c_receber[0],state.c_receber[1],state.c_receber_1t||0,state.c_receber[2]],backgroundColor:OT.purpleMa,borderRadius:5,datalabels:dlBar},
-    {label:'Caixa',data:[state.caixa[0],state.caixa[1],state.caixa_1t||0,state.caixa[2]],backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar}
+  const CX_LAB=state.caixa_month_labels||['Jan/2025','Dez/2025','1T/2026','2T/2026','Jul/2026','Dez/2026 (Proj.)'];
+  charts.caixa=new Chart('chartCaixa',{type:'bar',data:{labels:CX_LAB.slice(0,6),datasets:[
+    {label:'Contas a Receber',data:[state.c_receber[0],state.c_receber[1],state.c_receber_1t||0,state.c_receber_2t||0,state.c_receber_jul||0,state.c_receber[2]],backgroundColor:OT.purpleMa,borderRadius:5,datalabels:dlBar},
+    {label:'Caixa',data:[state.caixa[0],state.caixa[1],state.caixa_1t||0,state.caixa_2t||0,state.caixa_jul||0,state.caixa[2]],backgroundColor:OT.orangeA,borderRadius:5,datalabels:dlBar}
   ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:leg(),tooltip:tip},scales:sc}});
 
-  const cx1t=(state.c_receber_1t||0)+(state.caixa_1t||0);
-  const variacoes=[
-    state.c_receber[1]-state.c_receber[0],
-    state.caixa[1]-state.caixa[0],
-    d.caixa_total[1]-d.caixa_total[0],
-    (state.c_receber_1t||0)-state.c_receber[1],
-    (state.caixa_1t||0)-state.caixa[1],
-    cx1t-d.caixa_total[1],
-    state.c_receber[2]-state.c_receber[1],
-    d.caixa_total[2]-d.caixa_total[1]
-  ];
-  charts.caixaVar=new Chart('chartCaixaVar',{type:'bar',data:{labels:['Δ C.Rec\n2025','Δ Caixa\n2025','Δ Total\n2025','Δ C.Rec\n1T','Δ Caixa\n1T','Δ Total\n1T','Δ C.Rec\n2026','Δ Total\n2026'],datasets:[
-    {label:'Variação (R$ mil)',data:variacoes,backgroundColor:[OT.purpleMa,OT.orangeA,'rgba(60,0,60,0.75)','rgba(8,145,178,0.75)','rgba(8,145,178,0.75)','rgba(8,145,178,0.9)',OT.purpleMa,'rgba(60,0,60,0.65)'],borderRadius:5,datalabels:dlBar}
+  const CX_VAR=()=>{
+    const t1=(state.c_receber_1t||0)+(state.caixa_1t||0);
+    const t2=(state.c_receber_2t||0)+(state.caixa_2t||0);
+    const tj=(state.c_receber_jul||0)+(state.caixa_jul||0);
+    return[
+      state.c_receber[1]-state.c_receber[0],
+      state.caixa[1]-state.caixa[0],
+      d.caixa_total[1]-d.caixa_total[0],
+      (state.c_receber_1t||0)-state.c_receber[1],
+      (state.caixa_1t||0)-state.caixa[1],
+      t1-d.caixa_total[1],
+      t2>0?t2-t1:0,
+      tj>0?tj-(t2>0?t2:t1):0,
+      state.c_receber[2]-state.c_receber[1],
+      d.caixa_total[2]-d.caixa_total[1]
+    ];
+  };
+  charts.caixaVar=new Chart('chartCaixaVar',{type:'bar',data:{labels:['Δ C.Rec\n2025','Δ Caixa\n2025','Δ Total\n2025','Δ C.Rec\n1T','Δ Caixa\n1T','Δ Total\n1T','Δ Total\n2T','Δ Total\nJul','Δ C.Rec\n2026','Δ Total\n2026'],datasets:[
+    {label:'Variação (R$ mil)',data:CX_VAR(),backgroundColor:[OT.purpleMa,OT.orangeA,'rgba(60,0,60,0.75)','rgba(8,145,178,0.75)','rgba(8,145,178,0.75)','rgba(8,145,178,0.9)','rgba(8,145,178,0.9)',OT.orangeA,OT.purpleMa,'rgba(60,0,60,0.65)'],borderRadius:5,datalabels:dlBar}
   ]},options:{responsive:true,layout:{padding:{top:28}},plugins:{legend:{display:false},tooltip:tip},scales:sc}});
 
   // Gráficos de Projeção 2026 — try/catch defensivo (não cascateia se um falhar)
@@ -1787,23 +1811,28 @@ function updateCharts(){
   charts.histEbitda.data.datasets[1].data=margens;
   charts.histEbitda.update();
 
-  const _tot1tD=(state.div_trib_1t||0)+(state.div_trab_1t||0)+(state.div_forn_1t||0)+(state.div_bndes_1t||0);
-  charts.divida.data.datasets[0].data=[...d.div_total,_tot1tD];
-  charts.divida.data.datasets[0].pointBackgroundColor=[OT.red,OT.red,OT.red,OT.red,'#0891b2'];
-  charts.divida.data.datasets[0].datalabels.color=[OT.red,OT.red,OT.red,OT.red,'#0891b2'];
+  const _DSUM=sfx=>(state['div_trib'+sfx]||0)+(state['div_trab'+sfx]||0)+(state['div_forn'+sfx]||0)+(state['div_bndes'+sfx]||0);
+  const _DPTC=[OT.red,OT.red,OT.red,OT.red,'#0891b2','#0891b2',OT.orange];
+  charts.divida.data.labels=['Dez/22','Dez/23','Dez/24','Dez/25','1T/26','2T/26','Jul/26'];
+  charts.divida.data.datasets[0].data=[...d.div_total,_DSUM('_1t'),_DSUM('_2t'),_DSUM('_jul')].map(v=>v>0?v:null);
+  charts.divida.data.datasets[0].pointBackgroundColor=_DPTC;
+  charts.divida.data.datasets[0].datalabels.color=_DPTC;
   charts.divida.update();
 
-  charts.dividaComp.data.datasets[0].data=[...state.div_trib,state.div_trib_1t||0];
-  charts.dividaComp.data.datasets[1].data=[...state.div_trab,state.div_trab_1t||0];
-  charts.dividaComp.data.datasets[2].data=[...state.div_forn,state.div_forn_1t||0];
-  charts.dividaComp.data.datasets[3].data=[...state.div_bndes,state.div_bndes_1t||0];
+  charts.dividaComp.data.datasets[0].data=[...state.div_trib,state.div_trib_1t||0,state.div_trib_2t||0,state.div_trib_jul||0];
+  charts.dividaComp.data.datasets[1].data=[...state.div_trab,state.div_trab_1t||0,state.div_trab_2t||0,state.div_trab_jul||0];
+  charts.dividaComp.data.datasets[2].data=[...state.div_forn,state.div_forn_1t||0,state.div_forn_2t||0,state.div_forn_jul||0];
+  charts.dividaComp.data.datasets[3].data=[...state.div_bndes,state.div_bndes_1t||0,state.div_bndes_2t||0,state.div_bndes_jul||0];
   charts.dividaComp.update();
 
-  charts.caixa.data.datasets[0].data=[state.c_receber[0],state.c_receber[1],state.c_receber_1t||0,state.c_receber[2]];
-  charts.caixa.data.datasets[1].data=[state.caixa[0],state.caixa[1],state.caixa_1t||0,state.caixa[2]];
+  if(state.caixa_month_labels&&state.caixa_month_labels.length>=6)charts.caixa.data.labels=state.caixa_month_labels.slice(0,6);
+  charts.caixa.data.datasets[0].data=[state.c_receber[0],state.c_receber[1],state.c_receber_1t||0,state.c_receber_2t||0,state.c_receber_jul||0,state.c_receber[2]];
+  charts.caixa.data.datasets[1].data=[state.caixa[0],state.caixa[1],state.caixa_1t||0,state.caixa_2t||0,state.caixa_jul||0,state.caixa[2]];
   charts.caixa.update();
 
   const _cx1t=(state.c_receber_1t||0)+(state.caixa_1t||0);
+  const _cx2t=(state.c_receber_2t||0)+(state.caixa_2t||0);
+  const _cxJul=(state.c_receber_jul||0)+(state.caixa_jul||0);
   charts.caixaVar.data.datasets[0].data=[
     state.c_receber[1]-state.c_receber[0],
     state.caixa[1]-state.caixa[0],
@@ -1811,6 +1840,8 @@ function updateCharts(){
     (state.c_receber_1t||0)-state.c_receber[1],
     (state.caixa_1t||0)-state.caixa[1],
     _cx1t-d.caixa_total[1],
+    _cx2t>0?_cx2t-_cx1t:0,
+    _cxJul>0?_cxJul-(_cx2t>0?_cx2t:_cx1t):0,
     state.c_receber[2]-state.c_receber[1],
     d.caixa_total[2]-d.caixa_total[1]
   ];
@@ -1881,8 +1912,8 @@ function downloadTemplate(){
     ['   Mensal_2026 -> alimenta projeção 2026'],
     ['   Historico_Anual -> APENAS 2023 e 2024 (2025/2026 vêm das abas mensais)'],
     ['   Trimestral_Comp -> APENAS 2024 trimestral'],
-    ['   Endividamento -> 4 categorias x 5 períodos (Dez/22, Dez/23, Dez/24, Dez/25, 1T/26) + créditos'],
-    ['   Caixa -> 4 momentos (Jan/25, Dez/25, 1T/26, Dez/26 Proj.)'],
+    ['   Endividamento -> 4 categorias x 7 períodos (Dez/22, Dez/23, Dez/24, Dez/25, 1T/26, 2T/26, Jul/26) + créditos'],
+    ['   Caixa -> 6 momentos (Jan/25, Dez/25, 1T/26, 2T/26, Jul/26, Dez/26 Proj.)'],
     [],
     ['4. SG&A e Resultado Financeiro agora sao MENSAIS (colunas B ate M).'],
     ['   Se voce preencher so a coluna B, o dashboard divide o valor por 12.'],
@@ -1957,28 +1988,28 @@ function downloadTemplate(){
   XLSX.utils.book_append_sheet(wb,wsT,'Trimestral_Comp');
 
   const debt=[
-    ['Categoria','Dez/2022','Dez/2023','Dez/2024','Dez/2025','1T/2026'],
-    ['Tributário',...state.div_trib,state.div_trib_1t||0],
-    ['Trabalhista e Cível',...state.div_trab,state.div_trab_1t||0],
-    ['Fornecedores (ECT)',...state.div_forn,state.div_forn_1t||0],
-    ['BNDES',...state.div_bndes,state.div_bndes_1t||0],
+    ['Categoria','Dez/2022','Dez/2023','Dez/2024','Dez/2025','1T/2026','2T/2026','Jul/2026'],
+    ['Tributário',...state.div_trib,state.div_trib_1t||0,state.div_trib_2t||0,state.div_trib_jul||0],
+    ['Trabalhista e Cível',...state.div_trab,state.div_trab_1t||0,state.div_trab_2t||0,state.div_trab_jul||0],
+    ['Fornecedores (ECT)',...state.div_forn,state.div_forn_1t||0,state.div_forn_2t||0,state.div_forn_jul||0],
+    ['BNDES',...state.div_bndes,state.div_bndes_1t||0,state.div_bndes_2t||0,state.div_bndes_jul||0],
     [],
     ['Créditos Fiscais — PIS/Cofins'],
-    ['Indicador','Dez/2021','Dez/2022','Dez/2023','Dez/2024','Dez/2025','1T/2026'],
-    ['Saldo PIS/Cofins',...state.pis_cofins,state.pis_cofins_1t||0],
-    ['Compensações Realizadas',...state.compensacoes,state.compensacoes_1t||0],
+    ['Indicador','Dez/2021','Dez/2022','Dez/2023','Dez/2024','Dez/2025','1T/2026','2T/2026','Jul/2026'],
+    ['Saldo PIS/Cofins',...state.pis_cofins,state.pis_cofins_1t||0,state.pis_cofins_2t||0,state.pis_cofins_jul||0],
+    ['Compensações Realizadas',...state.compensacoes,state.compensacoes_1t||0,state.compensacoes_2t||0,state.compensacoes_jul||0],
   ];
   const wsD=XLSX.utils.aoa_to_sheet(debt);
-  wsD['!cols']=[{wch:30},...Array(6).fill({wch:14})];
+  wsD['!cols']=[{wch:30},...Array(8).fill({wch:14})];
   XLSX.utils.book_append_sheet(wb,wsD,'Endividamento');
 
   const cx=[
-    ['Componente','Jan/2025','Dez/2025','1T/2026','Dez/2026 (Proj.)'],
-    ['Contas a Receber',state.c_receber[0],state.c_receber[1],state.c_receber_1t||0,state.c_receber[2]],
-    ['Caixa Disponível',state.caixa[0],state.caixa[1],state.caixa_1t||0,state.caixa[2]],
+    ['Componente','Jan/2025','Dez/2025','1T/2026','2T/2026','Jul/2026','Dez/2026 (Proj.)'],
+    ['Contas a Receber',state.c_receber[0],state.c_receber[1],state.c_receber_1t||0,state.c_receber_2t||0,state.c_receber_jul||0,state.c_receber[2]],
+    ['Caixa Disponível',state.caixa[0],state.caixa[1],state.caixa_1t||0,state.caixa_2t||0,state.caixa_jul||0,state.caixa[2]],
   ];
   const wsC=XLSX.utils.aoa_to_sheet(cx);
-  wsC['!cols']=[{wch:25},...Array(4).fill({wch:18})];
+  wsC['!cols']=[{wch:25},...Array(6).fill({wch:18})];
   XLSX.utils.book_append_sheet(wb,wsC,'Caixa');
 
   XLSX.writeFile(wb,'Template_OT_Dashboard.xlsx');
@@ -2098,14 +2129,45 @@ async function handleFileUpload(event){
           if(rC>0)newState.compensacoes_1t=cell('Endividamento',col1T+rC);
         }
       }
+      // NOVO: colunas 2T/2026 e Jul/2026
+      const p2T=/2\s*T/i, pJul=/jul/i;
+      [['_2t',p2T],['_jul',pJul]].forEach(([sfx,pat])=>{
+        if(rT>0){
+          const col=findColByHeader('Endividamento',rT-2,pat);
+          if(col){
+            newState['div_trib'+sfx]=cell('Endividamento',col+rT);
+            if(rTr>0)newState['div_trab'+sfx]=cell('Endividamento',col+rTr);
+            if(rF>0)newState['div_forn'+sfx]=cell('Endividamento',col+rF);
+            if(rB>0)newState['div_bndes'+sfx]=cell('Endividamento',col+rB);
+          }
+        }
+        if(rP>0){
+          const col=findColByHeader('Endividamento',rP-2,pat);
+          if(col){
+            newState['pis_cofins'+sfx]=cell('Endividamento',col+rP);
+            if(rC>0)newState['compensacoes'+sfx]=cell('Endividamento',col+rC);
+          }
+        }
+      });
     }
     if(wb.Sheets['Caixa']){
       const rCR=findRow('Caixa','Contas a Receber'),rCx=findRow('Caixa','Caixa');
       // Detecta layout (com ou sem 1T) procurando 1T no cabeçalho (linha acima dos dados)
       const dataRow=rCR>0?rCR:(rCx>0?rCx:2);
-      const p1T=/1\s*T|1\s*[\/\-]\s*2?6/i, pDez26=/Dez\s*[\/\-]?\s*2?6|2026/i;
+      const p1T=/1\s*T|1\s*[\/\-]\s*2?6/i, pDez26=/Dez\s*[\/\-]?\s*(20)?26|Proj/i;
+      const p2T=/2\s*T/i, pJul=/jul/i;
       const col1T=findColByHeader('Caixa',dataRow-2,p1T);
       const colDez26=findColByHeader('Caixa',dataRow-2,pDez26);
+      const col2T=findColByHeader('Caixa',dataRow-2,p2T);
+      const colJul=findColByHeader('Caixa',dataRow-2,pJul);
+      if(col2T){
+        if(rCR>0)newState.c_receber_2t=cell('Caixa',col2T+rCR);
+        if(rCx>0)newState.caixa_2t=cell('Caixa',col2T+rCx);
+      }
+      if(colJul){
+        if(rCR>0)newState.c_receber_jul=cell('Caixa',colJul+rCR);
+        if(rCx>0)newState.caixa_jul=cell('Caixa',colJul+rCx);
+      }
       if(col1T&&colDez26){
         // Novo layout: B=Jan, C=Dez25, depois 1T e Dez26 em alguma ordem
         if(rCR>0){newState.c_receber=['B','C',colDez26].map(c=>cell('Caixa',c+rCR));newState.c_receber_1t=cell('Caixa',col1T+rCR);}
@@ -2137,10 +2199,14 @@ function compareStates(a,b){
     'Trimestral 2024':['tri_rec_2024','tri_ebitda_2024'],
     'Endividamento':['div_trib','div_trab','div_forn','div_bndes','pis_cofins','compensacoes'],
     'Endividamento 1T/2026':['div_trib_1t','div_trab_1t','div_forn_1t','div_bndes_1t','pis_cofins_1t','compensacoes_1t'],
+    'Endividamento 2T/2026':['div_trib_2t','div_trab_2t','div_forn_2t','div_bndes_2t','pis_cofins_2t','compensacoes_2t'],
+    'Endividamento Jul/2026':['div_trib_jul','div_trab_jul','div_forn_jul','div_bndes_jul','pis_cofins_jul','compensacoes_jul'],
     'Caixa':['c_receber','caixa'],
     'Caixa 1T/2026':['c_receber_1t','caixa_1t'],
+    'Caixa 2T/2026':['c_receber_2t','caixa_2t'],
+    'Caixa Jul/2026':['c_receber_jul','caixa_jul'],
   };
-  const labels={rec_2025:'Receita Bruta 2025',imp_2025:'Impostos 2025',cvar_2025:'Custos Variáveis 2025',cfix_2025:'Custos Fixos 2025',ebt_2025:'EBITDA 2025',ll_2025:'LAIR 2025',gae_2025:'Despesas SG&A 2025',resfin_2025:'Res. Financeiro 2025',ircs_2025:'IR/CSLL 2025',outros_2025:'Outros 2025',rec_2026:'Receita Bruta 2026',imp_2026:'Impostos 2026',cvar_2026:'Custos Variáveis 2026',cfix_2026:'Custos Fixos 2026',ebt_2026:'EBITDA 2026',ll_2026:'LAIR 2026',gae_2026:'Despesas SG&A 2026',resfin_2026:'Res. Financeiro 2026',ircs_2026:'IR/CSLL 2026',outros_2026:'Outros 2026',rec_2023:'Receita Bruta 2023',rec_2024:'Receita Bruta 2024',liq_2023:'Receita Líquida 2023',liq_2024:'Receita Líquida 2024',ebitda_2023:'EBITDA 2023',ebitda_2024:'EBITDA 2024',ll_2023:'LAIR 2023',ll_2024:'LAIR 2024',tri_rec_2024:'Receita Trim. 2024',tri_ebitda_2024:'EBITDA Trim. 2024',div_trib:'Dívida Tributária',div_trab:'Dívida Trabalhista',div_forn:'Dívida Fornecedores',div_bndes:'Dívida BNDES',pis_cofins:'Saldo PIS/Cofins',compensacoes:'Compensações',c_receber:'Contas a Receber',caixa:'Caixa Disponível'};
+  const labels={div_trib_2t:'Dívida Tributária 2T/26',div_trab_2t:'Dívida Trabalhista 2T/26',div_forn_2t:'Dívida Fornecedores 2T/26',div_bndes_2t:'Dívida BNDES 2T/26',pis_cofins_2t:'PIS/Cofins 2T/26',compensacoes_2t:'Compensações 2T/26',c_receber_2t:'Contas a Receber 2T/26',caixa_2t:'Caixa 2T/26',div_trib_jul:'Dívida Tributária Jul/26',div_trab_jul:'Dívida Trabalhista Jul/26',div_forn_jul:'Dívida Fornecedores Jul/26',div_bndes_jul:'Dívida BNDES Jul/26',pis_cofins_jul:'PIS/Cofins Jul/26',compensacoes_jul:'Compensações Jul/26',c_receber_jul:'Contas a Receber Jul/26',caixa_jul:'Caixa Jul/26',rec_2025:'Receita Bruta 2025',imp_2025:'Impostos 2025',cvar_2025:'Custos Variáveis 2025',cfix_2025:'Custos Fixos 2025',ebt_2025:'EBITDA 2025',ll_2025:'LAIR 2025',gae_2025:'Despesas SG&A 2025',resfin_2025:'Res. Financeiro 2025',ircs_2025:'IR/CSLL 2025',outros_2025:'Outros 2025',rec_2026:'Receita Bruta 2026',imp_2026:'Impostos 2026',cvar_2026:'Custos Variáveis 2026',cfix_2026:'Custos Fixos 2026',ebt_2026:'EBITDA 2026',ll_2026:'LAIR 2026',gae_2026:'Despesas SG&A 2026',resfin_2026:'Res. Financeiro 2026',ircs_2026:'IR/CSLL 2026',outros_2026:'Outros 2026',rec_2023:'Receita Bruta 2023',rec_2024:'Receita Bruta 2024',liq_2023:'Receita Líquida 2023',liq_2024:'Receita Líquida 2024',ebitda_2023:'EBITDA 2023',ebitda_2024:'EBITDA 2024',ll_2023:'LAIR 2023',ll_2024:'LAIR 2024',tri_rec_2024:'Receita Trim. 2024',tri_ebitda_2024:'EBITDA Trim. 2024',div_trib:'Dívida Tributária',div_trab:'Dívida Trabalhista',div_forn:'Dívida Fornecedores',div_bndes:'Dívida BNDES',pis_cofins:'Saldo PIS/Cofins',compensacoes:'Compensações',c_receber:'Contas a Receber',caixa:'Caixa Disponível'};
   const periodLabels={_12:MONTHS,_4tri:['1T','2T','3T','4T'],_4dez:['Dez/22','Dez/23','Dez/24','Dez/25'],_5dez:['Dez/21','Dez/22','Dez/23','Dez/24','Dez/25'],_3cx:['Jan/25','Dez/25','Dez/26']};
   const periodMap={rec_2025:'_12',imp_2025:'_12',cvar_2025:'_12',cfix_2025:'_12',ebt_2025:'_12',ll_2025:'_12',rec_2026:'_12',imp_2026:'_12',cvar_2026:'_12',cfix_2026:'_12',ebt_2026:'_12',ll_2026:'_12',gae_2025:'_12',resfin_2025:'_12',gae_2026:'_12',resfin_2026:'_12',tri_rec_2024:'_4tri',tri_ebitda_2024:'_4tri',div_trib:'_4dez',div_trab:'_4dez',div_forn:'_4dez',div_bndes:'_4dez',pis_cofins:'_5dez',compensacoes:'_5dez',c_receber:'_3cx',caixa:'_3cx'};
   const gc={};
@@ -2304,7 +2370,7 @@ window.addEventListener('beforeprint',_resizeAllChartsForPrint);
 window.addEventListener('afterprint',()=>setTimeout(_resizeAllChartsForPrint,100));
 
 // ════════════════ INLINE EDITOR (CLIQUE-E-EDITA) ════════════════
-const FIELD_LABELS={rec_2025:'Receita Bruta 2025',rec_2026_real:'Receita Bruta Real.',imp_2026_real:'Impostos Real.',cvar_2026_real:'Custos Variáveis Real.',cfix_2026_real:'Custos Fixos Real.',ebt_2026_real:'EBITDA Real.',ll_2026_real:'LAIR Real.',div_trib_1t:'Dívida Tributária 1T/26',div_trab_1t:'Dívida Trabalhista 1T/26',div_forn_1t:'Dívida Fornecedores 1T/26',div_bndes_1t:'Dívida BNDES 1T/26',pis_cofins_1t:'PIS/Cofins 1T/26',compensacoes_1t:'Compensações 1T/26',c_receber_1t:'Contas a Receber 1T/26',caixa_1t:'Caixa 1T/26',imp_2025:'Impostos 2025',cvar_2025:'Custos Variáveis 2025',cfix_2025:'Custos Fixos 2025',ebt_2025:'EBITDA 2025',ll_2025:'LAIR 2025',gae_2025:'Despesas SG&A 2025',resfin_2025:'Res. Financeiro 2025',ircs_2025:'IR/CSLL 2025',outros_2025:'Outros 2025',rec_2026:'Receita Bruta 2026',imp_2026:'Impostos 2026',cvar_2026:'Custos Variáveis 2026',cfix_2026:'Custos Fixos 2026',ebt_2026:'EBITDA 2026',ll_2026:'LAIR 2026',liq_2026:'Receita Líquida 2026',rec_2023:'Receita Bruta 2023',rec_2024:'Receita Bruta 2024',liq_2023:'Receita Líquida 2023',liq_2024:'Receita Líquida 2024',ebitda_2023:'EBITDA 2023',ebitda_2024:'EBITDA 2024',ll_2023:'LAIR 2023',ll_2024:'LAIR 2024',tri_rec_2024:'Receita Trim. 2024',tri_ebitda_2024:'EBITDA Trim. 2024',div_trib:'Dívida Tributária',div_trab:'Dívida Trabalhista',div_forn:'Dívida Fornecedores',div_bndes:'Dívida BNDES',pis_cofins:'PIS/Cofins',compensacoes:'Compensações',c_receber:'Contas a Receber',caixa:'Caixa Disponível'};
+const FIELD_LABELS={div_trib_2t:'Dívida Tributária 2T/26',div_trab_2t:'Dívida Trabalhista 2T/26',div_forn_2t:'Dívida Fornecedores 2T/26',div_bndes_2t:'Dívida BNDES 2T/26',pis_cofins_2t:'PIS/Cofins 2T/26',compensacoes_2t:'Compensações 2T/26',c_receber_2t:'Contas a Receber 2T/26',caixa_2t:'Caixa 2T/26',div_trib_jul:'Dívida Tributária Jul/26',div_trab_jul:'Dívida Trabalhista Jul/26',div_forn_jul:'Dívida Fornecedores Jul/26',div_bndes_jul:'Dívida BNDES Jul/26',pis_cofins_jul:'PIS/Cofins Jul/26',compensacoes_jul:'Compensações Jul/26',c_receber_jul:'Contas a Receber Jul/26',caixa_jul:'Caixa Jul/26',rec_2025:'Receita Bruta 2025',rec_2026_real:'Receita Bruta Real.',imp_2026_real:'Impostos Real.',cvar_2026_real:'Custos Variáveis Real.',cfix_2026_real:'Custos Fixos Real.',ebt_2026_real:'EBITDA Real.',ll_2026_real:'LAIR Real.',div_trib_1t:'Dívida Tributária 1T/26',div_trab_1t:'Dívida Trabalhista 1T/26',div_forn_1t:'Dívida Fornecedores 1T/26',div_bndes_1t:'Dívida BNDES 1T/26',pis_cofins_1t:'PIS/Cofins 1T/26',compensacoes_1t:'Compensações 1T/26',c_receber_1t:'Contas a Receber 1T/26',caixa_1t:'Caixa 1T/26',imp_2025:'Impostos 2025',cvar_2025:'Custos Variáveis 2025',cfix_2025:'Custos Fixos 2025',ebt_2025:'EBITDA 2025',ll_2025:'LAIR 2025',gae_2025:'Despesas SG&A 2025',resfin_2025:'Res. Financeiro 2025',ircs_2025:'IR/CSLL 2025',outros_2025:'Outros 2025',rec_2026:'Receita Bruta 2026',imp_2026:'Impostos 2026',cvar_2026:'Custos Variáveis 2026',cfix_2026:'Custos Fixos 2026',ebt_2026:'EBITDA 2026',ll_2026:'LAIR 2026',liq_2026:'Receita Líquida 2026',rec_2023:'Receita Bruta 2023',rec_2024:'Receita Bruta 2024',liq_2023:'Receita Líquida 2023',liq_2024:'Receita Líquida 2024',ebitda_2023:'EBITDA 2023',ebitda_2024:'EBITDA 2024',ll_2023:'LAIR 2023',ll_2024:'LAIR 2024',tri_rec_2024:'Receita Trim. 2024',tri_ebitda_2024:'EBITDA Trim. 2024',div_trib:'Dívida Tributária',div_trab:'Dívida Trabalhista',div_forn:'Dívida Fornecedores',div_bndes:'Dívida BNDES',pis_cofins:'PIS/Cofins',compensacoes:'Compensações',c_receber:'Contas a Receber',caixa:'Caixa Disponível'};
 const FIELD_PERIODS={rec_2025:MONTHS,imp_2025:MONTHS,cvar_2025:MONTHS,cfix_2025:MONTHS,ebt_2025:MONTHS,ll_2025:MONTHS,rec_2026:MONTHS,imp_2026:MONTHS,cvar_2026:MONTHS,cfix_2026:MONTHS,ebt_2026:MONTHS,ll_2026:MONTHS,liq_2026:MONTHS,gae_2025:MONTHS,resfin_2025:MONTHS,gae_2026:MONTHS,resfin_2026:MONTHS,tri_rec_2024:['1T','2T','3T','4T'],tri_ebitda_2024:['1T','2T','3T','4T'],div_trib:['Dez/22','Dez/23','Dez/24','Dez/25'],div_trab:['Dez/22','Dez/23','Dez/24','Dez/25'],div_forn:['Dez/22','Dez/23','Dez/24','Dez/25'],div_bndes:['Dez/22','Dez/23','Dez/24','Dez/25'],pis_cofins:['Dez/21','Dez/22','Dez/23','Dez/24','Dez/25'],compensacoes:['Dez/21','Dez/22','Dez/23','Dez/24','Dez/25'],c_receber:['Jan/25','Dez/25','Dez/26 Proj.'],caixa:['Jan/25','Dez/25','Dez/26 Proj.']};
 
 let activeEditor=null;
@@ -2412,8 +2478,8 @@ function attachChartEditors(){
   setup(charts.triEbitda,el=>null);
   setup(charts.histRec,el=>{if(el.index===0)return{path:'rec_2023'};if(el.index===1)return{path:'rec_2024'};return null;});
   setup(charts.histEbitda,el=>{if(el.index===0)return{path:'ebitda_2023'};if(el.index===1)return{path:'ebitda_2024'};return null;});
-  setup(charts.dividaComp,el=>{const k=['div_trib','div_trab','div_forn','div_bndes'];return{path:k[el.datasetIndex],index:el.index};});
-  setup(charts.caixa,el=>{const k=['c_receber','caixa'];return{path:k[el.datasetIndex],index:el.index};});
+  setup(charts.dividaComp,el=>{const k=['div_trib','div_trab','div_forn','div_bndes'];const b=k[el.datasetIndex];if(!b)return null;const sfx=[null,null,null,null,'_1t','_2t','_jul'];return el.index<4?{path:b,index:el.index}:(sfx[el.index]?{path:b+sfx[el.index]}:null);});
+  setup(charts.caixa,el=>{const k=['c_receber','caixa'];const b=k[el.datasetIndex];if(!b)return null;const m=[{path:b,index:0},{path:b,index:1},{path:b+'_1t'},{path:b+'_2t'},{path:b+'_jul'},{path:b,index:2}];return m[el.index]||null;});
 }
 
 // Atacha click em células editáveis das tabelas (event delegation por tbody)
@@ -2491,7 +2557,7 @@ function toggleMesBadge(el){
 // ════════════════ CAIXA HEADER LABEL EDITOR ════════════════
 function openCaixaLabelEditor(idx, th){
   closeInlineEditor();
-  if(!state.caixa_month_labels)state.caixa_month_labels=['Jan/2025','Dez/2025','Dez/2026 (Proj.)'];
+  if(!state.caixa_month_labels||state.caixa_month_labels.length<6)state.caixa_month_labels=['Jan/2025','Dez/2025','1T/2026','2T/2026','Jul/2026','Dez/2026 (Proj.)'];
   const current=state.caixa_month_labels[idx]||th.textContent.replace('✎','').trim();
   const rect=th.getBoundingClientRect();
   const ed=document.createElement('div');
