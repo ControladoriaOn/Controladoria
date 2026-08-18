@@ -199,6 +199,30 @@
   }
   .busca input:focus{border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.1); background:#fff}
   .chips-linha{display:flex; gap:6px; flex-wrap:wrap}
+  .chip{
+    display:inline-flex; align-items:center; gap:7px; padding:7px 13px;
+    background:var(--surface-soft); border:1px solid var(--border); border-radius:999px;
+    font-family:inherit; font-size:12.5px; font-weight:600; color:var(--plum-soft);
+    cursor:pointer; transition:all .14s; white-space:nowrap;
+  }
+  .chip:hover{border-color:var(--orange); color:var(--orange-deep)}
+  .chip .cnt{
+    font-family:var(--font-mono); font-size:11px; font-weight:700;
+    background:rgba(0,0,0,.07); padding:1px 6px; border-radius:5px;
+  }
+  .chip.active{background:var(--plum-deep); border-color:var(--plum-deep); color:#fff}
+  .chip.active .cnt{background:rgba(255,255,255,.18)}
+  /* cor por tipo, a mesma leitura rápida do painel */
+  .chip.t-bol{background:#EFEAFB; border-color:#DCD2F5; color:#5B3FA8}
+  .chip.t-nf{background:var(--orange-soft); border-color:#FFD9B8; color:var(--orange-deep)}
+  .chip.t-pa{background:#E4F1FE; border-color:#C6E1FB; color:#1B6FBF}
+  .chip.t-pc{background:#E7F7F1; border-color:#C7EBDE; color:#12795A}
+  .chip.t-rb{background:#FDECF3; border-color:#F8D3E3; color:#B0246A}
+  .chip.t-px{background:#FDF3D9; border-color:#F5E4B0; color:#8A6410}
+  .chip.t-ted{background:#E9EEF5; border-color:#D3DDEA; color:#3C5A80}
+  .chip.t-ciot{background:#F0EAE2; border-color:#E0D4C4; color:#7A5A2E}
+  .chip.t-adi,.chip.t-res{background:#F3E8F3; border-color:#E5D2E5; color:#7A2E7A}
+  .chip.active[class*="t-"]{background:var(--plum-deep); border-color:var(--plum-deep); color:#fff}
   .paginacao{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     flex-wrap:wrap; padding:10px 20px; font-size:12.5px; font-weight:600; color:var(--plum-soft);
@@ -1172,7 +1196,6 @@ function listasDaAba(){
     casados:     { rotulo:'Casados com o Totvs',  icone:'fa-link',            linhas: c.itens.filter(i => i.par) },
     semTitulo:   { rotulo:'Sem título no Totvs',  icone:'fa-triangle-exclamation', linhas: c.itens.filter(i => semTituloSit(i.situacao)) },
     divergentes: { rotulo:'Divergências',         icone:'fa-scale-unbalanced', linhas: c.itens.filter(i => i.aviso) },
-    cancelados:  { rotulo:'Cancelados',           icone:'fa-ban',             linhas: porSit('cancelado') },
     direto:      { rotulo:'Lançado direto',       icone:'fa-database',        linhas: c.soTotvsDireto, totvs:true },
     antigos:     { rotulo:'De solicitação antiga', icone:'fa-clock-rotate-left', linhas: c.soTotvsAntigo, totvs:true },
   };
@@ -1317,14 +1340,15 @@ function renderConferencia(){
 
   const tipos = {};
   L.linhas.forEach(x => {
-    const t = safeStr(L.totvs ? x.tipo : (x.par && x.par.tipo)) || '—';
+    const t = safeStr(L.totvs ? x.tipo : ((x.par && x.par.tipo) || Conc.tipoPresumido(x))) || '—';
     tipos[t] = (tipos[t] || 0) + 1;
   });
   const nomes = Object.keys(tipos).sort();
   if (nomes.length > 1){
     const chips = h('div', { class:'chips-linha' });
     const mk = (v, rot, qtd) => {
-      const b = h('button', { class:'chip' + (state.filtroTipo === v ? ' active' : ''), type:'button' },
+      const cor = v ? (' t-' + norm(v).replace(/[^a-z0-9]/g,'')) : '';
+      const b = h('button', { class:'chip' + cor + (state.filtroTipo === v ? ' active' : ''), type:'button' },
         [ rot, h('span', { class:'cnt', text:String(qtd) }) ]);
       b.addEventListener('click', () => { state.filtroTipo = v; state.pagina = 1; renderConferencia(); });
       return b;
@@ -1401,7 +1425,7 @@ function filtrarLinhas(linhas, ehTotvs){
   }
   if (state.filtroTipo){
     L = L.filter(x => {
-      const t = ehTotvs ? safeStr(x.tipo) : safeStr(x.par && x.par.tipo);
+      const t = ehTotvs ? safeStr(x.tipo) : safeStr((x.par && x.par.tipo) || Conc.tipoPresumido(x));
       return (t || '—') === state.filtroTipo;
     });
   }

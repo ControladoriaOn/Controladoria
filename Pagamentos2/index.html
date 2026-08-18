@@ -18,6 +18,14 @@
 </head>
 <body>
 
+<!-- fundo vivo: luzes grandes da marca que se movem devagar, com grão por cima -->
+<div class="fundo" aria-hidden="true">
+  <span class="brilho b1"></span>
+  <span class="brilho b2"></span>
+  <span class="brilho b3"></span>
+  <span class="grao"></span>
+</div>
+
 <div id="loader">
   <div class="load-fundo" aria-hidden="true">
     <span class="luz luz-a"></span><span class="luz luz-b"></span><span class="luz luz-c"></span>
@@ -40,73 +48,36 @@
   </div>
 </div>
 
-<div class="sidebar-overlay" id="sidebarOverlay" role="presentation"></div>
-
-<aside class="sidebar" id="sidebar" aria-label="Navegação principal">
-  <button class="btn-recolher" id="btnRecolher" type="button"
-          title="Recolher a barra lateral" aria-label="Recolher a barra lateral">
-    <i class="fa-solid fa-angles-left"></i>
-  </button>
-
-  <div class="logo">
-    <div class="logo-mark">
-      <img src="../logo-mascote.jpg" alt="Mascote"
+<header>
+  <div class="marca">
+    <div class="marca-icone">
+      <img src="../logo-mascote.jpg" alt=""
            onerror="this.style.display='none'; this.parentNode.textContent='₣';">
     </div>
-    <div class="logo-text">
-      <span>Financeiro</span>
-      <span>Pagamentos</span>
+    <div class="marca-texto">
+      <h1>Pagamentos</h1>
+      <span id="headerData"></span>
     </div>
   </div>
 
-  <nav id="nav"></nav>
-
-  <div class="side-card">
-    <div class="sc-title"><i class="fa-solid fa-bolt"></i> Resumo do dia</div>
-    <div class="sc-item">
-      <span class="sc-label">Já pago</span>
-      <span class="sc-value" id="sc-pago">—</span>
-    </div>
-    <div class="sc-item">
-      <span class="sc-label">Falta pagar</span>
-      <span class="sc-value" id="sc-pagar">—</span>
-    </div>
-  </div>
-
-  <div class="sidebar-footer">
+  <div class="header-right">
     <div class="stamp" id="stamp" role="status" aria-live="polite">
       <span class="dot off"></span>
       <span class="stamp-text" id="stamp-text">carregando…</span>
     </div>
-    <a id="link-atualizar" class="btn-hub" href="atualizar.html" hidden>
-      <i class="fa-solid fa-arrow-up-from-bracket"></i> Atualizar base
+    <button class="btn btn-ghost" id="btnRecarregar" type="button" title="Recarregar dados">
+      <i class="fa-solid fa-rotate"></i>
+    </button>
+    <a id="link-atualizar" class="btn btn-primary" href="atualizar.html" hidden>
+      <i class="fa-solid fa-arrow-up-from-bracket"></i> <span>Atualizar base</span>
     </a>
-    <a id="btn-hub" class="btn-hub" href="../" rel="noopener" hidden
-       style="background:transparent;border-color:rgba(255,255,255,.2);box-shadow:none">
-      <i class="fa-solid fa-arrow-left-long"></i> Voltar ao Hub
+    <a id="btn-hub" class="btn btn-ghost" href="../" rel="noopener" hidden title="Voltar ao Hub">
+      <i class="fa-solid fa-arrow-left-long"></i>
     </a>
   </div>
-</aside>
+</header>
 
-<div class="main" id="scroll">
-  <header>
-    <div class="header-left">
-      <button class="hamburger" id="btnHamburger" type="button"
-              aria-label="Abrir menu lateral" aria-expanded="false">
-        <i class="fa-solid fa-bars"></i>
-      </button>
-      <h1 class="page-title"><i class="fa-solid fa-chart-line"></i> Pagamentos</h1>
-    </div>
-    <div class="header-right">
-      <span class="header-data" id="headerData"></span>
-      <button class="btn btn-ghost" id="btnRecarregar" type="button" title="Recarregar dados">
-        <i class="fa-solid fa-rotate"></i>
-      </button>
-    </div>
-  </header>
-
-  <div class="content" id="content"></div>
-</div>
+<main class="content" id="content"></main>
 
 <div class="toast" id="toast"></div>
 

@@ -60,7 +60,7 @@ const state = {
   conc: null, resumo: null, linhas: [],
   dataRef: hojeISO(),
   aba: 'hoje',          // pago | hoje | amanha | ocultos
-  busca: '', filtroSit: '', filtroOrigem: '', filtroTipo: '',
+  busca: '', filtroSit: '', filtroOrigem: '', filtroTipo: '', verOcultos: false,
   ordem: { col:'vencimento', dir:'asc' },
   pagina: 1,
   orfaos: [],
@@ -233,12 +233,6 @@ function recortes(){
            + r.foraTotvsAmanha.qtd + ' só no Fluig',
       linhas: previsto.filter(x => emAberto(x) && x.vencimento === r.amanha),
     },
-    ocultos: {
-      rotulo: 'Ocultos',
-      icone: 'fa-eye-slash', classe: 'mute',
-      linhas: state.linhas.filter(x => x.oculto),
-      opcional: true, semValor: true,
-    },
   };
 }
 
@@ -246,8 +240,6 @@ function recortes(){
    RENDER
    ============================================================================ */
 function render(){
-  renderNav();
-  renderSidebar();
   renderStamp();
   const c = el('content');
   c.innerHTML = '';
@@ -273,29 +265,6 @@ function animarValores(){
     };
     requestAnimationFrame(passo);
   });
-}
-
-function renderNav(){
-  const nav = el('nav');
-  nav.innerHTML = '';
-  const R = recortes();
-  ['pago','hoje','amanha','ocultos'].forEach(k => {
-    const rec = R[k];
-    if (rec.opcional && !rec.linhas.length) return;
-    const b = h('button', { class:'nav-item' + (state.aba === k ? ' active' : ''), type:'button' }, [
-      icone(rec.icone),
-      h('span', { text: rec.rotulo }),
-      h('span', { class:'cnt', text: String(rec.linhas.length) }),
-    ]);
-    b.onclick = () => { state.aba = k; state.pagina = 1; render(); fecharMenu(); };
-    nav.appendChild(b);
-  });
-}
-
-function renderSidebar(){
-  const R = recortes();
-  el('sc-pago').textContent  = 'R$ ' + fmtBR0(R.pago.valor);
-  el('sc-pagar').textContent = 'R$ ' + fmtBR0(R.hoje.valor);
 }
 
 function renderStamp(){
@@ -329,9 +298,9 @@ function secaoKPIs(){
     }, [
       h('div', { class:'marco-topo' }, [
         h('span', { class:'marco-quando', text: rec.rotulo }),
+        h('span', { class:'marco-qtd', text: rec.qtd ? (rec.qtd + (rec.qtd === 1 ? ' título' : ' títulos')) : 'nenhum' }),
       ]),
       h('div', { class:'marco-valor', 'data-valor': Number(rec.valor)||0 }, [ 'R$ ' + fmtBR0(rec.valor) ]),
-      h('div', { class:'marco-qtd', text: rec.qtd ? (rec.qtd + (rec.qtd === 1 ? ' título' : ' títulos')) : 'nenhum título' }),
       h('div', { class:'marco-sub', text: rec.sub }),
     ]);
 
@@ -372,6 +341,7 @@ function secaoKPIs(){
 function linhasVisiveis(){
   const rec = recortes()[state.aba];
   let L = rec.linhas.slice();
+  if (state.verOcultos) L = L.concat(state.linhas.filter(x => x.oculto));
 
   const b = norm(state.busca);
   if (b) L = L.filter(x =>
@@ -424,9 +394,9 @@ function secaoTabela(){
   selOri.onchange = e => { state.filtroOrigem = e.target.value; state.pagina = 1; atualizarTabela(); };
 
   const btnXls = h('button', { class:'btn btn-ghost btn-sm', type:'button' }, [icone('fa-table-list'), 'Conferência']);
-  btnXls.onclick = () => exportarExcel(L, rec.rotulo);
+  btnXls.onclick = () => comEspera(btnXls, () => exportarExcel(L, rec.rotulo));
   const btnRel = h('button', { class:'btn btn-primary btn-sm', type:'button' }, [icone('fa-file-excel'), 'Relatório']);
-  btnRel.onclick = () => gerarRelatorio(L, rec.rotulo);
+  btnRel.onclick = () => comEspera(btnRel, () => gerarRelatorio(L, rec.rotulo));
 
   card.appendChild(h('div', { class:'card-bar' }, [
     h('div', { class:'card-bar-title' }, [ icone(rec.icone), rec.rotulo ]),
@@ -468,6 +438,21 @@ function secaoTabela(){
     h('span', { text: L.length + ' de ' + rec.linhas.length + ' linha(s)' }),
     h('span', { text: 'Total: R$ ' + fmtBR(total) }),
   ]));
+
+  /* Ocultos ficam fora dos totais e da tabela, mas não somem sem deixar rastro.
+     Trazer de volta é na tela de conferência, que é onde se edita. */
+  const ocultos = state.linhas.filter(x => x.oculto);
+  if (ocultos.length){
+    const link = h('button', { type:'button',
+      text: state.verOcultos ? 'esconder' : 'ver quais são' });
+    link.onclick = () => { state.verOcultos = !state.verOcultos; render(); };
+    card.appendChild(h('div', { class:'ocultos-linha' }, [
+      icone('fa-eye-slash'),
+      h('span', { text: ocultos.length + (ocultos.length === 1 ? ' título oculto' : ' títulos ocultos') +
+        ' — fora dos totais e do relatório.' }),
+      link,
+    ]));
+  }
 
   sec.appendChild(card);
   return sec;
@@ -576,7 +561,7 @@ function linhaTabela(x, ehPago){
      conferência, que é onde os dados entram e são checados antes de publicar. */
   const tdAcoes = h('td', {}, []);
 
-  return h('tr', { class: x.editado ? 'editada' : '' }, [
+  return h('tr', { class: (x.oculto ? 'linha-oculta ' : '') + (x.editado ? 'editada' : '') }, [
     h('td', {}, [ badge(x.origem, x.origem === 'Direto no Totvs' ? 'b-mute' : 'b-info') ]),
     h('td', { class:'mono', text: x.numero }),
     h('td', {}, [ h('div', { class:'forn' }, [
@@ -593,6 +578,39 @@ function debounce(fn, ms){
 }
 
 /* --------------------------------------------------------- exportação */
+
+/* Com mais de mil linhas a planilha demora alguns segundos para ser montada, e
+   nesse tempo o navegador fica parado. Então avisa antes, desabilita o botão e
+   só depois começa o trabalho pesado, para ninguém achar que o clique não pegou. */
+function comEspera(botao, tarefa){
+  const original = botao.innerHTML;
+  botao.disabled = true;
+  botao.textContent = 'Gerando…';
+  setTimeout(() => {
+    try { tarefa(); }
+    finally { botao.disabled = false; botao.innerHTML = original; }
+  }, 60);
+}
+
+/* Exporta no formato do relatório que a controladoria já usa. Sai exatamente o
+   que está na tela, filtros inclusive — por isso o recorte vai escrito no
+   cabeçalho e no nome do arquivo. */
+function gerarRelatorio(L, rotulo){
+  const naturezas = (state.dados && state.dados.naturezas) || {};
+  try {
+    const res = exportarRelatorio(L, state.dataRef, naturezas, rotulo);
+    const semFluxo = L.filter(x => {
+      const n = safeStr(x.natureza);
+      const info = naturezas[n] || naturezas[n.replace(/^0+/,'')];
+      return !x.conta_fluxo && !(info && info.conta_fluxo);
+    }).length;
+    toast(res.linhas + ' linha(s) no relatório' +
+      (semFluxo ? (' · ' + semFluxo + ' sem conta de fluxo') : '') + '.');
+  } catch(e){
+    toast(e.message || String(e), true);
+  }
+}
+
 function exportarExcel(L, rotulo){
   if (typeof XLSX === 'undefined'){ toast('Biblioteca de exportação carregando…', true); return; }
   const ehPago = state.aba === 'pago';
@@ -618,14 +636,6 @@ function exportarExcel(L, rotulo){
   } catch(e){ toast('Erro ao gerar a planilha.', true); }
 }
 
-/* ------------------------------------------------------------- menu --- */
-function abrirMenu(v){
-  el('sidebar').classList.toggle('open', v);
-  el('sidebarOverlay').classList.toggle('visible', v);
-  el('btnHamburger').setAttribute('aria-expanded', v ? 'true' : 'false');
-}
-const fecharMenu = () => { if (window.innerWidth <= 1024) abrirMenu(false); };
-
 /* ============================================================================
    INÍCIO
    ============================================================================ */
@@ -639,19 +649,6 @@ document.addEventListener('DOMContentLoaded', () => {
     { weekday:'long', day:'numeric', month:'long' });
 
   el('btnRecarregar').onclick = () => { abrirLoader('Atualizando…'); carregar(); };
-  el('btnHamburger').onclick = () => abrirMenu(!el('sidebar').classList.contains('open'));
-  el('sidebarOverlay').onclick = () => abrirMenu(false);
-
-  // estado da barra lateral fica gravado: ela abre como você deixou
-  const btnRec = el('btnRecolher');
-  try {
-    if (localStorage.getItem('pgv2_sidebar') === 'recolhida') document.body.classList.add('recolhida');
-  } catch(e){}
-  if (btnRec) btnRec.onclick = () => {
-    const rec = document.body.classList.toggle('recolhida');
-    try { localStorage.setItem('pgv2_sidebar', rec ? 'recolhida' : 'aberta'); } catch(e){}
-  };
-
   if (!CONFIG.DATA_URL || CONFIG.DATA_URL.indexOf('COLE_A_URL') === 0){
     mostrarErro(new Error('Falta colar a URL do Apps Script em CONFIG.DATA_URL, no topo do app.js.'));
     return;
