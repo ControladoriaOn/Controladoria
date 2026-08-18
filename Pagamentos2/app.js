@@ -62,7 +62,7 @@ const state = {
   aba: 'hoje',          // pago | hoje | amanha | ocultos
   busca: '', filtroSit: '', filtroOrigem: '', filtroTipo: '', verOcultos: false,
   ordem: { col:'vencimento', dir:'asc' },
-  pagina: 1,
+  pagina: 1, animarProxima: true,
   orfaos: [],
 };
 
@@ -122,6 +122,11 @@ function etapaLoader(texto, pct){
   if (t) t.textContent = texto;
   if (f) f.style.width = pct + '%';
   if (p) p.textContent = pct + '%';
+  const fio = el('fio'), ff = el('fio-fill');
+  if (fio && ff){
+    fio.classList.toggle('ativo', pct < 100);
+    ff.style.width = pct + '%';
+  }
 }
 const respira = ms => new Promise(r => setTimeout(r, ms));
 
@@ -138,6 +143,7 @@ async function carregar(primeira){
 
     etapaLoader('Calculando totais e somas…', 84);
     await respira(60);
+    state.animarProxima = true;
     render();
 
     etapaLoader('Pronto', 100);
@@ -245,7 +251,9 @@ function render(){
   c.innerHTML = '';
   c.appendChild(secaoKPIs());
   c.appendChild(secaoTabela());
-  animarValores();
+  // a contagem só roda quando a página abre ou é recarregada: repetir isso a
+  // cada clique de cartão ou de filtro cansa rápido
+  if (state.animarProxima){ animarValores(); state.animarProxima = false; }
 }
 
 /* Os valores sobem contando até o número. Uma vez por carga, curto, e
@@ -519,7 +527,7 @@ function tabela(L){
     thOrd('Favorecido','fornecedor'),
     thOrd(ehPago ? 'Baixa' : 'Vencimento', ehPago ? 'dt_baixa' : 'vencimento'),
     thOrd('Valor','valor'),
-    h('th', { text:'Situação' }),
+    h('th', { text:'Status' }),
   ])]);
 
   const tbody = h('tbody');
@@ -598,7 +606,9 @@ function comEspera(botao, tarefa){
 function gerarRelatorio(L, rotulo){
   const naturezas = (state.dados && state.dados.naturezas) || {};
   try {
-    const res = exportarRelatorio(L, state.dataRef, naturezas, rotulo);
+    // a data do arquivo é a do recorte, não a de hoje: exportar o Pago gerava
+    // um relatório com a data errada no título
+    const res = exportarRelatorio(L, dataDoRecorte(), naturezas, rotulo);
     const semFluxo = L.filter(x => {
       const n = safeStr(x.natureza);
       const info = naturezas[n] || naturezas[n.replace(/^0+/,'')];
@@ -609,6 +619,14 @@ function gerarRelatorio(L, rotulo){
   } catch(e){
     toast(e.message || String(e), true);
   }
+}
+
+/* Qual data representa o que está na tela agora. */
+function dataDoRecorte(){
+  const r = state.resumo;
+  if (state.aba === 'pago')   return r.dataPago || diaUtilAnterior(state.dataRef);
+  if (state.aba === 'amanha') return r.amanha;
+  return state.dataRef;
 }
 
 function exportarExcel(L, rotulo){
@@ -632,7 +650,7 @@ function exportarExcel(L, rotulo){
   try {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dados), 'Pagamentos');
-    XLSX.writeFile(wb, 'pagamentos-' + norm(rotulo).replace(/[^a-z0-9]+/g,'-') + '-' + state.dataRef + '.xlsx');
+    XLSX.writeFile(wb, 'pagamentos-' + norm(rotulo).replace(/[^a-z0-9]+/g,'-') + '-' + dataDoRecorte() + '.xlsx');
   } catch(e){ toast('Erro ao gerar a planilha.', true); }
 }
 

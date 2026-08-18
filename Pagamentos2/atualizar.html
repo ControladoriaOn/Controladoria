@@ -70,24 +70,26 @@
   section{margin-bottom:22px}
 
   /* ---------- dropzone ---------- */
+  /* faixa enxuta: ela é o começo do fluxo, não a estrela da tela */
   .dropzone{
-    background:var(--surface); border:2px dashed var(--border); border-radius:var(--radius);
-    padding:42px 22px; text-align:center; transition:all .2s; cursor:pointer; box-shadow:var(--shadow);
+    display:flex; align-items:center; gap:14px; cursor:pointer;
+    background:var(--surface); border:1.5px dashed var(--border); border-radius:var(--radius-sm);
+    padding:14px 18px; transition:all .18s; box-shadow:var(--shadow);
   }
   .dropzone:hover,.dropzone.drag{border-color:var(--orange); background:var(--orange-soft)}
-  .dropzone i.icon-up{font-size:42px; color:var(--orange); margin-bottom:12px; display:block}
-  .dropzone .dz-title{font-family:var(--font-display); font-weight:500; font-size:19px; margin:0 0 6px}
-  .dropzone .dz-sub{margin:0 0 16px; font-size:13px; color:var(--plum-soft)}
+  .dropzone > i{font-size:20px; color:var(--orange); flex-shrink:0}
+  .dz-texto{display:flex; flex-direction:column; gap:2px; flex:1; min-width:0}
+  .dz-texto strong{font-size:13.5px; font-weight:700}
+  .dz-texto span{font-size:12px; color:var(--plum-soft)}
   .btn-pick{
-    padding:10px 22px; background:var(--surface); color:var(--plum);
-    border:1px solid var(--border); border-radius:10px; font-family:inherit;
-    font-weight:600; font-size:13px; cursor:pointer; transition:all .15s;
+    flex-shrink:0; padding:8px 16px; background:var(--surface-soft); color:var(--plum);
+    border:1px solid var(--border); border-radius:9px; font-family:inherit;
+    font-weight:600; font-size:12.5px; cursor:pointer; transition:all .15s;
   }
-  .btn-pick:hover{background:var(--orange-soft); border-color:var(--orange); color:var(--orange-deep)}
-  .dz-hint{margin-top:14px; font-size:12px; color:var(--plum-soft); line-height:1.6}
-  .dz-hint code{
-    font-family:var(--font-mono); font-size:11.5px; background:var(--surface-soft);
-    padding:1px 6px; border-radius:4px;
+  .btn-pick:hover{background:#fff; border-color:var(--orange); color:var(--orange-deep)}
+  @media (max-width:620px){
+    .dropzone{flex-wrap:wrap}
+    .dz-texto{flex-basis:100%; order:2}
   }
 
   /* ---------- cards / arquivos ---------- */
@@ -316,6 +318,19 @@
     border-radius:50%; animation:spin .7s linear infinite;
   }
   @keyframes spin{to{transform:rotate(360deg)}}
+  /* fio de progresso no alto: a tela busca a base ao abrir, e sem isso ela
+     parecia parada */
+  .fio{
+    position:fixed; top:0; left:0; right:0; height:2.5px; z-index:9500;
+    opacity:0; transition:opacity .25s; pointer-events:none;
+  }
+  .fio.ativo{opacity:1}
+  .fio span{
+    display:block; height:100%; width:35%;
+    background:linear-gradient(90deg,transparent,#FF8A2E,var(--orange),transparent);
+    animation:correfio 1.1s ease-in-out infinite;
+  }
+  @keyframes correfio{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
   .toast{
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
     background:var(--plum-deep); color:#fff; padding:13px 22px; border-radius:10px;
@@ -365,6 +380,7 @@
     color:#B9A9B9; cursor:pointer; font-size:12.5px; transition:all .14s;
   }
   .btn-icon:hover{background:var(--orange-soft); color:var(--orange-deep)}
+  .btn-icon.perigo:hover{background:var(--danger-soft); color:var(--danger)}
   tr.editada td{background:rgba(255,110,0,.05)}
   tr.oculta td{opacity:.5}
   .antes{display:block; font-weight:400; color:#A89CB0; font-size:10.5px;
@@ -402,21 +418,18 @@
   </div>
 </header>
 
+<div class="fio" id="fio"><span></span></div>
+
 <main>
 
   <section class="dropzone" id="dz" tabindex="0" role="button" aria-label="Arraste os arquivos ou clique para escolher">
-    <i class="fa-solid fa-cloud-arrow-up icon-up"></i>
-    <h3 class="dz-title">Arraste os relatórios aqui</h3>
-    <p class="dz-sub">pode soltar todos de uma vez — a tela reconhece cada um</p>
-    <button class="btn-pick" id="btn-pick" type="button">
-      <i class="fa-solid fa-folder-open" style="margin-right:6px"></i>Escolher arquivos
-    </button>
-    <input type="file" id="file-input" hidden multiple accept=".csv,.xlsx,.xls">
-    <div class="dz-hint">
-      Totvs: <code>.csv</code> por vencimento (previsto) e, se quiser, por data de baixa (pago)<br>
-      Controladoria: o <code>.xlsx</code> do relatório do dia anterior também serve como pago<br>
-      Fluig: <code>.xlsx</code> de NFs de Serviço, Contas e Reembolsos · uma vez só: mapa de naturezas
+    <i class="fa-solid fa-cloud-arrow-up"></i>
+    <div class="dz-texto">
+      <strong>Arraste os relatórios aqui</strong>
+      <span>Totvs, Fluig ou o relatório do dia — pode soltar todos de uma vez</span>
     </div>
+    <button class="btn-pick" id="btn-pick" type="button">Escolher arquivos</button>
+    <input type="file" id="file-input" hidden multiple accept=".csv,.xlsx,.xls">
   </section>
 
   <section class="card" id="files-wrap" hidden>
@@ -454,9 +467,6 @@
     </button>
     <button class="btn btn-ghost" id="btn-relatorio">
       <i class="fa-solid fa-file-excel"></i> Relatório em Excel
-    </button>
-    <button class="btn btn-ghost" id="btn-json">
-      <i class="fa-solid fa-download"></i> Baixar JSON
     </button>
     <button class="btn btn-danger" id="btn-limpar">
       <i class="fa-solid fa-eraser"></i> Limpar base
@@ -518,16 +528,13 @@
 <div class="cf-overlay" id="modalSenha">
   <div class="cf-modal" role="dialog" aria-modal="true">
     <div class="cf-body">
-      <h3 class="cf-title"><i class="fa-solid fa-lock"></i> Senha de edição</h3>
-      <p class="cf-text">Pedida uma vez por aba. Fica só nesta sessão do navegador.</p>
+      <h3 class="cf-title"><i class="fa-solid fa-user-pen"></i> Quem está editando</h3>
+      <p class="cf-text">Pedido uma vez neste navegador. Fica registrado em cada
+        alteração, para depois se saber quem mexeu em quê.</p>
       <div class="campos">
         <div class="campo wide">
           <label for="ms-nome">Seu nome</label>
-          <input type="text" id="ms-nome" placeholder="quem está editando" autocomplete="name">
-        </div>
-        <div class="campo wide">
-          <label for="ms-senha">Senha</label>
-          <input type="password" id="ms-senha" autocomplete="current-password">
+          <input type="text" id="ms-nome" placeholder="seu nome" autocomplete="name">
         </div>
       </div>
     </div>
@@ -1077,7 +1084,7 @@ const state = {
   conferidos: {},              // pontos do roteiro já marcados como vistos
   roteiroAberto: false,
   base: null, ajustes: [], orfaos: [],
-  autor: '', token: '',
+  autor: '',
   dataRef: hojeISO(),
 };
 const TIPO_ROTULO = {
@@ -1183,7 +1190,7 @@ function renderResumo(){
     qtd(r.aguardandoAmanha) + ' · já dentro do "a pagar"', 'warn'));
   if (r.atrasado.qtd) grid.appendChild(kpi('Vencido e em aberto', money(r.atrasado), qtd(r.atrasado), 'danger'));
   if (r.semTituloAprovado.qtd) grid.appendChild(kpi('Aprovado sem título', money(r.semTituloAprovado), qtd(r.semTituloAprovado), 'danger'));
-  grid.appendChild(kpi('Vai para o histórico', qtd(r.historico), 'R$ ' + fmtBR0(r.historico.valor) + ' já baixados', ''));
+
 }
 
 /* ---------------------------- conferência ---------------------------- */
@@ -1412,7 +1419,7 @@ function renderConferencia(){
 function linhaDoTitulo(t){
   if (!t) return null;
   return {
-    titulo: t, chave: Conc.chaveTitulo(t),
+    titulo: t, chave: Conc.chaveTitulo(t), id_manual: t.id_manual || '',
     numero: t.numero + (t.parcela ? ('/' + t.parcela) : ''),
     fornecedor: t.fornecedor, id_fluig: t.id_fluig,
     editado: !!t._editado, edicoes: t._edicoes || null, oculto: !!t._oculto,
@@ -1422,6 +1429,7 @@ function linhaDoTitulo(t){
 function acoesLinha(l){
   const box = h('div', { class:'acoes-linha' });
   if (!l) return box;
+  const manual = !!(l.titulo && l.titulo.id_manual);
   const bEd = h('button', { class:'btn-icon', type:'button', title:'Editar este título' },
     [ h('i', { class:'fa-solid fa-pen' }) ]);
   bEd.addEventListener('click', () => abrirEdicao(l));
@@ -1431,6 +1439,12 @@ function acoesLinha(l){
     [ h('i', { class:'fa-solid ' + (l.oculto ? 'fa-eye' : 'fa-eye-slash') }) ]);
   bOc.addEventListener('click', () => alternarOculto(l));
   box.appendChild(bOc);
+  if (manual){
+    const bEx = h('button', { class:'btn-icon perigo', type:'button', title:'Excluir este lançamento' },
+      [ h('i', { class:'fa-solid fa-trash' }) ]);
+    bEx.addEventListener('click', () => excluirManual(l));
+    box.appendChild(bEx);
+  }
   return box;
 }
 
@@ -1493,7 +1507,7 @@ function tabelaUnificada(linhas, ehPago){
   const thead = h('thead', {}, [ h('tr', {}, [
     h('th', { text:'Origem' }), h('th', { text:'Tipo' }), h('th', { text:'Número' }),
     h('th', { text:'Favorecido' }), h('th', { text: ehPago ? 'Baixa' : 'Vencimento' }),
-    h('th', { text:'Valor' }), h('th', { text:'Situação' }), h('th', { text:'' }),
+    h('th', { text:'Valor' }), h('th', { text:'Status' }), h('th', { text:'' }),
   ])]);
   const tbody = h('tbody');
   paginar(linhas).forEach(x => {
@@ -1533,7 +1547,7 @@ function tabelaItens(linhas){
   const thead = h('thead', {}, [ h('tr', {}, [
     h('th', { text:'Origem' }), h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
     h('th', { text:'Vencimento' }), h('th', { text:'Valor Fluig' }), h('th', { text:'Valor Totvs' }),
-    h('th', { text:'Situação' }), h('th', { text:'' }),
+    h('th', { text:'Status' }), h('th', { text:'' }),
   ])]);
   const tbody = h('tbody');
   paginar(linhas).forEach(it => {
@@ -1571,7 +1585,7 @@ function tabelaItens(linhas){
 function tabelaTotvs(linhas){
   const thead = h('thead', {}, [ h('tr', {}, [
     h('th', { text:'Tipo' }), h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
-    h('th', { text:'Vencimento' }), h('th', { text:'Valor' }), h('th', { text:'Situação' }),
+    h('th', { text:'Vencimento' }), h('th', { text:'Valor' }), h('th', { text:'Status' }),
     h('th', { text:'' }),
   ])]);
   const tbody = h('tbody');
@@ -1695,7 +1709,6 @@ function render(){
   const pronto = !!state.conc;
   el('actions-wrap').hidden = !state.files.length;
   el('btn-enviar').disabled = !pronto;
-  el('btn-json').disabled = !pronto;
 
   const btn = el('btn-enviar');
   const pontos = state.conc ? montarPontos() : [];
@@ -1742,43 +1755,31 @@ const CAMPOS_EDITAVEIS = [
   { k:'historico',     rot:'Histórico',        tipo:'text', wide:true },
 ];
 
-/* Senha e nome ficam só na aba aberta; a senha é conferida no servidor. */
+/* Sem senha: o que importa guardar é o nome de quem edita, para o registro na
+   planilha responder quem mexeu em quê. É pedido uma vez por aba. */
 const Auth = {
-  K_TOKEN:'pgv2_token', K_NOME:'pgv2_autor',
+  K_NOME:'pgv2_autor',
   carregar(){
-    try {
-      state.token = sessionStorage.getItem(this.K_TOKEN) || '';
-      state.autor = localStorage.getItem(this.K_NOME) || '';
-    } catch(e){}
-  },
-  guardar(nome, token){
-    state.autor = nome; state.token = token;
-    try {
-      sessionStorage.setItem(this.K_TOKEN, token);
-      localStorage.setItem(this.K_NOME, nome);
-    } catch(e){}
-  },
-  limpar(){
-    state.token = '';
-    try { sessionStorage.removeItem(this.K_TOKEN); } catch(e){}
+    try { state.autor = localStorage.getItem(this.K_NOME) || ''; } catch(e){}
   },
   pedir(){
     return new Promise(resolve => {
-      if (state.token && state.autor) return resolve(true);
+      if (state.autor) return resolve(true);
       const m = el('modalSenha');
-      el('ms-nome').value = state.autor || '';
-      el('ms-senha').value = '';
+      el('ms-nome').value = '';
       m.classList.add('show');
-      setTimeout(() => (state.autor ? el('ms-senha') : el('ms-nome')).focus(), 60);
+      setTimeout(() => el('ms-nome').focus(), 60);
       const fechar = ok => {
         m.classList.remove('show');
         el('ms-ok').onclick = null; el('ms-cancel').onclick = null; m.onkeydown = null;
         resolve(ok);
       };
       el('ms-ok').onclick = () => {
-        const nome = el('ms-nome').value.trim(), senha = el('ms-senha').value.trim();
-        if (!nome || !senha){ toast('Preencha nome e senha.'); return; }
-        Auth.guardar(nome, senha); fechar(true);
+        const nome = el('ms-nome').value.trim();
+        if (!nome){ toast('Escreva seu nome.'); return; }
+        state.autor = nome;
+        try { localStorage.setItem(Auth.K_NOME, nome); } catch(e){}
+        fechar(true);
       };
       el('ms-cancel').onclick = () => fechar(false);
       m.onkeydown = e => {
@@ -1849,6 +1850,8 @@ async function abrirNovo(modelo){
    corrigir algo sem precisar subir arquivo de novo. */
 async function carregarBase(){
   if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0) return;
+  const fio = el('fio');
+  if (fio) fio.classList.add('ativo');
   try {
     const res = await fetch(CONFIG.APP_SCRIPT_URL + '?v=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -1878,6 +1881,8 @@ async function carregarBase(){
     render();
   } catch(e){
     // a tela funciona sem a base; é só não ter o que corrigir
+  } finally {
+    if (fio) fio.classList.remove('ativo');
   }
 }
 
@@ -1917,7 +1922,7 @@ async function salvarEdicao(){
   });
   if (!ajustes.length){ toast('Nada mudou.'); fecharEdicao(); return; }
   fecharEdicao();
-  await gravarAjuste({ acao:'ajuste', token: state.token, ajustes: ajustes },
+  await gravarAjuste({ acao:'ajuste', ajustes: ajustes },
     ajustes.length + ' campo(s) alterado(s).');
 }
 
@@ -1932,18 +1937,36 @@ async function salvarNovo(){
   if (!titulo.fornecedor || !titulo.valor_rs){ toast('Favorecido e valor são obrigatórios.'); return; }
   titulo.valor = titulo.valor_rs;
   if (!titulo.valor_liquido) titulo.valor_liquido = titulo.valor_rs;
-  titulo.id_manual = edicaoAtual.ciot
-    ? ('CIOT-' + (titulo.vencimento || state.dataRef))
-    : ((titulo.tipo || 'MAN') + '-' + (titulo.vencimento || state.dataRef) + '-' + Math.random().toString(36).slice(2,6));
+  /* Cada lançamento tem identidade própria, inclusive dois CIOTs no mesmo dia:
+     sem isso, editar um acertaria o outro e excluir apagaria os dois. */
+  titulo.id_manual = (edicaoAtual.ciot ? 'CIOT' : (titulo.tipo || 'MAN')) +
+    '-' + (titulo.vencimento || state.dataRef) +
+    '-' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
   fecharEdicao();
-  await gravarAjuste({ acao:'titulo_manual', token: state.token, titulo: titulo }, 'Título lançado.');
+  await gravarAjuste({ acao:'titulo_manual', titulo: titulo }, 'Título lançado.');
 }
 
 async function desfazerEdicoes(){
   if (!edicaoAtual) return;
   const alvo = edicaoAtual.chave;
   fecharEdicao();
-  await gravarAjuste({ acao:'desfazer', token: state.token, id:'alvo:' + alvo }, 'Edições desfeitas.');
+  await gravarAjuste({ acao:'desfazer', id:'alvo:' + alvo }, 'Edições desfeitas.');
+}
+
+/* Lançamento próprio (CIOT, título manual) é seu e não volta de relatório
+   nenhum, então aqui apagar é apagar. Título do Totvs continua só podendo ser
+   ocultado, porque reapareceria no dia seguinte. */
+async function excluirManual(linha){
+  const t = linha.titulo;
+  const id = safeStr(t && t.id_manual);
+  if (!id) return;
+  const ok = confirm('Excluir este lançamento?\n\n' +
+    safeStr(t.tipo) + ' · ' + safeStr(t.fornecedor) + '\n' +
+    'R$ ' + fmtBR(t.valor_rs) + ' · ' + fmtData(t.vencimento) +
+    '\n\nIsso apaga de vez, não dá para desfazer.');
+  if (!ok) return;
+  if (!(await Auth.pedir())) return;
+  await gravarAjuste({ acao:'excluir_manual', id_manual: id }, 'Lançamento excluído.');
 }
 
 /* Ocultar não apaga: o título continua na base e volta com um clique. Apagar de
@@ -1952,7 +1975,7 @@ async function alternarOculto(linha){
   if (!(await Auth.pedir())) return;
   const voltando = linha.oculto;
   const motivo = voltando ? '' : (prompt('Por que está ocultando este título? (opcional)') || '');
-  await gravarAjuste({ acao:'ajuste', token: state.token, ajustes: [{
+  await gravarAjuste({ acao:'ajuste', ajustes: [{
       alvo: linha.chave, campo:'oculto',
       valor_novo: voltando ? '0' : '1', valor_antigo: voltando ? '1' : '0',
       autor: state.autor, motivo: motivo,
@@ -2052,14 +2075,6 @@ function exportarRelatorioDaConferencia(){
   }
 }
 
-function baixarJson(){
-  const blob = new Blob([JSON.stringify(montarPayload(), null, 2)], { type:'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'pagamentos-' + state.dataRef + '.json';
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-}
 
 async function fetchStatus(){
   const dot = el('status-dot'), txt = el('status-text');
@@ -2130,7 +2145,6 @@ document.addEventListener('DOMContentLoaded', () => {
   el('me-salvar').addEventListener('click', salvarEdicao);
   el('modalEdit').addEventListener('click', e => { if (e.target === el('modalEdit')) fecharEdicao(); });
   el('btn-relatorio').addEventListener('click', exportarRelatorioDaConferencia);
-  el('btn-json').addEventListener('click', baixarJson);
   el('btn-limpar').addEventListener('click', abrirLimpar);
   el('btn-reset').addEventListener('click', resetTudo);
   el('ml-cancel').addEventListener('click', fecharLimpar);

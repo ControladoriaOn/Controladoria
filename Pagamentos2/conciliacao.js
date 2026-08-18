@@ -641,7 +641,11 @@ const COLUNAS_RELATORIO = [
   'Banco','No. Titulo','Tipo','Natureza','Conta Fluxo C','Fluxo Caixa',
   'Nome Fornece','Vencto Real','Vlr.Titulo','Historico','Saldo','Bordero',
 ];
-const LARGURAS_RELATORIO = [10, 12, 7, 12, 16.3, 18.6, 23.1, 12.7, 13.4, 27.7, 14.9, 12.6];
+const LARGURAS_RELATORIO = [10, 12, 7, 14, 16.3, 18.6, 23.1, 12.7, 13.4, 27.7, 14.9, 12.6];
+/* Código de natureza e de conta de fluxo são identificadores, não quantidades:
+   saem sem separador de milhar e sem casas decimais, para 33.030.905 não virar
+   um número lido como valor. */
+const FMT_CODIGO = '0';
 const FMT_CONTABIL = '_-* #,##0.00_-;\\-* #,##0.00_-;_-* "-"??_-;_-@_-';
 
 /* Uma linha da tela vira uma linha do relatório. */
@@ -718,6 +722,7 @@ function exportarRelatorio(linhas, dataRef, naturezas, recorte){
       let z = null;
       if (c === 8 || c === 10) z = FMT_CONTABIL;
       if (c === 7) z = 'dd/mm/yyyy';
+      if (c === 1 || c === 3 || c === 4) z = FMT_CODIGO;
       setStyle(addr, s, z);
     }
   }

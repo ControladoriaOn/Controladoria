@@ -26,23 +26,27 @@
   <span class="grao"></span>
 </div>
 
+<!-- fio de progresso no alto da janela, o padrão de quem está carregando -->
+<div class="fio" id="fio"><span id="fio-fill"></span></div>
+
+<!-- O carregamento é a própria página se preenchendo: os três cartões já estão
+     no lugar e o do meio, onde vai nascer o cartão em destaque, é quem mostra o
+     mascote e o progresso. Nada aparece ou some depois; a tela só ganha dado. -->
 <div id="loader">
-  <div class="load-fundo" aria-hidden="true">
-    <span class="luz luz-a"></span><span class="luz luz-b"></span><span class="luz luz-c"></span>
-  </div>
   <div class="load-palco">
     <div class="esq-linha" aria-hidden="true">
-      <div class="esq-bloco"></div><div class="esq-bloco"></div><div class="esq-bloco"></div>
-    </div>
-    <div class="load-card">
-      <div class="load-brilho" aria-hidden="true"></div>
-      <div class="load-mascote">
-        <div class="load-ring"></div>
-        <img src="../logo-mascote.jpg" alt="" onerror="this.style.display='none'">
+      <div class="esq-bloco"></div>
+      <div class="load-card">
+        <div class="load-brilho" aria-hidden="true"></div>
+        <div class="load-mascote">
+          <div class="load-ring"></div>
+          <img src="../logo-mascote.jpg" alt="" onerror="this.style.display='none'">
+        </div>
+        <div class="load-text" id="load-text">Lendo a base…</div>
+        <div class="load-barra"><span id="load-barra-fill"></span></div>
+        <div class="load-pct" id="load-pct">0%</div>
       </div>
-      <div class="load-text" id="load-text">Lendo a base…</div>
-      <div class="load-barra"><span id="load-barra-fill"></span></div>
-      <div class="load-pct" id="load-pct">0%</div>
+      <div class="esq-bloco"></div>
     </div>
     <div class="esq-tabela" aria-hidden="true"></div>
   </div>
