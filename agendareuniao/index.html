@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Reserva de Salas · OnTime</title>
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -46,6 +48,7 @@ input{font:inherit}
 .faixa{max-width:1120px;margin:0 auto;padding:0 20px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;justify-content:space-between}
 .marca-nome{font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1;display:flex;align-items:center;gap:8px;transition:font-size .2s}
 .marca-nome span{color:var(--laranja)}
+.marca-mascote{width:32px;height:32px;border-radius:8px;object-fit:cover;flex-shrink:0}
 .marca-sub{font-size:12.5px;color:#C9AFC2;letter-spacing:.11em;text-transform:uppercase;font-weight:600;margin-top:2px}
 .relogio{font-family:'JetBrains Mono',monospace;font-size:13px;color:#C9AFC2;letter-spacing:.04em}
 .fixo.rolou .topo{padding:12px 0 11px}
@@ -187,7 +190,7 @@ button.linha:hover{border-color:var(--ameixa-500)}
   <header class="topo">
     <div class="faixa">
       <div>
-        <div class="marca-nome">ON-TIME<span>·</span></div>
+        <div class="marca-nome"><img class="marca-mascote" src="../logo-mascote.jpg" alt="Mascote On Time">ON-TIME<span>·</span></div>
         <div class="marca-sub">Reserva de salas de Reunião</div>
       </div>
       <div class="relogio" id="relogio"></div>
@@ -603,7 +606,11 @@ $('inpPinCancel').onkeydown=e=>{ if(e.key==='Enter') confirmarCancelar(); };
 document.onkeydown=e=>{ if(e.key==='Escape'){ fecharModal(); fecharCancelar(); } };
 
 const elFixo=$('fixo');
-addEventListener('scroll',()=>{ elFixo.classList.toggle('rolou', window.scrollY>16); }, {passive:true});
+addEventListener('scroll',()=>{
+  const y=window.scrollY;
+  if(y>24) elFixo.classList.add('rolou');
+  else if(y<8) elFixo.classList.remove('rolou');
+}, {passive:true});
 
 function tick(){
   const n=new Date();
