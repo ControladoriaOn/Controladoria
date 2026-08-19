@@ -346,7 +346,18 @@ function conciliar(store){
       };
       if (est !== 'cancelado'){
         const achado = acharPar(r.id, () => {
-          const cands = (porNumero[normNum(r[campo])] || []).filter(i => !usados.has(i));
+          /* Número sozinho não basta. Um número curto como "6" colide com
+             qualquer coisa: já aconteceu de uma nota do Fluig casar com um
+             título de outro favorecido só porque ambos eram o número 6. Então
+             o casamento por semelhança exige um segundo sinal — ou o favorecido
+             ou o valor precisa bater também. */
+          const cands = (porNumero[normNum(r[campo])] || []).filter(i => {
+            if (usados.has(i)) return false;
+            const t = titulos[i];
+            const nomeBate = nomesBatem(t.fornecedor, r.fornecedor);
+            const valorBate = Math.abs((t.valor_rs || 0) - (r.valor_total || 0)) <= TOL;
+            return nomeBate || valorBate;
+          });
           const c = cands.find(i => titulos[i].vencimento === r.vencimento);
           return c !== undefined ? c : cands[0];
         });
@@ -438,6 +449,7 @@ function resumir(conc, dataRef, baixas){
     aguardandoHoje: z(), aguardandoAmanha: z(),// recorte sobreposto: falta aprovar
     atrasado: z(), semTituloAprovado: z(), cancelados: z(),
     divergencias: 0, suspeitos: 0, aproximados: 0, editados: 0, ocultos: 0,
+    pagosOutrasDatas: 0,
     soTotvs: z(), historico: z(), temDataRef: false,
   };
   const add = (b, v) => { b.qtd++; b.valor += (Number(v)||0); };
@@ -446,22 +458,42 @@ function resumir(conc, dataRef, baixas){
      tela mostra qual é, em vez de fingir que é sempre ontem. */
   /* O CIOT nunca aparece no relatório de baixas do Totvs — ele é lançado aqui.
      Por isso o Pago soma as duas fontes: o relatório e os lançamentos próprios
-     que já têm data de pagamento. */
+     que já têm data de pagamento.
+
+     A data do cartão é ancorada no RELATÓRIO: ele é a fonte externa e é o que
+     define o dia fechado. Um lançamento próprio datado de outro dia entra na
+     data dele, e não arrasta o cartão inteiro junto — antes, um único CIOT
+     datado de hoje escondia o dia inteiro que veio do relatório. */
   const manuaisPagos = (conc.titulos || []).filter(t => t.manual && t.dt_baixa && !t._oculto);
-  const bx = (baixas || []).filter(t => !t._oculto).concat(manuaisPagos);
+  const doRelatorio = (baixas || []).filter(t => !t._oculto);
+
   const porData = {};
-  bx.forEach(t => {
+  doRelatorio.concat(manuaisPagos).forEach(t => {
     const d = safeStr(t.dt_baixa).slice(0,10);
     if (!d) return;
     (porData[d] = porData[d] || []).push(t);
   });
   r.datasBaixa = Object.keys(porData).sort();
-  if (r.datasBaixa.length){
-    // a mais recente que não passe do dia escolhido; senão, a mais recente de todas
-    const ateHoje = r.datasBaixa.filter(d => d <= dataRef);
-    r.dataPago = ateHoje.length ? ateHoje[ateHoje.length-1] : r.datasBaixa[r.datasBaixa.length-1];
+
+  const datasRelatorio = [];
+  doRelatorio.forEach(t => {
+    const d = safeStr(t.dt_baixa).slice(0,10);
+    if (d && datasRelatorio.indexOf(d) < 0) datasRelatorio.push(d);
+  });
+  datasRelatorio.sort();
+
+  const escolher = lista => {
+    if (!lista.length) return null;
+    const ate = lista.filter(d => d <= dataRef);
+    return ate.length ? ate[ate.length-1] : lista[lista.length-1];
+  };
+  // o relatório manda; sem relatório, o cartão segue o que houver
+  r.dataPago = escolher(datasRelatorio) || escolher(r.datasBaixa);
+  if (r.dataPago){
     (porData[r.dataPago] || []).forEach(t => add(r.pago, t.valor_liquido || t.valor_rs));
   }
+  // pagamentos próprios em datas que o cartão não está mostrando
+  r.pagosOutrasDatas = manuaisPagos.filter(t => safeStr(t.dt_baixa).slice(0,10) !== r.dataPago).length;
 
   conc.titulos.forEach(t => {
     if (t._oculto){ r.ocultos++; return; }

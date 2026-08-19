@@ -62,7 +62,7 @@ const state = {
   aba: 'hoje',          // pago | hoje | amanha | ocultos
   busca: '', filtroSit: '', filtroOrigem: '', filtroTipo: '', verOcultos: false,
   ordem: { col:'vencimento', dir:'asc' },
-  pagina: 1, animarProxima: true,
+  pagina: 1, animarProxima: true, podeVerOcultos: false,
   orfaos: [],
 };
 
@@ -392,7 +392,7 @@ function secaoKPIs(){
 function linhasVisiveis(){
   const rec = recortes()[state.aba];
   let L = rec.linhas.slice();
-  if (state.verOcultos) L = L.concat(state.linhas.filter(x => x.oculto));
+  if (state.verOcultos && state.podeVerOcultos) L = L.concat(state.linhas.filter(x => x.oculto));
 
   const b = norm(state.busca);
   if (b) L = L.filter(x =>
@@ -492,7 +492,8 @@ function secaoTabela(){
 
   /* Ocultos ficam fora dos totais e da tabela, mas não somem sem deixar rastro.
      Trazer de volta é na tela de conferência, que é onde se edita. */
-  const ocultos = state.linhas.filter(x => x.oculto);
+  // quem entra fora do hub não vê o que foi ocultado
+  const ocultos = state.podeVerOcultos ? state.linhas.filter(x => x.oculto) : [];
   if (ocultos.length){
     const link = h('button', { type:'button',
       text: state.verOcultos ? 'esconder' : 'ver quais são' });
@@ -674,17 +675,30 @@ function dataDoRecorte(){
 
 function exportarExcel(L, rotulo){
   if (typeof XLSX === 'undefined'){ toast('Biblioteca de exportação carregando…', true); return; }
-  const ehPago = state.aba === 'pago';
+  const naturezas = (state.dados && state.dados.naturezas) || {};
+  /* O mapa de naturezas pode estar guardado no formato antigo, só com a
+     descrição. Aí a conta de fluxo simplesmente não existe, e a coluna sai
+     vazia em vez de quebrar. */
+  const doFluxo = (nat, campo) => {
+    const n = safeStr(nat);
+    const info = naturezas[n] || naturezas[n.replace(/^0+/,'')];
+    return (info && typeof info === 'object') ? safeStr(info[campo]) : '';
+  };
   const dados = L.map(x => ({
     'Origem': x.origem,
+    'Tipo': x.tipo || '',
     'Número': x.numero,
     'Fluig': x.id_fluig || '',
     'Favorecido': x.fornecedor,
+    'Natureza': x.natureza || '',
+    'Conta Fluxo C': x.conta_fluxo || doFluxo(x.natureza, 'conta_fluxo'),
+    'Fluxo Caixa': (x.fluxo_caixa && x.fluxo_caixa !== 'Sim' && x.fluxo_caixa !== 'Nao')
+      ? x.fluxo_caixa : doFluxo(x.natureza, 'fluxo_caixa'),
     'Vencimento': fmtData(x.vencimento),
     'Data da baixa': x.dt_baixa ? fmtData(x.dt_baixa) : '',
     'Valor': Number(x.valor) || 0,
     'Valor Fluig': x.valorFluig != null ? x.valorFluig : '',
-    'Situação': (SITUACOES[x.situacao] || [x.situacao])[0],
+    'Status': (SITUACOES[x.situacao] || [x.situacao])[0],
     'Status Fluig': x.status || '',
     'Histórico': x.detalhe || '',
     'Editado': x.editado ? 'sim' : '',
@@ -701,7 +715,7 @@ function exportarExcel(L, rotulo){
    INÍCIO
    ============================================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  HubLink.init();
+  state.podeVerOcultos = HubLink.init();
 
   // o painel é sempre do dia de hoje — sem seletor de data
   state.dataRef = hojeISO();

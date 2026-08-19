@@ -1227,7 +1227,6 @@ function listasDaAba(){
 
   return Object.assign(listas, {
     todos:       { rotulo:'Tudo',                 icone:'fa-list',            linhas: c.itens },
-    pendentes:   { rotulo:'Falta aprovar',        icone:'fa-hourglass-half',  linhas: c.itens.filter(i => aguardandoSit(i.situacao)) },
     casados:     { rotulo:'Casados com o Totvs',  icone:'fa-link',            linhas: c.itens.filter(i => i.par) },
     semTitulo:   { rotulo:'Sem título no Totvs',  icone:'fa-triangle-exclamation', linhas: c.itens.filter(i => semTituloSit(i.situacao)) },
     divergentes: { rotulo:'Divergências',         icone:'fa-scale-unbalanced', linhas: c.itens.filter(i => i.aviso) },
@@ -1287,6 +1286,11 @@ function montarPontos(){
   if (divVal){
     add('diverge', 'erro', divVal + ' com valor diferente entre Fluig e Totvs.',
       'Casaram por favorecido e vencimento, mas o valor não bate.', 'divergentes');
+  }
+  if (r && r.pagosOutrasDatas){
+    add('outrasdatas', 'atencao', r.pagosOutrasDatas + ' pagamento(s) próprio(s) em outra data.',
+      'O cartão do Pago segue a data do relatório de baixas (' + fmtData(r.dataPago) +
+      '). Lançamentos com data de pagamento diferente ficam fora dele.', 'pagoEm');
   }
   const semTit = c.itens.filter(i => i.situacao === 'sem_titulo_aprovado').length;
   if (semTit){
