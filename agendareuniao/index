@@ -298,7 +298,7 @@ const CONFIG = {
    ENDEREÇO DO BACKEND
    Cole aqui a URL do Apps Script publicado (termina em /exec)
    ============================================================ */
-const API_URL = 'COLE_AQUI_A_URL_DO_APPS_SCRIPT';
+const API_URL = 'https://script.google.com/macros/s/AKfycbz05oEv1V7jv9eGOiW8koywZJ1hFt8wPQKoijjaJ78l-wC7ceRW7E91sgvf36WkuqPWbg/exec';
 
 /* ============================================================
    ESTADO
