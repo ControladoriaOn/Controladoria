@@ -51,15 +51,19 @@ function toast(msg, erro){
 /* -------------------------------------------------------------- números */
 const num = v => Number(v) || 0;
 
-/* Na grade o que importa é a ordem de grandeza, não o centavo: milhões com
-   centavo viram um borrão. O valor exato fica no title da célula. */
-function fmtGrade(v){
+/* Duas leituras do mesmo número. Na compacta, milhões sem centavo, para caber
+   mais dias na tela. Na exata, tudo com as duas casas, que é como se confere
+   caixa. O botão no alto troca uma pela outra, e a escolha fica guardada.
+   Sem "R$": a tela inteira é dinheiro, repetir o símbolo em cada célula só
+   rouba espaço de dígito. */
+function fmtNum(v){
+  if (v === undefined || v === null || v === '') return '';
   const n = num(v);
-  if (!n) return '';
-  const abs = Math.abs(n);
-  const casas = abs < 100 ? 2 : 0;
+  if (!n) return '–';                      // zero contábil
+  const casas = state.exato ? 2 : (Math.abs(n) < 100 ? 2 : 0);
   return n.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
 }
+const fmtGrade = fmtNum;
 const fmtExato = v => num(v).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
 
 function fmtData(iso){
@@ -101,10 +105,12 @@ const state = {
   dados: null,
   calc: null,
   soUteis: true,        // dia sem movimento nem saldo fica escondido
+  exato: false,         // centavos à mostra
   recolhidos: {},       // grupos fechados
   autor: '',
   podeEditar: false,
   edicao: null,
+  cache: {},            // meses já abertos nesta sessão
 };
 
 /* ------------------------------------------------ veio pelo hub? ------
@@ -192,29 +198,79 @@ function etapaLoader(texto, pct){
 }
 const respira = ms => new Promise(r => setTimeout(r, ms));
 
-async function carregar(primeira){
-  etapaLoader(primeira ? 'Lendo o fluxo…' : 'Atualizando…', 14);
-  try {
-    const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') +
-                'fluxo=' + state.mes + '&v=' + Date.now();
-    const d = await buscarJson(url);
-    if (!d || d.ok === false) throw new Error((d && d.erro) || 'resposta vazia');
-    state.dados = d;
+async function buscarMes(mes){
+  const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') +
+              'fluxo=' + mes + '&v=' + Date.now();
+  const d = await buscarJson(url);
+  if (!d || d.ok === false) throw new Error((d && d.erro) || 'resposta vazia');
+  guardar(mes, d);
+  return d;
+}
 
-    etapaLoader('Somando o mês…', 66);
-    await respira(50);
-    calcular();
-
-    etapaLoader('Montando a tabela…', 88);
-    await respira(50);
-    render();
-
-    etapaLoader('Pronto', 100);
-    await respira(150);
-    esconderLoader();
-  } catch(e){
-    mostrarErro(e);
+/* Guarda os meses já abertos, mas não todos: seis é mais do que qualquer um
+   navega numa sessão, e evita a página ir engordando sozinha. */
+function guardar(mes, d){
+  state.cache[mes] = d;
+  const chaves = Object.keys(state.cache);
+  if (chaves.length > 6){
+    chaves.sort();
+    const longe = chaves.reduce((a, b) =>
+      Math.abs(mesesEntre(a, state.mes)) > Math.abs(mesesEntre(b, state.mes)) ? a : b);
+    if (longe !== state.mes) delete state.cache[longe];
   }
+}
+function mesesEntre(a, b){
+  const pa = a.split('-'), pb = b.split('-');
+  return (+pa[0] * 12 + +pa[1]) - (+pb[0] * 12 + +pb[1]);
+}
+
+/* O fio no alto da janela basta para trocar de mês. A tela cheia de
+   carregamento é para quando a página abre, não para uma troca de coluna. */
+function fioComeca(){
+  const fio = el('fio'), ff = el('fio-fill');
+  if (!fio) return;
+  fio.classList.add('ativo');
+  ff.style.width = '35%';
+  clearTimeout(fioComeca._t);
+  fioComeca._t = setTimeout(() => { ff.style.width = '75%'; }, 260);
+}
+function fioTermina(){
+  const fio = el('fio'), ff = el('fio-fill');
+  if (!fio) return;
+  clearTimeout(fioComeca._t);
+  ff.style.width = '100%';
+  setTimeout(() => { fio.classList.remove('ativo'); ff.style.width = '0%'; }, 220);
+}
+
+async function carregar(primeira){
+  if (primeira) etapaLoader('Lendo o fluxo…', 14); else fioComeca();
+  try {
+    state.dados = await buscarMes(state.mes);
+    if (primeira){ etapaLoader('Somando o mês…', 66); await respira(50); }
+    calcular();
+    if (primeira){ etapaLoader('Montando a tabela…', 88); await respira(50); }
+    render();
+    if (primeira){
+      etapaLoader('Pronto', 100);
+      await respira(150);
+      esconderLoader();
+    } else fioTermina();
+    vizinhos();
+  } catch(e){
+    if (primeira) mostrarErro(e);
+    else { fioTermina(); toast('Não consegui abrir o mês: ' + (e.message || e), true); }
+  }
+}
+
+/* Navegar de mês em mês é o movimento natural da tela, então os vizinhos são
+   buscados em silêncio enquanto se olha o mês atual. */
+function vizinhos(){
+  clearTimeout(vizinhos._t);
+  vizinhos._t = setTimeout(() => {
+    [addMes(state.mes, 1), addMes(state.mes, -1)].forEach(m => {
+      if (!state.cache[m]) buscarMes(m).catch(() => {});
+    });
+  }, 900);
 }
 
 function esconderLoader(){
@@ -418,11 +474,28 @@ function diasVisiveis(){
    RENDER
    ============================================================================ */
 function render(){
+  document.body.classList.toggle('exato', state.exato);
   renderStamp();
   const c = el('content');
   c.innerHTML = '';
   c.appendChild(barraMes());
   c.appendChild(secaoTabela());
+  empilharFixas();
+}
+
+/* Cada linha que acompanha a rolagem para logo abaixo da anterior. As alturas
+   são medidas na hora, e não escritas no estilo, porque mudam com a fonte, com
+   o zoom do navegador e com a visão de centavos ligada. */
+function empilharFixas(){
+  requestAnimationFrame(() => {
+    const thead = document.querySelector('table.grade thead');
+    if (!thead) return;
+    let topo = thead.getBoundingClientRect().height;
+    document.querySelectorAll('table.grade tr.fixa').forEach(tr => {
+      tr.style.setProperty('--topo', Math.round(topo) + 'px');
+      topo += tr.getBoundingClientRect().height;
+    });
+  });
 }
 
 function renderStamp(){
@@ -471,13 +544,21 @@ function somaMes(mapa){
 function kpi(rotulo, valor, classe){
   return h('div', { class:'mini-kpi ' + (classe || '') }, [
     h('span', { class:'mk-label', text:rotulo }),
-    h('span', { class:'mk-valor', text:'R$ ' + (fmtGrade(valor) || '0'), title:'R$ ' + fmtExato(valor) }),
+    h('span', { class:'mk-valor', text: fmtGrade(valor) || '0,00', title: fmtExato(valor) }),
   ]);
 }
 
 function irPara(mes){
+  if (mes === state.mes) return;
   state.mes = mes;
-  abrirLoader('Abrindo ' + nomeMes(mes) + '…');
+  const guardado = state.cache[mes];
+  if (guardado){            // mês já visitado: aparece na hora
+    state.dados = guardado;
+    calcular();
+    render();
+    vizinhos();
+    return;
+  }
   carregar();
 }
 
@@ -601,7 +682,12 @@ function linhaTr(l, dias){
     return tr;
   }
 
-  const tr = h('tr', { class:'l-' + l.kind + (l.nivel ? ' nivel-' + l.nivel : '') });
+  /* Saldo inicial, total de saídas e saldo final ficam à vista o tempo todo,
+     como o cabeçalho dos dias: são as três leituras que dão sentido a qualquer
+     linha que se esteja olhando lá embaixo. */
+  const acompanha = l.kind === 'saldo-ini' || l.kind === 'saldo-fim' || l.kind === 'total';
+  const tr = h('tr', { class:'l-' + l.kind + (l.nivel ? ' nivel-' + l.nivel : '') +
+                              (l.classe ? ' ' + l.classe : '') + (acompanha ? ' fixa' : '') });
   const pegar = l.get || (() => undefined);
 
   /* nome da linha, com o código e o triângulo de recolher */
@@ -645,11 +731,11 @@ function linhaTr(l, dias){
   const tdTot = h('td', { class:'col-total num' + classeValor(l, tv) });
   if (l.kind === 'dif' && tv !== undefined && tv !== null){
     const z = Math.abs(num(tv)) < 0.005 ? 0 : num(tv);
-    tdTot.textContent = z === 0 ? '0,00' : fmtGrade(z);
+    tdTot.textContent = z.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
   } else {
     tdTot.textContent = (tv === undefined || tv === null) ? '' : fmtGrade(tv);
   }
-  if (tv) tdTot.title = 'R$ ' + fmtExato(tv);
+  if (tv) tdTot.title = fmtExato(tv);
   tr.appendChild(tdTot);
   return tr;
 }
@@ -683,29 +769,35 @@ function celula(l, dia, v){
   if (previsto) cls.push('previsto');
   if (editavel) cls.push('editavel');
   if (detalhavel) cls.push('detalhe');
-  if (ajuste && l.kind === 'linha') cls.push('ajustada');
+  if (ajuste && l.kind === 'linha' && l.linha.modo === 'auto') cls.push('ajustada');
 
   const td = h('td', { class: cls.filter(Boolean).join(' ') });
-  if ((l.kind === 'dif' || l.kind === 'cobertura') && v !== undefined && v !== null){
+  if (l.kind === 'linha'){ td.setAttribute('data-linha', l.linha.id); td.setAttribute('data-dia', dia.data); }
+  if (l.kind === 'dif' && v !== undefined && v !== null){
     const z = Math.abs(num(v)) < 0.005 ? 0 : num(v);
-    td.textContent = z === 0 ? '0,00' : fmtGrade(z);
+    td.textContent = z.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  } else if (l.kind === 'cobertura' && v !== undefined && v !== null){
+    td.textContent = fmtNum(num(v)) || '0';
   } else {
     td.textContent = (v === undefined || v === null) ? '' : fmtGrade(v);
   }
   if (ajuste && auto){
     td.textContent = fmtGrade(v) || '0';
-    td.title = 'R$ ' + fmtExato(auto) + ' do relatório  ·  ajuste de R$ ' + fmtExato(ajuste) +
-               '  =  R$ ' + fmtExato(v);
+    td.title = fmtExato(auto) + ' do relatório  ·  ajuste de ' + fmtExato(ajuste) +
+               '  =  ' + fmtExato(v);
   } else if (ajuste){
-    td.title = 'R$ ' + fmtExato(v) + '  ·  lançado à mão';
+    td.title = fmtExato(v) + '  ·  lançado à mão';
   } else if (num(v)){
     const q = chave && c.qtdPorCel[chave];
-    td.title = 'R$ ' + fmtExato(v) + (q ? ('  ·  ' + q + ' título(s)') : '') +
+    td.title = fmtExato(v) + (q ? ('  ·  ' + q + ' título(s)') : '') +
                (previsto ? '  ·  previsto' : '');
   }
 
   if (editavel || detalhavel){
-    td.onclick = () => abrirCelula(l, dia, v);
+    td.onclick = () => abrirCelula(l, dia, v, td);
+    if (editavel && l.kind === 'linha'){
+      td.ondblclick = e => { e.preventDefault(); editarNaCelula(td, l, dia); };
+    }
   }
   return td;
 }
@@ -713,12 +805,138 @@ function celula(l, dia, v){
 /* ============================================================================
    CLIQUE NA CÉLULA
    ============================================================================ */
-function abrirCelula(l, dia, v){
+function abrirCelula(l, dia, v, td){
   if (l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' || l.kind === 'cabec-saldo'){
     return abrirSaldos(dia.data);
   }
+  /* Linha digitada é para digitar: o clique abre a própria célula. A janela
+     continua ali para observação, exclusão e histórico, no duplo clique da
+     linha automática ou quando o dia tem mais de um lançamento. */
   if (l.linha.modo === 'auto') return abrirDetalheTitulos(l, dia);
+  if (state.podeEditar) return editarNaCelula(td, l, dia);
   return abrirLancamentos(l, dia);
+}
+
+/* ============================================================================
+   EDIÇÃO NA PRÓPRIA CÉLULA
+   ----------------------------------------------------------------------------
+   Enter salva e desce, Tab salva e anda para o dia seguinte, Esc desiste.
+   O valor entra na tela na hora e a gravação segue por baixo — quem digita uma
+   coluna inteira de recebimentos não pode esperar o servidor a cada tecla.
+   ============================================================================ */
+function editarNaCelula(td, l, dia){
+  if (!state.podeEditar || !td || td.querySelector('input')) return;
+  const lista = state.calc.lancPorCel[l.linha.id + '|' + dia.data] || [];
+  if (lista.length > 1) return abrirLancamentos(l, dia);   // vários: pela janela
+  if (!pedirAutor()){ toast('Preciso do seu nome para registrar o lançamento.', true); return; }
+
+  const lanc = lista[0] || null;
+  const antes = td.textContent;
+  td.classList.add('editando');
+  td.textContent = '';
+  const inp = h('input', { type:'text', inputmode:'decimal', class:'cel-input',
+                           value: lanc ? fmtExato(lanc.valor) : '' });
+  td.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  let encerrado = false;
+  const encerrar = (salvar, depois) => {
+    if (encerrado) return;
+    encerrado = true;
+    const texto = inp.value;
+    td.classList.remove('editando');
+    td.textContent = antes;
+    if (salvar) aplicarNaCelula(l, dia, lanc, texto);
+    if (depois) depois();
+  };
+
+  inp.onkeydown = e => {
+    if (e.key === 'Enter'){ e.preventDefault(); encerrar(true, () => andar(l, dia, 'baixo')); }
+    else if (e.key === 'Tab'){ e.preventDefault(); encerrar(true, () => andar(l, dia, e.shiftKey ? 'esq' : 'dir')); }
+    else if (e.key === 'Escape'){ e.preventDefault(); encerrar(false); }
+  };
+  inp.onblur = () => encerrar(true);
+}
+
+/* Depois de salvar a tabela é redesenhada, então a célula vizinha é procurada
+   pelo par linha+dia, não pelo elemento antigo, que já não existe. */
+function andar(l, dia, sentido){
+  const dias = diasVisiveis();
+  const iDia = dias.findIndex(x => x.data === dia.data);
+  let alvo = null;
+
+  if (sentido === 'dir' || sentido === 'esq'){
+    const j = iDia + (sentido === 'dir' ? 1 : -1);
+    if (dias[j]) alvo = { linha: l.linha.id, dia: dias[j].data };
+  } else {
+    const linhas = linhasDaTela().filter(x => x.kind === 'linha' && x.linha.secao === l.linha.secao);
+    const i = linhas.findIndex(x => x.linha.id === l.linha.id);
+    if (linhas[i + 1]) alvo = { linha: linhas[i + 1].linha.id, dia: dia.data };
+  }
+  if (!alvo) return;
+
+  setTimeout(() => {
+    const td = document.querySelector('td[data-linha="' + alvo.linha + '"][data-dia="' + alvo.dia + '"]');
+    if (!td || !td.classList.contains('editavel')) return;
+    td.scrollIntoView({ block:'nearest', inline:'nearest' });
+    const rec = linhasDaTela().find(x => x.linha && x.linha.id === alvo.linha);
+    const d = state.dados.dias.find(x => x.data === alvo.dia);
+    if (rec && d) editarNaCelula(td, rec, d);
+  }, 30);
+}
+
+/* Grava sem tirar o usuário do lugar: o número muda na tela na hora e o envio
+   acontece atrás. Se o envio falhar, a tela recarrega e o aviso aparece —
+   melhor perder a digitação do que exibir número que não foi gravado. */
+function aplicarNaCelula(l, dia, lanc, texto){
+  const v = parseValor(texto);
+  const atual = lanc ? num(lanc.valor) : null;
+  if (v === null && !lanc) return;                       // nada digitado, nada a fazer
+  if (v !== null && atual !== null && Math.abs(v - atual) < 0.005) return;   // nada mudou
+
+  const lista = state.dados.lancamentos;
+  if (v === null && lanc){                               // apagou: exclui o lançamento
+    const i = lista.findIndex(x => x.id === lanc.id);
+    if (i >= 0) lista.splice(i, 1);
+    redesenhar();
+    enviarEmSilencio({ acao:'fluxo_excluir', id: lanc.id }, 'Lançamento excluído.');
+    return;
+  }
+
+  const id = lanc ? lanc.id : ('m' + Date.now().toString(36) + Math.floor(Math.random() * 1e4));
+  if (lanc) lanc.valor = v;
+  else lista.push({ id: id, data: dia.data, linha_id: l.linha.id, valor: v,
+                    descricao: '', autor: state.autor, quando: '', desfeito: false });
+  redesenhar();
+  enviarEmSilencio({ acao:'fluxo_lancamento', lancamento: {
+    id: id, data: dia.data, linha_id: l.linha.id, valor: v,
+    descricao: lanc ? (lanc.descricao || '') : '', autor: state.autor,
+  } }, null);
+}
+
+function redesenhar(){
+  state.cache[state.mes] = state.dados;
+  calcular();
+  render();
+}
+
+async function enviarEmSilencio(payload, textoOk){
+  fioComeca();
+  try {
+    await fetch(CONFIG.DATA_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    });
+    fioTermina();
+    if (textoOk) toast(textoOk);
+  } catch(e){
+    fioTermina();
+    toast('Não consegui gravar: ' + (e.message || e) + '. Recarregando…', true);
+    delete state.cache[state.mes];
+    setTimeout(() => carregar(), 1200);
+  }
 }
 
 /* --- o que forma o número: os títulos daquele dia e daquela conta --- */
@@ -734,7 +952,7 @@ function blocoAjustes(l, dia){
       lista.length === 1 ? 'Ajuste lançado à mão' : (lista.length + ' ajustes lançados à mão') }));
     lista.forEach(x => {
       const b = h('button', { class:'lanc-item', type:'button' }, [
-        h('span', { class:'li-val', text:'R$ ' + fmtExato(x.valor) }),
+        h('span', { class:'li-val', text: fmtExato(x.valor) }),
         h('span', { class:'li-desc', text: x.descricao || 'sem observação' }),
         h('span', { class:'li-quem', text: (x.autor || '') +
           (x.quando ? (' · ' + x.quando.slice(0,10).split('-').reverse().join('/')) : '') }),
@@ -788,7 +1006,7 @@ async function abrirDetalheTitulos(l, dia){
        ali seria mentira — o valor está na cara de quem pergunta. */
     if (!r.linhas.length){
       el('det-sub').textContent = fmtData(dia.data) +
-        (auto ? (' · R$ ' + fmtExato(auto)) : ' · sem valor do relatório');
+        (auto ? (' · ' + fmtExato(auto)) : ' · sem valor do relatório');
       corpo.appendChild(h('div', { class:'note info' }, [
         icone('fa-circle-info'),
         h('span', { text: auto
@@ -807,8 +1025,8 @@ async function abrirDetalheTitulos(l, dia){
       return;
     }
     el('det-sub').textContent = fmtData(dia.data) + ' · ' + r.linhas.length +
-      ' título(s) · R$ ' + fmtExato(r.total) +
-      (ajuste ? ('  ·  ajuste de R$ ' + fmtExato(ajuste)) : '');
+      ' título(s) · ' + fmtExato(r.total) +
+      (ajuste ? ('  ·  ajuste de ' + fmtExato(ajuste)) : '');
     const tbl = h('table', { class:'tabela-simples' }, [
       h('thead', {}, [ h('tr', {}, [
         h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
@@ -847,7 +1065,7 @@ function abrirLancamentos(l, dia){
     corpo.innerHTML = '';
     lista.forEach(x => {
       const b = h('button', { class:'lanc-item', type:'button' }, [
-        h('span', { class:'li-val', text:'R$ ' + fmtExato(x.valor) }),
+        h('span', { class:'li-val', text: fmtExato(x.valor) }),
         h('span', { class:'li-desc', text: x.descricao || 'sem observação' }),
         h('span', { class:'li-quem', text: (x.autor || '') + (x.quando ? (' · ' + x.quando.slice(0,10).split('-').reverse().join('/')) : '') }),
       ]);
@@ -915,7 +1133,8 @@ async function excluirLancamento(){
 /* O Apps Script responde sem corpo (no-cors), então esperamos um instante
    antes de reler — é o mesmo compasso da tela de envio do painel. */
 function recarregarDepois(){
-  abrirLoader('Salvando…');
+  delete state.cache[state.mes];
+  fioComeca();
   setTimeout(() => carregar(), 1500);
 }
 
@@ -933,9 +1152,9 @@ function abrirSaldos(data){
   const atualizarTotal = () => {
     let t = 0;
     corpo.querySelectorAll('input[data-conta]').forEach(i => { t += parseValor(i.value) || 0; });
-    el('sal-total').textContent = 'Total: R$ ' + fmtExato(t) +
-      '  ·  saldo calculado: R$ ' + fmtExato(c.sdFim[data]) +
-      '  ·  diferença: R$ ' + fmtExato(t - c.sdFim[data]);
+    el('sal-total').textContent = 'Total: ' + fmtExato(t) +
+      '  ·  saldo calculado: ' + fmtExato(c.sdFim[data]) +
+      '  ·  diferença: ' + fmtExato(t - c.sdFim[data]);
     el('sal-total').className = 'sal-total' + (Math.abs(t - c.sdFim[data]) < 0.01 ? ' ok' : ' alerta');
   };
 
@@ -1041,6 +1260,19 @@ document.addEventListener('DOMContentLoaded', () => {
     el('btnDias').querySelector('span').textContent = state.soUteis ? 'Dias úteis' : 'Todos os dias';
     render();
   };
+  try { state.exato = sessionStorage.getItem('fluxo_exato') === '1'; } catch(e){}
+  const pintarCentavos = () => {
+    const b = el('btnCentavos');
+    b.querySelector('span').textContent = state.exato ? 'Compacto' : 'Centavos';
+    b.classList.toggle('ligado', state.exato);
+  };
+  pintarCentavos();
+  el('btnCentavos').onclick = () => {
+    state.exato = !state.exato;
+    try { sessionStorage.setItem('fluxo_exato', state.exato ? '1' : '0'); } catch(e){}
+    pintarCentavos();
+    render();
+  };
   el('lanc-salvar').onclick = salvarLancamento;
   el('lanc-excluir').onclick = excluirLancamento;
   el('sal-salvar').onclick = salvarSaldos;
@@ -1054,6 +1286,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.modal').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
   });
+
+  window.addEventListener('resize', () => empilharFixas());
 
   try {
     const p = new URLSearchParams(location.search).get('mes');

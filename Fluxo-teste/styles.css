@@ -91,6 +91,7 @@ header{
 .btn-danger{background:#fff;color:var(--danger);border-color:var(--danger-soft)}
 .btn-danger:hover:not(:disabled){background:var(--danger-soft);border-color:var(--danger)}
 .btn-sm{padding:7px 12px;font-size:12px;border-radius:9px}
+.btn-ghost.ligado{background:var(--orange-soft);border-color:#FFD9B8;color:var(--orange-deep)}
 
 /* ------------------------------------------------------------- conteúdo */
 .content{position:relative;z-index:1;padding:20px 26px 70px;margin:0 auto;width:100%;
@@ -159,6 +160,8 @@ thead th{
 }
 thead th.col-nome{z-index:6}
 th.col-dia{width:96px;min-width:96px;text-align:right;padding:5px 10px;height:auto}
+body.exato th.col-dia{width:118px;min-width:118px}
+body.exato th.col-total{width:140px;min-width:140px}
 th.col-dia .d-num{display:block;font-family:var(--font-mono);font-size:12px;color:var(--ink);letter-spacing:0}
 th.col-dia .d-dow{display:block;font-size:9.5px;font-weight:600;color:var(--subtle);text-transform:lowercase}
 th.col-dia.nao-util{background:#F1ECF1}
@@ -188,6 +191,13 @@ tr.nivel-1 .nome-box{padding-left:14px}
 tr.nivel-2 .nome-box{padding-left:28px}
 tr.nivel-3 .nome-box{padding-left:42px}
 
+/* as linhas que acompanham a rolagem, empilhadas abaixo do cabeçalho.
+   Ficam sob o cabeçalho dos dias (z-index menor) e sobre o resto da tabela. */
+tr.fixa td{position:sticky;top:var(--topo,0);z-index:3}
+tr.fixa td.col-nome{z-index:5}
+tr.fixa td{box-shadow:0 1px 0 rgba(45,27,45,.10)}
+tr.fixa.l-total td{box-shadow:0 1px 0 rgba(45,27,45,.14)}
+
 tr.l-espaco td{height:10px;border-bottom:none;background:transparent!important}
 tr.l-grupo td{font-weight:700;background:rgba(246,242,246,.7)}
 tr.l-grupo td.col-nome{background:#F6F2F6}
@@ -202,7 +212,11 @@ tr.l-saldo-ini td,tr.l-saldo-fim td{background:var(--plum-deep);color:#fff;font-
 tr.l-saldo-ini td.col-nome,tr.l-saldo-fim td.col-nome{
   background:var(--plum-deep);color:#fff;font-family:var(--font-display);font-size:13.5px}
 tr.l-saldo-fim td{font-size:12.5px}
-tr.l-saldo-ini:hover td,tr.l-saldo-fim:hover td{background:#3A243A}
+/* O hover geral clareia a coluna dos nomes, e nas linhas escuras isso apagava
+   o texto branco. Aqui a linha inteira escurece junto, coluna do nome incluída. */
+tbody tr.l-saldo-ini:hover td,tbody tr.l-saldo-fim:hover td,
+tbody tr.l-saldo-ini:hover td.col-nome,tbody tr.l-saldo-fim:hover td.col-nome{
+  background:#3A243A;color:#fff}
 
 tr.l-cabec-saldo td{background:var(--surface-soft);font-family:var(--font-display);
   font-size:12.5px;font-weight:600;color:var(--plum)}
@@ -233,6 +247,12 @@ td.ajustada::before{
   color:var(--muted);margin-bottom:8px}
 .ajustes-dica{margin-top:9px;font-size:11.5px;line-height:1.5;color:var(--subtle)}
 .note.warn{background:var(--warn-soft);color:#7C2D12}
+/* célula em edição: o campo ocupa a célula inteira, sem empurrar a coluna */
+td.editando{padding:0;background:#fff!important;box-shadow:inset 0 0 0 2px var(--orange)}
+input.cel-input{
+  width:100%;height:28px;padding:0 9px;border:none;outline:none;background:transparent;
+  font-family:var(--font-mono);font-size:11.5px;text-align:right;color:var(--ink);
+}
 td.detalhe{cursor:pointer}
 td.detalhe:hover{text-decoration:underline dotted;text-underline-offset:3px}
 
