@@ -108,6 +108,7 @@ const state = {
   exato: false,         // centavos à mostra
   recolhidos: {},       // grupos fechados
   autor: '',
+  primeiraPintura: true,
   podeEditar: false,
   edicao: null,
   cache: {},            // meses já abertos nesta sessão
@@ -487,10 +488,29 @@ function render(){
   fecharBancosNaPrimeiraVez();
   document.body.classList.toggle('exato', state.exato);
   renderStamp();
+
+  /* Onde a pessoa estava olhando. Trocar de mês, ligar os centavos ou mostrar
+     os fins de semana refazem a tabela, e sem isto a tela saltaria para o
+     começo a cada vez. */
+  const antigo = document.querySelector('.grade-wrap');
+  const rolagem = antigo ? { x: antigo.scrollLeft, y: antigo.scrollTop } : null;
+
   const c = el('content');
   c.innerHTML = '';
   c.appendChild(barraMes());
   c.appendChild(secaoTabela());
+
+  if (rolagem){
+    const novo = document.querySelector('.grade-wrap');
+    if (novo){ novo.scrollLeft = rolagem.x; novo.scrollTop = rolagem.y; }
+  }
+  /* A animação de entrada é para a primeira pintura. Repetida a cada
+     atualização, ela vira piscada. */
+  if (state.primeiraPintura){
+    document.body.classList.add('entrando');
+    state.primeiraPintura = false;
+    setTimeout(() => document.body.classList.remove('entrando'), 700);
+  }
   empilharFixas();
 }
 
@@ -663,24 +683,19 @@ function linhasDaTela(){
      e fecha: no dia a dia o que se lê é o total do banco, e o detalhe por
      conta só interessa na hora de digitar. Por isso nascem fechados. */
   c.empresas.forEach(emp => {
-    L.push({ kind:'espaco' });
+    L.push({ kind:'espaco', cadeia: [] });
     const chaveEmp = 'emp:' + emp;
     L.push({ kind:'cabec-saldo', label:'Posição de saldos · ' + emp,
-             grupo: chaveEmp, aberto: !fechado(chaveEmp) });
-    if (fechado(chaveEmp)){
-      L.push({ kind:'saldo-total', label:'Total ' + emp,
-               get: dia => c.temSaldo[dia] ? c.totEmpresa[emp][dia] : undefined });
-      return;
-    }
+             grupo: chaveEmp, cadeia: [] });
     d.contas.filter(x => x.empresa === emp).forEach(x => {
       if (x.tipo === 'grupo'){
         L.push({ kind:'saldo-grupo', conta: x, label: x.descricao,
-                 grupo: 'banco:' + x.id, aberto: !fechado('banco:' + x.id),
+                 grupo: 'banco:' + x.id, cadeia: [chaveEmp],
                  get: dia => (c.sal[x.id] && c.sal[x.id][dia]) });
         return;
       }
-      if (fechado('banco:' + x.pai)) return;
       L.push({ kind:'saldo-conta', conta: x, label: x.descricao,
+               cadeia: ['banco:' + x.pai, chaveEmp],
                get: dia => (c.sal[x.id] && c.sal[x.id][dia]) });
     });
     L.push({ kind:'saldo-total', label:'Total ' + emp,
@@ -693,16 +708,28 @@ function linhasDaTela(){
   return L;
 }
 
-/* Empilha uma linha do plano respeitando os grupos fechados. */
+/* Empilha uma linha do plano. Nada é filtrado aqui: a linha vai para a tabela
+   sabendo de quem ela depende, e quem decide se aparece é o CSS. */
 function empilhar(L, l){
-  if (l.pai && paiFechado(l.pai)) return;
   const c = state.calc;
   L.push({
     kind: l.tipo === 'grupo' ? 'grupo' : 'linha',
     linha: l, label: l.descricao, codigo: l.codigo,
     nivel: nivelDe(l),
+    cadeia: ancestrais(l.pai),
     get: dia => (c.val[l.id] && c.val[l.id][dia]),
   });
+}
+
+/* A cadeia de grupos acima de uma linha, do mais próximo ao mais distante. */
+function ancestrais(pai){
+  const out = [];
+  let p = pai;
+  while (p){
+    out.push(p);
+    p = state.calc.porId[p] ? state.calc.porId[p].pai : '';
+  }
+  return out;
 }
 function nivelDe(l){
   let n = 0, p = l.pai;
@@ -710,6 +737,31 @@ function nivelDe(l){
   return n;
 }
 function fechado(chave){ return !!state.recolhidos[chave]; }
+
+/* Abrir e fechar grupo não redesenha nada: as linhas já estão na tabela, e o
+   que muda é quais delas aparecem. Sem reconstrução não há piscada, a rolagem
+   fica onde está e a resposta é imediata. */
+function aplicarGrupos(){
+  document.querySelectorAll('table.grade tr[data-cadeia]').forEach(tr => {
+    const cadeia = tr.getAttribute('data-cadeia').split(' ');
+    tr.classList.toggle('oculta', cadeia.some(fechado));
+  });
+  document.querySelectorAll('table.grade tr[data-grupo]').forEach(tr => {
+    const estaFechado = fechado(tr.getAttribute('data-grupo'));
+    const i = tr.querySelector('button.toggle i');
+    if (i) i.className = 'fa-solid ' + (estaFechado ? 'fa-chevron-right' : 'fa-chevron-down');
+    const b = tr.querySelector('button.toggle');
+    if (b) b.title = estaFechado ? 'abrir' : 'fechar';
+  });
+  const btn = document.querySelector('.btn-agrupar');
+  if (btn){
+    const tudo = tudoFechado();
+    const i = btn.querySelector('i');
+    if (i) i.className = 'fa-solid ' + (tudo ? 'fa-angles-down' : 'fa-angles-up');
+    btn.title = tudo ? 'Abrir todos os grupos' : 'Fechar todos os grupos';
+  }
+  empilharFixas();
+}
 
 function guardarGrupos(){
   try { sessionStorage.setItem('fluxo_grupos', JSON.stringify(state.recolhidos)); } catch(e){}
@@ -748,13 +800,17 @@ function alternarTudo(){
     state.calc.empresas.forEach(e => { state.recolhidos['emp:' + e] = true; });
   }
   guardarGrupos();
-  render();
+  aplicarGrupos();
   return !algumAberto;
 }
 
+/* "Tudo fechado" leva em conta as duas hierarquias, senão o ícone do botão
+   contradiz o que está na tela. */
 function tudoFechado(){
-  if (!state.dados) return false;
-  return !state.dados.plano.some(l => l.tipo === 'grupo' && !fechado(l.id));
+  if (!state.dados || !state.calc) return false;
+  return !state.dados.plano.some(l => l.tipo === 'grupo' && !fechado(l.id)) &&
+         !state.dados.contas.some(c => c.tipo === 'grupo' && !fechado('banco:' + c.id)) &&
+         !state.calc.empresas.some(e => !fechado('emp:' + e));
 }
 
 function paiFechado(id){
@@ -778,8 +834,12 @@ function linhaTr(l, dias){
      como o cabeçalho dos dias: são as três leituras que dão sentido a qualquer
      linha que se esteja olhando lá embaixo. */
   const acompanha = l.kind === 'saldo-ini' || l.kind === 'saldo-fim' || l.kind === 'total';
+  const cadeia = l.cadeia || [];
   const tr = h('tr', { class:'l-' + l.kind + (l.nivel ? ' nivel-' + l.nivel : '') +
-                              (l.classe ? ' ' + l.classe : '') + (acompanha ? ' fixa' : '') });
+                              (l.classe ? ' ' + l.classe : '') + (acompanha ? ' fixa' : '') +
+                              (cadeia.some(fechado) ? ' oculta' : '') });
+  if (cadeia.length) tr.setAttribute('data-cadeia', cadeia.join(' '));
+  if (l.grupo) tr.setAttribute('data-grupo', l.grupo);
   const pegar = l.get || (() => undefined);
 
   /* nome da linha, com o código e o triângulo de recolher */
@@ -788,15 +848,19 @@ function linhaTr(l, dias){
   /* O triângulo serve às duas hierarquias: os grupos do plano de contas e os
      bancos da posição de saldos. */
   const chaveGrupo = l.kind === 'grupo' ? l.linha.id : (l.grupo || '');
+  if (chaveGrupo) tr.setAttribute('data-grupo', chaveGrupo);
   if (chaveGrupo){
     const estaFechado = fechado(chaveGrupo);
     const b = h('button', { class:'toggle', type:'button', title: estaFechado ? 'abrir' : 'fechar' },
       [ icone(estaFechado ? 'fa-chevron-right' : 'fa-chevron-down') ]);
+    /* O estado é lido no momento do clique, e não capturado aqui: como a
+       tabela não é mais redesenhada a cada vez, um valor guardado no botão
+       envelhece assim que outro comando mexe nos grupos. */
     b.onclick = e => {
       e.stopPropagation();
-      state.recolhidos[chaveGrupo] = !estaFechado;
+      state.recolhidos[chaveGrupo] = !fechado(chaveGrupo);
       guardarGrupos();
-      render();
+      aplicarGrupos();
     };
     box.appendChild(b);
   }

@@ -96,7 +96,12 @@ header{
 /* ------------------------------------------------------------- conteúdo */
 .content{position:relative;z-index:1;padding:20px 26px 70px;margin:0 auto;width:100%;
   display:flex;flex-direction:column;gap:16px}
-.section{animation:fadeUp .35s ease-out both}
+/* a entrada é animada uma vez, quando a tela abre; a cada atualização seria
+   piscada, não recepção */
+body.entrando .section{animation:fadeUp .35s ease-out both}
+
+/* linha de grupo fechado: sai de vista sem sair da tabela */
+tr.oculta{display:none}
 
 /* barra do mês: navegação à esquerda, o resumo do mês à direita */
 .barra-mes{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:space-between}
