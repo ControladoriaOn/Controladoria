@@ -20,7 +20,7 @@
 
 const CONFIG = {
   // mesma URL /exec do painel de pagamentos
-  DATA_URL: 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec',
+  DATA_URL: 'https://script.google.com/macros/s/AKfycbzHS4o-21O7eIfKsyc3Y04J0hBObuhnTAcWZmV7EWXeCyyvlp5FyMpDj93406TgEOZ2/exec',
   RETRIES: 3,
   BACKOFF_MS: 600,
 };
