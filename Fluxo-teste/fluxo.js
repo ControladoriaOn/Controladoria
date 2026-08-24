@@ -439,38 +439,34 @@ function calcular(){
 
   const empresas = [];
   contas.forEach(c => { if (empresas.indexOf(c.empresa) < 0) empresas.push(c.empresa); });
-  const totEmpresa = {}, totBancos = {}, disponivel = {};
+  const totEmpresa = {}, totBancos = {};
   empresas.forEach(emp => { totEmpresa[emp] = {}; });
   dias.forEach(data => {
-    let geral = 0, livre = 0;
+    let geral = 0;
     empresas.forEach(emp => {
       let t = 0;
       contas.forEach(c => {
         if (c.empresa !== emp || c.tipo !== 'conta') return;
-        const v = (sal[c.id] && sal[c.id][data]) || 0;
-        t += v;
-        if (String(c.disponivel).toLowerCase() === 'sim') livre += v;
+        t += (sal[c.id] && sal[c.id][data]) || 0;
       });
       totEmpresa[emp][data] = t;
       geral += t;
     });
     totBancos[data] = geral;
-    disponivel[data] = livre;
   });
 
   /* A diferença é o alarme: bancos menos saldo calculado. Só faz sentido no
      dia em que alguém informou os saldos. */
-  const dif = {}, cobertura = {};
+  const dif = {};
   dias.forEach(data => {
     if (!temSaldo[data]) return;
     dif[data] = totBancos[data] - sdFim[data];
-    cobertura[data] = disponivel[data] - totSai[data];
   });
 
   state.calc = {
     dias, val, filhos, porId, totEnt, totSai, sdIni, sdFim,
     sal, temSaldo, contaPorId, filhosConta, empresas, totEmpresa, totBancos,
-    disponivel, dif, cobertura, lancPorCel, qtdPorCel, previstoCel, hoje,
+    dif, lancPorCel, qtdPorCel, previstoCel, hoje,
     autoCel, ajusteCel,
   };
 }
@@ -694,7 +690,6 @@ function linhasDaTela(){
   L.push({ kind:'espaco' });
   L.push({ kind:'bancos', label:'Total nos bancos', get: dia => c.temSaldo[dia] ? c.totBancos[dia] : undefined });
   L.push({ kind:'dif', label:'Diferença', get: dia => c.dif[dia] });
-  L.push({ kind:'cobertura', label:'Sobra depois de pagar o dia', get: dia => c.cobertura[dia] });
   return L;
 }
 
@@ -820,7 +815,6 @@ function linhaTr(l, dias){
   /* Total do mês: soma nas linhas de movimento; nas de saldo, a última foto. */
   let tv = total;
   if (l.kind === 'saldo-ini') tv = c.sdIni[dias[0] ? dias[0].data : c.dias[0]];
-  else if (l.kind === 'cobertura') tv = undefined;
   else if (l.kind === 'saldo-fim' || l.kind === 'bancos' || l.kind === 'dif' ||
            l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' ||
            l.kind === 'saldo-total'){
@@ -843,10 +837,9 @@ function linhaTr(l, dias){
 }
 
 function classeValor(l, v){
-  if (l.kind !== 'dif' && l.kind !== 'cobertura') return '';
+  if (l.kind !== 'dif') return '';
   if (v === undefined || v === null) return '';
-  if (l.kind === 'dif') return Math.abs(num(v)) < 0.01 ? ' v-ok' : ' v-alerta';
-  return num(v) >= 0 ? ' v-ok' : ' v-alerta';
+  return Math.abs(num(v)) < 0.01 ? ' v-ok' : ' v-alerta';
 }
 
 function celula(l, dia, v){
@@ -878,8 +871,6 @@ function celula(l, dia, v){
   if (l.kind === 'dif' && v !== undefined && v !== null){
     const z = Math.abs(num(v)) < 0.005 ? 0 : num(v);
     td.textContent = z.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
-  } else if (l.kind === 'cobertura' && v !== undefined && v !== null){
-    td.textContent = fmtNum(num(v)) || '0';
   } else {
     td.textContent = (v === undefined || v === null) ? '' : fmtGrade(v);
   }

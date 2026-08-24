@@ -238,8 +238,8 @@ tr.l-saldo-conta td.col-nome{color:var(--plum-soft);padding-left:24px}
 tr.l-saldo-total td,tr.l-bancos td{font-weight:800;background:#F3EDF3}
 tr.l-saldo-total td.col-nome,tr.l-bancos td.col-nome{background:#F3EDF3}
 
-tr.l-dif td,tr.l-cobertura td{font-weight:700}
-tr.l-dif td.col-nome,tr.l-cobertura td.col-nome{font-weight:700;color:var(--plum)}
+tr.l-dif td{font-weight:700}
+tr.l-dif td.col-nome{font-weight:700;color:var(--plum)}
 td.v-ok{color:var(--ok)}
 td.v-alerta{color:var(--danger);background:rgba(254,226,226,.55)!important}
 
