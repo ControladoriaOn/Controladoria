@@ -20,7 +20,7 @@
 
 const CONFIG = {
   // mesma URL /exec do painel de pagamentos
-  DATA_URL: 'https://script.google.com/macros/s/AKfycbzHS4o-21O7eIfKsyc3Y04J0hBObuhnTAcWZmV7EWXeCyyvlp5FyMpDj93406TgEOZ2/exec',
+  DATA_URL: 'cole aqui a URL /exec do script de teste',
   RETRIES: 3,
   BACKOFF_MS: 600,
 };
@@ -262,15 +262,29 @@ async function carregar(primeira){
   }
 }
 
-/* Navegar de mês em mês é o movimento natural da tela, então os vizinhos são
-   buscados em silêncio enquanto se olha o mês atual. */
+/* O mês vizinho é buscado em silêncio, mas um de cada vez e só depois que a
+   tela já está pronta. O Apps Script atende uma execução por vez para o mesmo
+   usuário: pedir três meses juntos põe o mês que você está olhando atrás dos
+   outros dois na fila. Por isso a espera é longa, e por isso isto anda devagar
+   de propósito. */
 function vizinhos(){
   clearTimeout(vizinhos._t);
-  vizinhos._t = setTimeout(() => {
-    [addMes(state.mes, 1), addMes(state.mes, -1)].forEach(m => {
-      if (!state.cache[m]) buscarMes(m).catch(() => {});
-    });
-  }, 900);
+  vizinhos._t = setTimeout(async () => {
+    for (const m of [addMes(state.mes, -1), addMes(state.mes, 1)]){
+      if (state.cache[m] || m !== addMes(state.mes, -1) && !state.cache[addMes(state.mes,-1)]) {
+        // segue adiante mesmo assim, mas nunca em paralelo
+      }
+      if (state.cache[m]) continue;
+      try { await buscarMes(m); } catch(e){ return; }
+      await respira(300);
+      if (state.mes !== m && !state.cache[state.mes]) return;  // o usuário mudou de ideia
+    }
+  }, 2500);
+}
+
+/* Passar o mouse na seta é um bom palpite de para onde a pessoa vai. */
+function adiantar(mes){
+  if (!state.cache[mes]) buscarMes(mes).catch(() => {});
 }
 
 function esconderLoader(){
@@ -474,6 +488,7 @@ function diasVisiveis(){
    RENDER
    ============================================================================ */
 function render(){
+  fecharBancosNaPrimeiraVez();
   document.body.classList.toggle('exato', state.exato);
   renderStamp();
   const c = el('content');
@@ -490,10 +505,16 @@ function empilharFixas(){
   requestAnimationFrame(() => {
     const thead = document.querySelector('table.grade thead');
     if (!thead) return;
+    /* Sem arredondar: as linhas têm altura fracionária, e cada arredondamento
+       deixava uma fresta de menos de um pixel por onde a tabela aparecia
+       correndo por baixo. Cada linha ainda sobe um pixel sobre a anterior,
+       para não sobrar vão nenhum. */
     let topo = thead.getBoundingClientRect().height;
-    document.querySelectorAll('table.grade tr.fixa').forEach(tr => {
-      tr.style.setProperty('--topo', Math.round(topo) + 'px');
-      topo += tr.getBoundingClientRect().height;
+    const fixas = document.querySelectorAll('table.grade tr.fixa');
+    fixas.forEach((tr, i) => {
+      tr.classList.toggle('ultima-fixa', i === fixas.length - 1);
+      tr.style.setProperty('--topo', (i ? topo - 1 : topo).toFixed(2) + 'px');
+      topo += tr.getBoundingClientRect().height - (i ? 1 : 0);
     });
   });
 }
@@ -514,8 +535,10 @@ function barraMes(){
   const nav = h('div', { class:'mes-nav' });
   const ant = h('button', { class:'btn btn-ghost btn-sm', type:'button', title:'Mês anterior' }, [icone('fa-chevron-left')]);
   ant.onclick = () => irPara(addMes(state.mes, -1));
+  ant.onmouseenter = () => adiantar(addMes(state.mes, -1));
   const prox = h('button', { class:'btn btn-ghost btn-sm', type:'button', title:'Próximo mês' }, [icone('fa-chevron-right')]);
   prox.onclick = () => irPara(addMes(state.mes, 1));
+  prox.onmouseenter = () => adiantar(addMes(state.mes, 1));
   const sel = h('select', { class:'filtro' });
   const meses = (d.meses || []).slice();
   if (meses.indexOf(state.mes) < 0) meses.push(state.mes);
@@ -569,7 +592,17 @@ function secaoTabela(){
   const sec = h('div', { class:'section' });
   const card = h('div', { class:'card' });
 
+  /* Fecha ou abre tudo de uma vez — os grupos do plano e os bancos. Fica antes
+     do nome do mês, na altura da coluna de descrição, que é a coluna a que ele
+     se refere. */
+  const tudo = tudoFechado();
+  const btnTudo = h('button', { class:'btn-agrupar', type:'button',
+    title: tudo ? 'Abrir todos os grupos' : 'Fechar todos os grupos' },
+    [ icone(tudo ? 'fa-angles-down' : 'fa-angles-up') ]);
+  btnTudo.onclick = () => alternarTudo();
+
   const legenda = h('div', { class:'card-bar' }, [
+    btnTudo,
     h('div', { class:'card-bar-title' }, [ icone('fa-table-columns'), nomeMes(state.mes) ]),
     h('div', { class:'legenda' }, [
       h('span', {}, [ h('i', { class:'leg leg-real' }), 'realizado' ]),
@@ -630,22 +663,38 @@ function linhasDaTela(){
   L.push({ kind:'espaco' });
   L.push({ kind:'saldo-fim', label:'Saldo Final', get: dia => c.sdFim[dia] });
 
-  /* posição de saldos, uma empresa por bloco */
+  /* Posição de saldos, uma empresa por bloco. Cada banco é um grupo que abre
+     e fecha: no dia a dia o que se lê é o total do banco, e o detalhe por
+     conta só interessa na hora de digitar. Por isso nascem fechados. */
   c.empresas.forEach(emp => {
     L.push({ kind:'espaco' });
-    L.push({ kind:'cabec-saldo', label:'Posição de saldos · ' + emp });
+    const chaveEmp = 'emp:' + emp;
+    L.push({ kind:'cabec-saldo', label:'Posição de saldos · ' + emp,
+             grupo: chaveEmp, aberto: !fechado(chaveEmp) });
+    if (fechado(chaveEmp)){
+      L.push({ kind:'saldo-total', label:'Total ' + emp,
+               get: dia => c.temSaldo[dia] ? c.totEmpresa[emp][dia] : undefined });
+      return;
+    }
     d.contas.filter(x => x.empresa === emp).forEach(x => {
-      L.push({ kind: x.tipo === 'grupo' ? 'saldo-grupo' : 'saldo-conta',
-               conta: x, label: x.descricao,
+      if (x.tipo === 'grupo'){
+        L.push({ kind:'saldo-grupo', conta: x, label: x.descricao,
+                 grupo: 'banco:' + x.id, aberto: !fechado('banco:' + x.id),
+                 get: dia => (c.sal[x.id] && c.sal[x.id][dia]) });
+        return;
+      }
+      if (fechado('banco:' + x.pai)) return;
+      L.push({ kind:'saldo-conta', conta: x, label: x.descricao,
                get: dia => (c.sal[x.id] && c.sal[x.id][dia]) });
     });
-    L.push({ kind:'saldo-total', label:'Total ' + emp, get: dia => c.temSaldo[dia] ? c.totEmpresa[emp][dia] : undefined });
+    L.push({ kind:'saldo-total', label:'Total ' + emp,
+             get: dia => c.temSaldo[dia] ? c.totEmpresa[emp][dia] : undefined });
   });
 
   L.push({ kind:'espaco' });
   L.push({ kind:'bancos', label:'Total nos bancos', get: dia => c.temSaldo[dia] ? c.totBancos[dia] : undefined });
   L.push({ kind:'dif', label:'Diferença', get: dia => c.dif[dia] });
-  L.push({ kind:'cobertura', label:'Disponível menos as saídas do dia', get: dia => c.cobertura[dia] });
+  L.push({ kind:'cobertura', label:'Sobra depois de pagar o dia', get: dia => c.cobertura[dia] });
   return L;
 }
 
@@ -665,6 +714,54 @@ function nivelDe(l){
   while (p && state.calc.porId[p]){ n++; p = state.calc.porId[p].pai; }
   return n;
 }
+function fechado(chave){ return !!state.recolhidos[chave]; }
+
+function guardarGrupos(){
+  try { sessionStorage.setItem('fluxo_grupos', JSON.stringify(state.recolhidos)); } catch(e){}
+}
+function lerGrupos(){
+  try {
+    const g = sessionStorage.getItem('fluxo_grupos');
+    if (g) state.recolhidos = JSON.parse(g) || {};
+  } catch(e){}
+}
+
+/* Os bancos nascem fechados: no dia a dia o que se lê é o total de cada um, e
+   o detalhe por conta só interessa na hora de digitar. Vale uma vez por
+   sessão — depois disso manda o que a pessoa deixou aberto. */
+function fecharBancosNaPrimeiraVez(){
+  if (state.gruposIniciados) return;
+  state.gruposIniciados = true;
+  let jaTem = false;
+  Object.keys(state.recolhidos).forEach(k => { if (k.indexOf('banco:') === 0) jaTem = true; });
+  if (jaTem) return;
+  (state.dados.contas || []).forEach(c => {
+    if (c.tipo === 'grupo') state.recolhidos['banco:' + c.id] = true;
+  });
+  guardarGrupos();
+}
+
+/* Fecha ou abre tudo de uma vez: as linhas do plano e os bancos. */
+function alternarTudo(){
+  const algumAberto = state.dados.plano.some(l => l.tipo === 'grupo' && !fechado(l.id)) ||
+                      state.dados.contas.some(c => c.tipo === 'grupo' && !fechado('banco:' + c.id)) ||
+                      state.calc.empresas.some(e => !fechado('emp:' + e));
+  state.recolhidos = {};
+  if (algumAberto){
+    state.dados.plano.forEach(l => { if (l.tipo === 'grupo') state.recolhidos[l.id] = true; });
+    state.dados.contas.forEach(c => { if (c.tipo === 'grupo') state.recolhidos['banco:' + c.id] = true; });
+    state.calc.empresas.forEach(e => { state.recolhidos['emp:' + e] = true; });
+  }
+  guardarGrupos();
+  render();
+  return !algumAberto;
+}
+
+function tudoFechado(){
+  if (!state.dados) return false;
+  return !state.dados.plano.some(l => l.tipo === 'grupo' && !fechado(l.id));
+}
+
 function paiFechado(id){
   let p = id;
   while (p){
@@ -693,12 +790,17 @@ function linhaTr(l, dias){
   /* nome da linha, com o código e o triângulo de recolher */
   const nome = h('td', { class:'col-nome' });
   const box = h('div', { class:'nome-box' });
-  if (l.kind === 'grupo'){
-    const fechado = !!state.recolhidos[l.linha.id];
-    const b = h('button', { class:'toggle', type:'button', title: fechado ? 'abrir' : 'fechar' },
-      [ icone(fechado ? 'fa-chevron-right' : 'fa-chevron-down') ]);
-    b.onclick = () => {
-      state.recolhidos[l.linha.id] = !fechado;
+  /* O triângulo serve às duas hierarquias: os grupos do plano de contas e os
+     bancos da posição de saldos. */
+  const chaveGrupo = l.kind === 'grupo' ? l.linha.id : (l.grupo || '');
+  if (chaveGrupo){
+    const estaFechado = fechado(chaveGrupo);
+    const b = h('button', { class:'toggle', type:'button', title: estaFechado ? 'abrir' : 'fechar' },
+      [ icone(estaFechado ? 'fa-chevron-right' : 'fa-chevron-down') ]);
+    b.onclick = e => {
+      e.stopPropagation();
+      state.recolhidos[chaveGrupo] = !estaFechado;
+      guardarGrupos();
       render();
     };
     box.appendChild(b);
@@ -1287,6 +1389,7 @@ document.addEventListener('DOMContentLoaded', () => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
   });
 
+  lerGrupos();
   window.addEventListener('resize', () => empilharFixas());
 
   try {
