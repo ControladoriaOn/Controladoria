@@ -221,6 +221,18 @@ td.editavel{cursor:pointer;box-shadow:inset 0 -2px 0 rgba(255,110,0,.18)}
 td.editavel:hover{background:var(--orange-soft)!important;color:var(--orange-deep)}
 td.editavel:empty::after{content:'+';color:transparent}
 td.editavel:hover:empty::after{color:var(--orange)}
+/* célula com ajuste à mão: um canto marcado, para o número não passar por
+   automático quando não é */
+td.ajustada{position:relative}
+td.ajustada::before{
+  content:'';position:absolute;top:2px;right:2px;width:0;height:0;
+  border-top:5px solid var(--orange);border-left:5px solid transparent;
+}
+.ajustes-box{margin-top:16px;padding-top:14px;border-top:1px solid var(--border-soft)}
+.ajustes-titulo{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px}
+.ajustes-dica{margin-top:9px;font-size:11.5px;line-height:1.5;color:var(--subtle)}
+.note.warn{background:var(--warn-soft);color:#7C2D12}
 td.detalhe{cursor:pointer}
 td.detalhe:hover{text-decoration:underline dotted;text-underline-offset:3px}
 

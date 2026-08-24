@@ -20,7 +20,7 @@
 
 const CONFIG = {
   // mesma URL /exec do painel de pagamentos
-  DATA_URL: 'https://script.google.com/macros/s/AKfycbzHS4o-21O7eIfKsyc3Y04J0hBObuhnTAcWZmV7EWXeCyyvlp5FyMpDj93406TgEOZ2/exec',
+  DATA_URL: 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec',
   RETRIES: 3,
   BACKOFF_MS: 600,
 };
@@ -279,6 +279,14 @@ function calcular(){
      corrente mostraria o dia vazio. */
   const hoje = d.hoje;
   const qtdPorCel = {}, previstoCel = {};
+  /* O que veio do relatório e o que foi digitado por cima ficam separados: a
+     célula mostra a soma, mas na hora de explicar o número é preciso saber de
+     onde veio cada parte. */
+  const autoCel = {}, ajusteCel = {};
+  (d.lancamentos || []).forEach(l => {
+    const k = l.linha_id + '|' + l.data;
+    ajusteCel[k] = (ajusteCel[k] || 0) + num(l.valor);
+  });
   const prev = {};
   (d.previsto || []).forEach(r => {
     if (!r.linha_id || r.data < hoje) return;
@@ -289,11 +297,13 @@ function calcular(){
     if (!r.linha_id) return;
     if (r.data >= hoje && k in prev) return;   // o previsto já responde por este dia
     põe(r.linha_id, r.data, num(r.valor));
+    autoCel[k] = (autoCel[k] || 0) + num(r.valor);
     qtdPorCel[k] = num(r.qtd);
   });
   Object.keys(prev).forEach(k => {
     const p = k.split('|');
     põe(p[0], p[1], prev[k]);
+    autoCel[k] = (autoCel[k] || 0) + prev[k];
     previstoCel[k] = true;
   });
 
@@ -391,6 +401,7 @@ function calcular(){
     dias, val, filhos, porId, totEnt, totSai, sdIni, sdFim,
     sal, temSaldo, contaPorId, filhosConta, empresas, totEmpresa, totBancos,
     disponivel, dif, cobertura, lancPorCel, qtdPorCel, previstoCel, hoje,
+    autoCel, ajusteCel,
   };
 }
 
@@ -632,7 +643,12 @@ function linhaTr(l, dias){
     }
   }
   const tdTot = h('td', { class:'col-total num' + classeValor(l, tv) });
-  tdTot.textContent = (tv === undefined || tv === null) ? '' : fmtGrade(tv);
+  if (l.kind === 'dif' && tv !== undefined && tv !== null){
+    const z = Math.abs(num(tv)) < 0.005 ? 0 : num(tv);
+    tdTot.textContent = z === 0 ? '0,00' : fmtGrade(z);
+  } else {
+    tdTot.textContent = (tv === undefined || tv === null) ? '' : fmtGrade(tv);
+  }
   if (tv) tdTot.title = 'R$ ' + fmtExato(tv);
   tr.appendChild(tdTot);
   return tr;
@@ -652,21 +668,38 @@ function celula(l, dia, v){
   if (dia.data === c.hoje) cls.push('hoje');
   cls.push(classeValor(l, v).trim());
 
+  /* Toda linha aceita ajuste à mão, inclusive as que somam sozinhas do
+     relatório: o dinheiro que a automação não enxerga precisa caber em algum
+     lugar, e o lugar certo é a conta a que ele pertence. */
   const editavel = state.podeEditar &&
-    ((l.kind === 'linha' && l.linha.modo === 'manual') ||
-     l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' || l.kind === 'cabec-saldo');
-  const detalhavel = (l.kind === 'linha' && l.linha.modo === 'auto' && num(v)) ||
-                     (l.kind === 'linha' && l.linha.modo === 'manual' && num(v));
+    (l.kind === 'linha' || l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' ||
+     l.kind === 'cabec-saldo');
+  const detalhavel = l.kind === 'linha' && num(v);
 
-  const previsto = l.linha && c.previstoCel[l.linha.id + '|' + dia.data];
+  const chave = l.linha ? (l.linha.id + '|' + dia.data) : '';
+  const previsto = chave && c.previstoCel[chave];
+  const ajuste = chave ? c.ajusteCel[chave] : 0;
+  const auto = chave ? c.autoCel[chave] : 0;
   if (previsto) cls.push('previsto');
   if (editavel) cls.push('editavel');
   if (detalhavel) cls.push('detalhe');
+  if (ajuste && l.kind === 'linha') cls.push('ajustada');
 
   const td = h('td', { class: cls.filter(Boolean).join(' ') });
-  td.textContent = (v === undefined || v === null) ? '' : fmtGrade(v);
-  if (num(v)){
-    const q = l.linha && c.qtdPorCel[l.linha.id + '|' + dia.data];
+  if ((l.kind === 'dif' || l.kind === 'cobertura') && v !== undefined && v !== null){
+    const z = Math.abs(num(v)) < 0.005 ? 0 : num(v);
+    td.textContent = z === 0 ? '0,00' : fmtGrade(z);
+  } else {
+    td.textContent = (v === undefined || v === null) ? '' : fmtGrade(v);
+  }
+  if (ajuste && auto){
+    td.textContent = fmtGrade(v) || '0';
+    td.title = 'R$ ' + fmtExato(auto) + ' do relatório  ·  ajuste de R$ ' + fmtExato(ajuste) +
+               '  =  R$ ' + fmtExato(v);
+  } else if (ajuste){
+    td.title = 'R$ ' + fmtExato(v) + '  ·  lançado à mão';
+  } else if (num(v)){
+    const q = chave && c.qtdPorCel[chave];
     td.title = 'R$ ' + fmtExato(v) + (q ? ('  ·  ' + q + ' título(s)') : '') +
                (previsto ? '  ·  previsto' : '');
   }
@@ -689,6 +722,40 @@ function abrirCelula(l, dia, v){
 }
 
 /* --- o que forma o número: os títulos daquele dia e daquela conta --- */
+/* O bloco dos ajustes: aparece em qualquer célula, acima ou abaixo dos
+   títulos. É por aqui que entra o que a automação não enxerga. */
+function blocoAjustes(l, dia){
+  const c = state.calc;
+  const lista = c.lancPorCel[l.linha.id + '|' + dia.data] || [];
+  const box = h('div', { class:'ajustes-box' });
+
+  if (lista.length){
+    box.appendChild(h('div', { class:'ajustes-titulo', text:
+      lista.length === 1 ? 'Ajuste lançado à mão' : (lista.length + ' ajustes lançados à mão') }));
+    lista.forEach(x => {
+      const b = h('button', { class:'lanc-item', type:'button' }, [
+        h('span', { class:'li-val', text:'R$ ' + fmtExato(x.valor) }),
+        h('span', { class:'li-desc', text: x.descricao || 'sem observação' }),
+        h('span', { class:'li-quem', text: (x.autor || '') +
+          (x.quando ? (' · ' + x.quando.slice(0,10).split('-').reverse().join('/')) : '') }),
+      ]);
+      b.onclick = () => { fecharModal('modal-detalhe'); editarLancamento(l, dia, x); };
+      box.appendChild(b);
+    });
+  }
+
+  if (state.podeEditar){
+    const novo = h('button', { class:'btn btn-ghost btn-sm', type:'button' },
+      [ icone('fa-plus'), lista.length ? 'Lançar outro ajuste' : 'Lançar ajuste neste dia' ]);
+    novo.onclick = () => { fecharModal('modal-detalhe'); editarLancamento(l, dia, null); };
+    box.appendChild(novo);
+    box.appendChild(h('div', { class:'ajustes-dica', text:
+      'Valor negativo tira desta conta, positivo acrescenta. Serve para o que o ' +
+      'relatório não enxerga — ou para tirar daqui o que já entrou por outro caminho.' }));
+  }
+  return box;
+}
+
 async function abrirDetalheTitulos(l, dia){
   el('det-titulo').textContent = l.label;
   el('det-sub').textContent = fmtData(dia.data) + ' · carregando…';
@@ -702,6 +769,7 @@ async function abrirDetalheTitulos(l, dia){
       'Este valor é previsão: são títulos em aberto com vencimento neste dia. ' +
       'O detalhe título a título está no painel de pagamentos.',
     ]));
+    el('det-corpo').appendChild(blocoAjustes(l, dia));
     return;
   }
 
@@ -710,14 +778,37 @@ async function abrirDetalheTitulos(l, dia){
                 '&conta=' + encodeURIComponent(l.linha.codigo) + '&v=' + Date.now();
     const r = await buscarJson(url);
     if (!r || !r.ok) throw new Error((r && r.erro) || 'sem resposta');
-    el('det-sub').textContent = fmtData(dia.data) + ' · ' + r.linhas.length +
-      ' título(s) · R$ ' + fmtExato(r.total);
+    const c = state.calc, k = l.linha.id + '|' + dia.data;
+    const auto = c.autoCel[k] || 0, ajuste = c.ajusteCel[k] || 0;
     const corpo = el('det-corpo');
     corpo.innerHTML = '';
+
+    /* Sem título no histórico mas com valor na tela: o número veio da migração
+       da planilha antiga, que guardou só o total do dia. Dizer "nada neste dia"
+       ali seria mentira — o valor está na cara de quem pergunta. */
     if (!r.linhas.length){
-      corpo.appendChild(h('div', { class:'empty' }, [ icone('fa-inbox'), 'Nada neste dia.' ]));
+      el('det-sub').textContent = fmtData(dia.data) +
+        (auto ? (' · R$ ' + fmtExato(auto)) : ' · sem valor do relatório');
+      corpo.appendChild(h('div', { class:'note info' }, [
+        icone('fa-circle-info'),
+        h('span', { text: auto
+          ? ('Este valor veio da migração da planilha antiga, que guardava só o total ' +
+             'do dia por conta de fluxo — o detalhe título a título está na base do Excel. ' +
+             'A partir do momento em que o relatório de baixas passa a alimentar o fluxo, ' +
+             'a lista aparece aqui.')
+          : 'Nenhum título neste dia nesta conta.' }),
+      ]));
+      if (ajuste) corpo.appendChild(h('div', { class:'note warn', style:'margin-top:10px' }, [
+        icone('fa-pen'),
+        h('span', { text:'Há ajuste lançado à mão neste dia: R$ ' + fmtExato(ajuste) +
+                          '. O valor na tela é R$ ' + fmtExato(auto + ajuste) + '.' }),
+      ]));
+      corpo.appendChild(blocoAjustes(l, dia));
       return;
     }
+    el('det-sub').textContent = fmtData(dia.data) + ' · ' + r.linhas.length +
+      ' título(s) · R$ ' + fmtExato(r.total) +
+      (ajuste ? ('  ·  ajuste de R$ ' + fmtExato(ajuste)) : '');
     const tbl = h('table', { class:'tabela-simples' }, [
       h('thead', {}, [ h('tr', {}, [
         h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
@@ -738,6 +829,7 @@ async function abrirDetalheTitulos(l, dia){
     });
     tbl.appendChild(tb);
     corpo.appendChild(tbl);
+    corpo.appendChild(blocoAjustes(l, dia));
   } catch(e){
     el('det-sub').textContent = 'não consegui carregar o detalhe';
     el('det-corpo').appendChild(h('div', { class:'note danger', text: String(e.message || e) }));
@@ -779,8 +871,10 @@ function editarLancamento(l, dia, lanc){
   if (!pedirAutor()){ toast('Preciso do seu nome para registrar o lançamento.', true); return; }
   state.edicao = { linha: l.linha, data: dia.data, lanc: lanc };
   el('lanc-titulo').textContent = l.label;
+  const auto = l.linha.modo === 'auto';
   el('lanc-sub').textContent = fmtData(dia.data) +
-    (l.linha.secao === 'E' ? ' · entrada' : ' · saída');
+    (l.linha.secao === 'E' ? ' · entrada' : ' · saída') +
+    (auto ? ' · ajuste sobre o que veio do relatório' : '');
   el('lanc-valor').value = lanc ? fmtExato(lanc.valor) : '';
   el('lanc-desc').value = lanc ? (lanc.descricao || '') : '';
   el('lanc-excluir').hidden = !lanc;
