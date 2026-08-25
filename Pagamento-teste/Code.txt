@@ -1,0 +1,790 @@
+/* ============================================================================
+   PAGAMENTOS V2 · BACKEND (Google Apps Script Web App)
+   ----------------------------------------------------------------------------
+   Este script é um DEPÓSITO. Ele não calcula KPI nem faz casamento entre Fluig
+   e Totvs — isso tudo mora no front (atualizar.html e, depois, o painel), que é
+   a parte fácil de ajustar sem reimplantar nada.
+
+   Duas planilhas:
+     · OPERAÇÃO  — a posição atual. Cada envio SUBSTITUI as abas enviadas.
+     · HISTÓRICO — os pagamentos que de fato saíram. Só CRESCE, uma aba por mês.
+                   Nunca é apagada pela ação "limpar". É a base do fluxo de caixa.
+
+   COMO INSTALAR
+   1. Abra a planilha de OPERAÇÃO > Extensões > Apps Script. Apague tudo e cole
+      este arquivo. Salve.
+   2. Rode a função testarInstalacao() pelo editor (escolha o nome dela na lista
+      ao lado do botão Executar). Ela cria as abas e mostra na tela, em vermelho,
+      uma mensagem começando com "INSTALACAO OK". O vermelho é proposital, é só
+      o jeito de garantir que a mensagem apareça — se está escrito OK, deu certo.
+   3. Implantar > Nova implantação > Tipo: App da Web
+        - Executar como: Eu
+        - Quem tem acesso: Qualquer pessoa
+   4. Copie a URL /exec e cole em atualizar.html (CONFIG.APP_SCRIPT_URL).
+
+   Sobre a planilha de HISTÓRICO: o ID já vem preenchido em HIST_SHEET_ID. Se
+   ela não abrir (ID errado, outra conta, sem permissão), o script NÃO quebra —
+   ele grava o histórico na própria planilha de operação, em abas mensais. A
+   mensagem do testarInstalacao() diz qual das duas está sendo usada.
+
+   Se editar depois: Gerenciar implantações > lápis > Versão: Nova versão.
+   A URL continua a mesma.
+   ============================================================================ */
+
+'use strict';
+
+/* ============================ CONFIG ====================================== */
+const SHEET_ID      = '';          // vazio = usa a planilha à qual o script está vinculado
+const HIST_SHEET_ID = '1Tw9NbO76faxXqt6Vd4L45y59yb5kDneZ9vWtamMT0uY';
+const TZ            = 'America/Sao_Paulo';
+const PROP_LAST     = 'lastUpdated';
+const CACHE_KEY     = 'pgv2_json';
+const CACHE_TTL     = 300;         // 5 minutos
+const CACHE_CHUNK   = 95000;
+
+/* A edição não pede senha: é ferramenta interna, de endereço pouco divulgado, e
+   a senha só atrapalhava o dia a dia. O nome de quem edita continua sendo
+   registrado em cada ajuste, então o histórico de quem mexeu em quê se mantém. */
+
+/* ============================ SCHEMAS =====================================
+   t: 's' texto · 'n' número · 'd' data (yyyy-mm-dd) · 'b' booleano
+   ========================================================================== */
+
+/* Título do Totvs. Ganhou 'saldo' e 'loja' na V2: agora o relatório traz
+   título EM ABERTO, e é o saldo/dt_baixa que diz se já foi pago. */
+const SCHEMA_TITULO = [
+  { k: 'numero', t: 's' }, { k: 'id_fluig', t: 's' },
+  /* Lançamento próprio (CIOT e afins) repete o mesmo número todo dia, então
+     carrega um id próprio para não se confundir com o do dia anterior. */
+  { k: 'id_manual', t: 's' }, { k: 'origem_manual', t: 's' },
+  { k: 'parcela', t: 's' }, { k: 'prefixo', t: 's' },
+  { k: 'tipo', t: 's' }, { k: 'natureza', t: 's' }, { k: 'fornecedor_cod', t: 's' },
+  { k: 'loja', t: 's' }, { k: 'fornecedor', t: 's' },
+  { k: 'dt_emissao', t: 'd' }, { k: 'vencimento', t: 'd' }, { k: 'dt_baixa', t: 'd' },
+  { k: 'valor', t: 'n' }, { k: 'valor_rs', t: 'n' }, { k: 'valor_liquido', t: 'n' },
+  { k: 'saldo', t: 'n' },
+  { k: 'historico', t: 's' }, { k: 'forma_pgto', t: 's' }, { k: 'banco', t: 's' },
+  { k: 'bordero', t: 's' }, { k: 'fluxo_caixa', t: 's' }, { k: 'conta_fluxo', t: 's' },
+  { k: 'manual', t: 'b' },
+];
+
+const SCHEMA_NF_SERVICO = [
+  { k: 'id', t: 'n' }, { k: 'solicitante', t: 's' }, { k: 'numero_nf', t: 's' },
+  { k: 'natureza_cod', t: 's' }, { k: 'natureza', t: 's' }, { k: 'fornecedor', t: 's' },
+  { k: 'contato', t: 's' }, { k: 'valor_servico', t: 'n' }, { k: 'valor_produto', t: 'n' },
+  { k: 'valor_total', t: 'n' }, { k: 'valor_texto', t: 's' },
+  { k: 'vencimento', t: 'd' }, { k: 'dt_solicitacao', t: 'd' }, { k: 'dt_emissao', t: 'd' },
+  { k: 'aprovador', t: 's' }, { k: 'cnpj', t: 's' }, { k: 'empresa', t: 's' },
+  { k: 'observacoes', t: 's' }, { k: 'status', t: 's' },
+];
+
+const SCHEMA_NF_TITULO = [
+  { k: 'id', t: 'n' }, { k: 'solicitante', t: 's' }, { k: 'numero_titulo', t: 's' },
+  { k: 'natureza_cod', t: 's' }, { k: 'natureza', t: 's' }, { k: 'fornecedor', t: 's' },
+  { k: 'valor_total', t: 'n' }, { k: 'valor_texto', t: 's' },
+  { k: 'vencimento', t: 'd' }, { k: 'dt_solicitacao', t: 'd' }, { k: 'dt_emissao', t: 'd' },
+  { k: 'aprovador', t: 's' }, { k: 'cnpj', t: 's' }, { k: 'empresa', t: 's' },
+  { k: 'historico', t: 's' }, { k: 'status', t: 's' },
+];
+
+const SCHEMA_REEMBOLSO = [
+  { k: 'id', t: 'n' }, { k: 'solicitante', t: 's' }, { k: 'tipo_solicitacao', t: 's' },
+  { k: 'tipo_despesa', t: 's' }, { k: 'natureza_cod', t: 's' }, { k: 'fornecedor', t: 's' },
+  { k: 'valor_total', t: 'n' }, { k: 'valor_texto', t: 's' }, { k: 'valor_numerico_cru', t: 'b' },
+  { k: 'vencimento', t: 'd' }, { k: 'dt_emissao', t: 'd' },
+  { k: 'aprovador', t: 's' }, { k: 'cnpj', t: 's' }, { k: 'empresa', t: 's' },
+  { k: 'status', t: 's' },
+];
+
+/* Vem da aba NATUREZA X FLUXO do relatório de naturezas. As duas últimas
+   colunas são o que o relatório da controladoria buscava por PROCV; guardando
+   aqui, a exportação sai completa sem link para planilha externa. */
+const SCHEMA_NATUREZAS = [
+  { k: 'codigo', t: 's' }, { k: 'descricao', t: 's' },
+  { k: 'conta_fluxo', t: 's' }, { k: 'fluxo_caixa', t: 's' },
+];
+
+/* Tradução dos status do Fluig. O Fluig inventa status novos de vez em quando,
+   e esta aba existe para você resolver isso sem mexer no código: escreva o
+   texto exato do status de um lado e, do outro, um destes três significados —
+   pendente, aprovado ou cancelado. O que não estiver aqui cai numa regra
+   padrão e a tela avisa. */
+const SCHEMA_CONFIG_STATUS = [
+  { k: 'status', t: 's' }, { k: 'significado', t: 's' },
+];
+
+/* Dias em que não há pagamento. Sem isto, a previsão de "amanhã" na véspera de
+   um feriado apontaria para um dia em que ninguém paga. Nacionais já vêm
+   preenchidos; os municipais você acrescenta à mão, uma vez por ano. */
+const SCHEMA_FERIADO = [
+  { k: 'data', t: 'd' }, { k: 'descricao', t: 's' },
+];
+
+/* Ajustes feitos à mão pelo painel. É um LOG: nada é escrito por cima do dado
+   original. O painel lê os títulos do último envio e aplica isto por cima, então
+   uma edição sobrevive a quantos envios forem feitos no mesmo dia.
+   'alvo' identifica o que foi editado: a chave do título, ou 'fluig:<id>'. */
+const SCHEMA_AJUSTE = [
+  { k: 'id', t: 's' }, { k: 'alvo', t: 's' }, { k: 'campo', t: 's' },
+  { k: 'valor_novo', t: 's' }, { k: 'valor_antigo', t: 's' },
+  { k: 'autor', t: 's' }, { k: 'quando', t: 's' },
+  { k: 'motivo', t: 's' }, { k: 'desfeito', t: 'b' },
+];
+
+/* Histórico de pagamentos efetivados — a base do futuro fluxo de caixa.
+   'chave' é o identificador do título no Totvs; 'origem' diz se veio do
+   relatório ou de lançamento manual. */
+const SCHEMA_HIST = [
+  { k: 'chave', t: 's' }, { k: 'dt_baixa', t: 'd' }, { k: 'vencimento', t: 'd' },
+  { k: 'numero', t: 's' }, { k: 'id_fluig', t: 's' },
+  { k: 'parcela', t: 's' }, { k: 'prefixo', t: 's' },
+  { k: 'tipo', t: 's' }, { k: 'natureza', t: 's' }, { k: 'conta_fluxo', t: 's' },
+  { k: 'fornecedor_cod', t: 's' }, { k: 'loja', t: 's' }, { k: 'fornecedor', t: 's' },
+  { k: 'valor_pago', t: 'n' }, { k: 'valor_titulo', t: 'n' },
+  { k: 'historico', t: 's' }, { k: 'banco', t: 's' }, { k: 'bordero', t: 's' },
+  { k: 'fluxo_caixa', t: 's' }, { k: 'origem', t: 's' }, { k: 'registrado_em', t: 's' },
+];
+
+const TABS = {
+  Titulos:       SCHEMA_TITULO,   // relatório por VENCIMENTO — o que está previsto
+  Baixas:        SCHEMA_TITULO,   // relatório por DATA DE BAIXA — o que já saiu
+  TitulosManual: SCHEMA_TITULO,
+  NFServico:     SCHEMA_NF_SERVICO,
+  NFTitulo:      SCHEMA_NF_TITULO,
+  Reembolso:     SCHEMA_REEMBOLSO,
+  Naturezas:     SCHEMA_NATUREZAS,
+  Ajustes:       SCHEMA_AJUSTE,
+  ConfigStatus:  SCHEMA_CONFIG_STATUS,
+  Feriados:      SCHEMA_FERIADO,
+};
+
+/* ============================ ENTRYPOINTS ================================= */
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return jsonOut_({ ok: false, erro: 'Requisição sem corpo (postData vazio).' });
+    }
+    const body = JSON.parse(e.postData.contents);
+    const ss = getSpreadsheet_();
+
+    /* ---- EDIÇÃO PELO PAINEL ----
+       Todas exigem a senha. O envio de relatórios não exige, para não quebrar
+       o fluxo de quem só sobe arquivo. */
+    if (body.acao === 'ajuste' || body.acao === 'desfazer'
+        || body.acao === 'titulo_manual' || body.acao === 'excluir_manual') {
+      let res;
+      if (body.acao === 'ajuste')             res = gravarAjustes_(ss, body.ajustes || []);
+      else if (body.acao === 'desfazer')      res = desfazerAjuste_(ss, body.id);
+      else if (body.acao === 'excluir_manual') res = excluirTituloManual_(ss, body.id_manual);
+      else                                    res = gravarTituloManual_(ss, body.titulo);
+      clearCache_();
+      return jsonOut_(res);
+    }
+
+    /* ---- LIMPEZA ----
+       Só mexe na planilha de OPERAÇÃO. O histórico nunca é tocado aqui. */
+    if (body.acao === 'limpar') {
+      const alvo = body.alvo || 'tudo';
+      if (alvo === 'totvs' || alvo === 'tudo') {
+        writeTab_(ss, 'Titulos',   [], SCHEMA_TITULO);
+        writeTab_(ss, 'Baixas',    [], SCHEMA_TITULO);
+        writeTab_(ss, 'NFServico', [], SCHEMA_NF_SERVICO);
+        writeTab_(ss, 'NFTitulo',  [], SCHEMA_NF_TITULO);
+        writeTab_(ss, 'Reembolso', [], SCHEMA_REEMBOLSO);
+      }
+      if (alvo === 'manuais' || alvo === 'tudo') {
+        writeTab_(ss, 'TitulosManual', [], SCHEMA_TITULO);
+      }
+      const props = PropertiesService.getScriptProperties();
+      if (alvo === 'tudo') props.deleteProperty(PROP_LAST);
+      else props.setProperty(PROP_LAST, new Date().toISOString());
+      clearCache_();
+      return jsonOut_({ ok: true, limpou: alvo, aviso: 'O histórico de pagamentos NÃO foi afetado.' });
+    }
+
+    /* ---- GRAVAÇÃO ----
+       Cada aba só é tocada se a sua chave vier no envio, então um envio
+       parcial não apaga o resto. */
+    const resumo = {};
+    if (Array.isArray(body.titulos)) {
+      writeTab_(ss, 'Titulos', body.titulos, SCHEMA_TITULO);
+      resumo.titulos = body.titulos.length;
+    }
+    if (Array.isArray(body.baixas)) {
+      writeTab_(ss, 'Baixas', body.baixas, SCHEMA_TITULO);
+      resumo.baixas = body.baixas.length;
+    }
+    if (Array.isArray(body.titulos_manual)) {
+      writeTab_(ss, 'TitulosManual', body.titulos_manual, SCHEMA_TITULO);
+      resumo.titulos_manual = body.titulos_manual.length;
+    }
+    if (Array.isArray(body.nf_servico)) {
+      writeTab_(ss, 'NFServico', body.nf_servico, SCHEMA_NF_SERVICO);
+      resumo.nf_servico = body.nf_servico.length;
+    }
+    if (Array.isArray(body.nf_titulo)) {
+      writeTab_(ss, 'NFTitulo', body.nf_titulo, SCHEMA_NF_TITULO);
+      resumo.nf_titulo = body.nf_titulo.length;
+    }
+    if (Array.isArray(body.reembolso)) {
+      writeTab_(ss, 'Reembolso', body.reembolso, SCHEMA_REEMBOLSO);
+      resumo.reembolso = body.reembolso.length;
+    }
+    if (body.naturezas && typeof body.naturezas === 'object') {
+      const arr = Object.keys(body.naturezas).sort().map(k => {
+        const v = body.naturezas[k];
+        if (v && typeof v === 'object') {
+          return { codigo: k, descricao: v.descricao || '',
+                   conta_fluxo: v.conta_fluxo || '', fluxo_caixa: v.fluxo_caixa || '' };
+        }
+        return { codigo: k, descricao: v || '', conta_fluxo: '', fluxo_caixa: '' };
+      });
+      writeTab_(ss, 'Naturezas', arr, SCHEMA_NATUREZAS);
+      resumo.naturezas = arr.length;
+    }
+
+    /* ---- HISTÓRICO ----
+       Acontece sozinho, sem botão: tudo que chegou com data de baixa vira
+       linha no histórico. Reenviar o mesmo título não duplica. */
+    if (Array.isArray(body.historico) && body.historico.length) {
+      const h = gravarHistorico_(body.historico);
+      resumo.historico_novos = h.novos;
+      resumo.historico_atualizados = h.atualizados;
+    }
+
+    if (Object.keys(resumo).length === 0) {
+      return jsonOut_({ ok: false, erro: 'Envio sem dados reconhecidos.' });
+    }
+
+    PropertiesService.getScriptProperties().setProperty(PROP_LAST, new Date().toISOString());
+    clearCache_();
+
+    return jsonOut_({ ok: true, recebido: resumo, lastUpdated: getLast_() });
+  } catch (err) {
+    return jsonOut_({ ok: false, erro: String(err && err.message || err) });
+  }
+}
+
+function doGet(e) {
+  try {
+    const p = (e && e.parameter) || {};
+
+    if (p.check) {
+      const ss = getSpreadsheet_();
+      return jsonOut_({
+        ok: true,
+        lastUpdated: getLast_(),
+        contagem: {
+          titulos:   contarTab_(ss, 'Titulos'),
+          baixas:    contarTab_(ss, 'Baixas'),
+          manuais:   contarTab_(ss, 'TitulosManual'),
+          nf_servico: contarTab_(ss, 'NFServico'),
+          nf_titulo:  contarTab_(ss, 'NFTitulo'),
+          reembolso:  contarTab_(ss, 'Reembolso'),
+        },
+        feriados: readTab_(ss, 'Feriados', SCHEMA_FERIADO).filter(f => f.data),
+      });
+    }
+
+    if (p.naturezas) {
+      const rows = readTab_(getSpreadsheet_(), 'Naturezas', SCHEMA_NATUREZAS);
+      const map = {};
+      rows.forEach(r => {
+        if (r.codigo) map[r.codigo] = {
+          descricao: r.descricao, conta_fluxo: r.conta_fluxo, fluxo_caixa: r.fluxo_caixa };
+      });
+      return rawJson_(JSON.stringify(map));
+    }
+
+    if (p.manuais) {
+      return rawJson_(JSON.stringify(readTab_(getSpreadsheet_(), 'TitulosManual', SCHEMA_TITULO)));
+    }
+
+    /* Histórico de um mês: ?historico=2026-08 — usado pelo futuro fluxo de caixa.
+       Fica fora do payload do painel de propósito, pra não pesar a carga. */
+    if (p.historico) {
+      const hs = getHistSpreadsheet_();
+      return rawJson_(JSON.stringify(readTab_(hs, String(p.historico), SCHEMA_HIST)));
+    }
+    if (p.historico_meses) {
+      const hs = getHistSpreadsheet_();
+      const nomes = hs.getSheets().map(s => s.getName())
+        .filter(n => /^\d{4}-\d{2}$/.test(n)).sort();
+      return jsonOut_({ ok: true, meses: nomes });
+    }
+
+    const cached = readCache_();
+    if (cached) return rawJson_(cached);
+
+    const json = buildPayload_();
+    writeCache_(json);
+    return rawJson_(json);
+  } catch (err) {
+    return jsonOut_({ erro: String(err && err.message || err) });
+  }
+}
+
+/* ============================ PAYLOAD DO PAINEL ===========================
+   Devolve as listas CRUAS + meta. A classificação (pago / em aberto /
+   aguardando aprovação), o casamento Fluig x Totvs e os KPIs são feitos no
+   front, que é onde dá pra ajustar sem reimplantar o Apps Script.
+   ========================================================================== */
+
+function buildPayload_() {
+  const ss = getSpreadsheet_();
+  const payload = {
+    versao: 2,
+    meta: computeMeta_(),
+    titulos: readTab_(ss, 'Titulos', SCHEMA_TITULO)
+      .concat(readTab_(ss, 'TitulosManual', SCHEMA_TITULO)),
+    /* Baixas ficam separadas: são de outro relatório, filtrado por data de
+       baixa, e um título nunca é baixado no mesmo dia em que é pago. */
+    baixas: readTab_(ss, 'Baixas', SCHEMA_TITULO),
+    nf_servico: readTab_(ss, 'NFServico', SCHEMA_NF_SERVICO),
+    nf_titulo:  readTab_(ss, 'NFTitulo',  SCHEMA_NF_TITULO),
+    reembolso:  readTab_(ss, 'Reembolso', SCHEMA_REEMBOLSO),
+    naturezas:  (function(){
+      const map = {};
+      readTab_(ss, 'Naturezas', SCHEMA_NATUREZAS).forEach(r => {
+        if (r.codigo) map[r.codigo] = {
+          descricao: r.descricao, conta_fluxo: r.conta_fluxo, fluxo_caixa: r.fluxo_caixa };
+      });
+      return map;
+    })(),
+    feriados: readTab_(ss, 'Feriados', SCHEMA_FERIADO).filter(f => f.data),
+    config_status: (function(){
+      const map = {};
+      readTab_(ss, 'ConfigStatus', SCHEMA_CONFIG_STATUS).forEach(r => {
+        if (r.status) map[r.status] = String(r.significado || '').toLowerCase();
+      });
+      return map;
+    })(),
+    /* Só os ajustes em vigor — os desfeitos ficam na planilha como histórico,
+       mas não voltam para o painel. */
+    ajustes: readTab_(ss, 'Ajustes', SCHEMA_AJUSTE).filter(a => !a.desfeito),
+  };
+  return JSON.stringify(payload);
+}
+
+/* meta.data_ref = dia do último envio (referência de "hoje" na tela).
+   A classificação de cada título usa o VENCIMENTO dele, não isto aqui. */
+function computeMeta_() {
+  const lastIso = getLast_();
+  if (!lastIso) return { generated_at: null, data_ref: null, data_amanha: null };
+  const d = new Date(lastIso);
+  const data_ref = Utilities.formatDate(d, TZ, 'yyyy-MM-dd');
+  return {
+    generated_at: Utilities.formatDate(d, TZ, "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    data_ref: data_ref,
+    data_amanha: nextBusinessDay_(data_ref),
+  };
+}
+
+function getLast_() {
+  return PropertiesService.getScriptProperties().getProperty(PROP_LAST) || null;
+}
+
+function nextBusinessDay_(isoDate) {
+  const p = isoDate.split('-');
+  const d = new Date(+p[0], +p[1] - 1, +p[2]);
+  do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6);
+  return Utilities.formatDate(d, TZ, 'yyyy-MM-dd');
+}
+
+/* ============================ AJUSTES =====================================
+   Log append-only. Desfazer não apaga: marca a linha como desfeita, então o
+   registro de quem mexeu em quê continua na planilha.
+   ========================================================================== */
+
+function gravarAjustes_(ss, ajustes) {
+  if (!Array.isArray(ajustes) || !ajustes.length) {
+    return { ok: false, erro: 'Nenhum ajuste recebido.' };
+  }
+  const existentes = readTab_(ss, 'Ajustes', SCHEMA_AJUSTE);
+  const agora = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd'T'HH:mm:ss");
+  const novos = [];
+  ajustes.forEach(a => {
+    if (!a || !a.alvo || !a.campo) return;
+    novos.push({
+      id: Utilities.getUuid().slice(0, 8),
+      alvo: String(a.alvo),
+      campo: String(a.campo),
+      valor_novo: (a.valor_novo === null || a.valor_novo === undefined) ? '' : String(a.valor_novo),
+      valor_antigo: (a.valor_antigo === null || a.valor_antigo === undefined) ? '' : String(a.valor_antigo),
+      autor: String(a.autor || 'sem nome'),
+      quando: agora,
+      motivo: String(a.motivo || ''),
+      desfeito: false,
+    });
+  });
+  if (!novos.length) return { ok: false, erro: 'Ajustes sem alvo ou campo.' };
+  writeTab_(ss, 'Ajustes', existentes.concat(novos), SCHEMA_AJUSTE);
+  return { ok: true, gravados: novos.length, ids: novos.map(n => n.id) };
+}
+
+function desfazerAjuste_(ss, id) {
+  if (!id) return { ok: false, erro: 'Ajuste não informado.' };
+  const linhas = readTab_(ss, 'Ajustes', SCHEMA_AJUSTE);
+  let achou = false;
+  linhas.forEach(l => {
+    // desfaz o ajuste pedido, ou todos de um alvo quando vem 'alvo:<chave>'
+    if (l.id === id || ('alvo:' + l.alvo) === id) { l.desfeito = true; achou = true; }
+  });
+  if (!achou) return { ok: false, erro: 'Ajuste não encontrado.' };
+  writeTab_(ss, 'Ajustes', linhas, SCHEMA_AJUSTE);
+  return { ok: true, desfeito: id };
+}
+
+/* Título lançado direto pelo painel — o pagamento que não passou nem pelo
+   Fluig nem pelo Totvs. Fica na aba própria, que o envio de relatório não toca. */
+function gravarTituloManual_(ss, titulo) {
+  if (!titulo || typeof titulo !== 'object') {
+    return { ok: false, erro: 'Título não recebido.' };
+  }
+  const atuais = readTab_(ss, 'TitulosManual', SCHEMA_TITULO);
+  const novo = {};
+  SCHEMA_TITULO.forEach(c => { novo[c.k] = titulo[c.k]; });
+  novo.manual = true;
+  if (!safeNum_(novo.valor_rs) && safeNum_(novo.valor)) novo.valor_rs = safeNum_(novo.valor);
+  if (!safeNum_(novo.valor_liquido)) novo.valor_liquido = safeNum_(novo.valor_rs);
+  atuais.push(novo);
+  writeTab_(ss, 'TitulosManual', atuais, SCHEMA_TITULO);
+
+  // se já nasce baixado, entra no histórico na mesma hora
+  let hist = null;
+  if (novo.dt_baixa) {
+    hist = gravarHistorico_([{
+      chave: 'manual|' + (novo.numero || '') + '|' + (novo.fornecedor || '') + '|' + novo.dt_baixa,
+      dt_baixa: novo.dt_baixa, vencimento: novo.vencimento,
+      numero: novo.numero, id_fluig: novo.id_fluig, parcela: novo.parcela,
+      prefixo: novo.prefixo, tipo: novo.tipo, natureza: novo.natureza,
+      conta_fluxo: novo.conta_fluxo, fornecedor_cod: novo.fornecedor_cod,
+      loja: novo.loja, fornecedor: novo.fornecedor,
+      valor_pago: safeNum_(novo.valor_liquido) || safeNum_(novo.valor_rs),
+      valor_titulo: safeNum_(novo.valor_rs),
+      historico: novo.historico, banco: novo.banco, bordero: novo.bordero,
+      fluxo_caixa: novo.fluxo_caixa, origem: 'manual',
+    }]);
+  }
+  PropertiesService.getScriptProperties().setProperty(PROP_LAST, new Date().toISOString());
+  return { ok: true, total_manuais: atuais.length, historico: hist };
+}
+
+/* Lançamento próprio é seu e não volta de relatório nenhum, então aqui apagar
+   é apagar mesmo — diferente do título do Totvs, que só pode ser ocultado
+   porque reapareceria no dia seguinte. */
+function excluirTituloManual_(ss, idManual) {
+  const id = String(idManual || '');
+  if (!id) return { ok: false, erro: 'Lançamento não informado.' };
+  const atuais = readTab_(ss, 'TitulosManual', SCHEMA_TITULO);
+  const restantes = atuais.filter(t => String(t.id_manual || '') !== id);
+  if (restantes.length === atuais.length) {
+    return { ok: false, erro: 'Lançamento não encontrado.' };
+  }
+  writeTab_(ss, 'TitulosManual', restantes, SCHEMA_TITULO);
+  PropertiesService.getScriptProperties().setProperty(PROP_LAST, new Date().toISOString());
+  return { ok: true, excluidos: atuais.length - restantes.length };
+}
+
+function safeNum_(v) { return Number(v) || 0; }
+
+/* ============================ HISTÓRICO ===================================
+   Uma aba por mês (yyyy-MM), definida pela DATA DE BAIXA. Dedup por
+   chave + dt_baixa dentro da aba do mês, então reenviar o mesmo arquivo
+   três vezes no dia não gera linha repetida.
+   ========================================================================== */
+
+function gravarHistorico_(linhas) {
+  const hs = getHistSpreadsheet_();
+  const agora = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd'T'HH:mm:ss");
+
+  // Agrupa o que chegou por mês da baixa.
+  const porMes = {};
+  linhas.forEach(r => {
+    const dt = String(r.dt_baixa || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dt)) return;   // sem baixa válida não entra
+    const mes = dt.slice(0, 7);
+    (porMes[mes] = porMes[mes] || []).push(r);
+  });
+
+  let novos = 0, atualizados = 0;
+
+  Object.keys(porMes).forEach(mes => {
+    const existentes = readTab_(hs, mes, SCHEMA_HIST);
+    const idx = {};
+    existentes.forEach((r, i) => { idx[r.chave + '|' + r.dt_baixa] = i; });
+
+    porMes[mes].forEach(r => {
+      const linha = {
+        chave: r.chave || '',
+        dt_baixa: String(r.dt_baixa || '').slice(0, 10),
+        vencimento: String(r.vencimento || '').slice(0, 10),
+        numero: r.numero || '', id_fluig: r.id_fluig || '',
+        parcela: r.parcela || '', prefixo: r.prefixo || '',
+        tipo: r.tipo || '', natureza: r.natureza || '', conta_fluxo: r.conta_fluxo || '',
+        fornecedor_cod: r.fornecedor_cod || '', loja: r.loja || '',
+        fornecedor: r.fornecedor || '',
+        valor_pago: num_(r.valor_pago), valor_titulo: num_(r.valor_titulo),
+        historico: r.historico || '', banco: r.banco || '', bordero: r.bordero || '',
+        fluxo_caixa: r.fluxo_caixa || '', origem: r.origem || 'totvs',
+        registrado_em: agora,
+      };
+      const k = linha.chave + '|' + linha.dt_baixa;
+      if (k in idx) {
+        // Mantém a data em que entrou pela primeira vez.
+        linha.registrado_em = existentes[idx[k]].registrado_em || agora;
+        existentes[idx[k]] = linha;
+        atualizados++;
+      } else {
+        idx[k] = existentes.length;
+        existentes.push(linha);
+        novos++;
+      }
+    });
+
+    existentes.sort((a, b) => String(a.dt_baixa).localeCompare(String(b.dt_baixa)));
+    writeTab_(hs, mes, existentes, SCHEMA_HIST);
+  });
+
+  return { novos: novos, atualizados: atualizados };
+}
+
+/* ============================ PLANILHAS =================================== */
+
+function getSpreadsheet_() {
+  if (SHEET_ID) return SpreadsheetApp.openById(SHEET_ID);
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) return active;
+  throw new Error('Planilha de operação não encontrada. Preencha SHEET_ID no topo do Code.gs.');
+}
+
+function getHistSpreadsheet_() {
+  if (!HIST_SHEET_ID || HIST_SHEET_ID.indexOf('COLE_AQUI') === 0) {
+    throw new Error('HIST_SHEET_ID não configurado no topo do Code.gs — cole o ID da planilha de histórico.');
+  }
+  return SpreadsheetApp.openById(HIST_SHEET_ID);
+}
+
+function getSheet_(ss, name) {
+  let sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name);
+  return sh;
+}
+
+function contarTab_(ss, name) {
+  const sh = ss.getSheetByName(name);
+  if (!sh) return 0;
+  return Math.max(0, sh.getLastRow() - 1);
+}
+
+function writeTab_(ss, name, arr, schema) {
+  const sh = getSheet_(ss, name);
+  sh.clearContents();
+  const headers = schema.map(c => c.k);
+  const rows = (arr || []).map(o => schema.map(c => cellOut_(o ? o[c.k] : '', c.t)));
+  const matrix = [headers].concat(rows);
+
+  // Colunas de texto/data em formato TEXTO, pra planilha não "adivinhar" tipo.
+  schema.forEach((c, i) => {
+    if (c.t !== 'n') sh.getRange(1, i + 1, matrix.length, 1).setNumberFormat('@');
+  });
+  sh.getRange(1, 1, matrix.length, headers.length).setValues(matrix);
+  sh.setFrozenRows(1);
+}
+
+function readTab_(ss, name, schema) {
+  const sh = ss.getSheetByName(name);
+  if (!sh) return [];
+  const values = sh.getDataRange().getValues();
+  if (values.length < 2) return [];
+
+  const headers = values[0].map(h => String(h).trim());
+  const idx = {};
+  schema.forEach(c => { idx[c.k] = headers.indexOf(c.k); });
+
+  const out = [];
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+    const obj = {};
+    let hasData = false;
+    schema.forEach(c => {
+      const raw = idx[c.k] >= 0 ? row[idx[c.k]] : '';
+      const val = cellIn_(raw, c.t);
+      obj[c.k] = val;
+      if (val !== '' && val !== null && val !== 0 && val !== false) hasData = true;
+    });
+    if (hasData) out.push(obj);
+  }
+  return out;
+}
+
+/* ============================ COERÇÃO DE TIPOS ============================ */
+
+function cellOut_(v, t) {
+  if (t === 'n') return (typeof v === 'number') ? v : (Number(v) || 0);
+  if (t === 'b') return v === true;
+  if (t === 'd') return (v === null || v === undefined || v === '') ? '' : String(v);
+  return (v === null || v === undefined) ? '' : String(v);
+}
+
+function cellIn_(v, t) {
+  if (t === 'n') return Number(v) || 0;
+  if (t === 'b') return v === true || v === 'true' || v === 'TRUE';
+  if (t === 'd') {
+    if (v === null || v === undefined || v === '') return null;
+    if (Object.prototype.toString.call(v) === '[object Date]') {
+      return Utilities.formatDate(v, TZ, 'yyyy-MM-dd');
+    }
+    return String(v).slice(0, 10);
+  }
+  return (v === null || v === undefined) ? '' : String(v);
+}
+
+function num_(v) { return Number(v) || 0; }
+
+/* ============================ CACHE ======================================= */
+
+function writeCache_(str) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const n = Math.ceil(str.length / CACHE_CHUNK);
+    if (n > 25) return;
+    const entries = {};
+    for (let i = 0; i < n; i++) entries[CACHE_KEY + '_' + i] = str.substr(i * CACHE_CHUNK, CACHE_CHUNK);
+    entries[CACHE_KEY + '_count'] = String(n);
+    cache.putAll(entries, CACHE_TTL);
+  } catch (err) {}
+}
+
+function readCache_() {
+  try {
+    const cache = CacheService.getScriptCache();
+    const countStr = cache.get(CACHE_KEY + '_count');
+    if (!countStr) return null;
+    const n = parseInt(countStr, 10);
+    const keys = [];
+    for (let i = 0; i < n; i++) keys.push(CACHE_KEY + '_' + i);
+    const parts = cache.getAll(keys);
+    let out = '';
+    for (let i = 0; i < n; i++) {
+      const piece = parts[CACHE_KEY + '_' + i];
+      if (piece === null || piece === undefined) return null;
+      out += piece;
+    }
+    return out;
+  } catch (err) { return null; }
+}
+
+function clearCache_() {
+  try {
+    const cache = CacheService.getScriptCache();
+    const countStr = cache.get(CACHE_KEY + '_count');
+    const keys = [CACHE_KEY + '_count'];
+    if (countStr) {
+      const n = parseInt(countStr, 10);
+      for (let i = 0; i < n; i++) keys.push(CACHE_KEY + '_' + i);
+    }
+    cache.removeAll(keys);
+  } catch (err) {}
+}
+
+/* ============================ RESPOSTAS =================================== */
+
+function jsonOut_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function rawJson_(str) {
+  return ContentService.createTextOutput(str)
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ============================ DIAGNÓSTICO =================================
+   Rode uma vez pelo editor depois de instalar. Cria as abas que faltarem e
+   confirma que as duas planilhas estão acessíveis.
+   ========================================================================== */
+
+function testarInstalacao() {
+  const ss = getSpreadsheet_();
+  Object.keys(TABS).forEach(nome => {
+    if (!ss.getSheetByName(nome)) writeTab_(ss, nome, [], TABS[nome]);
+  });
+  // semente do mapa de status, para a aba não nascer vazia
+  if (!contarTab_(ss, 'ConfigStatus')) {
+    writeTab_(ss, 'ConfigStatus', [
+      { status: 'Aprovação',                   significado: 'pendente'  },
+      { status: 'Aprovação Reembolso',         significado: 'pendente'  },
+      { status: 'Aguardando baixa titulos Pagto', significado: 'aprovado'  },
+      { status: 'Disponivel para Pagamento',   significado: 'aprovado'  },
+      { status: 'Solicitação Cancelada',       significado: 'cancelado' },
+    ], SCHEMA_CONFIG_STATUS);
+  }
+
+  // semente dos feriados nacionais — acrescente os municipais nesta mesma aba
+  if (!contarTab_(ss, 'Feriados')) {
+    writeTab_(ss, 'Feriados', [
+      { data: '2026-01-01', descricao: 'Confraternização Universal' },
+      { data: '2026-02-16', descricao: 'Carnaval' },
+      { data: '2026-02-17', descricao: 'Carnaval' },
+      { data: '2026-04-03', descricao: 'Sexta-feira Santa' },
+      { data: '2026-04-21', descricao: 'Tiradentes' },
+      { data: '2026-05-01', descricao: 'Dia do Trabalho' },
+      { data: '2026-06-04', descricao: 'Corpus Christi' },
+      { data: '2026-09-07', descricao: 'Independência' },
+      { data: '2026-10-12', descricao: 'Nossa Senhora Aparecida' },
+      { data: '2026-11-02', descricao: 'Finados' },
+      { data: '2026-11-15', descricao: 'Proclamação da República' },
+      { data: '2026-11-20', descricao: 'Consciência Negra' },
+      { data: '2026-12-25', descricao: 'Natal' },
+      { data: '2027-01-01', descricao: 'Confraternização Universal' },
+      { data: '2027-02-08', descricao: 'Carnaval' },
+      { data: '2027-02-09', descricao: 'Carnaval' },
+      { data: '2027-03-26', descricao: 'Sexta-feira Santa' },
+      { data: '2027-04-21', descricao: 'Tiradentes' },
+      { data: '2027-05-01', descricao: 'Dia do Trabalho' },
+      { data: '2027-05-27', descricao: 'Corpus Christi' },
+      { data: '2027-09-07', descricao: 'Independência' },
+      { data: '2027-10-12', descricao: 'Nossa Senhora Aparecida' },
+      { data: '2027-11-02', descricao: 'Finados' },
+      { data: '2027-11-15', descricao: 'Proclamação da República' },
+      { data: '2027-11-20', descricao: 'Consciência Negra' },
+      { data: '2027-12-25', descricao: 'Natal' },
+    ], SCHEMA_FERIADO);
+  }
+
+  const hs = getHistSpreadsheet_();
+  const mesAtual = Utilities.formatDate(new Date(), TZ, 'yyyy-MM');
+  if (!hs.getSheetByName(mesAtual)) writeTab_(hs, mesAtual, [], SCHEMA_HIST);
+  const msg = 'OK\n' +
+    'Operação: ' + ss.getName() + '\n' +
+    'Histórico: ' + hs.getName() + '\n' +
+    'Abas de operação: ' + Object.keys(TABS).join(', ') + '\n' +
+    'Aba do mês no histórico: ' + mesAtual;
+  Logger.log(msg);
+  return msg;
+}
+
+/* Procura o mesmo título gravado em meses diferentes — acontece se a data de
+   baixa for corrigida no Totvs depois de já ter entrado no histórico. */
+function conferirDuplicidadesHistorico() {
+  const hs = getHistSpreadsheet_();
+  const vistos = {}, dups = [];
+  hs.getSheets().forEach(sh => {
+    const nome = sh.getName();
+    if (!/^\d{4}-\d{2}$/.test(nome)) return;
+    readTab_(hs, nome, SCHEMA_HIST).forEach(r => {
+      if (!r.chave) return;
+      if (vistos[r.chave] && vistos[r.chave] !== nome) {
+        dups.push(r.chave + ' → ' + vistos[r.chave] + ' e ' + nome);
+      } else {
+        vistos[r.chave] = nome;
+      }
+    });
+  });
+  const msg = dups.length ? ('Duplicidades encontradas:\n' + dups.join('\n'))
+                          : 'Nenhuma duplicidade entre meses.';
+  Logger.log(msg);
+  return msg;
+}

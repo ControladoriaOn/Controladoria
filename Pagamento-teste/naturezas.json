@@ -1,0 +1,2552 @@
+{
+  "10010": {
+    "descricao": "FATURAMENTO FRETES",
+    "conta_fluxo": "11999",
+    "fluxo_caixa": "Faturamento Frete"
+  },
+  "15427": {
+    "descricao": "TREINAMENTO E CURSOS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "25441": {
+    "descricao": "ESCOLTA ISS,PCC,INSS, IRRF",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "2574": {
+    "descricao": "RESCISAO A PAGAR",
+    "conta_fluxo": "2500104",
+    "fluxo_caixa": "Rescisoes"
+  },
+  "11010101": {
+    "descricao": "CAIXA",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "11010314": {
+    "descricao": "CIOT",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "11010319": {
+    "descricao": "TRANSFERENCIA BANCARIA",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "11020101": {
+    "descricao": "DUPLICATAS A RECEBER",
+    "conta_fluxo": "11999",
+    "fluxo_caixa": "Faturamento Frete"
+  },
+  "11020208": {
+    "descricao": "BANCO INDUSTRIAL CTA VINCULADA",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "11020401": {
+    "descricao": "CLIENTES NAO IDENTIFICADOS",
+    "conta_fluxo": "11999",
+    "fluxo_caixa": "Faturamento Frete"
+  },
+  "110301": {
+    "descricao": "OUTROS TITULOS A RECEBER",
+    "conta_fluxo": "11999",
+    "fluxo_caixa": "Faturamento Frete"
+  },
+  "11030101": {
+    "descricao": "INDENIZACOES A RECEBER",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "11030102": {
+    "descricao": "OUTROS CREDITOS",
+    "conta_fluxo": "11999",
+    "fluxo_caixa": "Faturamento Frete"
+  },
+  "110303": {
+    "descricao": "ADIANTAMENTO A TERCEIROS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "11030301": {
+    "descricao": "ADIANTAMENTO A FORNECEDOR",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "11030302": {
+    "descricao": "ANTECIPACAO DE DIVIDENDOS",
+    "conta_fluxo": "22001",
+    "fluxo_caixa": "Dividendos"
+  },
+  "11030303": {
+    "descricao": "FORNECEDORES NAO IDENTIFICADOS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "110304": {
+    "descricao": "CREDITOS COM TERCEIROS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "11030401": {
+    "descricao": "ADIANTAMENTO PARA VIAGENS",
+    "conta_fluxo": "25006",
+    "fluxo_caixa": "Despesas Viagens"
+  },
+  "11030402": {
+    "descricao": "ADIANTAMENTO DE SALARIO",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "11030403": {
+    "descricao": "ADIANTAMENTO 13º SALARIO",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "11030404": {
+    "descricao": "ANTECIPACAO DE FERIAS",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "11030405": {
+    "descricao": "EMPRESTIMOS A FUNCIONARIOS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "11030406": {
+    "descricao": "ADIANTAMENTO CIOT",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "11030502": {
+    "descricao": "IRRF A RECUPERAR",
+    "conta_fluxo": "26009",
+    "fluxo_caixa": "IRRF Aplicações"
+  },
+  "11040101": {
+    "descricao": "ALMOXARIFADO",
+    "conta_fluxo": "21006",
+    "fluxo_caixa": "Suprimento Operacional"
+  },
+  "110501": {
+    "descricao": "DESPESAS A AMORTIZAR",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "11050101": {
+    "descricao": "SEGUROS/ASSINATURAS A VENCER",
+    "conta_fluxo": "25014",
+    "fluxo_caixa": "Seguros/Assinaturas"
+  },
+  "11050104": {
+    "descricao": "DESPESAS ANTECIPADAS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "110801": {
+    "descricao": "CONTRATO DE MUTUO",
+    "conta_fluxo": "23999",
+    "fluxo_caixa": "Outros"
+  },
+  "11080101": {
+    "descricao": "CREDITO COM PESSOAS LIGADAS",
+    "conta_fluxo": "23999",
+    "fluxo_caixa": "Outros"
+  },
+  "11080102": {
+    "descricao": "SISLOGICA SISTEMAS DE INFORMAC",
+    "conta_fluxo": "23999",
+    "fluxo_caixa": "Outros"
+  },
+  "11080103": {
+    "descricao": "OUTROS CREDITOS ENTRE CIAS",
+    "conta_fluxo": "23999",
+    "fluxo_caixa": "Outros"
+  },
+  "11080104": {
+    "descricao": "SYRNA",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "11080105": {
+    "descricao": "OT SERVICOS",
+    "conta_fluxo": "3",
+    "fluxo_caixa": "MUTUO"
+  },
+  "11080106": {
+    "descricao": "SYRNA INDENIZACOES",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "11080107": {
+    "descricao": "ON TIME EXPRESS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "120101": {
+    "descricao": "OUTROS CREDITOS A LONGO PRAZO",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "12010102": {
+    "descricao": "DEPOSITO JUDICIAL",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "12010103": {
+    "descricao": "INDENIZACOES A RECEBER L.P",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "12010106": {
+    "descricao": "TITULO DE CAP SANTANDER",
+    "conta_fluxo": "22002",
+    "fluxo_caixa": "Capitalização"
+  },
+  "120301": {
+    "descricao": "BENS TANGIVEIS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "12030101": {
+    "descricao": "VEICULOS",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "12030102": {
+    "descricao": "COMPUTADORES E PERIFERICOS",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "12030103": {
+    "descricao": "MAQUINAS E EQUIPAMENTOS",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "12030104": {
+    "descricao": "MOVEIS E UTENSILIOS",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "12030105": {
+    "descricao": "INSTALACOES",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "12030106": {
+    "descricao": "EQUIPAMENTOS DE COMUNICACAO",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "12030107": {
+    "descricao": "BENFEIT. EM IMOV. DE TERCEIROS",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "12030109": {
+    "descricao": "COTAS DE CONSORCIO",
+    "conta_fluxo": "23003",
+    "fluxo_caixa": "Consorcio"
+  },
+  "12030999": {
+    "descricao": "IMOBILIZ - TRANSIT C/IR E PCC",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "120309991": {
+    "descricao": "IMOBILIZADO - TRANSITORIA",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "120401": {
+    "descricao": "BENS INTANGIVEIS",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "12040102": {
+    "descricao": "SOFTWARES",
+    "conta_fluxo": "25012",
+    "fluxo_caixa": "Prestação de Serviço Informatica"
+  },
+  "210101": {
+    "descricao": "EMPRESTIMOS E FINANCIAMENTOS",
+    "conta_fluxo": "230040101",
+    "fluxo_caixa": "Bancos -Pricipal"
+  },
+  "21010101": {
+    "descricao": "ARRENDAMENTO MERCANTIL",
+    "conta_fluxo": "23002",
+    "fluxo_caixa": "Leasing"
+  },
+  "21010102": {
+    "descricao": "EMPRESTIMOS A PAGAR",
+    "conta_fluxo": "230040101",
+    "fluxo_caixa": "Bancos -Pricipal"
+  },
+  "21010103": {
+    "descricao": "(-) JUROS A TRANSCORRER",
+    "conta_fluxo": "230040102",
+    "fluxo_caixa": "Bancos-Juros"
+  },
+  "21010104": {
+    "descricao": "(-) ENCARGOS S/ ARRENDAMENTO",
+    "conta_fluxo": "230040102",
+    "fluxo_caixa": "Bancos-Juros"
+  },
+  "21010105": {
+    "descricao": "DAYCOVA CTA 6046756",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21010106": {
+    "descricao": "BANCO INDUSTRIAL",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "210301": {
+    "descricao": "FORNECEDORES",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "21030101": {
+    "descricao": "FORNECEDORES DIVERSOS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "21030104": {
+    "descricao": "PARCELAMENTO CORREIOS",
+    "conta_fluxo": "21001",
+    "fluxo_caixa": "Correios"
+  },
+  "21050101": {
+    "descricao": "SALARIOS A PAGAR",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "21050102": {
+    "descricao": "13º SALARIO A PAGAR",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "21050103": {
+    "descricao": "FERIAS A PAGAR",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "21050104": {
+    "descricao": "RESCISAO A PAGAR",
+    "conta_fluxo": "2500104",
+    "fluxo_caixa": "Rescisoes"
+  },
+  "21050105": {
+    "descricao": "PENSAO JUDICIAL",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "210502": {
+    "descricao": "CONTRIBUICOES E IMPOSTOS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21050201": {
+    "descricao": "INSS A RECOLHER",
+    "conta_fluxo": "2500102",
+    "fluxo_caixa": "Encargos"
+  },
+  "21050202": {
+    "descricao": "INSS DE TERCEIROS A RECOLHER",
+    "conta_fluxo": "26012",
+    "fluxo_caixa": "INSS - Retido"
+  },
+  "21050203": {
+    "descricao": "FGTS A RECOLHER",
+    "conta_fluxo": "2500102",
+    "fluxo_caixa": "Encargos"
+  },
+  "21050204": {
+    "descricao": "CONTRIB. SINDICAIS A RECOLHER",
+    "conta_fluxo": "2500102",
+    "fluxo_caixa": "Encargos"
+  },
+  "21050205": {
+    "descricao": "IRRF S/SALARIOS A RECOLHER",
+    "conta_fluxo": "2500102",
+    "fluxo_caixa": "Encargos"
+  },
+  "210701": {
+    "descricao": "IMPOSTOS MUNICIPAIS",
+    "conta_fluxo": "26012",
+    "fluxo_caixa": "INSS - Retido"
+  },
+  "21070101": {
+    "descricao": "ISS A RECOLHER",
+    "conta_fluxo": "26008",
+    "fluxo_caixa": "CSLL-CORRENTE"
+  },
+  "21070102": {
+    "descricao": "ISS S/NOTA FISCAL A RECOLHER",
+    "conta_fluxo": "26011",
+    "fluxo_caixa": "ISS"
+  },
+  "210702": {
+    "descricao": "IMPOSTOS ESTADUAIS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21070201": {
+    "descricao": "ICMS A RECOLHER",
+    "conta_fluxo": "26001",
+    "fluxo_caixa": "ICMS - Corrente"
+  },
+  "210703": {
+    "descricao": "IMPOSTOS FEDERAIS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21070303": {
+    "descricao": "COFINS A RECOLHER",
+    "conta_fluxo": "26005",
+    "fluxo_caixa": "COFINS - Corrente"
+  },
+  "21070304": {
+    "descricao": "PIS A RECOLHER",
+    "conta_fluxo": "26003",
+    "fluxo_caixa": "PIS - Corrente"
+  },
+  "21070307": {
+    "descricao": "IRRF S/SERV.PJ A RECOLHER",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "21070308": {
+    "descricao": "COFINS/PIS/CSLL A RECOLHER",
+    "conta_fluxo": "26005",
+    "fluxo_caixa": "COFINS - Corrente"
+  },
+  "210901": {
+    "descricao": "PARCELAMENTO DE TRIBUTOS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21090103": {
+    "descricao": "PARCELAMENTO PIS",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "21090104": {
+    "descricao": "PARCELAMENTO COFINS",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS - Parcelamento"
+  },
+  "21090105": {
+    "descricao": "PARCELAMENTO ICMS",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "21090106": {
+    "descricao": "(-) ENCARGOS PARC TRIBUTOS ICM",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "21090109": {
+    "descricao": "PARCELAMENTO REFIS",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "21090110": {
+    "descricao": "(-) ENCARGOS PARCELAMENTO REFI",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "21090111": {
+    "descricao": "(-) ENCARGOS PARC TRIBUTOS PIS",
+    "conta_fluxo": "",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "21090112": {
+    "descricao": "(-) ENCARGOS PARC TRIBUTOS COF",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "21090113": {
+    "descricao": "PARCELAMENTO IRRF",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "21090114": {
+    "descricao": "(-) ENCARGOS PARCELAMENTO IRRF",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "21090115": {
+    "descricao": "PARCELAMENTO CSRF",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "21090116": {
+    "descricao": "(-) ENCARGOS PARCELAMENTO CSRF",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "210903": {
+    "descricao": "ADIANTAMENTO A TERCEIROS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21090301": {
+    "descricao": "ADIANTAMENTO DE CLIENTES",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "211001": {
+    "descricao": "OUTRAS CONTAS A PAGAR",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21100101": {
+    "descricao": "INDENIZACAO A PAGAR",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "21100102": {
+    "descricao": "PRO - LABORE A PAGAR",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "21100103": {
+    "descricao": "ALUGUEIS A PAGAR",
+    "conta_fluxo": "25004",
+    "fluxo_caixa": "Aluguel e Condomínio"
+  },
+  "21100104": {
+    "descricao": "SEGUROS A PAGAR",
+    "conta_fluxo": "21005",
+    "fluxo_caixa": "Seguro"
+  },
+  "21100106": {
+    "descricao": "DIVIDENDOS A PAGAR - LINK",
+    "conta_fluxo": "22001",
+    "fluxo_caixa": "Dividendos"
+  },
+  "21100107": {
+    "descricao": "PARTICIPACAO NOS LUCROS",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "21100108": {
+    "descricao": "DIVIDENDOS A PAGAR - RONALDO",
+    "conta_fluxo": "22001",
+    "fluxo_caixa": "Dividendos"
+  },
+  "21100109": {
+    "descricao": "DIVIDENDOS A PAGAR - ULTRECH",
+    "conta_fluxo": "22001",
+    "fluxo_caixa": "Dividendos"
+  },
+  "21100110": {
+    "descricao": "(-) PROV PERDAS INDENIZ A PAGA",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21100111": {
+    "descricao": "SYRNA INDENIZACOES",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "211101": {
+    "descricao": "OBRIGACOES DE TERCEIROS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21110101": {
+    "descricao": "DEBITO COM PESSOAS LIGADAS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21110102": {
+    "descricao": "ON TIME EXPRESS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "21110103": {
+    "descricao": "OT SERVICOS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "220301": {
+    "descricao": "PARCELAMENTO DE TRIBUTOS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "22030115": {
+    "descricao": "ICMS ES 771364001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030116": {
+    "descricao": "(-)JUROS ICMS ES 771364001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030120": {
+    "descricao": "PIS PROC 10882.403209",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "22030121": {
+    "descricao": "COFINS PROC 10882.403209",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS - Parcelamento"
+  },
+  "22030122": {
+    "descricao": "PIS PROC 10882.400808",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "22030123": {
+    "descricao": "COFINS PROC 10882.400808",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS - Parcelamento"
+  },
+  "22030124": {
+    "descricao": "IRRF PROC 10882.402969",
+    "conta_fluxo": "26010",
+    "fluxo_caixa": "REFIS FEDERAL"
+  },
+  "22030125": {
+    "descricao": "PIS PROC 10882.402969",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "22030126": {
+    "descricao": "COFINS PROC 10882.402969",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS - Parcelamento"
+  },
+  "22030127": {
+    "descricao": "CSRF PROC 10882.402969",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "22030128": {
+    "descricao": "PIS PROC 10882.403084",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "22030129": {
+    "descricao": "COFINS PROC 10882.403084",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS - Parcelamento"
+  },
+  "22030130": {
+    "descricao": "ICMS PROC 00790796-1",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030131": {
+    "descricao": "ICMS PROC 00790792-8",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030132": {
+    "descricao": "ICMS PROC 01611545-7",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030133": {
+    "descricao": "ICMS PROC 00768353-1",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030134": {
+    "descricao": "ICMS PROC 00766259-7",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030135": {
+    "descricao": "ICMS PROC 01609030-3",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030136": {
+    "descricao": "ICMS PROC 50009742-7",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030137": {
+    "descricao": "CP PATRONAL 908212000235883",
+    "conta_fluxo": "26013",
+    "fluxo_caixa": "INSS - Parcelamento"
+  },
+  "22030138": {
+    "descricao": "CP SEGURADOS 908212000235883",
+    "conta_fluxo": "26013",
+    "fluxo_caixa": "INSS - Parcelamento"
+  },
+  "22030139": {
+    "descricao": "CP TERCEIROS 908212000235883",
+    "conta_fluxo": "26013",
+    "fluxo_caixa": "INSS - Parcelamento"
+  },
+  "22030140": {
+    "descricao": "PERT FEDERAL",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "22030141": {
+    "descricao": "PERT PREVIDENCIARIO",
+    "conta_fluxo": "26013",
+    "fluxo_caixa": "INSS - Parcelamento"
+  },
+  "22030142": {
+    "descricao": "ICMS PROC 00793848-9",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030143": {
+    "descricao": "ICMS DIVIDA ATIVA",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030144": {
+    "descricao": "ICMS ES 750365",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030145": {
+    "descricao": "ICMS ES 750354",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030146": {
+    "descricao": "ICMS ES 750343",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030147": {
+    "descricao": "ICMS ES 750332",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030148": {
+    "descricao": "ICMS MG 2215386.00-24",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030149": {
+    "descricao": "ICMS PB 3019232351",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030150": {
+    "descricao": "ICMS PB 3019232280",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030151": {
+    "descricao": "ICMS SP 20414775-8",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030152": {
+    "descricao": "ICMS SP 20414792-1",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030153": {
+    "descricao": "ICMS PB 1901452019-0",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030154": {
+    "descricao": "ICMS MG PROC 1208812150041",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030155": {
+    "descricao": "ICMS ES 771342001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030156": {
+    "descricao": "ICMS ES 772970001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030157": {
+    "descricao": "ICMS ES 771375001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030158": {
+    "descricao": "ICMS ES 771397001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030159": {
+    "descricao": "ICMS ES 771353001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015901": {
+    "descricao": "ICMS ES 771386001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015902": {
+    "descricao": "ICMS PE 20200000350425411",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015903": {
+    "descricao": "ICMS PE 20200000350029654",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015904": {
+    "descricao": "ICMS ES 771364001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015905": {
+    "descricao": "ICMS MG 5601382829600",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015906": {
+    "descricao": "CP PATR.90841200025182562059",
+    "conta_fluxo": "26013",
+    "fluxo_caixa": "INSS - Parcelamento"
+  },
+  "2203015907": {
+    "descricao": "ICMS PROC 00810972-7",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015908": {
+    "descricao": "ICMS PROC 50024726-3",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015909": {
+    "descricao": "ICMS PROC 20200017491",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015910": {
+    "descricao": "ICMS PROC 137502-3",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015911": {
+    "descricao": "ICMS PROC 137421-6",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015912": {
+    "descricao": "ICMS PROC 137555-1",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203015913": {
+    "descricao": "ICMS PROC 138431",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030160": {
+    "descricao": "(-) JUROS PIS PROC 10882.40320",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "22030161": {
+    "descricao": "(-) JUROS COFINS PROC 10882.40",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS - Parcelamento"
+  },
+  "22030162": {
+    "descricao": "(-) JUROS PIS PROC 10882.40080",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "22030163": {
+    "descricao": "(-) JUROS COFINS PROC 10882.40",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS - Parcelamento"
+  },
+  "22030164": {
+    "descricao": "(-) JUROS IRRF PROC 10882.4029",
+    "conta_fluxo": "25007",
+    "fluxo_caixa": "Despesas Financeiras"
+  },
+  "22030165": {
+    "descricao": "(-) JUROS PIS PROC 10882.40296",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "22030166": {
+    "descricao": "(-) JUROS COFINS PROC 10882.40",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS - Parcelamento"
+  },
+  "22030167": {
+    "descricao": "(-) JUROS CSRF PROC 10882.4029",
+    "conta_fluxo": "25007",
+    "fluxo_caixa": "Despesas Financeiras"
+  },
+  "22030168": {
+    "descricao": "(-) JUROS PIS PROC 10882.40308",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS - Parcelamento"
+  },
+  "22030169": {
+    "descricao": "(-) JUROS COFINS PROC 10882.40",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS - Parcelamento"
+  },
+  "22030170": {
+    "descricao": "(-) JUROS ICMS PROC 00790796-1",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030171": {
+    "descricao": "(-) JUROS ICMS PROC 00790792-8",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030172": {
+    "descricao": "(-) JUROS ICMS PROC 01611545-7",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030173": {
+    "descricao": "(-) JUROS ICMS PROC 00768353-1",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030174": {
+    "descricao": "(-) JUROS ICMS PROC 00766259-7",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030175": {
+    "descricao": "(-) JUROS ICMS PROC 01609030-3",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030176": {
+    "descricao": "(-) JUROS ICMS PROC 50009742-7",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030177": {
+    "descricao": "(-) JUROS CP PATRONAL 90821200",
+    "conta_fluxo": "25007",
+    "fluxo_caixa": "Despesas Financeiras"
+  },
+  "22030178": {
+    "descricao": "(-) JUROS CP SEGURADOS 9082120",
+    "conta_fluxo": "25007",
+    "fluxo_caixa": "Despesas Financeiras"
+  },
+  "22030179": {
+    "descricao": "(-) JUROS CP TERCEIROS 9082120",
+    "conta_fluxo": "25007",
+    "fluxo_caixa": "Despesas Financeiras"
+  },
+  "22030180": {
+    "descricao": "(-) JUROS PERT FEDERAL",
+    "conta_fluxo": "25007",
+    "fluxo_caixa": "Despesas Financeiras"
+  },
+  "22030181": {
+    "descricao": "(-) JUROS PERT PREVIDENCIARIO",
+    "conta_fluxo": "25007",
+    "fluxo_caixa": "Despesas Financeiras"
+  },
+  "22030182": {
+    "descricao": "(-) JUROS ICMS PROC 00793848-9",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030183": {
+    "descricao": "(-) JUROS ICMS DIVIDA ATIVA",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030184": {
+    "descricao": "(-) JUROS ICMS ES 750365",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030185": {
+    "descricao": "(-) JUROS ICMS ES 750354",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030186": {
+    "descricao": "(-) JUROS ICMS ES 750343",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030187": {
+    "descricao": "(-) JUROS ICMS ES 750332",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030188": {
+    "descricao": "(-) ICMS MG 2215386.00-24",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030189": {
+    "descricao": "(-)JUROS ICMS PB 3019232351",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030190": {
+    "descricao": "(-)JUROS ICMS PB 3019232280",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030191": {
+    "descricao": "(-)JUROS ICMS SP 20414775-8",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030192": {
+    "descricao": "(-)JUROS ICMS SP 20414792-1",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030193": {
+    "descricao": "(-)JUROS ICMS PB 1901452019-0",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030194": {
+    "descricao": "(-)JUROS ICMS 1208812150041",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030195": {
+    "descricao": "(-)JUROS ICMS ES 771342001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030196": {
+    "descricao": "(-)JUROS ICMS ES 772970001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030197": {
+    "descricao": "(-)JUROS ICMS ES 771375001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030198": {
+    "descricao": "(-)JUROS ICMS ES 771397001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "22030199": {
+    "descricao": "(-)JUROS ICMS ES 771353001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203019901": {
+    "descricao": "(-)JUROS ICMS ES 771386001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203019902": {
+    "descricao": "(-)JUROS ICMS PE 2020000035042",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203019903": {
+    "descricao": "(-)JUROS ICMS PE 2020000035002",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203019904": {
+    "descricao": "(-)JUROS ICMS ES 771364001",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "2203019905": {
+    "descricao": "(-)JUROS ICMS MG 5601382829600",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "23010103": {
+    "descricao": "(-)CAPITAL A INTEGRALIZAR",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "310101": {
+    "descricao": "RECEITAS OPERACIONAIS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "31010101": {
+    "descricao": "RECEITA C/ENCOM. EXPRESSA",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "3102": {
+    "descricao": "DEDUCOES DA RECEITA BRUTA",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "33": {
+    "descricao": "CUSTOS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "3301": {
+    "descricao": "PESSOAL",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "330101": {
+    "descricao": "PESSOAL - OPERACIONAL",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "33010101": {
+    "descricao": "ORDENADOS E SALARIOS",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "33010104": {
+    "descricao": "ENCARGOS SOCIAIS INSS",
+    "conta_fluxo": "26012",
+    "fluxo_caixa": "INSS - Retido"
+  },
+  "33010105": {
+    "descricao": "ENCARGOS SOCIAIS FGTS",
+    "conta_fluxo": "2500102",
+    "fluxo_caixa": "Encargos"
+  },
+  "33010106": {
+    "descricao": "AVISO PREVIO E INDENIZACOES",
+    "conta_fluxo": "2500104",
+    "fluxo_caixa": "Rescisoes"
+  },
+  "33010107": {
+    "descricao": "ASSISTENCIA MEDICA",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "33010108": {
+    "descricao": "SEGURO DE VIDA EM GRUPO",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "33010110": {
+    "descricao": "REFEICOES",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "33010111": {
+    "descricao": "VALE-TRANSPORTE",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "33010112": {
+    "descricao": "VALE TRANSPORTES C/ IRRF",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "33010113": {
+    "descricao": "PROCESSOS TRABALHISTAS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33010114": {
+    "descricao": "CONTRIBUICAO SINDICAL",
+    "conta_fluxo": "2500102",
+    "fluxo_caixa": "Encargos"
+  },
+  "33010115": {
+    "descricao": "PARTICIPACAO NOS LUCROS",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "33010118": {
+    "descricao": "ASSISTENCIA ODONTOLOGICA",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "33010119": {
+    "descricao": "GRATIFICACOES",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "33010120": {
+    "descricao": "HORAS EXTRAS",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "33010121": {
+    "descricao": "MAO DE OBRA TERCEIRIZADA",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "33010122": {
+    "descricao": "MAO DE OBRA C/INSS,ISS,IR,PCC",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "33010123": {
+    "descricao": "ALIMENTACAO - PAT",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "33010124": {
+    "descricao": "UNIFORMES",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33010127": {
+    "descricao": "COMBUSTIVEL",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "33010128": {
+    "descricao": "COMISSAO SOBRE VENDAS",
+    "conta_fluxo": "25002",
+    "fluxo_caixa": "Representante Comercial"
+  },
+  "33010129": {
+    "descricao": "AUTONOMOS CUSTO",
+    "conta_fluxo": "25003",
+    "fluxo_caixa": "Consultoria"
+  },
+  "330101291": {
+    "descricao": "AUTONOMOS CUSTO C/ ISS,IR,INSS",
+    "conta_fluxo": "25003",
+    "fluxo_caixa": "Consultoria"
+  },
+  "33010131": {
+    "descricao": "MEDICINA DO TRABALHO",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33010132": {
+    "descricao": "MAO DE OBRA C/INSS, ISS E PCC",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "33010134": {
+    "descricao": "MAO DE OBRA C/ISS",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "3303": {
+    "descricao": "CUSTOS VARIAVEIS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "330301": {
+    "descricao": "OPERACIONAL",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "33030101": {
+    "descricao": "MATERIAL DE EMBALAGEM",
+    "conta_fluxo": "21006",
+    "fluxo_caixa": "Suprimento Operacional"
+  },
+  "33030102": {
+    "descricao": "ETIQUETA",
+    "conta_fluxo": "21006",
+    "fluxo_caixa": "Suprimento Operacional"
+  },
+  "33030103": {
+    "descricao": "SACO DE RAFIA",
+    "conta_fluxo": "21006",
+    "fluxo_caixa": "Suprimento Operacional"
+  },
+  "33030104": {
+    "descricao": "FLYER",
+    "conta_fluxo": "21006",
+    "fluxo_caixa": "Suprimento Operacional"
+  },
+  "33030105": {
+    "descricao": "SUPRIMENTOS INFORM OPERACIONAL",
+    "conta_fluxo": "21006",
+    "fluxo_caixa": "Suprimento Operacional"
+  },
+  "33030106": {
+    "descricao": "LACRE",
+    "conta_fluxo": "21006",
+    "fluxo_caixa": "Suprimento Operacional"
+  },
+  "33030107": {
+    "descricao": "OUTROS INSUMOS",
+    "conta_fluxo": "21006",
+    "fluxo_caixa": "Suprimento Operacional"
+  },
+  "330302": {
+    "descricao": "FRETES",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frete Rodoviario"
+  },
+  "33030201": {
+    "descricao": "FRETES AEREOS",
+    "conta_fluxo": "21002",
+    "fluxo_caixa": "Frete Aereo"
+  },
+  "33030202": {
+    "descricao": "FRETES RODOVIARIO",
+    "conta_fluxo": "21003",
+    "fluxo_caixa": "Frete Rodoviario"
+  },
+  "330305": {
+    "descricao": "INDENIZACOES/EXTRAVIOS/FURTOS",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "33030501": {
+    "descricao": "INDENIZACOES/EXTRAVIOS",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "33030502": {
+    "descricao": "(-) RECUP. INDENIZ. EXTRAVIOS",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "33030503": {
+    "descricao": "(-) RECUP. INDEN. EXTRAV. LOTE",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "33030505": {
+    "descricao": "DESCONTO DE INDENIZACOES",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "330307": {
+    "descricao": "GERENCIAMENTO DE RISCO",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030701": {
+    "descricao": "ESCOLTA",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "330307012": {
+    "descricao": "ESCOLTA C/ ISS, INSS",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030702": {
+    "descricao": "SEGURO AEREO",
+    "conta_fluxo": "21005",
+    "fluxo_caixa": "Seguro"
+  },
+  "33030703": {
+    "descricao": "SEGURO RODOVIARIO",
+    "conta_fluxo": "21005",
+    "fluxo_caixa": "Seguro"
+  },
+  "33030704": {
+    "descricao": "RASTREAMENTO",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030705": {
+    "descricao": "SEGURANCA PATRIMONIAL",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030706": {
+    "descricao": "RASTREAMENTO C/IR E PCC",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030707": {
+    "descricao": "ESCOLTA C/INSS",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030708": {
+    "descricao": "RASTREAMENTO C/ISS, IR E PCC",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030709": {
+    "descricao": "ESCOLTA C/INSS, IR E PCC",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030710": {
+    "descricao": "SEGURANCA PATRIMONIAL C/ISS",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030711": {
+    "descricao": "SEGURANCA PATRIMONIAL IRRF PCC",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030712": {
+    "descricao": "RASTREAMENTO C/ PCC",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030713": {
+    "descricao": "ESCOLTA C/ ISS",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030901": {
+    "descricao": "CORREIOS",
+    "conta_fluxo": "21001",
+    "fluxo_caixa": "Correios"
+  },
+  "33030904": {
+    "descricao": "(-)CORREIOS CUT-OFF",
+    "conta_fluxo": "21001",
+    "fluxo_caixa": "Correios"
+  },
+  "33031301": {
+    "descricao": "GASTOS S/ASSESSORIA E POSTAGEM",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "3305": {
+    "descricao": "CUSTOS FIXOS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "330501": {
+    "descricao": "OPERACIONAL",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33050101": {
+    "descricao": "ALUGUEL DE EQUIPAMENTOS",
+    "conta_fluxo": "25010",
+    "fluxo_caixa": "Locação de Equipamento"
+  },
+  "330501011": {
+    "descricao": "ALUGUEL EQUIPAMENTOS C/ISS",
+    "conta_fluxo": "25010",
+    "fluxo_caixa": "Locação de Equipamento"
+  },
+  "33050102": {
+    "descricao": "COMBUSTIVEL FROTA",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "33050103": {
+    "descricao": "FROTA",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "33050104": {
+    "descricao": "AGENCIADORES",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33050105": {
+    "descricao": "PEDAGIO",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "33050106": {
+    "descricao": "AGENCIADORES C/ IRRF E PCC",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "330501061": {
+    "descricao": "PRESTACAO DE SERVICOS PJ",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "330501062": {
+    "descricao": "PRESTACAO DE SERVICOS PJ C/ISS",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33050107": {
+    "descricao": "FROTA C/IRRF E PCC",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "33050108": {
+    "descricao": "FROTA COM/ PCC",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "33050109": {
+    "descricao": "LOCACAO DE VEICULOS CUSTO",
+    "conta_fluxo": "25011",
+    "fluxo_caixa": "Locação deVeículos"
+  },
+  "33050113": {
+    "descricao": "SEGUROS / ASSINATURAS",
+    "conta_fluxo": "25014",
+    "fluxo_caixa": "Seguros/Assinaturas"
+  },
+  "330503": {
+    "descricao": "INFRAESTRUTURA",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33050301": {
+    "descricao": "PALLETS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "330503011": {
+    "descricao": "PALLETS C/INSS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33050302": {
+    "descricao": "TELEFONIA",
+    "conta_fluxo": "25005",
+    "fluxo_caixa": "Telefonia / Internet"
+  },
+  "33050303": {
+    "descricao": "INTERNET",
+    "conta_fluxo": "25005",
+    "fluxo_caixa": "Telefonia / Internet"
+  },
+  "33050304": {
+    "descricao": "ERP - LICENCA",
+    "conta_fluxo": "25012",
+    "fluxo_caixa": "Prestação de Serviço Informatica"
+  },
+  "330504": {
+    "descricao": "FROTA TERCEIRIZ. TRANSFERENCIA",
+    "conta_fluxo": "21003",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33050401": {
+    "descricao": "FROTA TERCEIRIZADA PJ",
+    "conta_fluxo": "21003",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "330504011": {
+    "descricao": "ND SEMP TOSHIBA",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33050402": {
+    "descricao": "FROTA TERCEIRIZADA PF",
+    "conta_fluxo": "21003",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33050403": {
+    "descricao": "FROTA TERCEIRIZADA PJ  C/ISS",
+    "conta_fluxo": "21003",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "330505": {
+    "descricao": "LOCACAO/CONDOMINIOS",
+    "conta_fluxo": "25004",
+    "fluxo_caixa": "Aluguel e Condomínio"
+  },
+  "33050501": {
+    "descricao": "ALUGUEIS E CONDOMINIOS",
+    "conta_fluxo": "25004",
+    "fluxo_caixa": "Aluguel e Condomínio"
+  },
+  "33050502": {
+    "descricao": "ENERGIA ELETRICA",
+    "conta_fluxo": "25008",
+    "fluxo_caixa": "Energia Elétrica"
+  },
+  "35": {
+    "descricao": "DESPESAS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "3501": {
+    "descricao": "PESSOAL",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "350101": {
+    "descricao": "PESSOAL - ADMINISTRATIVO",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "35010101": {
+    "descricao": "ORDENADOS E SALARIOS",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "35010104": {
+    "descricao": "ENCARGOS SOCIAIS-INSS",
+    "conta_fluxo": "26012",
+    "fluxo_caixa": "INSS - Retido"
+  },
+  "35010105": {
+    "descricao": "ENCARGOS SOCIAIS-FGTS",
+    "conta_fluxo": "2500102",
+    "fluxo_caixa": "Encargos"
+  },
+  "35010106": {
+    "descricao": "AVISO PREVIO E INDENIZACOES",
+    "conta_fluxo": "2500104",
+    "fluxo_caixa": "Rescisoes"
+  },
+  "35010107": {
+    "descricao": "ASSISTENCIA MEDICA",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "35010108": {
+    "descricao": "SEGURO DE VIDA EM GRUPO",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "35010109": {
+    "descricao": "CURSOS E TREINAMENTOS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35010110": {
+    "descricao": "REFEICOES",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "35010111": {
+    "descricao": "VALE-TRANSPORTE",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "35010112": {
+    "descricao": "REMUNERACAO E ESTAGIARIOS",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "35010113": {
+    "descricao": "PRO-LABORE",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "35010116": {
+    "descricao": "PARTICIPACAO NOS LUCROS",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "35010119": {
+    "descricao": "ASSISTENCIA ODONTOLOGICA",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "35010122": {
+    "descricao": "CESTA BASICA",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "35010123": {
+    "descricao": "HORAS EXTRAS",
+    "conta_fluxo": "2500101",
+    "fluxo_caixa": "Salarios"
+  },
+  "35010124": {
+    "descricao": "AUTONOMOS DESPESA",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "350101241": {
+    "descricao": "AUTONOMOS DESP C/ ISS,IR,INSS",
+    "conta_fluxo": "25003",
+    "fluxo_caixa": "Consultoria"
+  },
+  "35010125": {
+    "descricao": "COMBUSTIVEIS",
+    "conta_fluxo": "25006",
+    "fluxo_caixa": "Despesas Viagens"
+  },
+  "35010126": {
+    "descricao": "ALIMENTACAO - PAT",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Beneficios"
+  },
+  "35010128": {
+    "descricao": "RECRUTAMENTO E SELECAO",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35010129": {
+    "descricao": "MEDICINA  DO TRABALHO",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35010130": {
+    "descricao": "MAO DE OBRA TERCEIRIZADA",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "350101301": {
+    "descricao": "MAO OBRA TERC. INSS/ISS/IR/PCC",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "350101302": {
+    "descricao": "MAO OBRA TERC. INSS/ISS/PCC",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "3503": {
+    "descricao": "LOCACAO/CONDOMINIOS",
+    "conta_fluxo": "25004",
+    "fluxo_caixa": "Aluguel e Condomínio"
+  },
+  "350301": {
+    "descricao": "OCUPACAO",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35030101": {
+    "descricao": "ALUGUEIS E CONDOMINIOS",
+    "conta_fluxo": "25004",
+    "fluxo_caixa": "Aluguel e Condomínio"
+  },
+  "35030103": {
+    "descricao": "TELEFONIA",
+    "conta_fluxo": "25005",
+    "fluxo_caixa": "Telefonia / Internet"
+  },
+  "35030104": {
+    "descricao": "LOCACAO DE EQUIPAMENTOS",
+    "conta_fluxo": "25010",
+    "fluxo_caixa": "Locação de Equipamento"
+  },
+  "35030105": {
+    "descricao": "SEGURO FIANCA",
+    "conta_fluxo": "25014",
+    "fluxo_caixa": "Seguros/Assinaturas"
+  },
+  "3505": {
+    "descricao": "COMPRA DE MATERIAIS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "350501": {
+    "descricao": "COMPRA DE MATERIAIS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35050101": {
+    "descricao": "MATERIAL DE ESCRITORIO",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35050103": {
+    "descricao": "LIMPEZA",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35050104": {
+    "descricao": "MATERIAIS DE INFORMATICA",
+    "conta_fluxo": "25012",
+    "fluxo_caixa": "Prestação de Serviço Informatica"
+  },
+  "35050105": {
+    "descricao": "BENS DE NATUREZA PERMANENTE",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35050106": {
+    "descricao": "LIMPEZA C/ISS,INSS,IR,PCC",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "3509": {
+    "descricao": "PRESTACAO DE SERVICOS DE TERCE",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "350901": {
+    "descricao": "PRESTACAO DE SERVICOS DE TERCE",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "35090101": {
+    "descricao": "ASSESSORIA CONTABIL",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090102": {
+    "descricao": "ASSISTENCIA JURIDICA",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "350901021": {
+    "descricao": "ASSISTENCIA JURIDICA C/IR,PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090103": {
+    "descricao": "AUDITORIA",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "350901031": {
+    "descricao": "AUDITORIA C/IR E PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090104": {
+    "descricao": "OUTROS SERV. PREST. POR PJ",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090105": {
+    "descricao": "CONSULTORIA",
+    "conta_fluxo": "25003",
+    "fluxo_caixa": "Consultoria"
+  },
+  "35090106": {
+    "descricao": "MANUTENCAO PREDIAL",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "350901061": {
+    "descricao": "SERV. MANUTENCAO COM ISS E PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "350901062": {
+    "descricao": "MANUTENCAO PREDIAL C/ IR, PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090107": {
+    "descricao": "PREST. SERV. DE INFORMATICA",
+    "conta_fluxo": "25012",
+    "fluxo_caixa": "Prestação de Serviço Informatica"
+  },
+  "35090108": {
+    "descricao": "CORREIOS E MALOTES",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090109": {
+    "descricao": "SERV DE INFORMATICA C/IRRF PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090110": {
+    "descricao": "ASSESSORIA CONTABIL C/ IR, PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090150": {
+    "descricao": "SERV.TERC.PJ C/INSS,ISS,IR E P",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "35090151": {
+    "descricao": "CONSULTORIA C/IRRF E PCC",
+    "conta_fluxo": "25003",
+    "fluxo_caixa": "Consultoria"
+  },
+  "35090152": {
+    "descricao": "SERV.TERC.PJ C/IRRF E PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090153": {
+    "descricao": "SERV.TERC.PJ C/PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090154": {
+    "descricao": "MANUT.PREDIAL C/IRRF E PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "350901541": {
+    "descricao": "MANUTENCAO PREDIAL C/PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090155": {
+    "descricao": "INFORMATICA C/PCC",
+    "conta_fluxo": "25012",
+    "fluxo_caixa": "Prestação de Serviço Informatica"
+  },
+  "35090156": {
+    "descricao": "MANUTENCAO PREDIAL C/ISS RETID",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090157": {
+    "descricao": "SERV INFORMATICA IRRF PCC ISS",
+    "conta_fluxo": "25012",
+    "fluxo_caixa": "Prestação de Serviço Informatica"
+  },
+  "3511": {
+    "descricao": "DESPESAS DIVERSAS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "351101": {
+    "descricao": "DESPESAS DIVERSAS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110101": {
+    "descricao": "VIAGENS E ESTADIAS - DESPESA",
+    "conta_fluxo": "25006",
+    "fluxo_caixa": "Despesas Viagens"
+  },
+  "35110103": {
+    "descricao": "ASSOCIACOES DE CLASSE",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110104": {
+    "descricao": "COPA, COZINHA E REFEITORIOS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110105": {
+    "descricao": "LEGAIS E JUDICIAIS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110106": {
+    "descricao": "TAXAS/EMOLUMENTOS E CARTORIO",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110107": {
+    "descricao": "LEGAIS E JUDICIAIS C/IR E PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "351101071": {
+    "descricao": "DESPESAS DIVERSAS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110108": {
+    "descricao": "PEDAGIO",
+    "conta_fluxo": "25006",
+    "fluxo_caixa": "Despesas Viagens"
+  },
+  "35110109": {
+    "descricao": "KILOMETRAGEM",
+    "conta_fluxo": "25006",
+    "fluxo_caixa": "Despesas Viagens"
+  },
+  "35110110": {
+    "descricao": "EVENTOS E CONFRATERNIZACOES",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110111": {
+    "descricao": "MANUTENCAO VEICULO  - DESPESAS",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "35110112": {
+    "descricao": "MANUTENCAO E REPAROS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110113": {
+    "descricao": "CONTRIB SINDICAL PATRONAL",
+    "conta_fluxo": "2500102",
+    "fluxo_caixa": "Encargos"
+  },
+  "35110114": {
+    "descricao": "CARRETOS E FRETES",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110115": {
+    "descricao": "ICMS INSIDENTES AQUISICAO DE B",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "35110116": {
+    "descricao": "BRINDES",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110117": {
+    "descricao": "ESTACIONAMENTO",
+    "conta_fluxo": "25006",
+    "fluxo_caixa": "Despesas Viagens"
+  },
+  "35110118": {
+    "descricao": "MANUTENCAO IMOBILIZADO",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "351101181": {
+    "descricao": "MANUTENCAO IMOBILIZADO C/PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110119": {
+    "descricao": "OUTRAS DESPESAS C/PESSOAL",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35110120": {
+    "descricao": "COMBUSTIVEL - REEMBOLSO",
+    "conta_fluxo": "25006",
+    "fluxo_caixa": "Despesas Viagens"
+  },
+  "35110121": {
+    "descricao": "LOCACAO VEICULOS DESPESA",
+    "conta_fluxo": "25011",
+    "fluxo_caixa": "Locação deVeículos"
+  },
+  "351501": {
+    "descricao": "DESPESAS INDEDUTIVEIS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35150101": {
+    "descricao": "MULTAS FISCAIS",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "35150102": {
+    "descricao": "MULTA DE TRANSITO",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "35170101": {
+    "descricao": "PROVISAO P CREDITO LIQUIDACAO",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "360101": {
+    "descricao": "DESPESAS COMERCIAIS",
+    "conta_fluxo": "25002",
+    "fluxo_caixa": "Representante Comercial"
+  },
+  "36010101": {
+    "descricao": "PROPAGANDA E PUBLICIDADE",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "36010102": {
+    "descricao": "REPRESENTANTES",
+    "conta_fluxo": "25002",
+    "fluxo_caixa": "Representante Comercial"
+  },
+  "36010103": {
+    "descricao": "REPRESENTANTES C/IRRF",
+    "conta_fluxo": "25002",
+    "fluxo_caixa": "Representante Comercial"
+  },
+  "370101": {
+    "descricao": "DESPESAS FINANCEIRAS",
+    "conta_fluxo": "25007",
+    "fluxo_caixa": "Despesas Financeiras"
+  },
+  "37010101": {
+    "descricao": "JUROS PAGOS OU INCORRIDOS",
+    "conta_fluxo": "25007",
+    "fluxo_caixa": "Despesas Financeiras"
+  },
+  "37010102": {
+    "descricao": "DESCONTOS CONCEDIDOS",
+    "conta_fluxo": "11998",
+    "fluxo_caixa": "Outros"
+  },
+  "37010103": {
+    "descricao": "I.O.F.",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "37010104": {
+    "descricao": "DESPESAS BANCARIAS",
+    "conta_fluxo": "25009",
+    "fluxo_caixa": "Despesas bancárias"
+  },
+  "37010105": {
+    "descricao": "ENCARGOS SOBRE TRIBUTOS",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "37010106": {
+    "descricao": "JUROS OUTRAS OPERACOES",
+    "conta_fluxo": "230040102",
+    "fluxo_caixa": "Bancos-Juros"
+  },
+  "37010108": {
+    "descricao": "PERDAS NO RECEBIMENTO DE CREDI",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "37010110": {
+    "descricao": "JUROS SOBRE EMPRESTIMOS",
+    "conta_fluxo": "230040102",
+    "fluxo_caixa": "Bancos-Juros"
+  },
+  "37010111": {
+    "descricao": "MULTAS CONTRATUAIS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "37010112": {
+    "descricao": "I.O.C.",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "370301": {
+    "descricao": "RECEITAS FINANCEIRAS",
+    "conta_fluxo": "11999",
+    "fluxo_caixa": "Faturamento Frete"
+  },
+  "37030101": {
+    "descricao": "DESCONTOS OBTIDOS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Outros"
+  },
+  "37030102": {
+    "descricao": "JUROS RECEBIDOS OU AUFERIDOS",
+    "conta_fluxo": "11999",
+    "fluxo_caixa": "Faturamento Frete"
+  },
+  "37030103": {
+    "descricao": "RECEITAS DE APLIC.FINANCEIRAS",
+    "conta_fluxo": "12001",
+    "fluxo_caixa": "Rendimento de Aplicações"
+  },
+  "37030108": {
+    "descricao": "OUTRAS RECEITAS FINANCEIRAS",
+    "conta_fluxo": "11999",
+    "fluxo_caixa": "Faturamento Frete"
+  },
+  "38020102": {
+    "descricao": "OUTRAS RECEITAS NAO OPERAC",
+    "conta_fluxo": "11999",
+    "fluxo_caixa": "Faturamento Frete"
+  },
+  "38020109": {
+    "descricao": "INDENIZACOES DE SEGUROS RECEBI",
+    "conta_fluxo": "13999",
+    "fluxo_caixa": "Outros"
+  },
+  "5412": {
+    "descricao": "ASSISTENCIA CONTABIL",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "55412": {
+    "descricao": "RASTREAMENTO C IR,INSS,ISS,PCC",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "COFINS": {
+    "descricao": "COFINS",
+    "conta_fluxo": "26005",
+    "fluxo_caixa": "COFINS - Corrente"
+  },
+  "COMISSOES": {
+    "descricao": "COMISSOES DE VENDEDORES",
+    "conta_fluxo": "25002",
+    "fluxo_caixa": "Representante Comercial"
+  },
+  "CSLL": {
+    "descricao": "CONTRIB.S/LUCRO LIQUIDO",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "INSS": {
+    "descricao": "RETENCAO P/ SEGURIDADE SOCIAL",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "IRF": {
+    "descricao": "IMPOSTO RENDA RETIDO NA FONTE",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "ISS": {
+    "descricao": "IMPOSTO SOBRE SERVICOS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "NATMOVP": {
+    "descricao": "Movimento bancário pagar",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "NATMOVR": {
+    "descricao": "Movimento bancário Receber",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "OUTROS": {
+    "descricao": "OUTROS",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "PIS": {
+    "descricao": "PIS A RECOLHER",
+    "conta_fluxo": "26003",
+    "fluxo_caixa": "PIS - Corrente"
+  },
+  "SEST": {
+    "descricao": "Serviço Social do Transporte",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33030905": {
+    "descricao": "MALHA PRIVADA PROPRIA",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33030906": {
+    "descricao": "MALHA PRIVADA TERCEIRA",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33030907": {
+    "descricao": "AGENCIADORES",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33030908": {
+    "descricao": "MALHA PRIVADA PROPRIA C/ISS",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33050405": {
+    "descricao": "FROTA PROPRIA",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33050409": {
+    "descricao": "FROTA PROPRIA C/ISS",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "35030106": {
+    "descricao": "LOCAÇÃO DE EQUIPAMENTO C/ISS",
+    "conta_fluxo": "25010",
+    "fluxo_caixa": "Locação de Equipamento"
+  },
+  "33031105": {
+    "descricao": "MANUTENCAO FROTA",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "31010109": {
+    "descricao": "ANULACAO RECEITA C/ENCOM.EXPR",
+    "conta_fluxo": "",
+    "fluxo_caixa": ""
+  },
+  "33050406": {
+    "descricao": "FROTA TERCEIRA",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "35090113": {
+    "descricao": "PREST.SERV.LIMPEZA C/INSS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "35090112": {
+    "descricao": "SERV. LIMPEZA",
+    "conta_fluxo": "2500105",
+    "fluxo_caixa": "Terceiros"
+  },
+  "33031106": {
+    "descricao": "PEDAGIO",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "33031108": {
+    "descricao": "CUSTO COLETA TERCEIRO",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33050407": {
+    "descricao": "SURFACE PROPRIA",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "33050408": {
+    "descricao": "SURFACE TERCEIRA",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "350101091": {
+    "descricao": "CURSOS E TREINAMENTOS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33050305": {
+    "descricao": "ERP - LICENCA",
+    "conta_fluxo": "25012",
+    "fluxo_caixa": "Prestação de Serviço Informatica"
+  },
+  "33031104": {
+    "descricao": "COMBUSTIVEL FROTA",
+    "conta_fluxo": "21008",
+    "fluxo_caixa": "Frota"
+  },
+  "350901041": {
+    "descricao": "OUTROS SERV. PREST. POR PJ",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "330501081": {
+    "descricao": "VIAGENS E ESTADIAS - CUSTO",
+    "conta_fluxo": "25006",
+    "fluxo_caixa": "Despesas Viagens"
+  },
+  "35010114": {
+    "descricao": "PROCESSOS TRABALHISTAS",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "12010110": {
+    "descricao": "CAUCAO ALUGUEL",
+    "conta_fluxo": "25004",
+    "fluxo_caixa": "Aluguel e Condomínio"
+  },
+  "21090101": {
+    "descricao": "PARCELAMENTO ICMS",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS Parcelamento"
+  },
+  "33031107": {
+    "descricao": "1º PARCELA PARCELAMENTO",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS Parcelamento"
+  },
+  "33050411": {
+    "descricao": "SURFACE TERCEIRA C/ISS",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "330101121": {
+    "descricao": "VALE TRANSPORTE C/ISS",
+    "conta_fluxo": "2500103",
+    "fluxo_caixa": "Benefícios"
+  },
+  "350101092": {
+    "descricao": "CURSO E TREINAMENTO C/IR",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "2203015915": {
+    "descricao": "ICMS PE 3812494",
+    "conta_fluxo": "26001",
+    "fluxo_caixa": "ICMS"
+  },
+  "33030714": {
+    "descricao": "ESCOLTA COM ISS",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030909": {
+    "descricao": "MALHA PROPRIA",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "35010115": {
+    "descricao": "CONTRIB SINDICAL PATRONAL",
+    "conta_fluxo": "2500102",
+    "fluxo_caixa": "Encargos"
+  },
+  "2203015916": {
+    "descricao": "PARC.PGFN 00004642051",
+    "conta_fluxo": "26006",
+    "fluxo_caixa": "COFINS Parcelamento"
+  },
+  "2203015917": {
+    "descricao": "IRRF",
+    "conta_fluxo": "26010",
+    "fluxo_caixa": "REFIS FEDERAL"
+  },
+  "2203015918": {
+    "descricao": "CSRF PROC 10882.",
+    "conta_fluxo": "26999",
+    "fluxo_caixa": "Outros"
+  },
+  "2203015919": {
+    "descricao": "PARCELAMENTO PIS",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS Parcelamento"
+  },
+  "2203015920": {
+    "descricao": "IRRF",
+    "conta_fluxo": "26010",
+    "fluxo_caixa": "REFIS FEDERAL"
+  },
+  "2203015921": {
+    "descricao": "PARCELAMENTO PIS",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS Parcelamento"
+  },
+  "33030205": {
+    "descricao": "TRANS AEREA PROPRIA",
+    "conta_fluxo": "21004",
+    "fluxo_caixa": "Frota Tercerizada"
+  },
+  "38020110": {
+    "descricao": "VENDA ATIVO IMOBILIZADO",
+    "conta_fluxo": "23001",
+    "fluxo_caixa": "Imobilizado"
+  },
+  "350901551": {
+    "descricao": "INFORMATICA C/PCC",
+    "conta_fluxo": "25012",
+    "fluxo_caixa": "Prestação de Serviço Informatica"
+  },
+  "2203015922": {
+    "descricao": "PARCELAMENTO PIS",
+    "conta_fluxo": "26010",
+    "fluxo_caixa": "REFIS FEDERAL"
+  },
+  "2203015923": {
+    "descricao": "PARCELAMENTO PIS",
+    "conta_fluxo": "26010",
+    "fluxo_caixa": "REFIS FEDERAL"
+  },
+  "36010105": {
+    "descricao": "REPRESENTANTE C ISS",
+    "conta_fluxo": "25002",
+    "fluxo_caixa": "Representante Comercial"
+  },
+  "33050307": {
+    "descricao": "LOCAÇÃO DE EQUIP INFO CUSTO",
+    "conta_fluxo": "25010",
+    "fluxo_caixa": "Locação de Equipamento"
+  },
+  "2203015924": {
+    "descricao": "PARCELAMENTO ICMS",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS Parcelamento"
+  },
+  "350301041": {
+    "descricao": "LOCAÇÃO EQUIPAMENTO",
+    "conta_fluxo": "25010",
+    "fluxo_caixa": "Locação de Equipamento"
+  },
+  "21020008": {
+    "descricao": "PIS",
+    "conta_fluxo": "26004",
+    "fluxo_caixa": "PIS Parcelamento"
+  },
+  "351101101": {
+    "descricao": "ENENTOS, CONFRATERN C IR E PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33030718": {
+    "descricao": "RASTREAMENTO C IR,INSS,ISS,PCC",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "33030715": {
+    "descricao": "SEG PATRIM C IR",
+    "conta_fluxo": "21007",
+    "fluxo_caixa": "Gerenciamento de Risco"
+  },
+  "35070101": {
+    "descricao": "OUTROS SEGUROS",
+    "conta_fluxo": "25014",
+    "fluxo_caixa": "Seguros/Assinaturas"
+  },
+  "11010313": {
+    "descricao": "CAUCAO ALUGUEL",
+    "conta_fluxo": "25004",
+    "fluxo_caixa": "Aluguel e Condomínio"
+  },
+  "350901022": {
+    "descricao": "ASSISTENCIA JURIDICA",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "2109015927": {
+    "descricao": "PARCELAMENTO ICMS",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS - Parcelamento"
+  },
+  "21090117": {
+    "descricao": "PARCELAMENTO ICMS",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS Parcelamento"
+  },
+  "2109015931": {
+    "descricao": "PARCELAMENTO ICMS",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS Parcelamento"
+  },
+  "35090111": {
+    "descricao": "PRES SER DE LIMPEZA",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "2109019975": {
+    "descricao": "PARCELAMENTO ICMS",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS Parcelamento"
+  },
+  "2109019978": {
+    "descricao": "PARCELAMENTO ICMS",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS Parcelamento"
+  },
+  "2109019974": {
+    "descricao": "PARCELAMENTO ICMS",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS Parcelamento"
+  },
+  "2109019979": {
+    "descricao": "PGFN",
+    "conta_fluxo": "26013",
+    "fluxo_caixa": "PARC|PGFN"
+  },
+  "330309": {
+    "descricao": "CORREIOS",
+    "conta_fluxo": "21001",
+    "fluxo_caixa": "Correios"
+  },
+  "35110102": {
+    "descricao": "ÁGUA E ESGOTO",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33030719": {
+    "descricao": "RASTREAMENTO IR 1,5%, PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33030720": {
+    "descricao": "RASTREAMENTO IR 1%, PCC",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "33050114": {
+    "descricao": "ESTACIONAMENTO OPERACIONAL",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "Fornecedores"
+  },
+  "2109019977": {
+    "descricao": "PGE - PB",
+    "conta_fluxo": "26002",
+    "fluxo_caixa": "ICMS Parcelamento"
+  },
+  "351101171": {
+    "descricao": "ESTACIONAMENTO C IR",
+    "conta_fluxo": "25013",
+    "fluxo_caixa": "ESTACIONAMENTO C IR"
+  }
+}
