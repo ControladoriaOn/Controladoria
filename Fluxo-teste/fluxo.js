@@ -18,9 +18,31 @@
    porque um pagamento feito hoje só vira baixa amanhã.
    ============================================================================ */
 
+/* ============================================================================
+   QUAL BASE ESTA CÓPIA USA
+   ----------------------------------------------------------------------------
+   Não é uma linha que alguém precisa lembrar de trocar: quem decide é o
+   endereço em que a página está rodando. Pasta com "teste" no nome fala com o
+   script de teste; qualquer outra fala com produção.
+
+   Assim os arquivos são idênticos nos dois lugares, e copiar a pasta de teste
+   por cima da de produção não troca a base sem querer — o endereço muda, o
+   comportamento muda junto.
+
+   Na pasta de teste, a URL do script de teste é declarada uma única vez no
+   index.html daquela pasta, assim:
+
+       <script>window.URL_TESTE = 'https://script.google.com/.../exec';</script>
+
+   Se faltar, a cópia de teste não roda: melhor parar com um aviso na cara do
+   que sair gravando na planilha de produção achando que é teste.
+   ============================================================================ */
+const URL_PRODUCAO = 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec';
+const EH_TESTE = /teste/i.test(decodeURIComponent(location.pathname));
+const URL_BASE = EH_TESTE ? (window.URL_TESTE || '') : URL_PRODUCAO;
+
 const CONFIG = {
-  // mesma URL /exec do painel de pagamentos
-  DATA_URL: 'https://script.google.com/macros/s/AKfycbzHS4o-21O7eIfKsyc3Y04J0hBObuhnTAcWZmV7EWXeCyyvlp5FyMpDj93406TgEOZ2/exec',
+  DATA_URL: URL_BASE,
   RETRIES: 3,
   BACKOFF_MS: 600,
 };
@@ -516,22 +538,36 @@ function render(){
 
 /* Cada linha que acompanha a rolagem para logo abaixo da anterior. As alturas
    são medidas na hora, e não escritas no estilo, porque mudam com a fonte, com
-   o zoom do navegador e com a visão de centavos ligada. */
+   o zoom do navegador e com a visão de centavos ligada.
+
+   E medir uma vez não basta: a fonte da página chega depois do primeiro
+   desenho e muda a altura de todas as linhas. Quando isso acontece, o
+   empilhamento calculado antes fica defasado e a tabela aparece correndo pelos
+   vãos. Por isso, além de medir no desenho, há um observador que remede
+   sempre que qualquer uma dessas alturas mudar, seja lá por que motivo. */
+let observadorFixas = null;
+
+function medirFixas(){
+  const thead = document.querySelector('table.grade thead');
+  if (!thead) return null;
+  const fixas = document.querySelectorAll('table.grade tr.fixa');
+  let topo = thead.getBoundingClientRect().height;
+  fixas.forEach((tr, i) => {
+    tr.classList.toggle('ultima-fixa', i === fixas.length - 1);
+    tr.style.setProperty('--topo', (i ? topo - 1 : topo).toFixed(2) + 'px');
+    topo += tr.getBoundingClientRect().height - (i ? 1 : 0);
+  });
+  return { thead, fixas };
+}
+
 function empilharFixas(){
   requestAnimationFrame(() => {
-    const thead = document.querySelector('table.grade thead');
-    if (!thead) return;
-    /* Sem arredondar: as linhas têm altura fracionária, e cada arredondamento
-       deixava uma fresta de menos de um pixel por onde a tabela aparecia
-       correndo por baixo. Cada linha ainda sobe um pixel sobre a anterior,
-       para não sobrar vão nenhum. */
-    let topo = thead.getBoundingClientRect().height;
-    const fixas = document.querySelectorAll('table.grade tr.fixa');
-    fixas.forEach((tr, i) => {
-      tr.classList.toggle('ultima-fixa', i === fixas.length - 1);
-      tr.style.setProperty('--topo', (i ? topo - 1 : topo).toFixed(2) + 'px');
-      topo += tr.getBoundingClientRect().height - (i ? 1 : 0);
-    });
+    const alvos = medirFixas();
+    if (!alvos || typeof ResizeObserver === 'undefined') return;
+    if (observadorFixas) observadorFixas.disconnect();
+    observadorFixas = new ResizeObserver(() => medirFixas());
+    observadorFixas.observe(alvos.thead);
+    alvos.fixas.forEach(tr => observadorFixas.observe(tr));
   });
 }
 
@@ -1410,6 +1446,14 @@ document.addEventListener('DOMContentLoaded', () => {
   el('headerData').textContent = maiuscula(dt.toLocaleDateString('pt-BR',
     { weekday:'long', day:'numeric', month:'long' }));
 
+  if (EH_TESTE) document.body.classList.add('ambiente-teste');
+  if (!CONFIG.DATA_URL){
+    mostrarErro(new Error('Esta é uma cópia de teste e falta declarar a URL do ' +
+      'script de teste. No index.html desta pasta, acrescente: ' +
+      'window.URL_TESTE = "…/exec". Sem isso ela não roda — e não fala com a ' +
+      'base de produção.'));
+    return;
+  }
   el('btnRecarregar').onclick = () => { abrirLoader('Atualizando…'); carregar(); };
   el('btnExportar').onclick = exportar;
   el('btnDias').onclick = () => {
@@ -1446,6 +1490,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   lerGrupos();
   window.addEventListener('resize', () => empilharFixas());
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(() => empilharFixas()).catch(() => {});
+  }
 
   try {
     const p = new URLSearchParams(location.search).get('mes');
