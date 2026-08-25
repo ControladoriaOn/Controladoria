@@ -549,11 +549,39 @@
 
 <script>
 /* ============================================================================
-   CONFIG — cole aqui a URL /exec do Apps Script V2 (planilha de operação).
+   QUAL BASE ESTA CÓPIA USA
+   ----------------------------------------------------------------------------
+   Não é uma linha que alguém precisa lembrar de trocar: quem decide é o
+   endereço em que a página está rodando. Pasta com "teste" no nome fala com o
+   script de teste; qualquer outra fala com produção.
+
+   Assim os arquivos são idênticos nos dois lugares, e copiar a pasta de teste
+   por cima da de produção não troca a base sem querer — o endereço muda, o
+   comportamento muda junto.
+
+   Na pasta de teste, a URL do script de teste é declarada uma única vez no
+   index.html daquela pasta, assim:
+
+       <script>window.URL_TESTE = 'https://script.google.com/.../exec';</script>
+
+   Se faltar, a cópia de teste não roda: melhor parar com um aviso na cara do
+   que sair gravando na planilha de produção achando que é teste.
    ============================================================================ */
+const URL_PRODUCAO = 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec';
+const EH_TESTE = /teste/i.test(decodeURIComponent(location.pathname));
+const URL_BASE = EH_TESTE ? (window.URL_TESTE || '') : URL_PRODUCAO;
+
 const CONFIG = {
-  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec',
+  APP_SCRIPT_URL: URL_BASE,
 };
+
+/* Cópia de teste sem a URL declarada não faz nada — e, principalmente, não
+   cai na produção por engano. */
+function avisoSemUrl(){
+  return EH_TESTE
+    ? 'Cópia de teste sem a URL do script de teste. Declare window.URL_TESTE no index.html desta pasta.'
+    : 'URL do Apps Script não configurada no topo do arquivo.';
+}
 
 /* ============================================================================
    HELPERS
@@ -1853,7 +1881,7 @@ async function abrirNovo(modelo){
    conferência no meio da tarde, ver o dia como o painel está mostrando e
    corrigir algo sem precisar subir arquivo de novo. */
 async function carregarBase(){
-  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0) return;
+  if (!CONFIG.APP_SCRIPT_URL) return;
   const fio = el('fio');
   if (fio) fio.classList.add('ativo');
   try {
@@ -2005,8 +2033,16 @@ function montarPayload(){
     p.naturezas = limpo;
   }
   /* O histórico é alimentado só pelo relatório de baixas — é dele que sai o
-     valor efetivamente pago. O de vencimento não tem o que contribuir aqui. */
-  const pagos = state.store.baixas.concat(state.store.relatorio);
+     valor efetivamente pago. O de vencimento não tem o que contribuir aqui.
+
+     E vai com os ajustes já aplicados, sem os títulos ocultos: o histórico é a
+     base do fluxo de caixa, e não faria sentido o painel mostrar um valor
+     corrigido enquanto o fluxo recebe o valor errado, nem um título tirado da
+     conta aqui continuar somando lá. state.pagos é a mesma lista que a tela de
+     conferência usa. */
+  const pagos = (state.pagos && state.pagos.length)
+    ? state.pagos.filter(t => !t._oculto)
+    : state.store.baixas.concat(state.store.relatorio);
   if (pagos.length){
     const hist = montarHistorico({ titulos: pagos });
     if (hist.length) p.historico = hist;
@@ -2015,9 +2051,7 @@ function montarPayload(){
 }
 
 async function enviar(){
-  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0){
-    toast('URL do Apps Script não configurada no topo do arquivo.'); return;
-  }
+  if (!CONFIG.APP_SCRIPT_URL){ toast(avisoSemUrl()); return; }
   const payload = montarPayload();
   if (!Object.keys(payload).length){ toast('Nada para enviar.'); return; }
 
@@ -2039,9 +2073,7 @@ async function enviar(){
 }
 
 async function limparBase(){
-  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0){
-    toast('URL do Apps Script não configurada.'); return;
-  }
+  if (!CONFIG.APP_SCRIPT_URL){ toast(avisoSemUrl()); return; }
   fecharLimpar();
   showOverlay(true, 'Limpando…');
   try {
@@ -2082,8 +2114,10 @@ function exportarRelatorioDaConferencia(){
 
 async function fetchStatus(){
   const dot = el('status-dot'), txt = el('status-text');
-  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0){
-    dot.className = 'dot warn'; txt.textContent = 'URL não configurada'; return;
+  if (!CONFIG.APP_SCRIPT_URL){
+    dot.className = 'dot warn';
+    txt.textContent = EH_TESTE ? 'teste sem URL configurada' : 'URL não configurada';
+    return;
   }
   try {
     const res = await fetch(CONFIG.APP_SCRIPT_URL + '?check=1&v=' + Date.now());
@@ -2146,6 +2180,7 @@ document.addEventListener('DOMContentLoaded', () => {
   el('btn-novo').addEventListener('click', () => abrirNovo(null));
   el('me-cancel').addEventListener('click', fecharEdicao);
   el('me-reset').addEventListener('click', desfazerEdicoes);
+  if (EH_TESTE) document.body.classList.add('ambiente-teste');
   el('me-salvar').addEventListener('click', salvarEdicao);
   el('modalEdit').addEventListener('click', e => { if (e.target === el('modalEdit')) fecharEdicao(); });
   el('btn-relatorio').addEventListener('click', exportarRelatorioDaConferencia);
