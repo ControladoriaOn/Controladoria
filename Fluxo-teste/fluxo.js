@@ -32,7 +32,7 @@
    Na pasta de teste, a URL do script de teste é declarada uma única vez no
    index.html daquela pasta, assim:
 
-       <script>window.URL_TESTE = 'https://script.google.com/.../exec';</script>
+       window.URL_TESTE = '.../exec'   (declarado no index.html da pasta)
 
    Se faltar, a cópia de teste não roda: melhor parar com um aviso na cara do
    que sair gravando na planilha de produção achando que é teste.
