@@ -463,3 +463,21 @@ tbody tr.linha-oculta td{opacity:.45;font-style:italic}
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
   .brilho{animation:none!important}
 }
+
+/* ---------------------------------------------------- ambiente de teste
+   Uma tarja discreta, sempre à vista: em teste ninguém deve confundir a tela
+   com a de verdade. Quem decide é o endereço da página, não uma configuração
+   que alguém possa esquecer de trocar. */
+body.ambiente-teste::after{
+  content:'AMBIENTE DE TESTE';
+  position:fixed; left:0; bottom:0; z-index:9800;
+  padding:5px 14px 5px 12px; border-radius:0 10px 0 0;
+  background:var(--warn, #B45309); color:#fff;
+  font-family:var(--font-body, sans-serif); font-size:10.5px; font-weight:800;
+  letter-spacing:.12em; pointer-events:none;
+  box-shadow:0 -2px 12px -4px rgba(0,0,0,.4);
+}
+
+/* no painel, que é só leitura, a mesma informação sem os botões */
+.valor-nota{display:block;font-size:10px;color:var(--subtle);margin-top:2px}
+.valor-nota.pendente{color:var(--danger)}

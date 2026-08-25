@@ -182,6 +182,22 @@ function novoCiot(dataISO){
 }
 const estaPago = t => !!t.dt_baixa;
 
+/* Quanto sai por este título. Depois da baixa, o que o Totvs registrou como
+   pago; antes dela, o valor confirmado na tela, se houver, senão o do título.
+   Uma conta só, usada pelo painel, pelo relatório e pelo fluxo de caixa. */
+function valorAPagar(t){
+  if (!t) return 0;
+  if (estaPago(t)) return Number(t.valor_liquido) || Number(t.valor_rs) || 0;
+  return Number(t.valor_confirmado) || Number(t.valor_rs) || 0;
+}
+
+/* Retenções que o Totvs carimbou no próprio título. Servem para explicar uma
+   diferença de valor contra o Fluig sem ninguém ter que abrir o Protheus. */
+function retencaoDe(t){
+  if (!t) return 0;
+  return (Number(t.iss) || 0) + (Number(t.irrf) || 0) + (Number(t.inss) || 0);
+}
+
 const SITUACOES = {
   pago:                ['Pago',                       'b-ok'],
   em_aberto:           ['Em aberto no Totvs',         'b-orange'],
@@ -219,7 +235,11 @@ const aguardandoSit = s => s === 'sem_titulo_pendente' || s === 'em_aberto_pende
    ============================================================================ */
 const CAMPO_OCULTO = 'oculto';
 const CAMPOS_DATA = ['vencimento','dt_baixa','dt_emissao'];
-const CAMPOS_NUM  = ['valor','valor_rs','valor_liquido','saldo'];
+/* 'valor_confirmado' não vem do Totvs: é o valor que alguém escolheu na tela
+   quando Fluig e Totvs discordam (retenção de imposto, natureza lançada
+   errada). Vale só enquanto o título está previsto — ver aplicarAjustes. */
+const CAMPOS_NUM  = ['valor','valor_rs','valor_liquido','saldo','valor_confirmado'];
+const CAMPO_CONFIRMADO = 'valor_confirmado';
 
 function valorIgual(campo, a, b){
   if (CAMPOS_NUM.indexOf(campo) >= 0) return Math.abs(parseBRNumber(a) - parseBRNumber(b)) < 0.005;
@@ -259,8 +279,9 @@ function aplicarAjustes(titulos, ajustes){
                                    original: t[campo], absorvido: true };
           return;
         }
-        // título já baixado manda mais que qualquer previsão de vencimento
-        if (campo === 'vencimento' && t.dt_baixa){
+        /* Título já baixado manda mais que qualquer previsão: nem o vencimento
+           previsto nem o valor confirmado à mão sobrevivem ao que de fato saiu. */
+        if ((campo === 'vencimento' || campo === CAMPO_CONFIRMADO) && t.dt_baixa){
           novo._edicoes[campo] = { id: a.id, autor: a.autor, quando: a.quando,
                                    original: t[campo], descartado: true };
           return;
@@ -429,6 +450,53 @@ function classificarItem(item){
   if (Math.abs((t.valor_rs||0) - (item.valor||0)) > TOL) item.aviso = 'valor_diverge';
 }
 
+
+/* ----------------------------------------------------------------------------
+   A CAIXINHA DE CONFIRMAÇÃO
+   ----------------------------------------------------------------------------
+   Acontece de a solicitação subir no Fluig com um valor e o título ser lançado
+   no Totvs com outro — na maior parte das vezes menor, por retenção de imposto;
+   às vezes por engano de quem lançou. A ferramenta não adivinha qual dos dois
+   vale: ela mostra os dois e alguém escolhe, uma vez.
+
+   Devolve null quando não há nada a decidir. Devolve o par de opções quando há,
+   com 'sugerido' preenchido só nos casos em que a própria diferença se explica:
+   quando ela bate, no centavo, com o imposto que o Totvs carimbou no título.
+   -------------------------------------------------------------------------- */
+function montarConfirmacao(t, it){
+  if (!t || estaPago(t)) return null;
+  const totvs = Number(t.valor_rs) || 0;
+  const fluig = (it && it.valor != null) ? (Number(it.valor) || 0) : null;
+  const escolhido = Number(t.valor_confirmado) || null;
+  if (fluig == null || Math.abs(fluig - totvs) <= TOL){
+    // sem discordância: só interessa se alguém já tinha escolhido algo
+    return escolhido ? { totvs: totvs, fluig: fluig, escolhido: escolhido,
+                         retencao: 0, sugerido: null, quem: quemConfirmou(t) } : null;
+  }
+  const retencao = retencaoDe(t);
+  const bate = retencao > 0 && Math.abs((fluig - totvs) - retencao) <= TOL;
+  return {
+    totvs: totvs, fluig: fluig, escolhido: escolhido,
+    retencao: retencao,
+    sugerido: bate ? 'totvs' : null,
+    imposto: bate ? nomeImposto(t) : '',
+    quem: quemConfirmou(t),
+  };
+}
+
+function nomeImposto(t){
+  const p = [];
+  if (Number(t.irrf) > 0) p.push('IRRF');
+  if (Number(t.iss)  > 0) p.push('ISS');
+  if (Number(t.inss) > 0) p.push('INSS');
+  return p.join(' + ');
+}
+
+function quemConfirmou(t){
+  const e = t && t._edicoes && t._edicoes[CAMPO_CONFIRMADO];
+  return (e && !e.absorvido && !e.descartado) ? (e.autor || '') : '';
+}
+
 /* ============================================================================
    NÚMEROS DO DIA
    Cada título é classificado pelo VENCIMENTO dele, não pela data do envio.
@@ -441,7 +509,7 @@ function resumir(conc, dataRef, baixas){
   const z = () => ({ qtd:0, valor:0 });
   const r = {
     dataRef: dataRef, amanha: amanha,
-    pago: z(), dataPago: null, datasBaixa: [],
+    pago: z(), dataPago: null, datasBaixa: [], aConfirmar: 0,
     pagoHoje: z(),
     abertoHoje: z(), abertoAmanha: z(),        // títulos do Totvs, sem baixa
     foraTotvsHoje: z(), foraTotvsAmanha: z(),  // Fluig que ainda não virou título
@@ -508,15 +576,18 @@ function resumir(conc, dataRef, baixas){
       return;
     }
     if (!venc) return;
-    if (venc === dataRef) add(r.abertoHoje, t.valor_rs);
-    else if (venc === amanha) add(r.abertoAmanha, t.valor_rs);
-    else if (venc < dataRef) add(r.atrasado, t.valor_rs);
+    const vp = valorAPagar(t);
+    if (venc === dataRef) add(r.abertoHoje, vp);
+    else if (venc === amanha) add(r.abertoAmanha, vp);
+    else if (venc < dataRef) add(r.atrasado, vp);
   });
-  (conc.soTotvsDireto || []).forEach(t => { if (!estaPago(t)) add(r.soTotvs, t.valor_rs); });
+  (conc.soTotvsDireto || []).forEach(t => { if (!estaPago(t)) add(r.soTotvs, valorAPagar(t)); });
 
   conc.itens.forEach(it => {
     if (it.par && it.par._oculto) return;
     if (it.aviso === 'valor_diverge') r.divergencias++;
+    if (it.par && !estaPago(it.par) && !it.par._oculto &&
+        it.aviso === 'valor_diverge' && !Number(it.par.valor_confirmado)) r.aConfirmar++;
     if (it.aviso === 'valor_corrigido' || it.aviso === 'valor_corrigido_sem_par') r.suspeitos++;
     if (it.modoPar === 'aprox') r.aproximados++;
     if (it.situacao === 'cancelado'){ add(r.cancelados, it.valor); return; }
@@ -577,9 +648,10 @@ function montarLinhas(conc, baixas){
       vencimentoOriginal: t.vencimento,
       empurrado: !!(t.vencimento && vencimentoEfetivo(t.vencimento) !== t.vencimento),
       dt_baixa: t.dt_baixa,
-      valor: (ondeVeio === 'baixa') ? (t.valor_liquido || t.valor_rs) : t.valor_rs,
+      valor: valorAPagar(t),
       valorTotvs: t.valor_rs,
       valorFluig: it ? it.valor : null,
+      confirmacao: montarConfirmacao(t, it),
       situacao: it ? it.situacao : (estaPago(t) ? 'pago' : 'em_aberto'),
       aviso: it ? it.aviso : '',
       modoPar: it ? it.modoPar : '',
@@ -593,7 +665,7 @@ function montarLinhas(conc, baixas){
       estimado: !!(t.manual && !t.dt_baixa),
       natureza: t.natureza, conta_fluxo: t.conta_fluxo, fluxo_caixa: t.fluxo_caixa,
       banco: t.banco, bordero: t.bordero,
-      valorPago: t.valor_liquido || t.valor_rs,
+      valorPago: valorAPagar(t),
     };
   };
 
@@ -621,6 +693,7 @@ function montarLinhas(conc, baixas){
       id_fluig: safeStr(it.fluig.id), status: it.fluig.status,
       editavel: false,
       editado: false, edicoes: null, oculto: false, ocultoInfo: null,
+      confirmacao: null,
       estimado: false, manual: false, id_manual: '',
       natureza: it.fluig.natureza_cod || '', conta_fluxo: '', fluxo_caixa: '',
       banco: '', bordero: '', valorPago: it.valor,
@@ -799,6 +872,7 @@ raiz.Conc = {
   repararAcentos, txt,
   classificarStatus, definirMapaStatus,
   chaveTitulo, estaPago, SITUACOES, semTituloSit, aguardandoSit, tipoPresumido, TOL,
+  valorAPagar, retencaoDe, montarConfirmacao, CAMPO_CONFIRMADO,
   aplicarAjustes, conciliar, resumir, montarLinhas, montarHistorico,
   exportarRelatorio, linhaRelatorio, nomeBanco, COLUNAS_RELATORIO, serieDiaria,
   MODELO_CIOT, novoCiot, CAMPO_OCULTO,

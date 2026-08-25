@@ -13,9 +13,31 @@
    com a tela de envio.
    ============================================================================ */
 
+/* ============================================================================
+   QUAL BASE ESTA CÓPIA USA
+   ----------------------------------------------------------------------------
+   Não é uma linha que alguém precisa lembrar de trocar: quem decide é o
+   endereço em que a página está rodando. Pasta com "teste" no nome fala com o
+   script de teste; qualquer outra fala com produção.
+
+   Assim os arquivos são idênticos nos dois lugares, e copiar a pasta de teste
+   por cima da de produção não troca a base sem querer — o endereço muda, o
+   comportamento muda junto.
+
+   Na pasta de teste, a URL do script de teste é declarada uma única vez no
+   index.html daquela pasta, assim:
+
+       <script>window.URL_TESTE = 'https://script.google.com/.../exec';</script>
+
+   Se faltar, a cópia de teste não roda: melhor parar com um aviso na cara do
+   que sair gravando na planilha de produção achando que é teste.
+   ============================================================================ */
+const URL_PRODUCAO = 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec';
+const EH_TESTE = /teste/i.test(decodeURIComponent(location.pathname));
+const URL_BASE = EH_TESTE ? (window.URL_TESTE || '') : URL_PRODUCAO;
+
 const CONFIG = {
-  // ⬇️ mesma URL /exec usada no atualizar.html
-  DATA_URL: 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec',
+  DATA_URL: URL_BASE,
   RETRIES: 3,
   BACKOFF_MS: 600,
   PAGINA: 60,
@@ -589,6 +611,7 @@ function linhaTabela(x, ehPago){
   const tdSit = h('td', {}, [ badge(sit[0], sit[1]) ]);
   if (x.editado)  tdSit.appendChild(badge('editado','b-orange'));
   if (x.estimado) tdSit.appendChild(badge('estimado','b-warn'));
+  if (x.confirmacao && !x.confirmacao.escolhido) tdSit.appendChild(badge('valor a confirmar','b-danger'));
   if (x.oculto)   tdSit.appendChild(badge('oculto','b-mute'));
 
   const tdData = h('td', { class:'mono' }, [ fmtData(ehPago ? x.dt_baixa : x.vencimento) ]);
@@ -604,6 +627,15 @@ function linhaTabela(x, ehPago){
   const tdValor = h('td', { class:'num' }, [ fmtBR(x.valor) ]);
   if (x.edicoes && x.edicoes.valor_rs && !x.edicoes.valor_rs.absorvido){
     tdValor.appendChild(h('span', { class:'antes', text: fmtBR(x.edicoes.valor_rs.original) }));
+  } else if (x.confirmacao){
+    /* O painel é só leitura: aqui a caixinha vira recado. Confirmado, diz quem
+       escolheu; pendente, diz que ainda falta escolher — e a conferência é o
+       lugar de resolver. */
+    const c = x.confirmacao;
+    tdValor.appendChild(h('span', { class:'valor-nota' + (c.escolhido ? '' : ' pendente'),
+      text: c.escolhido
+        ? ('confirmado' + (c.quem ? (' por ' + c.quem) : ''))
+        : ('Fluig ' + fmtBR(c.fluig) + ' · a confirmar') }));
   } else if (x.valorFluig != null && x.valorTotvs != null && Math.abs(x.valorFluig - x.valorTotvs) > 0.05){
     tdValor.appendChild(h('span', { class:'antes', style:'text-decoration:none',
       text: 'Fluig: ' + fmtBR(x.valorFluig) }));
@@ -724,8 +756,13 @@ document.addEventListener('DOMContentLoaded', () => {
     { weekday:'long', day:'numeric', month:'long' });
 
   el('btnRecarregar').onclick = () => { abrirLoader('Atualizando…'); carregar(); };
-  if (!CONFIG.DATA_URL || CONFIG.DATA_URL.indexOf('COLE_A_URL') === 0){
-    mostrarErro(new Error('Falta colar a URL do Apps Script em CONFIG.DATA_URL, no topo do app.js.'));
+  if (EH_TESTE) document.body.classList.add('ambiente-teste');
+  if (!CONFIG.DATA_URL){
+    mostrarErro(new Error(EH_TESTE
+      ? 'Esta é uma cópia de teste e falta declarar a URL do script de teste. ' +
+        'No index.html desta pasta, acrescente: window.URL_TESTE = "…/exec". ' +
+        'Sem isso ela não roda — e não fala com a base de produção.'
+      : 'Falta a URL do Apps Script no topo do app.js.'));
     return;
   }
   carregar(true);

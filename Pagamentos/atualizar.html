@@ -400,6 +400,32 @@
     td,th{padding:9px 11px}
     .actions .hint{margin-left:0; width:100%}
   }
+
+/* -------------------------------------------------- caixinha de confirmação
+   Fluig e Totvs discordando no valor. Os dois números viram botão dentro da
+   própria célula: um clique resolve, sem abrir janela nenhuma. A sugestão,
+   quando existe, é a que a retenção do título explica — e ainda assim é só
+   uma sugestão, com contorno, nunca preenchida como se já fosse a escolha. */
+.confirma{margin-top:6px;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.confirma-ops{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.confirma .op{
+  font-family:var(--font-mono); font-size:10px; line-height:1;
+  padding:4px 7px; border-radius:var(--radius-sm); cursor:pointer;
+  border:1px solid var(--border); background:var(--surface); color:var(--plum-soft);
+  transition:background .12s, border-color .12s, color .12s;
+}
+.confirma .op:hover{border-color:var(--plum);color:var(--plum-deep);background:var(--surface-soft)}
+.confirma .op.sugerida{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
+.confirma .op.ativa{border-color:var(--plum);background:var(--plum);color:#fff;font-weight:600}
+.confirma-pe{display:flex;gap:8px;align-items:baseline;justify-content:flex-end;flex-wrap:wrap}
+.confirma-pe .outro{
+  border:0; background:none; padding:0; cursor:pointer; font-size:10px;
+  color:var(--plum-soft); text-decoration:underline; text-underline-offset:2px;
+}
+.confirma-pe .outro:hover{color:var(--plum-deep)}
+.confirma-nota{font-size:10px;color:var(--plum-soft);text-align:right;max-width:230px}
+.confirma-nota.ok{color:var(--ok)}
+.confirma.pronta .confirma-nota{color:var(--plum)}
 </style>
 </head>
 <body>
@@ -547,13 +573,41 @@
 
 <div class="toast" id="toast"></div>
 
+
 <script>
 /* ============================================================================
-   CONFIG — cole aqui a URL /exec do Apps Script V2 (planilha de operação).
+   QUAL BASE ESTA CÓPIA USA
+   ----------------------------------------------------------------------------
+   Não é uma linha que alguém precisa lembrar de trocar: quem decide é o
+   endereço em que a página está rodando. Pasta com "teste" no nome fala com o
+   script de teste; qualquer outra fala com produção.
+
+   Assim os arquivos são idênticos nos dois lugares, e copiar a pasta de teste
+   por cima da de produção não troca a base sem querer — o endereço muda, o
+   comportamento muda junto.
+
+   Na pasta de teste, a URL do script de teste é declarada numa linha logo
+   acima deste bloco, em cada página:  window.URL_TESTE = '.../exec'
+   (a tag não é escrita aqui de propósito: o navegador fecharia o script nela.)
+
+   Se faltar, a cópia de teste não roda: melhor parar com um aviso na cara do
+   que sair gravando na planilha de produção achando que é teste.
    ============================================================================ */
+const URL_PRODUCAO = 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec';
+const EH_TESTE = /teste/i.test(decodeURIComponent(location.pathname));
+const URL_BASE = EH_TESTE ? (window.URL_TESTE || '') : URL_PRODUCAO;
+
 const CONFIG = {
-  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec',
+  APP_SCRIPT_URL: URL_BASE,
 };
+
+/* Cópia de teste sem a URL declarada não faz nada — e, principalmente, não
+   cai na produção por engano. */
+function avisoSemUrl(){
+  return EH_TESTE
+    ? 'Cópia de teste sem a URL do script de teste. Declare window.URL_TESTE no topo desta página.'
+    : 'URL do Apps Script não configurada no topo do arquivo.';
+}
 
 /* ============================================================================
    HELPERS
@@ -651,6 +705,12 @@ async function parseTotvs(file){
     }
     return null;
   };
+  /* As colunas de imposto pedem nome exato: procurar por pedaço faria "ISS"
+     casar com "DT Emissao", que também tem as três letras. */
+  const acharExato = (...nomes) => {
+    for (const c of campos){ if (nomes.indexOf(normHdr(c)) >= 0) return c; }
+    return null;
+  };
   const primeiro = (...listas) => {
     for (const kws of listas){ const c = acharCampo.apply(null, kws); if (c) return c; }
     return null;
@@ -673,6 +733,11 @@ async function parseTotvs(file){
     vlrRs:    primeiro(['vlrr'], ['valorr']),
     vlrLiq:   primeiro(['valliqbaix'], ['valorliquido'], ['liquido']),
     saldo:    acharCampo('saldo'),
+    /* Retenções carimbadas no próprio título. Não mudam o que o Totvs manda
+       pagar; servem para explicar uma diferença de valor contra o Fluig. */
+    iss:      acharExato('iss','vlriss','valoriss'),
+    irrf:     acharExato('irrf','irf','vlrirrf'),
+    inss:     acharExato('inss','vlrinss'),
     historico: acharCampo('historico'),
     formaPgto: acharCampo('forma','pgto'),
     banco:    primeiro(['bcodepgto'], ['bancofor'], ['portador']),
@@ -713,6 +778,9 @@ async function parseTotvs(file){
       valor_rs: vlrRs,
       valor_liquido: vlrLiq,
       saldo: saldo,
+      iss:  C.iss  ? parseBRNumber(v(r, C.iss))  : 0,
+      irrf: C.irrf ? parseBRNumber(v(r, C.irrf)) : 0,
+      inss: C.inss ? parseBRNumber(v(r, C.inss)) : 0,
       historico: txt(v(r, C.historico)),
       forma_pgto: safeStr(v(r, C.formaPgto)),
       banco: safeStr(v(r, C.banco)),
@@ -1073,6 +1141,7 @@ async function parseNaturezas(file){
    ESTADO + RENDER
    ============================================================================ */
 const state = {
+  pendentesConfirmar: [], confirmados: 0,
   files: [],                 // [{nome, tipo, count, ok, err}]
   store: { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[] },
   naturezas: null,
@@ -1203,6 +1272,11 @@ function listasDaAba(){
      Totvs, do Fluig ou de lançamento próprio. */
   const uni = Conc.montarLinhas(c, state.pagos || []);
   const previsto = uni.filter(x => x.fonte === 'previsto' && x.situacao !== 'cancelado' && !x.dt_baixa);
+
+  /* O roteiro lê daqui: quantos valores ainda pedem uma escolha e quantos já
+     foram escolhidos. Fica junto porque é a mesma passada pela lista. */
+  state.pendentesConfirmar = uni.filter(x => x.confirmacao && !x.confirmacao.escolhido && !x.oculto);
+  state.confirmados = uni.filter(x => x.confirmacao && x.confirmacao.escolhido).length;
   const emAprovacao = s => s === 'sem_titulo_pendente' || s === 'em_aberto_pendente';
 
   const listas = {
@@ -1223,13 +1297,19 @@ function listasDaAba(){
       rotulo:'Falta aprovar', icone:'fa-hourglass-half', unificada:true,
       linhas: previsto.filter(x => emAprovacao(x.situacao)),
     },
+    /* Unificada de propósito: é aqui que se confirma o valor, e confirmar
+       exige a linha do título, não a solicitação do Fluig sozinha. */
+    divergentes: {
+      rotulo:'Divergências', icone:'fa-scale-unbalanced', unificada:true,
+      linhas: uni.filter(x => x.confirmacao || x.aviso),
+    },
   };
 
   return Object.assign(listas, {
     todos:       { rotulo:'Tudo',                 icone:'fa-list',            linhas: c.itens },
     casados:     { rotulo:'Casados com o Totvs',  icone:'fa-link',            linhas: c.itens.filter(i => i.par) },
     semTitulo:   { rotulo:'Sem título no Totvs',  icone:'fa-triangle-exclamation', linhas: c.itens.filter(i => semTituloSit(i.situacao)) },
-    divergentes: { rotulo:'Divergências',         icone:'fa-scale-unbalanced', linhas: c.itens.filter(i => i.aviso) },
+
     direto:      { rotulo:'Lançado direto',       icone:'fa-database',        linhas: c.soTotvsDireto, totvs:true },
     antigos:     { rotulo:'De solicitação antiga', icone:'fa-clock-rotate-left', linhas: c.soTotvsAntigo, totvs:true },
   });
@@ -1282,10 +1362,18 @@ function montarPontos(){
       dp ? ('O relatório parece ser de ' + fmtData(dp) + '. Confira se baixou o arquivo do dia.')
          : 'Confira se o relatório é o do dia.');
   }
-  const divVal = c.itens.filter(i => i.aviso === 'valor_diverge').length;
-  if (divVal){
-    add('diverge', 'erro', divVal + ' com valor diferente entre Fluig e Totvs.',
-      'Casaram por favorecido e vencimento, mas o valor não bate.', 'divergentes');
+  const pend = (state.pendentesConfirmar || []);
+  if (pend.length){
+    const comImposto = pend.filter(x => x.confirmacao && x.confirmacao.imposto).length;
+    add('diverge', 'erro', pend.length + ' valor(es) a confirmar.',
+      'A solicitação do Fluig e o título do Totvs não fecham no mesmo número. ' +
+      (comImposto ? (comImposto + ' se explica(m) por imposto retido no título. ') : '') +
+      'Escolha o valor que vale na coluna Valor.', 'divergentes');
+  }
+  const jaConf = (state.confirmados || 0);
+  if (jaConf){
+    add('confirmados', 'ok', jaConf + ' valor(es) já confirmado(s).',
+      'Ficam registrados com o nome de quem escolheu e deixam de valer quando a baixa chega.', 'divergentes');
   }
   if (r && r.pagosOutrasDatas){
     add('outrasdatas', 'atencao', r.pagosOutrasDatas + ' pagamento(s) próprio(s) em outra data.',
@@ -1517,7 +1605,9 @@ function tabelaUnificada(linhas, ehPago){
   paginar(linhas).forEach(x => {
     const sit = SITUACOES[x.situacao] || ['—','b-mute'];
     const tdSit = h('td', {}, [ badge(sit[0], sit[1]) ]);
-    if (x.aviso === 'valor_diverge') tdSit.appendChild(badge('valor diverge','b-danger'));
+    if (x.confirmacao && !x.confirmacao.escolhido) tdSit.appendChild(badge('valor a confirmar','b-danger'));
+    else if (x.confirmacao && x.confirmacao.escolhido) tdSit.appendChild(badge('valor confirmado','b-ok'));
+    else if (x.aviso === 'valor_diverge') tdSit.appendChild(badge('valor diverge','b-danger'));
     if (x.aviso === 'valor_corrigido') tdSit.appendChild(badge('valor corrigido','b-info'));
     if (x.aviso === 'valor_corrigido_sem_par') tdSit.appendChild(badge('valor a conferir','b-warn'));
     if (x.modoPar === 'aprox') tdSit.appendChild(badge('casado por semelhança','b-info'));
@@ -1526,7 +1616,8 @@ function tabelaUnificada(linhas, ehPago){
     if (x.oculto)  tdSit.appendChild(badge('oculto','b-mute'));
 
     const tdValor = h('td', { class:'num' }, [ fmtBR(x.valor) ]);
-    if (x.valorFluig != null && x.valorTotvs != null && Math.abs(x.valorFluig - x.valorTotvs) > 0.05){
+    if (x.confirmacao) tdValor.appendChild(caixaConfirmacao(x));
+    else if (x.valorFluig != null && x.valorTotvs != null && Math.abs(x.valorFluig - x.valorTotvs) > 0.05){
       tdValor.appendChild(h('span', { class:'antes', style:'text-decoration:none',
         text:'Fluig: ' + fmtBR(x.valorFluig) }));
     }
@@ -1545,6 +1636,68 @@ function tabelaUnificada(linhas, ehPago){
     ]));
   });
   return h('table', {}, [ thead, tbody ]);
+}
+
+
+/* ----------------------------------------------------------------------------
+   Caixinha de confirmação de valor.
+   Dois números lado a lado e um clique. Quando a diferença se explica pelo
+   imposto retido no título, o botão do Totvs vem marcado como sugestão — mas
+   quem decide continua sendo quem está olhando.
+   -------------------------------------------------------------------------- */
+function caixaConfirmacao(x){
+  const c = x.confirmacao;
+  const box = h('div', { class:'confirma' + (c.escolhido ? ' pronta' : '') });
+
+  const opcao = (qual, valor) => {
+    if (valor == null) return null;
+    const ativa = c.escolhido != null && Math.abs(c.escolhido - valor) <= 0.005;
+    const b = h('button', {
+      class:'op' + (ativa ? ' ativa' : '') + (!c.escolhido && c.sugerido === qual ? ' sugerida' : ''),
+      type:'button',
+      title: ativa ? 'valor em uso' : ('usar o valor do ' + (qual === 'fluig' ? 'Fluig' : 'Totvs')),
+    }, [ (qual === 'fluig' ? 'Fluig ' : 'Totvs ') + fmtBR(valor) ]);
+    b.addEventListener('click', () => confirmarValor(x, valor));
+    return b;
+  };
+
+  box.appendChild(h('div', { class:'confirma-ops' }, [
+    opcao('totvs', c.totvs), opcao('fluig', c.fluig),
+  ]));
+
+  const nota = (c.escolhido && c.quem) ? ['', 'confirmado por ' + c.quem]
+    : c.imposto ? ['ok', 'diferença de ' + fmtBR(c.retencao) + ' = ' + c.imposto + ' do título']
+    : (c.fluig != null) ? ['', 'diferença de ' + fmtBR(Math.abs(c.fluig - c.totvs)) + ' sem explicação no título']
+    : ['', ''];
+
+  const outro = h('button', { class:'outro', type:'button',
+    title:'digitar um valor que não é nem o do Fluig nem o do Totvs' }, ['outro valor']);
+  outro.addEventListener('click', () => {
+    const l = x.titulo ? linhaDoTitulo(x.titulo) : null;
+    if (l) abrirEdicao(l, true);
+  });
+  box.appendChild(h('div', { class:'confirma-pe' }, [
+    h('span', { class:'confirma-nota ' + nota[0], text: nota[1] }), outro,
+  ]));
+  return box;
+}
+
+/* Grava a escolha no mesmo log das outras edições: fica com nome e data, e
+   deixa de valer sozinha quando o título é baixado — aí manda o que saiu. */
+async function confirmarValor(x, valor){
+  if (!x.titulo) return;
+  if (!(await Auth.pedir())) return;
+  const c = x.confirmacao;
+  const motivo = (c && c.imposto)
+    ? ('retenção de ' + c.imposto + ': ' + fmtBR(c.retencao))
+    : 'valor conferido entre Fluig e Totvs';
+  await gravarAjuste({ acao:'ajuste', ajustes: [{
+    alvo: Conc.chaveTitulo(x.titulo),
+    campo: Conc.CAMPO_CONFIRMADO,
+    valor_novo: String(valor),
+    valor_antigo: String(Number(x.titulo.valor_confirmado) || ''),
+    autor: state.autor, motivo: motivo,
+  }] }, 'Valor confirmado: R$ ' + fmtBR(valor) + '.');
 }
 
 function tabelaItens(linhas){
@@ -1748,6 +1901,9 @@ const CAMPOS_EDITAVEIS = [
   { k:'dt_baixa',      rot:'Data do pagamento',tipo:'date' },
   { k:'valor_rs',      rot:'Valor (R$)',       tipo:'number' },
   { k:'valor_liquido', rot:'Valor pago (R$)',  tipo:'number' },
+  /* Só para o título ainda previsto: o valor escolhido quando Fluig e Totvs
+     discordam. Deixa de valer sozinho quando a baixa chega. */
+  { k:'valor_confirmado', rot:'Valor confirmado (R$)', tipo:'number' },
   { k:'fornecedor',    rot:'Favorecido',       tipo:'text', wide:true },
   { k:'numero',        rot:'Número do título', tipo:'text' },
   { k:'parcela',       rot:'Parcela',          tipo:'text' },
@@ -1803,10 +1959,16 @@ function montarCampos(base, edicoes){
   box.textContent = '';
   CAMPOS_EDITAVEIS.forEach(c => {
     let v = base[c.k];
+    /* O campo do valor confirmado começa com o que está valendo hoje: é mais
+       fácil corrigir um número do que digitar um do zero. */
+    if (c.k === 'valor_confirmado' && !Number(v)) v = Conc.valorAPagar(base);
     if (v === undefined || v === null) v = (c.tipo === 'number' ? 0 : '');
     const input = h('input', { type:c.tipo, id:'ed-'+c.k,
       step: c.tipo === 'number' ? '0.01' : null,
       value: c.tipo === 'number' ? (Number(v)||0) : safeStr(v) });
+    /* O que o campo mostrava ao abrir. É contra isto que a gravação compara —
+       assim um campo que a tela preencheu sozinha não vira edição por engano. */
+    input.dataset.ini = input.value;
     const ed = edicoes && edicoes[c.k];
     box.appendChild(h('div', { class:'campo' + (c.wide ? ' wide' : '') }, [
       h('label', { for:'ed-'+c.k, text:c.rot }), input,
@@ -1821,7 +1983,7 @@ function montarCampos(base, edicoes){
   ]));
 }
 
-async function abrirEdicao(linha){
+async function abrirEdicao(linha, foco){
   if (!(await Auth.pedir())) return;
   const t = linha.titulo;
   edicaoAtual = { chave: linha.chave, orig: t };
@@ -1832,6 +1994,10 @@ async function abrirEdicao(linha){
   montarCampos(t, linha.edicoes);
   el('me-reset').hidden = !linha.editado;
   el('modalEdit').classList.add('show');
+  if (foco) setTimeout(() => {
+    const i = el('ed-valor_confirmado');
+    if (i){ i.focus(); i.select(); }
+  }, 80);
 }
 
 async function abrirNovo(modelo){
@@ -1853,7 +2019,7 @@ async function abrirNovo(modelo){
    conferência no meio da tarde, ver o dia como o painel está mostrando e
    corrigir algo sem precisar subir arquivo de novo. */
 async function carregarBase(){
-  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0) return;
+  if (!CONFIG.APP_SCRIPT_URL) return;
   const fio = el('fio');
   if (fio) fio.classList.add('ativo');
   try {
@@ -1919,8 +2085,8 @@ async function salvarEdicao(){
     const input = el('ed-' + c.k);
     if (!input) return;
     const novo = input.value;
+    if (safeStr(novo) === safeStr(input.dataset.ini)) return;
     const atual = c.tipo === 'number' ? String(Number(t[c.k])||0) : safeStr(t[c.k]);
-    if (safeStr(novo) === atual) return;
     ajustes.push({ alvo: edicaoAtual.chave, campo: c.k, valor_novo: novo,
       valor_antigo: atual, autor: state.autor, motivo: el('ed-motivo').value.trim() });
   });
@@ -2005,8 +2171,16 @@ function montarPayload(){
     p.naturezas = limpo;
   }
   /* O histórico é alimentado só pelo relatório de baixas — é dele que sai o
-     valor efetivamente pago. O de vencimento não tem o que contribuir aqui. */
-  const pagos = state.store.baixas.concat(state.store.relatorio);
+     valor efetivamente pago. O de vencimento não tem o que contribuir aqui.
+
+     E vai com os ajustes já aplicados, sem os títulos ocultos: o histórico é a
+     base do fluxo de caixa, e não faria sentido o painel mostrar um valor
+     corrigido enquanto o fluxo recebe o valor errado, nem um título tirado da
+     conta aqui continuar somando lá. state.pagos é a mesma lista que a tela de
+     conferência usa. */
+  const pagos = (state.pagos && state.pagos.length)
+    ? state.pagos.filter(t => !t._oculto)
+    : state.store.baixas.concat(state.store.relatorio);
   if (pagos.length){
     const hist = montarHistorico({ titulos: pagos });
     if (hist.length) p.historico = hist;
@@ -2015,9 +2189,7 @@ function montarPayload(){
 }
 
 async function enviar(){
-  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0){
-    toast('URL do Apps Script não configurada no topo do arquivo.'); return;
-  }
+  if (!CONFIG.APP_SCRIPT_URL){ toast(avisoSemUrl()); return; }
   const payload = montarPayload();
   if (!Object.keys(payload).length){ toast('Nada para enviar.'); return; }
 
@@ -2039,9 +2211,7 @@ async function enviar(){
 }
 
 async function limparBase(){
-  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0){
-    toast('URL do Apps Script não configurada.'); return;
-  }
+  if (!CONFIG.APP_SCRIPT_URL){ toast(avisoSemUrl()); return; }
   fecharLimpar();
   showOverlay(true, 'Limpando…');
   try {
@@ -2067,13 +2237,18 @@ function exportarRelatorioDaConferencia(){
     .filter(x => !x.oculto)
     .filter(x => {
       if (state.aba === 'todos') return true;
+      if (L.unificada) return L.linhas.indexOf(x) >= 0 || L.linhas.some(y => y.chave === x.chave);
       if (L.totvs) return L.linhas.indexOf(x.titulo) >= 0;
       return L.linhas.some(it => it.fluig && x.item && it.fluig === x.item.fluig);
     });
   const alvo = linhas.length ? linhas : Conc.montarLinhas(state.conc, state.pagos || []).filter(x => !x.oculto);
   try {
     const res = Conc.exportarRelatorio(alvo, state.dataRef, state.naturezas || {}, L.rotulo);
-    toast(res.linhas + ' linha(s) exportada(s).');
+    /* O relatório é o que vai virar pagamento. Se algum valor divergente ainda
+       não foi escolhido, ele saiu com o do Totvs — vale dizer isso em voz alta. */
+    const pend = (state.pendentesConfirmar || []).filter(x => alvo.indexOf(x) >= 0).length;
+    toast(res.linhas + ' linha(s) exportada(s).' +
+      (pend ? (' Atenção: ' + pend + ' valor(es) ainda não confirmado(s) saíram com o do Totvs.') : ''));
   } catch(e){
     toast(e.message || String(e));
   }
@@ -2082,8 +2257,10 @@ function exportarRelatorioDaConferencia(){
 
 async function fetchStatus(){
   const dot = el('status-dot'), txt = el('status-text');
-  if (!CONFIG.APP_SCRIPT_URL || CONFIG.APP_SCRIPT_URL.indexOf('COLE_A_URL') === 0){
-    dot.className = 'dot warn'; txt.textContent = 'URL não configurada'; return;
+  if (!CONFIG.APP_SCRIPT_URL){
+    dot.className = 'dot warn';
+    txt.textContent = EH_TESTE ? 'teste sem URL configurada' : 'URL não configurada';
+    return;
   }
   try {
     const res = await fetch(CONFIG.APP_SCRIPT_URL + '?check=1&v=' + Date.now());
@@ -2146,6 +2323,7 @@ document.addEventListener('DOMContentLoaded', () => {
   el('btn-novo').addEventListener('click', () => abrirNovo(null));
   el('me-cancel').addEventListener('click', fecharEdicao);
   el('me-reset').addEventListener('click', desfazerEdicoes);
+  if (EH_TESTE) document.body.classList.add('ambiente-teste');
   el('me-salvar').addEventListener('click', salvarEdicao);
   el('modalEdit').addEventListener('click', e => { if (e.target === el('modalEdit')) fecharEdicao(); });
   el('btn-relatorio').addEventListener('click', exportarRelatorioDaConferencia);
