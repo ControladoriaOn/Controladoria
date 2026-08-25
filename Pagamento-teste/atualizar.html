@@ -562,10 +562,9 @@
    por cima da de produção não troca a base sem querer — o endereço muda, o
    comportamento muda junto.
 
-   Na pasta de teste, a URL do script de teste é declarada uma única vez no
-   index.html daquela pasta, assim:
-
-       <script>window.URL_TESTE = 'https://script.google.com/.../exec';</script>
+   Na pasta de teste, a URL do script de teste é declarada numa linha logo
+   acima deste bloco, em cada página:  window.URL_TESTE = '.../exec'
+   (a tag não é escrita aqui de propósito: o navegador fecharia o script nela.)
 
    Se faltar, a cópia de teste não roda: melhor parar com um aviso na cara do
    que sair gravando na planilha de produção achando que é teste.
@@ -582,7 +581,7 @@ const CONFIG = {
    cai na produção por engano. */
 function avisoSemUrl(){
   return EH_TESTE
-    ? 'Cópia de teste sem a URL do script de teste. Declare window.URL_TESTE no index.html desta pasta.'
+    ? 'Cópia de teste sem a URL do script de teste. Declare window.URL_TESTE no topo desta página.'
     : 'URL do Apps Script não configurada no topo do arquivo.';
 }
 
