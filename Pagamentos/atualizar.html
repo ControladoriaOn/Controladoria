@@ -426,6 +426,11 @@
 .confirma-nota{font-size:10px;color:var(--plum-soft);text-align:right;max-width:230px}
 .confirma-nota.ok{color:var(--ok)}
 .confirma.pronta .confirma-nota{color:var(--plum)}
+
+/* motivo que o banco devolveu, na linha do pagamento recusado */
+.forn small.motivo-retorno{color:var(--danger);font-style:italic}
+
+.conf-quebra{margin-left:auto;margin-right:14px;font-size:11px;color:var(--plum-soft)}
 </style>
 </head>
 <body>
@@ -664,6 +669,11 @@ async function detectType(file){
         return 'desconhecido';
       }
       if (nrm[0] === 'banco' && orig.indexOf('No. Titulo') >= 0) return 'relatorio';
+      /* Retorno do banco: o cabeçalho vem em minúsculas e sem padrão de
+         relatório do Totvs, então o que identifica é a combinação favorecido
+         + status + motivo, que só esse arquivo tem. */
+      if (nrm.indexOf('status') >= 0 && nrm.indexOf('motivo') >= 0 &&
+          nrm.some(h => h.indexOf('favorecido') >= 0 || h.indexOf('beneficiario') >= 0)) return 'retornos';
       const temCod  = nrm.some(h => h === 'codigo' || h === 'cod' || (h.indexOf('cod')===0 && h.indexOf('natureza')>=0));
       const temDesc = nrm.some(h => h.indexOf('desc') === 0);
       if (temCod && temDesc) return 'naturezas';
@@ -671,6 +681,90 @@ async function detectType(file){
     return 'desconhecido';
   }
   return 'desconhecido';
+}
+
+
+/* ============================================================================
+   PARSER — RETORNO DO BANCO
+   ----------------------------------------------------------------------------
+   O arquivo que o banco devolve com o que não conseguiu pagar. Sete colunas,
+   nomes em minúsculas, e uma linha por pagamento recusado. A referência da
+   empresa é número do banco e não existe no Totvs, então o casamento vai por
+   favorecido, valor e data do pagamento — os três campos que os dois lados
+   têm em comum.
+   ============================================================================ */
+async function parseRetornos(file){
+  const buf = await readAsArrayBuffer(file);
+  const wb = XLSX.read(buf, { type:'array', cellDates:true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:true, blankrows:false });
+
+  let hi = -1, H = null;
+  for (let i = 0; i < Math.min(15, rows.length); i++){
+    const nrm = (rows[i] || []).map(normHdr);
+    if (nrm.indexOf('status') >= 0 && nrm.indexOf('motivo') >= 0){ hi = i; H = nrm; break; }
+  }
+  if (hi === -1) return [];
+
+  const col = (...kws) => {
+    for (let i = 0; i < H.length; i++){
+      if (kws.every(k => H[i].indexOf(k) >= 0)) return i;
+    }
+    return -1;
+  };
+  const C = {
+    favorecido: (col('favorecido') >= 0) ? col('favorecido') : col('beneficiario'),
+    tipo: col('tipo'), referencia: col('referencia'),
+    data: col('data'), valor: col('valor'), status: col('status'), motivo: col('motivo'),
+  };
+
+  const out = [];
+  for (let i = hi + 1; i < rows.length; i++){
+    const l = rows[i] || [];
+    const nome = txt(l[C.favorecido]);
+    if (!nome) continue;
+    const status = txt(l[C.status]);
+    out.push({
+      favorecido: nome,
+      tipo_pgto: txt(l[C.tipo]),
+      referencia: safeStr(l[C.referencia]),
+      data: parseBRDate(l[C.data]),
+      valor: parseBRNumber(l[C.valor]),
+      status: status,
+      motivo: txt(l[C.motivo]),
+      /* Só o que o banco recusou vira devolução. Linha efetuada, se vier no
+         mesmo arquivo, serve de conferência e nada mais. */
+      devolvido: norm(status).indexOf('nao efetuado') >= 0 || norm(status).indexOf('devolvid') >= 0
+                 || norm(status).indexOf('recusad') >= 0 || norm(status).indexOf('rejeitad') >= 0,
+    });
+  }
+  return out;
+}
+
+/* Casa cada devolução com o pagamento correspondente entre as linhas já pagas.
+   Devolve o que casou, o que não casou, e onde havia mais de um candidato —
+   dois pagamentos iguais para o mesmo favorecido no mesmo dia. */
+function casarRetornos(retornos, pagos){
+  const usados = new Set();
+  const casados = [], semPar = [], ambiguos = [];
+
+  (retornos || []).filter(r => r.devolvido).forEach(r => {
+    const cand = [];
+    (pagos || []).forEach((t, i) => {
+      if (usados.has(i) || t._oculto) return;
+      if (!nomesBatem(t.fornecedor, r.favorecido)) return;
+      const v = Number(t.valor_liquido) || Number(t.valor_rs) || 0;
+      if (Math.abs(v - (Number(r.valor) || 0)) > 0.05) return;
+      if (r.data && safeStr(t.dt_baixa).slice(0,10) !== r.data) return;
+      cand.push(i);
+    });
+    if (!cand.length){ semPar.push(r); return; }
+    if (cand.length > 1) ambiguos.push(r);
+    usados.add(cand[0]);
+    casados.push({ retorno: r, titulo: pagos[cand[0]], candidatos: cand.length });
+  });
+
+  return { casados: casados, semPar: semPar, ambiguos: ambiguos };
 }
 
 /* ============================================================================
@@ -1142,8 +1236,9 @@ async function parseNaturezas(file){
    ============================================================================ */
 const state = {
   pendentesConfirmar: [], confirmados: 0,
+  diagRetornos: null, semParNoRelatorio: [],
   files: [],                 // [{nome, tipo, count, ok, err}]
-  store: { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[] },
+  store: { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[], retornos:[] },
   naturezas: null,
   colunasAusentes: [],
   diagBaixas: null, diagPrevisto: null, diagRelatorio: null,
@@ -1283,9 +1378,17 @@ function listasDaAba(){
     pagoEm: {
       rotulo: r.dataPago ? ('Pago em ' + fmtData(r.dataPago)) : 'Pago',
       icone:'fa-circle-check', unificada:true,
-      linhas: uni.filter(x => x.fonte === 'baixa' && (!r.dataPago || x.dt_baixa === r.dataPago)),
+      linhas: uni.filter(x => x.fonte === 'baixa' && x.dt_baixa !== r.dataRef
+                              && (!r.dataPago || x.dt_baixa === r.dataPago)),
     },
-    aPagarHoje: {
+    /* O dia fechando: chegou o relatório com a data de hoje, esta aba deixa de
+       ser o que vai sair e passa a ser o que saiu — com o que sobrou de
+       previsto logo abaixo, que é o que estava para sair e não saiu. */
+    aPagarHoje: r.temEfetivoHoje ? {
+      rotulo:'Pago hoje', icone:'fa-circle-check', unificada:true,
+      linhas: uni.filter(x => x.fonte === 'baixa' && x.dt_baixa === r.dataRef)
+                .concat(previsto.filter(x => x.vencimento === r.dataRef)),
+    } : {
       rotulo:'A pagar hoje', icone:'fa-calendar-day', unificada:true,
       linhas: previsto.filter(x => x.vencimento === r.dataRef),
     },
@@ -1296,6 +1399,10 @@ function listasDaAba(){
     faltaAprovar: {
       rotulo:'Falta aprovar', icone:'fa-hourglass-half', unificada:true,
       linhas: previsto.filter(x => emAprovacao(x.situacao)),
+    },
+    devolvidos: {
+      rotulo:'Devolvidos pelo banco', icone:'fa-rotate-left', unificada:true,
+      linhas: uni.filter(x => x.devolvido),
     },
     /* Unificada de propósito: é aqui que se confirma o valor, e confirmar
        exige a linha do título, não a solicitação do Fluig sozinha. */
@@ -1361,6 +1468,24 @@ function montarPontos(){
     add('semhoje', 'erro', 'Nenhum título de hoje (' + fmtData(r.dataRef) + ').',
       dp ? ('O relatório parece ser de ' + fmtData(dp) + '. Confira se baixou o arquivo do dia.')
          : 'Confira se o relatório é o do dia.');
+  }
+  const dr = state.diagRetornos;
+  if (dr){
+    const val = fmtBR(dr.valor);
+    add('retornos', dr.casados ? 'atencao' : 'ok',
+      dr.devolvidos + ' devolução(ões) no arquivo do banco.',
+      (dr.casados ? (dr.casados + ' casaram e saíram da soma, R$ ' + val + '. ') : '') +
+      (dr.semPar.length ? (dr.semPar.length + ' não achou par entre os pagos — ' +
+         dr.semPar.slice(0,2).map(x => x.favorecido + ' R$ ' + fmtBR(x.valor)).join('; ') + '. ') : '') +
+      (dr.ambiguos.length ? (dr.ambiguos.length + ' tinha mais de um pagamento igual no mesmo dia; casei com o primeiro. ') : '') +
+      'As devolvidas saem do Descritivo e vão para a aba Retorno do relatório.',
+      'devolvidos');
+  }
+  const semPar = (state.semParNoRelatorio || []);
+  if (semPar.length){
+    add('relsempar', 'atencao', semPar.length + ' linha(s) do relatório sem título em aberto.',
+      'Entraram como pagamento próprio. É o esperado para o que você acrescentou à mão na planilha; ' +
+      'se não foi o caso, confira o número do título.', 'pagoEm');
   }
   const pend = (state.pendentesConfirmar || []);
   if (pend.length){
@@ -1499,10 +1624,25 @@ function renderConferencia(){
   const baixo = controlePagina(filtradas, 'baixo');
   if (baixo) box.appendChild(baixo);
 
-  const soma = filtradas.reduce((s, x) =>
+  /* O que está oculto não soma: é dinheiro que não vai sair. Aparece na lista,
+     com o selo, mas fora do total — inclusive o devolvido pelo banco. */
+  const contam = filtradas.filter(x => !x.oculto);
+  const soma = contam.reduce((s, x) =>
     s + (Number(L.unificada ? x.valor : (L.totvs ? x.valor_rs : x.valor)) || 0), 0);
+  const fora = filtradas.length - contam.length;
+  /* A aba do dia fechando mistura o que já saiu com o que ainda não saiu.
+     Somar os dois num número só esconde justamente a informação que importa,
+     então o rodapé separa os dois lados. */
+  const pagos = contam.filter(x => L.unificada && x.fonte === 'baixa');
+  const somaPagos = pagos.reduce((s, x) => s + (Number(x.valor)||0), 0);
+  const detalhe = (L.unificada && pagos.length && pagos.length < contam.length)
+    ? h('span', { class:'conf-quebra',
+        text: 'R$ ' + fmtBR(somaPagos) + ' pagos · R$ ' + fmtBR(soma - somaPagos) + ' ainda previstos' })
+    : null;
   box.appendChild(h('div', { class:'conf-total' }, [
-    h('span', { text: filtradas.length + ' de ' + L.linhas.length + ' linha(s)' }),
+    h('span', { text: filtradas.length + ' de ' + L.linhas.length + ' linha(s)'
+      + (fora ? (' · ' + fora + ' fora do total') : '') }),
+    detalhe,
     h('strong', { text: 'R$ ' + fmtBR(soma) }),
   ]));
 }
@@ -1604,7 +1744,9 @@ function tabelaUnificada(linhas, ehPago){
   const tbody = h('tbody');
   paginar(linhas).forEach(x => {
     const sit = SITUACOES[x.situacao] || ['—','b-mute'];
-    const tdSit = h('td', {}, [ badge(sit[0], sit[1]) ]);
+    /* Devolvido pelo banco não é "pago": o selo de situação sairia dizendo o
+       contrário do que aconteceu, então nessa linha ele dá lugar à devolução. */
+    const tdSit = h('td', {}, x.devolvido ? [] : [ badge(sit[0], sit[1]) ]);
     if (x.confirmacao && !x.confirmacao.escolhido) tdSit.appendChild(badge('valor a confirmar','b-danger'));
     else if (x.confirmacao && x.confirmacao.escolhido) tdSit.appendChild(badge('valor confirmado','b-ok'));
     else if (x.aviso === 'valor_diverge') tdSit.appendChild(badge('valor diverge','b-danger'));
@@ -1613,7 +1755,8 @@ function tabelaUnificada(linhas, ehPago){
     if (x.modoPar === 'aprox') tdSit.appendChild(badge('casado por semelhança','b-info'));
     if (x.editado) tdSit.appendChild(badge('editado','b-orange'));
     if (x.estimado) tdSit.appendChild(badge('estimado','b-warn'));
-    if (x.oculto)  tdSit.appendChild(badge('oculto','b-mute'));
+    if (x.devolvido) tdSit.appendChild(badge('devolvido pelo banco','b-danger'));
+    else if (x.oculto) tdSit.appendChild(badge('oculto','b-mute'));
 
     const tdValor = h('td', { class:'num' }, [ fmtBR(x.valor) ]);
     if (x.confirmacao) tdValor.appendChild(caixaConfirmacao(x));
@@ -1628,7 +1771,9 @@ function tabelaUnificada(linhas, ehPago){
       h('td', { class:'mono', text: x.numero }),
       h('td', {}, [ h('div', { class:'forn' }, [
         x.fornecedor || '—',
-        h('small', { text: [x.status, x.detalhe].filter(Boolean).join(' · ').slice(0, 68) }),
+        h('small', { class: x.devolvido ? 'motivo-retorno' : '',
+          text: x.devolvido ? x.motivoRetorno
+                            : [x.status, x.detalhe].filter(Boolean).join(' · ').slice(0, 68) }),
       ])]),
       h('td', { class:'mono', text: fmtData(ehPago ? x.dt_baixa : x.vencimento) }),
       tdValor, tdSit,
@@ -1784,15 +1929,21 @@ function recalcular(){
   const rBx  = Conc.aplicarAjustes(state.store.baixas.concat(state.store.relatorio), aj);
   state.orfaos = rTit.orfaos;
 
+  /* O relatório do próprio dia baixa o que estava previsto. Roda depois dos
+     ajustes, para o casamento por valor enxergar o valor já confirmado, e
+     antes da conciliação, que é quem monta as listas da tela. */
+  const casado = Conc.casarRelatorio(rTit.titulos, rBx.titulos);
+  state.semParNoRelatorio = casado.semPar;
+
   state.conc = conciliar({
-    totvs: rTit.titulos,
+    totvs: casado.titulos,
     nf_servico: state.store.nf_servico,
     nf_titulo:  state.store.nf_titulo,
     reembolso:  state.store.reembolso,
   });
   // Pago vem das duas fontes: o relatório de baixas do Totvs e o relatório
   // diário da controladoria, que vale como pagamento efetivo
-  state.pagos = rBx.titulos;
+  state.pagos = casado.baixas;
   state.resumo = resumir(state.conc, state.dataRef, state.pagos);
 }
 /* Data mais presente entre os títulos em aberto — usada só para explicar,
@@ -1837,6 +1988,13 @@ async function processFiles(files){
           entry.count = linhas.length;
           if (!entry.count){ entry.ok = false; entry.err = 'nenhuma linha reconhecida'; }
         }
+        else if (tipo === 'retornos'){
+          const linhas = await parseRetornos(f);
+          state.store.retornos = linhas;
+          entry.count = linhas.length;
+          entry.devolvidos = linhas.filter(x => x.devolvido).length;
+          if (!entry.count){ entry.ok = false; entry.err = 'nenhuma linha reconhecida'; }
+        }
         else if (tipo === 'nf_servico'){ state.store.nf_servico = await parseNFServico(f); entry.count = state.store.nf_servico.length; }
         else if (tipo === 'nf_titulo'){  state.store.nf_titulo  = await parseNFTitulo(f);  entry.count = state.store.nf_titulo.length; }
         else if (tipo === 'reembolso'){  state.store.reembolso  = await parseReembolso(f); entry.count = state.store.reembolso.length; }
@@ -1852,10 +2010,46 @@ async function processFiles(files){
       state.files.push(entry);
     }
     recalcular();
+    if (state.store.retornos.length) await aplicarRetornos();
   } finally {
     showOverlay(false);
     render();
   }
+}
+
+/* ----------------------------------------------------------------------------
+   APLICAR OS RETORNOS
+   ----------------------------------------------------------------------------
+   Devolução não é um dado novo: é um pagamento que deixou de existir. Por isso
+   ela usa o mesmo mecanismo que já tira um título dos totais, do relatório e
+   da base — ocultar — só que preenchido sozinho, com o motivo vindo do banco.
+   Assim a devolução sobrevive a recarregar a tela e não precisa de estrutura
+   nova em lugar nenhum.
+   -------------------------------------------------------------------------- */
+async function aplicarRetornos(){
+  const r = casarRetornos(state.store.retornos, state.pagos || []);
+  state.diagRetornos = {
+    total: state.store.retornos.length,
+    devolvidos: state.store.retornos.filter(x => x.devolvido).length,
+    casados: r.casados.length, semPar: r.semPar, ambiguos: r.ambiguos,
+    valor: r.casados.reduce((s2, c) => s2 + (Number(c.retorno.valor) || 0), 0),
+  };
+
+  // o que já está oculto pelo mesmo motivo não precisa ser gravado de novo
+  const novos = r.casados.filter(c => !Conc.ehDevolvido(c.titulo));
+  if (!novos.length) return;
+  if (!(await Auth.pedir())) return;
+
+  const ajustes = novos.map(c => ({
+    alvo: chaveTitulo(c.titulo),
+    campo: Conc.CAMPO_OCULTO,
+    valor_novo: '1',
+    valor_antigo: '',
+    autor: state.autor,
+    motivo: Conc.PREFIXO_RETORNO + ' — ' + (c.retorno.motivo || 'sem motivo informado'),
+  }));
+  await gravarAjuste({ acao:'ajuste', ajustes: ajustes },
+    novos.length + ' pagamento(s) devolvido(s) pelo banco saíram da soma.');
 }
 
 function render(){
@@ -2243,11 +2437,13 @@ function exportarRelatorioDaConferencia(){
     });
   const alvo = linhas.length ? linhas : Conc.montarLinhas(state.conc, state.pagos || []).filter(x => !x.oculto);
   try {
-    const res = Conc.exportarRelatorio(alvo, state.dataRef, state.naturezas || {}, L.rotulo);
+    const devolvidas = Conc.montarLinhas(state.conc, state.pagos || []).filter(Conc.ehDevolvido);
+    const res = Conc.exportarRelatorio(alvo, state.dataRef, state.naturezas || {}, L.rotulo, devolvidas);
     /* O relatório é o que vai virar pagamento. Se algum valor divergente ainda
        não foi escolhido, ele saiu com o do Totvs — vale dizer isso em voz alta. */
     const pend = (state.pendentesConfirmar || []).filter(x => alvo.indexOf(x) >= 0).length;
-    toast(res.linhas + ' linha(s) exportada(s).' +
+    toast(res.linhas + ' linha(s) exportada(s)' +
+      (res.devolvidas ? (' · ' + res.devolvidas + ' na aba Retorno') : '') + '.' +
       (pend ? (' Atenção: ' + pend + ' valor(es) ainda não confirmado(s) saíram com o do Totvs.') : ''));
   } catch(e){
     toast(e.message || String(e));

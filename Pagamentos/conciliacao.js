@@ -497,6 +497,117 @@ function quemConfirmou(t){
   return (e && !e.absorvido && !e.descartado) ? (e.autor || '') : '';
 }
 
+
+/* ============================================================================
+   O RELATÓRIO DO DIA BAIXANDO O QUE ESTAVA PREVISTO
+   ----------------------------------------------------------------------------
+   Até aqui o relatório da controladoria sempre chegava no dia seguinte, quando
+   o título já não estava mais em aberto no Totvs. Subindo o relatório do
+   próprio dia, os dois falam do mesmo pagamento — e sem casar um com o outro
+   ele apareceria duas vezes: uma como previsto, outra como pago.
+
+   Casar tem um segundo efeito, menos visível e mais importante: a linha do
+   relatório passa a usar a chave do título. O histórico deduplica por chave e
+   data de baixa, então, quando a baixa do Totvs chegar amanhã contando o mesmo
+   pagamento, ela atualiza a linha que já existe em vez de criar outra.
+   ========================================================================== */
+function casarRelatorio(titulos, baixas){
+  const abertos = [];
+  (titulos || []).forEach((t, i) => { if (!estaPago(t) && !t.manual) abertos.push(i); });
+  if (!abertos.length) return { titulos: titulos || [], baixas: baixas || [], semPar: [] };
+
+  const usados = new Set();
+  const semPar = [];
+  /* Relatório de dia anterior não tem o que casar: aqueles títulos já foram
+     baixados no Totvs faz tempo. Só vale avisar de linha sem par quando o dia
+     dela ainda tem título em aberto — aí a falta de par diz alguma coisa. */
+  const diasAbertos = {};
+  abertos.forEach(i => {
+    const d = safeStr(vencimentoEfetivo(titulos[i].vencimento) || titulos[i].vencimento).slice(0,10);
+    if (d) diasAbertos[d] = 1;
+  });
+
+  // índice por número do título — é o casamento forte, o relatório traz o número
+  const porNumero = {};
+  abertos.forEach(i => {
+    const n = safeStr((titulos[i] || {}).numero);
+    if (n) (porNumero[n] = porNumero[n] || []).push(i);
+  });
+
+  const valorDe = t => Number(t.valor_liquido) || Number(t.valor_rs) || 0;
+
+  const novasBaixas = (baixas || []).map(b => {
+    // só linha vinda do relatório da controladoria procura par
+    if (safeStr(b.origem_manual) !== 'relatorio') return b;
+    // devolvido pelo banco não baixa nada: o título continua devendo
+    if (b._oculto) return b;
+    const alvo = valorDe(b);
+
+    let achou = -1;
+    (porNumero[safeStr(b.numero)] || []).forEach(i => {
+      if (achou >= 0 || usados.has(i)) return;
+      if (Math.abs(valorAPagar(titulos[i]) - alvo) <= TOL) achou = i;
+    });
+    // sem número igual, tenta por favorecido, vencimento e valor
+    if (achou < 0){
+      abertos.forEach(i => {
+        if (achou >= 0 || usados.has(i)) return;
+        const t = titulos[i];
+        if (normNome(t.fornecedor) !== normNome(b.fornecedor)) return;
+        if (safeStr(t.vencimento).slice(0,10) !== safeStr(b.vencimento).slice(0,10)) return;
+        if (Math.abs(valorAPagar(t) - alvo) > TOL) return;
+        achou = i;
+      });
+    }
+    if (achou < 0){
+      if (diasAbertos[safeStr(b.dt_baixa).slice(0,10)]) semPar.push(b);
+      return b;
+    }
+
+    usados.add(achou);
+    const t = titulos[achou];
+    /* A linha do relatório vira o pagamento daquele título: herda a identidade
+       dele e o que o relatório não traz (prefixo, loja, código do fornecedor). */
+    return Object.assign({}, b, {
+      chave_titulo: chaveTitulo(t),
+      prefixo: t.prefixo, parcela: t.parcela, tipo: safeStr(b.tipo) || t.tipo,
+      fornecedor_cod: t.fornecedor_cod, loja: t.loja,
+      id_fluig: t.id_fluig || b.id_fluig,
+      natureza: safeStr(b.natureza) || t.natureza,
+      conta_fluxo: safeStr(b.conta_fluxo) || t.conta_fluxo,
+      vencimento: t.vencimento || b.vencimento,
+      _doTitulo: true,
+    });
+  });
+
+  /* O título casado sai do previsto: ele foi pago, e quem responde por ele
+     agora é a linha do relatório. Fica marcado, não some — a tela precisa
+     saber que ele existiu para explicar de onde veio o pagamento. */
+  const novosTitulos = (titulos || []).map((t, i) =>
+    usados.has(i) ? Object.assign({}, t, { _baixadoPorRelatorio: true }) : t);
+
+  return { titulos: novosTitulos, baixas: novasBaixas, semPar: semPar };
+}
+
+/* ----------------------------------------------------------------------------
+   RETORNO DO BANCO
+   O pagamento devolvido é registrado como oculto — o mesmo mecanismo que já
+   tira um título dos totais, do relatório e da base, com autor, data e motivo.
+   O que distingue é o motivo, que começa sempre com esta frase.
+   -------------------------------------------------------------------------- */
+const PREFIXO_RETORNO = 'Devolvido pelo banco';
+
+function ehDevolvido(x){
+  const info = (x && (x.ocultoInfo || x._ocultoInfo)) || null;
+  return !!(info && norm(info.motivo).indexOf(norm(PREFIXO_RETORNO)) === 0);
+}
+function motivoRetorno(x){
+  if (!ehDevolvido(x)) return '';
+  const m = safeStr(((x.ocultoInfo || x._ocultoInfo) || {}).motivo);
+  const i = m.indexOf('—');
+  return (i >= 0 ? m.slice(i + 1) : m).trim();
+}
+
 /* ============================================================================
    NÚMEROS DO DIA
    Cada título é classificado pelo VENCIMENTO dele, não pela data do envio.
@@ -511,6 +622,11 @@ function resumir(conc, dataRef, baixas){
     dataRef: dataRef, amanha: amanha,
     pago: z(), dataPago: null, datasBaixa: [], aConfirmar: 0,
     pagoHoje: z(),
+    /* O dia fechando à tarde: o relatório com a data de hoje transforma o
+       previsto em efetivo, sem tocar no cartão de ontem nem no de amanhã. */
+    efetivoHoje: z(), temEfetivoHoje: false,
+    devolvidos: z(), devolvidosHoje: z(),
+    previstoSobrou: z(),
     abertoHoje: z(), abertoAmanha: z(),        // títulos do Totvs, sem baixa
     foraTotvsHoje: z(), foraTotvsAmanha: z(),  // Fluig que ainda não virou título
     aPagarHoje: z(), aPagarAmanha: z(),        // soma dos dois acima
@@ -550,21 +666,41 @@ function resumir(conc, dataRef, baixas){
   });
   datasRelatorio.sort();
 
+  /* O cartão do Pago olha só para trás. O que tem a data de hoje pertence ao
+     cartão do meio, que é o dia se fechando — misturar os dois faria o pago de
+     ontem sumir da tela no fim da tarde. */
   const escolher = lista => {
     if (!lista.length) return null;
-    const ate = lista.filter(d => d <= dataRef);
-    return ate.length ? ate[ate.length-1] : lista[lista.length-1];
+    const ate = lista.filter(d => d < dataRef);
+    if (ate.length) return ate[ate.length-1];
+    const depois = lista.filter(d => d > dataRef);
+    return depois.length ? null : lista[lista.length-1];
   };
-  // o relatório manda; sem relatório, o cartão segue o que houver
   r.dataPago = escolher(datasRelatorio) || escolher(r.datasBaixa);
   if (r.dataPago){
     (porData[r.dataPago] || []).forEach(t => add(r.pago, t.valor_liquido || t.valor_rs));
   }
+  // o efetivo de hoje: tudo que já foi pago com a data de hoje
+  r.temEfetivoHoje = datasRelatorio.indexOf(dataRef) >= 0;
+  (porData[dataRef] || []).forEach(t => add(r.efetivoHoje, valorAPagar(t)));
+
+  // o que o banco devolveu, que está oculto e por isso não entrou em soma nenhuma
+  const devolvidas = (baixas || []).filter(ehDevolvido);
+  devolvidas.forEach(t => {
+    add(r.devolvidos, t.valor_liquido || t.valor_rs);
+    if (safeStr(t.dt_baixa).slice(0,10) === dataRef) add(r.devolvidosHoje, t.valor_liquido || t.valor_rs);
+  });
+
   // pagamentos próprios em datas que o cartão não está mostrando
-  r.pagosOutrasDatas = manuaisPagos.filter(t => safeStr(t.dt_baixa).slice(0,10) !== r.dataPago).length;
+  r.pagosOutrasDatas = manuaisPagos.filter(t => {
+    const d = safeStr(t.dt_baixa).slice(0,10);
+    return d !== r.dataPago && d !== dataRef;
+  }).length;
 
   conc.titulos.forEach(t => {
     if (t._oculto){ r.ocultos++; return; }
+    // já pago pelo relatório do dia: quem responde por ele é a linha de lá
+    if (t._baixadoPorRelatorio) return;
     if (t._editado) r.editados++;
     const venc = vencimentoEfetivo(t.vencimento);
     if (venc === dataRef || t.dt_baixa === dataRef) r.temDataRef = true;
@@ -581,7 +717,10 @@ function resumir(conc, dataRef, baixas){
     else if (venc === amanha) add(r.abertoAmanha, vp);
     else if (venc < dataRef) add(r.atrasado, vp);
   });
-  (conc.soTotvsDireto || []).forEach(t => { if (!estaPago(t)) add(r.soTotvs, valorAPagar(t)); });
+  (conc.soTotvsDireto || []).forEach(t => {
+    if (!estaPago(t) && !t._baixadoPorRelatorio) add(r.soTotvs, valorAPagar(t));
+  });
+  if (r.temEfetivoHoje) r.previstoSobrou = { qtd: r.abertoHoje.qtd, valor: r.abertoHoje.valor };
 
   conc.itens.forEach(it => {
     if (it.par && it.par._oculto) return;
@@ -662,6 +801,10 @@ function montarLinhas(conc, baixas){
       edicoes: t._edicoes || null,
       oculto: !!t._oculto,
       ocultoInfo: t._ocultoInfo || null,
+      devolvido: ehDevolvido(t),
+      motivoRetorno: motivoRetorno(t),
+      doTitulo: !!t._doTitulo,
+      baixadoPorRelatorio: !!t._baixadoPorRelatorio,
       estimado: !!(t.manual && !t.dt_baixa),
       natureza: t.natureza, conta_fluxo: t.conta_fluxo, fluxo_caixa: t.fluxo_caixa,
       banco: t.banco, bordero: t.bordero,
@@ -669,7 +812,7 @@ function montarLinhas(conc, baixas){
     };
   };
 
-  (conc.titulos || []).forEach(t => linhas.push(doTitulo(t, 'previsto')));
+  (conc.titulos || []).forEach(t => { if (!t._baixadoPorRelatorio) linhas.push(doTitulo(t, 'previsto')); });
   (baixas || []).forEach(t => linhas.push(doTitulo(t, 'baixa')));
 
   // solicitações do Fluig que ainda não viraram título
@@ -707,7 +850,7 @@ function montarLinhas(conc, baixas){
    todo título com data de baixa, seja de qual vencimento for. */
 function montarHistorico(conc){
   return conc.titulos.filter(estaPago).map(t => ({
-    chave: chaveTitulo(t),
+    chave: t.chave_titulo || chaveTitulo(t),
     dt_baixa: t.dt_baixa, vencimento: t.vencimento,
     numero: t.numero, id_fluig: t.id_fluig,
     parcela: t.parcela, prefixo: t.prefixo, tipo: t.tipo,
@@ -778,68 +921,96 @@ function linhaRelatorio(x, naturezas){
 }
 
 /* Monta e baixa o arquivo. Precisa do XLSX (xlsx-js-style) já carregado. */
-function exportarRelatorio(linhas, dataRef, naturezas, recorte){
-  if (typeof XLSX === 'undefined') throw new Error('Biblioteca de planilha não carregada.');
-  const visiveis = (linhas || []).filter(x => !x.oculto);
-  if (!visiveis.length) throw new Error('Nada para exportar.');
+/* Monta uma aba no desenho do relatório. A de Retorno é a mesma coisa com uma
+   coluna a mais no fim, o motivo que o banco devolveu — assim quem abre o
+   arquivo reconhece as duas de imediato. */
+function abaRelatorio_(XLSXref, linhas, titulo, naturezas, rotuloTotal, comMotivo){
+  const cols = COLUNAS_RELATORIO.slice();
+  const larg = LARGURAS_RELATORIO.slice();
+  if (comMotivo){ cols.push('Motivo do retorno'); larg.push(42); }
+  const ultimaCol = cols.length - 1;
 
-  const titulo = 'RELATÓRIO CONTAS A PAGAR ON TIME - ' + fmtData(dataRef) +
-    (recorte ? ('  ·  ' + recorte) : '');
-  const aoa = [[], [titulo], [], COLUNAS_RELATORIO.slice()];
-  visiveis.forEach(x => aoa.push(linhaRelatorio(x, naturezas)));
+  const aoa = [[], [titulo], [], cols];
+  linhas.forEach(x => {
+    const l = linhaRelatorio(x, naturezas);
+    if (comMotivo) l.push(safeStr(x.motivoRetorno));
+    aoa.push(l);
+  });
 
-  const primeira = 5;                       // linha 5 do Excel
-  const ultima = primeira + visiveis.length - 1;
+  const primeira = 5;
+  const ultima = primeira + linhas.length - 1;
   const linhaTotal = ultima + 2;
   while (aoa.length < linhaTotal - 1) aoa.push([]);
   const total = [];
-  total[9]  = 'TOTAL A PAGAR';
+  total[9]  = rotuloTotal;
   total[10] = { f: 'SUBTOTAL(9,K' + primeira + ':K' + ultima + ')' };
   aoa.push(total);
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
-  ws['!merges'] = [{ s:{r:1,c:0}, e:{r:1,c:11} }];
-  ws['!cols'] = LARGURAS_RELATORIO.map(w => ({ wch: w }));
-  ws['!autofilter'] = { ref: 'A4:L' + ultima };
+  const ws = XLSXref.utils.aoa_to_sheet(aoa, { cellDates: true });
+  ws['!merges'] = [{ s:{r:1,c:0}, e:{r:1,c:ultimaCol} }];
+  ws['!cols'] = larg.map(w => ({ wch: w }));
+  ws['!autofilter'] = { ref: 'A4:' + XLSXref.utils.encode_col(ultimaCol) + ultima };
 
   const base = { font:{ name:'Courier New', sz:8 }, alignment:{ horizontal:'center', vertical:'center' } };
   const clone = extra => JSON.parse(JSON.stringify(Object.assign({}, base, extra)));
-
+  const negrito = clone({ font:{ name:'Courier New', sz:8, bold:true } });
   const estilos = {
-    titulo: clone({ font:{ name:'Courier New', sz:8, bold:true } }),
-    cabec:  clone({ font:{ name:'Courier New', sz:8, bold:true } }),
     banco:  clone({ fill:{ patternType:'solid', fgColor:{ rgb:'FFC000' } } }),
+    motivo: clone({ alignment:{ horizontal:'left', vertical:'center', wrapText:true } }),
     normal: clone({}),
   };
 
-  const setStyle = (addr, s, z) => {
+  const setStyle = (addr, st, z) => {
     if (!ws[addr]) ws[addr] = { t:'z' };
-    ws[addr].s = s;
+    ws[addr].s = st;
     if (z) ws[addr].z = z;
   };
-  setStyle('A2', estilos.titulo);
-  COLUNAS_RELATORIO.forEach((_, i) => setStyle(XLSX.utils.encode_col(i) + '4', estilos.cabec));
+  setStyle('A2', negrito);
+  cols.forEach((_, i) => setStyle(XLSXref.utils.encode_col(i) + '4', negrito));
 
   for (let r = primeira; r <= ultima; r++){
-    for (let c = 0; c < COLUNAS_RELATORIO.length; c++){
-      const addr = XLSX.utils.encode_col(c) + r;
-      const s = (c === 0) ? estilos.banco : estilos.normal;
+    for (let c = 0; c < cols.length; c++){
+      const addr = XLSXref.utils.encode_col(c) + r;
+      const st = (c === 0) ? estilos.banco : (c === 12 ? estilos.motivo : estilos.normal);
       let z = null;
       if (c === 8 || c === 10) z = FMT_CONTABIL;
       if (c === 7) z = 'dd/mm/yyyy';
       if (c === 1 || c === 3 || c === 4) z = FMT_CODIGO;
-      setStyle(addr, s, z);
+      setStyle(addr, st, z);
     }
   }
-  setStyle('J' + linhaTotal, clone({ font:{ name:'Courier New', sz:8, bold:true } }));
-  setStyle('K' + linhaTotal, clone({ font:{ name:'Courier New', sz:8, bold:true } }), FMT_CONTABIL);
+  setStyle('J' + linhaTotal, negrito);
+  setStyle('K' + linhaTotal, negrito, FMT_CONTABIL);
+  return ws;
+}
+
+/* O arquivo sai com uma ou duas abas. A segunda só existe quando o banco
+   devolveu algum pagamento: ele não entra no Descritivo, senão o TOTAL A PAGAR
+   contaria dinheiro que não saiu, mas também não pode simplesmente sumir. */
+function exportarRelatorio(linhas, dataRef, naturezas, recorte, devolvidas){
+  if (typeof XLSX === 'undefined') throw new Error('Biblioteca de planilha não carregada.');
+  const visiveis = (linhas || []).filter(x => !x.oculto);
+  const devol = (devolvidas || []).filter(ehDevolvido);
+  if (!visiveis.length && !devol.length) throw new Error('Nada para exportar.');
+
+  const cab = 'RELATÓRIO CONTAS A PAGAR ON TIME - ' + fmtData(dataRef) +
+    (recorte ? ('  ·  ' + recorte) : '');
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Descritivo');
+  if (visiveis.length){
+    XLSX.utils.book_append_sheet(wb,
+      abaRelatorio_(XLSX, visiveis, cab, naturezas, 'TOTAL A PAGAR', false), 'Descritivo');
+  }
+  if (devol.length){
+    XLSX.utils.book_append_sheet(wb,
+      abaRelatorio_(XLSX, devol, cab + '  ·  DEVOLVIDOS PELO BANCO', naturezas,
+                    'TOTAL DEVOLVIDO', true), 'Retorno');
+  }
+
   const nome = dataRef.replace(/-/g,'_') + '_RELATORIO_CONTAS_A_PAGAR' +
     (recorte ? ('_' + norm(recorte).replace(/[^a-z0-9]+/g,'_')) : '') + '.xlsx';
   XLSX.writeFile(wb, nome);
-  return { linhas: visiveis.length, arquivo: nome };
+  return { linhas: visiveis.length, devolvidas: devol.length, arquivo: nome };
 }
 
 /* ============================================================================
@@ -873,6 +1044,7 @@ raiz.Conc = {
   classificarStatus, definirMapaStatus,
   chaveTitulo, estaPago, SITUACOES, semTituloSit, aguardandoSit, tipoPresumido, TOL,
   valorAPagar, retencaoDe, montarConfirmacao, CAMPO_CONFIRMADO,
+  casarRelatorio, ehDevolvido, motivoRetorno, PREFIXO_RETORNO,
   aplicarAjustes, conciliar, resumir, montarLinhas, montarHistorico,
   exportarRelatorio, linhaRelatorio, nomeBanco, COLUNAS_RELATORIO, serieDiaria,
   MODELO_CIOT, novoCiot, CAMPO_OCULTO,

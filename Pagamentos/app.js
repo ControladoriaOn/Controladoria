@@ -48,6 +48,7 @@ const {
   chaveTitulo, estaPago, SITUACOES,
   aplicarAjustes, conciliar, resumir, montarLinhas, definirMapaStatus,
   exportarRelatorio, novoCiot, MODELO_CIOT, CAMPO_OCULTO,
+  casarRelatorio, ehDevolvido,
   definirFeriados, diaUtilAnterior, ehDiaUtil, ehFeriado,
 } = Conc;
 
@@ -187,10 +188,14 @@ function preparar(){
   const resTit = aplicarAjustes(d.titulos || [], aj);
   const resBx  = aplicarAjustes(d.baixas  || [], aj);
   state.orfaos = resTit.orfaos.filter(o => !resBx.titulos.some(t => chaveTitulo(t) === o.alvo));
-  state.baixas = resBx.titulos;
+
+  /* O relatório do próprio dia baixa o que estava previsto — o mesmo casamento
+     que a tela de conferência faz, para os dois lados contarem a mesma história. */
+  const casado = casarRelatorio(resTit.titulos, resBx.titulos);
+  state.baixas = casado.baixas;
 
   state.conc = conciliar({
-    totvs: resTit.titulos,
+    totvs: casado.titulos,
     nf_servico: d.nf_servico || [],
     nf_titulo:  d.nf_titulo  || [],
     reembolso:  d.reembolso  || [],
@@ -243,9 +248,26 @@ function recortes(){
       sub: r.dataPago
         ? (r.pago.qtd + ' títulos baixados')
         : 'sem relatório de baixas carregado',
-      linhas: L.filter(x => x.fonte === 'baixa' && x.dt_baixa === r.dataPago),
+      linhas: L.filter(x => x.fonte === 'baixa' && x.dt_baixa === r.dataPago && x.dt_baixa !== r.dataRef),
     },
-    hoje: {
+    /* À tarde, quando o relatório do dia chega, este cartão deixa de ser o que
+       vai sair e passa a ser o que saiu. O de ontem e o de amanhã não mudam. */
+    hoje: r.temEfetivoHoje ? {
+      rotulo: 'Pago hoje',
+      icone: 'fa-circle-check', classe: 'ok',
+      valor: r.efetivoHoje.valor, qtd: r.efetivoHoje.qtd,
+      /* O devolvido pelo banco também volta a ser previsto, então contar os
+         dois seria contar a mesma linha duas vezes: aqui ele aparece só como
+         devolução, e "ainda previsto" fica com o que sobrou além dela. */
+      sub: r.efetivoHoje.qtd + (r.efetivoHoje.qtd === 1 ? ' pago' : ' pagos')
+           + (r.devolvidosHoje.qtd ? (' · ' + r.devolvidosHoje.qtd + ' devolvido(s) pelo banco, R$ '
+              + fmtBR(r.devolvidosHoje.valor)) : '')
+           + ((r.previstoSobrou.qtd - r.devolvidosHoje.qtd) > 0
+              ? (' · ' + (r.previstoSobrou.qtd - r.devolvidosHoje.qtd) + ' ainda previsto(s), R$ '
+                 + fmtBR(r.previstoSobrou.valor - r.devolvidosHoje.valor)) : ''),
+      linhas: L.filter(x => x.fonte === 'baixa' && x.dt_baixa === r.dataRef)
+               .concat(previsto.filter(x => emAberto(x) && x.vencimento === r.dataRef)),
+    } : {
       rotulo: 'Previsto para hoje',
       icone: 'fa-calendar-day', classe: 'info',
       valor: r.aPagarHoje.valor, qtd: r.aPagarHoje.qtd,
@@ -608,11 +630,12 @@ function linhaTabela(x, ehPago){
   const sit = SITUACOES[x.situacao] || ['—','b-mute'];
   /* As marcas de conferência (valor diverge, casado por semelhança) vivem na
      tela de conferência. Aqui fica só o que muda a leitura do dia. */
-  const tdSit = h('td', {}, [ badge(sit[0], sit[1]) ]);
+  const tdSit = h('td', {}, x.devolvido ? [] : [ badge(sit[0], sit[1]) ]);
   if (x.editado)  tdSit.appendChild(badge('editado','b-orange'));
   if (x.estimado) tdSit.appendChild(badge('estimado','b-warn'));
   if (x.confirmacao && !x.confirmacao.escolhido) tdSit.appendChild(badge('valor a confirmar','b-danger'));
-  if (x.oculto)   tdSit.appendChild(badge('oculto','b-mute'));
+  if (x.devolvido) tdSit.appendChild(badge('devolvido pelo banco','b-danger'));
+  else if (x.oculto) tdSit.appendChild(badge('oculto','b-mute'));
 
   const tdData = h('td', { class:'mono' }, [ fmtData(ehPago ? x.dt_baixa : x.vencimento) ]);
   if (!ehPago && x.empurrado){
@@ -684,13 +707,15 @@ function gerarRelatorio(L, rotulo){
   try {
     // a data do arquivo é a do recorte, não a de hoje: exportar o Pago gerava
     // um relatório com a data errada no título
-    const res = exportarRelatorio(L, dataDoRecorte(), naturezas, rotulo);
+    const devolvidas = state.linhas.filter(ehDevolvido);
+    const res = exportarRelatorio(L, dataDoRecorte(), naturezas, rotulo, devolvidas);
     const semFluxo = L.filter(x => {
       const n = safeStr(x.natureza);
       const info = naturezas[n] || naturezas[n.replace(/^0+/,'')];
       return !x.conta_fluxo && !(info && info.conta_fluxo);
     }).length;
     toast(res.linhas + ' linha(s) no relatório' +
+      (res.devolvidas ? (' · ' + res.devolvidas + ' na aba Retorno') : '') +
       (semFluxo ? (' · ' + semFluxo + ' sem conta de fluxo') : '') + '.');
   } catch(e){
     toast(e.message || String(e), true);
