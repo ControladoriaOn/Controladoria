@@ -466,7 +466,7 @@ tbody tr.linha-oculta td{opacity:.45;font-style:italic}
 
 /* ---------------------------------------------------- ambiente de teste
    Uma tarja discreta, sempre à vista: em teste ninguém deve confundir a tela
-   com a de verdade. Quem decide é o endereço da página, não uma configuração
+   com a de verdade. Quem decide é o  endereço da página, não uma configuração
    que alguém possa esquecer de trocar. */
 body.ambiente-teste::after{
   content:'AMBIENTE DE TESTE';
