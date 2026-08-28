@@ -431,6 +431,8 @@
 .forn small.motivo-retorno{color:var(--danger);font-style:italic}
 
 .conf-quebra{margin-left:auto;margin-right:14px;font-size:11px;color:var(--plum-soft)}
+
+mark{background:#FFE9A8;color:inherit;border-radius:3px;padding:0 1px}
 </style>
 </head>
 <body>
@@ -567,7 +569,16 @@
           <label for="ms-nome">Seu nome</label>
           <input type="text" id="ms-nome" placeholder="seu nome" autocomplete="name">
         </div>
+        <!-- Só aparece quando o script está configurado para exigir chave. -->
+        <div class="campo wide" id="ms-campo-chave" hidden>
+          <label for="ms-chave">Senha de gravação</label>
+          <input type="password" id="ms-chave" placeholder="senha" autocomplete="current-password">
+        </div>
       </div>
+      <p class="cf-text" id="ms-nota-chave" hidden style="margin-top:10px">
+        A senha é a mesma para todo mundo e fica guardada só neste navegador.
+        Quem cuida do script pode trocá-la a qualquer momento.
+      </p>
     </div>
     <div class="cf-foot">
       <button class="btn btn-ghost" id="ms-cancel" type="button">Cancelar</button>
@@ -704,7 +715,7 @@ async function parseRetornos(file){
     const nrm = (rows[i] || []).map(normHdr);
     if (nrm.indexOf('status') >= 0 && nrm.indexOf('motivo') >= 0){ hi = i; H = nrm; break; }
   }
-  if (hi === -1) return [];
+  if (hi === -1) throw new Error('Não achei o cabeçalho do arquivo do banco (precisa ter status e motivo). ' + EXIGIDAS.retornos.dica);
 
   const col = (...kws) => {
     for (let i = 0; i < H.length; i++){
@@ -774,6 +785,8 @@ function casarRetornos(retornos, pagos){
    ============================================================================ */
 async function parseTotvs(file){
   const bruto = await readAsText(file, 'iso-8859-1');
+  const enc = encodingSuspeito(bruto);
+  if (enc) throw new Error(enc + ' Baixe o arquivo do Totvs de novo e suba sem abrir no Excel.');
   const texto = repararAcentos(bruto);
   const linhas = texto.split(/\r?\n/);
 
@@ -787,6 +800,8 @@ async function parseTotvs(file){
   const corpo = linhas.slice(hi).join('\n');
   const parsed = Papa.parse(corpo, { header:true, delimiter:';', skipEmptyLines:true });
   const campos = (parsed.meta && parsed.meta.fields) || [];
+  const falta = validarColunas('totvs', campos);
+  if (falta) throw new Error(falta);
 
   /* O layout do relatório muda conforme as colunas escolhidas no Totvs, então
      nada aqui depende do nome exato: cada campo é procurado por palavra-chave,
@@ -930,7 +945,9 @@ async function parseRelatorio(file){
     const linha = (rows[i] || []).map(safeStr);
     if (normHdr(linha[0]) === 'banco' && linha.some(c => normHdr(c) === 'notitulo')){ hi = i; break; }
   }
-  if (hi === -1) return [];
+  if (hi === -1) throw new Error('Não achei o cabeçalho do relatório (a linha que começa com Banco e tem No. Titulo). ' + EXIGIDAS.relatorio.dica);
+  const faltaRel = validarColunas('relatorio', (rows[hi] || []).map(safeStr));
+  if (faltaRel) throw new Error(faltaRel);
 
   const out = [];
   const vistos = {};
@@ -1043,6 +1060,55 @@ function diagnosticarRelatorio(linhas){
    reconhecer, a função confere se o conteúdo bate com o esperado, para a tela
    poder perguntar "tem certeza que é esse relatório?" antes de gravar.
    ============================================================================ */
+
+/* ============================================================================
+   VALIDAÇÃO DE ENTRADA
+   ----------------------------------------------------------------------------
+   Arquivo torto entra calado e só aparece depois, como número errado no
+   fechamento. Melhor recusar na porta, dizendo o que falta e como resolver —
+   a pessoa que gera o relatório no Totvs sabe exatamente onde marcar a caixa.
+
+   A checagem é só de estrutura: coluna que precisa existir e texto que precisa
+   estar legível. O conteúdo continua sendo conferido pelos diagnósticos, que
+   avisam sem barrar.
+   ========================================================================== */
+const EXIGIDAS = {
+  totvs:     { rot:'relatório do Totvs (SE2)',
+               cols:[['No. Titulo', ['no','titulo']], ['Vencimento', ['vencimento']],
+                     ['Vlr.Titulo', ['vlrtitulo']]],
+               dica:'No SE2, marque as colunas No. Titulo, Vencimento e Vlr.Titulo antes de gerar.' },
+  relatorio: { rot:'relatório da controladoria',
+               cols:[['Banco', ['banco']], ['No. Titulo', ['notitulo']], ['Saldo', ['saldo']]],
+               dica:'Use a planilha gerada pela própria ferramenta, aba Descritivo.' },
+  retornos:  { rot:'retorno do banco',
+               cols:[['status', ['status']], ['motivo', ['motivo']]],
+               dica:'Exporte a consulta de pagamentos do banco sem tirar colunas.' },
+};
+
+/* O CSV do Totvs vem em ISO-8859-1. Aberto e salvo de novo como UTF-8, os
+   acentos chegam como caracteres de substituição — e o nome do favorecido, que
+   é chave de casamento, deixa de bater. Vale recusar antes. */
+function encodingSuspeito(texto){
+  const t = String(texto || '').slice(0, 4000);
+  if (t.charCodeAt(0) === 0xFEFF) return 'O arquivo foi salvo como UTF-8 com BOM.';
+  const trocados = (t.match(/\uFFFD/g) || []).length;
+  if (trocados > 3) return 'Os acentos vieram corrompidos, sinal de que o arquivo foi aberto e salvo de novo.';
+  return '';
+}
+
+function validarColunas(tipo, cabecalhos){
+  const regra = EXIGIDAS[tipo];
+  if (!regra) return '';
+  const nrm = (cabecalhos || []).map(normHdr);
+  const faltando = regra.cols
+    .filter(par => !nrm.some(h => par[1].every(k => h.indexOf(k) >= 0)))
+    .map(par => par[0]);
+  if (!faltando.length) return '';
+  return 'O ' + regra.rot + ' está sem ' +
+    (faltando.length === 1 ? ('a coluna ' + faltando[0]) : ('as colunas ' + faltando.join(', '))) +
+    '. ' + regra.dica;
+}
+
 function diagnosticarTotvs(linhas){
   const n = linhas.length;
   const comBaixa = linhas.filter(t => !!t.dt_baixa);
@@ -1237,6 +1303,7 @@ async function parseNaturezas(file){
 const state = {
   pendentesConfirmar: [], confirmados: 0,
   diagRetornos: null, semParNoRelatorio: [],
+  chave: '', exigeChave: false,
   files: [],                 // [{nome, tipo, count, ok, err}]
   store: { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[], retornos:[] },
   naturezas: null,
@@ -1514,6 +1581,9 @@ function montarPontos(){
 }
 
 function renderConferencia(){
+  /* Trocar de página redesenhava a tela inteira e jogava a rolagem para o
+     topo, obrigando a descer de novo a cada cem linhas. */
+  const rolagem = window.scrollY;
   const wrap = el('conf-wrap');
   if (!state.conc){ wrap.hidden = true; return; }
   wrap.hidden = false;
@@ -1601,7 +1671,8 @@ function renderConferencia(){
     const chips = h('div', { class:'chips-linha' });
     const mk = (v, rot, qtd) => {
       const cor = v ? (' t-' + norm(v).replace(/[^a-z0-9]/g,'')) : '';
-      const b = h('button', { class:'chip' + cor + (state.filtroTipo === v ? ' active' : ''), type:'button' },
+      const b = h('button', { class:'chip' + cor + (state.filtroTipo === v ? ' active' : ''),
+        type:'button', title: TIPO_EXPLICA[v] || '' },
         [ rot, h('span', { class:'cnt', text:String(qtd) }) ]);
       b.addEventListener('click', () => { state.filtroTipo = v; state.pagina = 1; renderConferencia(); });
       return b;
@@ -1645,6 +1716,7 @@ function renderConferencia(){
     detalhe,
     h('strong', { text: 'R$ ' + fmtBR(soma) }),
   ]));
+  if (rolagem) window.scrollTo({ top: rolagem });
 }
 
 /* Monta o objeto que a edição espera a partir de um título cru. */
@@ -1735,6 +1807,42 @@ function controlePagina(L, onde){
 
 /* Uma linha por pagamento, venha ele do Totvs, do Fluig ou de lançamento
    próprio. É a mesma leitura do painel, só que aqui dá para editar. */
+
+/* ----------------------------------------------------------------------------
+   Realce da busca. Marca o trecho encontrado sem depender de innerHTML: o
+   favorecido vem do relatório e não é texto de confiança para injetar na
+   página. A comparação é sobre o texto normalizado (sem acento, minúsculo),
+   mas o que aparece na tela continua sendo o original.
+   -------------------------------------------------------------------------- */
+function comRealce(texto){
+  const t = safeStr(texto);
+  const termo = norm(state.busca);
+  if (!termo || !t) return [t];
+  const alvo = norm(t);
+  /* norm() pode encurtar a string (acento vira uma letra só), e aí o recorte
+     cairia no lugar errado e marcaria a letra vizinha. Nesse caso, sem realce. */
+  if (alvo.length !== t.length) return [t];
+  const partes = [];
+  let i = 0, achou = alvo.indexOf(termo);
+  while (achou >= 0){
+    if (achou > i) partes.push(t.slice(i, achou));
+    partes.push(h('mark', { text: t.slice(achou, achou + termo.length) }));
+    i = achou + termo.length;
+    achou = alvo.indexOf(termo, i);
+  }
+  if (i < t.length) partes.push(t.slice(i));
+  return partes;
+}
+
+/* Siglas que o Totvs usa. Aparecem nos chips e na coluna Tipo sem explicação
+   nenhuma; quem chega novo na equipe passa semanas sem saber o que é PA. */
+const TIPO_EXPLICA = {
+  NF:'Nota fiscal de serviço', BOL:'Boleto', TX:'Taxa ou tributo',
+  PA:'Pagamento antecipado (adiantamento)', PC:'Prestação de contas',
+  PX:'Pagamento diverso', RB:'Reembolso', INS:'Guia de INSS',
+  CIOT:'Adiantamento de frete (CIOT)', IRF:'IRRF retido', ISS:'ISS retido',
+};
+
 function tabelaUnificada(linhas, ehPago){
   const thead = h('thead', {}, [ h('tr', {}, [
     h('th', { text:'Origem' }), h('th', { text:'Tipo' }), h('th', { text:'Número' }),
@@ -1767,14 +1875,13 @@ function tabelaUnificada(linhas, ehPago){
     const tipo = safeStr(x.tipo) || '—';
     tbody.appendChild(h('tr', { class:(x.oculto ? 'oculta ' : '') + (x.editado ? 'editada' : '') }, [
       h('td', {}, [ badge(x.origem, 'b-mute') ]),
-      h('td', {}, [ badge(tipo, 'b-info') ]),
-      h('td', { class:'mono', text: x.numero }),
-      h('td', {}, [ h('div', { class:'forn' }, [
-        x.fornecedor || '—',
+      h('td', {}, [ h('span', { class:'badge b-info', title: TIPO_EXPLICA[tipo] || '', text: tipo }) ]),
+      h('td', { class:'mono' }, comRealce(x.numero)),
+      h('td', {}, [ h('div', { class:'forn' }, (x.fornecedor ? comRealce(x.fornecedor) : ['—']).concat([
         h('small', { class: x.devolvido ? 'motivo-retorno' : '',
           text: x.devolvido ? x.motivoRetorno
                             : [x.status, x.detalhe].filter(Boolean).join(' · ').slice(0, 68) }),
-      ])]),
+      ]))]),
       h('td', { class:'mono', text: fmtData(ehPago ? x.dt_baixa : x.vencimento) }),
       tdValor, tdSit,
       h('td', {}, [ acoesLinha(x.titulo ? linhaDoTitulo(x.titulo) : null) ]),
@@ -2111,26 +2218,53 @@ const CAMPOS_EDITAVEIS = [
 
 /* Sem senha: o que importa guardar é o nome de quem edita, para o registro na
    planilha responder quem mexeu em quê. É pedido uma vez por aba. */
+/* ----------------------------------------------------------------------------
+   QUEM EDITA E COM QUE AUTORIZAÇÃO
+   ----------------------------------------------------------------------------
+   O nome sempre foi pedido, para o registro dizer quem mexeu em quê. A senha é
+   nova e só aparece quando o script está configurado para exigi-la: ela é o
+   que impede alguém que ache o endereço do script no site de gravar na base
+   sem passar por aqui. Fica guardada neste navegador, nunca no código.
+   -------------------------------------------------------------------------- */
 const Auth = {
   K_NOME:'pgv2_autor',
+  K_CHAVE:'pgv2_chave',
   carregar(){
-    try { state.autor = localStorage.getItem(this.K_NOME) || ''; } catch(e){}
+    try {
+      state.autor = localStorage.getItem(this.K_NOME) || '';
+      state.chave = localStorage.getItem(this.K_CHAVE) || '';
+    } catch(e){}
   },
+  precisa(){ return state.exigeChave && !state.chave; },
   pedir(){
     return new Promise(resolve => {
-      if (state.autor) return resolve(true);
+      if (state.autor && !this.precisa()) return resolve(true);
       const m = el('modalSenha');
-      el('ms-nome').value = '';
+      el('ms-nome').value = state.autor || '';
+      el('ms-chave').value = '';
+      el('ms-campo-chave').hidden = !state.exigeChave;
+      el('ms-nota-chave').hidden = !state.exigeChave;
       m.classList.add('show');
-      setTimeout(() => el('ms-nome').focus(), 60);
+      setTimeout(() => el(state.autor && state.exigeChave ? 'ms-chave' : 'ms-nome').focus(), 60);
       const fechar = ok => {
         m.classList.remove('show');
         el('ms-ok').onclick = null; el('ms-cancel').onclick = null; m.onkeydown = null;
         resolve(ok);
       };
-      el('ms-ok').onclick = () => {
+      el('ms-ok').onclick = async () => {
         const nome = el('ms-nome').value.trim();
         if (!nome){ toast('Escreva seu nome.'); return; }
+        if (state.exigeChave){
+          const chave = el('ms-chave').value;
+          if (!chave){ toast('Digite a senha de gravação.'); return; }
+          /* Confere antes de guardar: o envio vai sem resposta de volta, então
+             descobrir a senha errada só na hora de gravar seria descobrir
+             tarde demais. */
+          const ok = await Auth.conferir(chave);
+          if (!ok){ toast('Senha de gravação incorreta.'); return; }
+          state.chave = chave;
+          try { localStorage.setItem(Auth.K_CHAVE, chave); } catch(e){}
+        }
         state.autor = nome;
         try { localStorage.setItem(Auth.K_NOME, nome); } catch(e){}
         fechar(true);
@@ -2141,6 +2275,24 @@ const Auth = {
         if (e.key === 'Enter') el('ms-ok').click();
       };
     });
+  },
+  async conferir(chave){
+    if (!CONFIG.APP_SCRIPT_URL) return false;
+    try {
+      const r = await fetch(CONFIG.APP_SCRIPT_URL + '?check=1&chave=' +
+                            encodeURIComponent(chave) + '&t=' + Date.now());
+      const d = await r.json();
+      return d && d.chave_ok !== false;
+    } catch(e){
+      toast('Não consegui conferir a senha agora.');
+      return false;
+    }
+  },
+  /* Senha recusada depois de guardada (alguém trocou no script): esquece a
+     que está aqui, para a próxima ação pedir de novo em vez de falhar calada. */
+  esquecerChave(){
+    state.chave = '';
+    try { localStorage.removeItem(Auth.K_CHAVE); } catch(e){}
   },
 };
 
@@ -2253,14 +2405,22 @@ async function carregarBase(){
 /* Grava o ajuste e recarrega a base, para a tela mostrar o que de fato ficou.
    A resposta do Apps Script não é legível no modo no-cors, então a confirmação
    vem dos dados, não do retorno da chamada. */
+/* Toda gravação sai por aqui, e é aqui que a senha entra no envelope. O envio
+   é no-cors — o navegador não deixa ler a resposta —, por isso a senha é
+   conferida antes, na hora de guardá-la, e não no meio da gravação. */
+async function postar(payload){
+  return fetch(CONFIG.APP_SCRIPT_URL, {
+    method:'POST', mode:'no-cors',
+    headers:{ 'Content-Type':'application/json' },
+    body: JSON.stringify(Object.assign({}, payload, { chave: state.chave || '' })),
+  });
+}
+
 async function gravarAjuste(payload, textoOk){
+  if (!(await Auth.pedir())) return;
   showOverlay(true, 'Salvando…');
   try {
-    await fetch(CONFIG.APP_SCRIPT_URL, {
-      method:'POST', mode:'no-cors',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify(payload),
-    });
+    await postar(payload);
     await new Promise(r => setTimeout(r, 1800));
     await carregarBase();
     toast(textoOk);
@@ -2364,20 +2524,24 @@ function montarPayload(){
     Object.keys(state.naturezas).forEach(k => { if (k.charAt(0) !== '_') limpo[k] = state.naturezas[k]; });
     p.naturezas = limpo;
   }
-  /* O histórico é alimentado só pelo relatório de baixas — é dele que sai o
-     valor efetivamente pago. O de vencimento não tem o que contribuir aqui.
+  /* ---- HISTÓRICO ----
+     Desligado: as duas ferramentas seguem separadas, e quem responde pelo
+     realizado do fluxo de caixa é a planilha "01. Base realizado 2026.1".
 
-     E vai com os ajustes já aplicados, sem os títulos ocultos: o histórico é a
-     base do fluxo de caixa, e não faria sentido o painel mostrar um valor
-     corrigido enquanto o fluxo recebe o valor errado, nem um título tirado da
-     conta aqui continuar somando lá. state.pagos é a mesma lista que a tela de
-     conferência usa. */
-  const pagos = (state.pagos && state.pagos.length)
-    ? state.pagos.filter(t => !t._oculto)
-    : state.store.baixas.concat(state.store.relatorio);
-  if (pagos.length){
-    const hist = montarHistorico({ titulos: pagos });
-    if (hist.length) p.historico = hist;
+     Para religar, troque para true aqui e em ALIMENTAR_HISTORICO no Code.gs —
+     os dois lados. O envio volta a levar os pagamentos com os ajustes já
+     aplicados e sem os títulos ocultos, que é como tem de ser: não faria
+     sentido o painel mostrar um valor corrigido enquanto o histórico recebe o
+     valor cru, nem um título tirado da conta aqui continuar somando lá. */
+  const ALIMENTAR_HISTORICO = false;
+  if (ALIMENTAR_HISTORICO){
+    const pagos = (state.pagos && state.pagos.length)
+      ? state.pagos.filter(t => !t._oculto)
+      : state.store.baixas.concat(state.store.relatorio);
+    if (pagos.length){
+      const hist = montarHistorico({ titulos: pagos });
+      if (hist.length) p.historico = hist;
+    }
   }
   return p;
 }
@@ -2387,14 +2551,11 @@ async function enviar(){
   const payload = montarPayload();
   if (!Object.keys(payload).length){ toast('Nada para enviar.'); return; }
 
+  if (!(await Auth.pedir())) return;
   const nHist = (payload.historico || []).length;
   showOverlay(true, 'Enviando…');
   try {
-    await fetch(CONFIG.APP_SCRIPT_URL, {
-      method:'POST', mode:'no-cors',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify(payload),
-    });
+    await postar(payload);
     toast(nHist ? ('Enviado · ' + nHist + ' pagamento(s) para o histórico.') : 'Enviado.');
     setTimeout(fetchStatus, 1800);
   } catch (e){
@@ -2407,13 +2568,10 @@ async function enviar(){
 async function limparBase(){
   if (!CONFIG.APP_SCRIPT_URL){ toast(avisoSemUrl()); return; }
   fecharLimpar();
+  if (!(await Auth.pedir())) return;
   showOverlay(true, 'Limpando…');
   try {
-    await fetch(CONFIG.APP_SCRIPT_URL, {
-      method:'POST', mode:'no-cors',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ acao:'limpar', alvo:'tudo' }),
-    });
+    await postar({ acao:'limpar', alvo:'tudo' });
     toast('Base de operação limpa. O histórico continua intacto.');
     setTimeout(fetchStatus, 1800);
   } catch (e){
@@ -2459,9 +2617,17 @@ async function fetchStatus(){
     return;
   }
   try {
-    const res = await fetch(CONFIG.APP_SCRIPT_URL + '?check=1&v=' + Date.now());
+    /* A senha guardada vai junto: além de dizer se o script exige chave, a
+       resposta confirma se a que está neste navegador continua valendo. */
+    const res = await fetch(CONFIG.APP_SCRIPT_URL + '?check=1&v=' + Date.now() +
+      (state.chave ? ('&chave=' + encodeURIComponent(state.chave)) : ''));
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const j = await res.json();
+    state.exigeChave = !!j.exige_chave;
+    if (state.exigeChave && state.chave && j.chave_ok === false){
+      Auth.esquecerChave();
+      toast('A senha de gravação mudou. Vou pedir a nova na próxima alteração.');
+    }
     if (j.feriados) Conc.definirFeriados(j.feriados);
     const c = j.contagem || {};
     const total = (c.titulos||0) + (c.nf_servico||0) + (c.nf_titulo||0) + (c.reembolso||0);
