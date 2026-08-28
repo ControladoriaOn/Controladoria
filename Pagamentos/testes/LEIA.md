@@ -36,6 +36,14 @@ restauração, a rotatividade dos trinta backups e o resumo diário.
 `apoio.js` — carrega o `conciliacao.js` e monta um Apps Script de mentira, com
 planilha e Drive em memória, para o `Code.gs` rodar fora do Google.
 
+## Se o Code.gs não estiver no repositório
+
+O `Code.gs` mora mesmo é no Apps Script; a cópia aqui existe só para estes
+testes. Sem ela, as verificações do backend não têm o que ler — e isso não
+conta como falha: elas são puladas, o comando continua verde e o placar diz
+quantas ficaram de fora. Suba a cópia em `Pagamentos/Code.gs` para ligá-las de
+volta.
+
 ## Acrescentar um teste
 
 Escolha o arquivo pelo assunto, ache o `grupo(...)` mais próximo e acrescente

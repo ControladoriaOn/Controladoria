@@ -16,7 +16,7 @@ const vm = require('vm');
 
 const RAIZ = path.join(__dirname, '..');
 
-let falhas = 0, passes = 0, secao = '';
+let falhas = 0, passes = 0, secao = '', pulados = 0;
 function grupo(nome){ secao = nome; console.log('\n— ' + nome); }
 function ok(titulo, condicao, detalhe){
   if (condicao){ passes++; console.log('  ok   ' + titulo); }
@@ -26,8 +26,13 @@ function igual(titulo, obtido, esperado){
   const a = JSON.stringify(obtido), b = JSON.stringify(esperado);
   ok(titulo, a === b, 'obtido ' + a + ', esperado ' + b);
 }
+function pular(motivo, quantas){
+  pulados += (quantas || 0);
+  console.log('  (pulado) ' + motivo);
+}
 function placar(){
-  console.log('\n' + passes + ' passaram, ' + falhas + ' falharam.');
+  console.log('\n' + passes + ' passaram, ' + falhas + ' falharam' +
+    (pulados ? (', ' + pulados + ' não puderam ser verificadas') : '') + '.');
   return falhas;
 }
 
@@ -37,6 +42,14 @@ function carregarConc(){
   g.window = g;
   vm.runInThisContext(fs.readFileSync(path.join(RAIZ, 'conciliacao.js'), 'utf8'));
   return g.Conc;
+}
+
+/* O Code.gs mora no Apps Script; a cópia no repositório existe para estes
+   testes. Se ela não estiver aqui, as verificações do backend não têm o que
+   ler — e isso não é uma falha: é uma parte que não pôde ser conferida. O
+   comando continua verde e diz, no fim, quantas ficaram de fora. */
+function temCodeGs(){
+  return fs.existsSync(path.join(RAIZ, 'Code.gs'));
 }
 
 /* Apps Script de mentira. Planilha e Drive viram objetos em memória; as abas
@@ -106,4 +119,4 @@ function carregarCodeGs(){
     limparDrive: () => { arquivos.length = 0; } };
 }
 
-module.exports = { grupo, ok, igual, placar, carregarConc, carregarCodeGs, RAIZ };
+module.exports = { grupo, ok, igual, pular, placar, carregarConc, carregarCodeGs, temCodeGs, RAIZ };

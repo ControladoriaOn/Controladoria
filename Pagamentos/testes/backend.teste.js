@@ -1,7 +1,16 @@
 /* O que o Apps Script faz antes de gravar: exigir a chave e guardar uma cópia.
    E o resumo diário, que lê as mesmas abas por outro caminho. */
 'use strict';
-const { grupo, ok, igual, carregarCodeGs } = require('./apoio');
+const { grupo, ok, igual, pular, carregarCodeGs, temCodeGs } = require('./apoio');
+
+if (!temCodeGs()){
+  grupo('Backend');
+  pular('Code.gs não está no repositório — as 31 verificações do backend ' +
+        '(chave, backup, restauração, histórico e resumo diário) não rodaram. ' +
+        'Para ligá-las, suba a cópia do Code.gs em Pagamentos/.', 31);
+  return;
+}
+
 const A = carregarCodeGs();
 const { ss, memoria, arquivos, post } = A;
 
