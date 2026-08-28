@@ -1,0 +1,28 @@
+# Roda os testes da ferramenta de pagamentos a cada alteração.
+#
+# Não instala nada: os testes são Node puro, de propósito, para continuarem
+# rodando sem ninguém precisar cuidar de dependências. O resultado aparece
+# como um sinal verde ou vermelho ao lado do commit, na página do repositório.
+name: Testes
+
+on:
+  push:
+    paths:
+      - 'Pagamentos/**'
+      - '.github/workflows/testes.yml'
+  pull_request:
+    paths:
+      - 'Pagamentos/**'
+  workflow_dispatch:        # permite rodar à mão pelo botão da aba Actions
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Rodar os testes
+        working-directory: Pagamentos
+        run: node testes/rodar.js
