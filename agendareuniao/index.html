@@ -58,9 +58,20 @@ input{font:inherit}
 .salas{max-width:1120px;margin:0 auto;padding:14px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;transition:padding .2s}
 .fixo.rolou .salas{padding-top:10px;padding-bottom:10px}
 .salas-rot{font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--tinta-suave);font-weight:700;margin-right:4px}
-.sala-btn{padding:7px 15px;border-radius:999px;border:1.5px solid var(--linha);background:var(--branco);font-size:13.5px;font-weight:600;color:var(--tinta-suave);transition:.15s}
+.sala-btn{padding:7px 15px;border-radius:999px;border:1.5px solid var(--linha);background:var(--branco);font-size:13.5px;font-weight:600;color:var(--tinta-suave);transition:.15s;white-space:nowrap}
 .sala-btn:hover{border-color:var(--ameixa-500);color:var(--ameixa-700)}
 .sala-btn[aria-pressed="true"]{background:var(--laranja-forte);border-color:var(--laranja-forte);color:#fff}
+
+/* mobile: mantém as 3 salas na mesma linha */
+@media (max-width:520px){
+  .salas{padding:10px 12px;gap:6px;flex-wrap:nowrap;overflow-x:hidden}
+  .salas-rot{display:none}
+  .sala-btn{padding:7px 9px;font-size:12px;flex:0 1 auto}
+}
+@media (max-width:370px){
+  .salas{padding:10px;gap:5px}
+  .sala-btn{padding:6px 7px;font-size:11px;letter-spacing:-.2px}
+}
 
 /* dias */
 .dias-area{max-width:1120px;margin:0 auto;padding:18px 20px 0}
