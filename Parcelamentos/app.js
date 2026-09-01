@@ -46,7 +46,7 @@ const HubLink = {
    ================================================================= */
 const Config = Object.freeze({
     API_URL: 'https://calm-queen-1204.controladoriaontimegestao.workers.dev',
-    APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwpOVWCs2Fad2a5B8E5UaVrpJweHEtL7uSB9AfBfQKWZmZgKz_kYgsHmPIB-pPuWVPksw/exec',
+    APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxH_wgQAaUif1nohXLzcAHqnYDW1m7ICbFd_6Xn5YU1cve-66EvOGGetrHbsXILRHR0MQ/exec',
     CAIXA_JAN_2023: 421634,
     ROWS_PER_PAGE_SINT: 20,
     ROWS_PER_PAGE_DET: 50,
