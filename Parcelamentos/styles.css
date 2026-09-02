@@ -605,19 +605,24 @@ tfoot td {
 }
 
 /* ============================================================
-   LOADER V3 — Mascote + anel + fio de progresso no topo
+   CARREGAMENTO — esqueleto da página + fio no topo
+   ------------------------------------------------------------
+   Saiu a tela cheia com mascote, anel e logo. Ela cobria tudo e
+   escondia que o menu e o topo já estavam prontos; e a barrinha
+   que vivia embaixo dela andava sempre igual, carregasse rápido
+   ou travasse.
+
+   No lugar, a página já aparece com a forma que vai ter: blocos
+   claros onde nascem os cartões, os gráficos e a tabela. Só o
+   miolo é esqueleto; o resto é a página de verdade. O andamento
+   fica por conta do fio laranja no alto, e a largura dele vem
+   das etapas reais do carregamento.
    ============================================================ */
 #loader {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
+    gap: 26px;
     width: 100%;
-    background: var(--bg);
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
     transition: opacity 0.4s ease, visibility 0.4s ease;
 }
 
@@ -627,67 +632,64 @@ tfoot td {
     pointer-events: none;
 }
 
-.loader-brand {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 18px;
-    animation: fadeUp 0.6s ease-out;
+/* O pulso é lento e de pouca amplitude de propósito: diz "ainda
+   estou carregando" sem fingir que mede progresso. Quem mede é o fio. */
+@keyframes skPulso {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .55; }
 }
 
-.loader-mascote-wrap {
-    position: relative;
-    width: 132px;
-    height: 132px;
-    display: grid;
-    place-items: center;
-}
-
-.loader-ring {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 3px solid rgba(255, 110, 0, 0.15);
-    border-top-color: var(--orange);
-    animation: spin 1s linear infinite;
-}
-
-.loader-mascote-box {
-    width: 100px;
-    height: 100px;
-    border-radius: 22px;
-    overflow: hidden;
+.sk-bloco, .sk-linha {
     background: var(--surface);
-    box-shadow: 0 8px 32px rgba(60, 0, 60, 0.12), 0 2px 8px rgba(255, 110, 0, 0.08);
-    border: 2px solid var(--border);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    animation: skPulso 1.9s ease-in-out infinite;
 }
 
-.loader-mascote-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+.sk-linha {
+    height: 22px;
+    width: 260px;
+    border-radius: var(--radius-sm);
+    background: var(--surface-soft);
+    box-shadow: none;
 }
 
-.loader-logo {
-    font-family: var(--font-display);
-    font-size: 36px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--plum);
-    line-height: 1;
+.sk-linha.curto { width: 190px; }
+
+.sk-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
 }
 
-.loader-logo span {
-    color: var(--orange);
+.sk-kpi { height: 132px; }
+
+.sk-graficos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
 }
 
-.loader-text {
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--muted);
-    letter-spacing: 0.02em;
+.sk-grafico { height: 340px; }
+.sk-grafico-largo { height: 260px; }
+.sk-tabela { height: 300px; }
+
+/* Cada bloco entra um instante depois do anterior: a página se
+   monta de cima para baixo, em vez de piscar inteira de uma vez. */
+.sk-kpis .sk-kpi:nth-child(2)     { animation-delay: .12s; }
+.sk-kpis .sk-kpi:nth-child(3)     { animation-delay: .24s; }
+.sk-graficos .sk-grafico:nth-child(2) { animation-delay: .12s; }
+.sk-grafico-largo { animation-delay: .18s; }
+.sk-tabela        { animation-delay: .24s; }
+
+@media (max-width: 1024px) {
+    .sk-kpis, .sk-graficos { grid-template-columns: 1fr; }
+    .sk-grafico { height: 260px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sk-bloco, .sk-linha { animation: none; }
 }
 
 /* A barra que ficava aqui dentro do loader era animação em laço: andava
@@ -727,7 +729,14 @@ tfoot td {
     margin-bottom: 8px;
 }
 
-#loader.error-state { gap: 16px; }
+/* Sem o esqueleto, o loader vira só a mensagem: aí sim centralizada. */
+#loader.error-state {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 20px;
+    gap: 16px;
+}
 
 #loader.error-state .loader-text {
     color: var(--err);

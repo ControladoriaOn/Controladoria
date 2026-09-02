@@ -249,17 +249,24 @@
     </header>
 
     <div class="content-area" id="contentArea">
-        <div id="loader" role="status" aria-live="polite">
-            <div class="loader-brand">
-                <div class="loader-mascote-wrap">
-                    <div class="loader-ring" aria-hidden="true"></div>
-                    <div class="loader-mascote-box">
-                        <img src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote Ontime" class="loader-mascote-img">
-                    </div>
-                </div>
-                <div class="loader-logo">ON<span>TIME</span></div>
-                <div class="loader-text">Carregando dados do sistema...</div>
+        <!-- Esqueleto do carregamento. Não é uma tela por cima da página: é a
+             própria página vazia, com os blocos já nos lugares onde os números
+             e os gráficos vão nascer. O menu e o topo aparecem de verdade desde
+             o primeiro instante. Quem diz o andamento é o fio lá em cima. -->
+        <div id="loader" role="status" aria-live="polite" aria-label="Carregando">
+            <div class="sk-linha sk-titulo"></div>
+            <div class="sk-kpis">
+                <div class="sk-bloco sk-kpi"></div>
+                <div class="sk-bloco sk-kpi"></div>
+                <div class="sk-bloco sk-kpi"></div>
             </div>
+            <div class="sk-graficos">
+                <div class="sk-bloco sk-grafico"></div>
+                <div class="sk-bloco sk-grafico"></div>
+            </div>
+            <div class="sk-bloco sk-grafico-largo"></div>
+            <div class="sk-linha sk-titulo curto"></div>
+            <div class="sk-bloco sk-tabela"></div>
         </div>
 
         <div id="app-content" style="display:none;flex-direction:column;gap:48px;">

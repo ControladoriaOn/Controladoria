@@ -1412,7 +1412,7 @@ const App = (() => {
 
     const showError = (message, detail) => {
         const fio = $('fio'); if (fio) fio.classList.remove('ativo');
-        const loader = $('loader'); loader.textContent = '';
+        const loader = $('loader'); loader.textContent = ''; loader.classList.add('error-state');
         const p = Utils.el('p', message); p.style.color = 'var(--err)'; p.style.fontWeight = '600'; loader.appendChild(p);
         if (detail) { const small = Utils.el('small', detail); small.style.color = 'var(--muted)'; loader.appendChild(small); }
         const btnRetry = Utils.el('button', 'Tentar novamente', 'btn-retry');
