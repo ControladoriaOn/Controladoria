@@ -575,6 +575,9 @@ mark{background:#FFE9A8;color:inherit;border-radius:3px;padding:0 1px}
           <input type="password" id="ms-chave" placeholder="senha" autocomplete="current-password">
         </div>
       </div>
+      <p class="cf-text" id="ms-nota-login" hidden style="margin-top:10px">
+        Este nome vem do seu login no hub e é o que fica registrado na planilha.
+      </p>
       <p class="cf-text" id="ms-nota-chave" hidden style="margin-top:10px">
         A senha é a mesma para todo mundo e fica guardada só neste navegador.
         Quem cuida do script pode trocá-la a qualquer momento.
@@ -1316,6 +1319,7 @@ const state = {
   roteiroAberto: false,
   base: null, ajustes: [], orfaos: [],
   autor: '',
+  autorFixo: false,            // nome veio do login do hub: não se digita por cima
   dataRef: hojeISO(),
 };
 const TIPO_ROTULO = {
@@ -2226,21 +2230,65 @@ const CAMPOS_EDITAVEIS = [
    que impede alguém que ache o endereço do script no site de gravar na base
    sem passar por aqui. Fica guardada neste navegador, nunca no código.
    -------------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------------
+   QUEM ESTÁ LOGADO, SEGUNDO O CLOUDFLARE ACCESS
+   ----------------------------------------------------------------------------
+   O hub roda atrás do Access, que já sabe quem entrou. Este endereço é servido
+   pelo próprio Cloudflare, na mesma origem da página, e devolve o e-mail da
+   sessão — sem senha, sem configuração, sem chamada para fora.
+
+   Fora do Access (github.io, arquivo aberto do disco) o endereço não existe. Aí
+   a função devolve vazio e a tela volta a pedir o nome digitado, como antes.
+   Nada quebra: o pior caso é o comportamento antigo.
+
+   Vale dizer o que isto NÃO é: o e-mail viaja no corpo da mensagem, escrito por
+   esta página. Quem contornar o hub e postar direto no endereço do script pode
+   escrever o e-mail que quiser. Quem impede essa pessoa é a senha de gravação.
+   Isto aqui serve para identificar entre os autorizados, não para provar.
+   -------------------------------------------------------------------------- */
+async function identidadeAccess(){
+  try {
+    const r = await fetch('/cdn-cgi/access/get-identity', { credentials:'include' });
+    if (!r.ok) return '';
+    const d = await r.json();
+    return String((d && (d.email || d.name)) || '').trim();
+  } catch(e){ return ''; }
+}
+
 const Auth = {
   K_NOME:'pgv2_autor',
   K_CHAVE:'pgv2_chave',
+  /* A consulta ao Access é assíncrona, e a página não espera por ela para
+     desenhar. A promessa fica guardada aqui: quem for gravar espera por ela
+     antes de montar o envelope, para o autor não sair errado por causa de uma
+     fração de segundo de diferença. */
+  _pronto: null,
   carregar(){
     try {
       state.autor = localStorage.getItem(this.K_NOME) || '';
       state.chave = localStorage.getItem(this.K_CHAVE) || '';
     } catch(e){}
+    this._pronto = identidadeAccess().then(quem => {
+      if (!quem) return;
+      state.autor = quem;
+      state.autorFixo = true;
+      try { localStorage.setItem(this.K_NOME, quem); } catch(e){}
+    });
+    return this._pronto;
   },
   precisa(){ return state.exigeChave && !state.chave; },
-  pedir(){
+  async pedir(){
+    try { await this._pronto; } catch(e){}
     return new Promise(resolve => {
       if (state.autor && !this.precisa()) return resolve(true);
       const m = el('modalSenha');
-      el('ms-nome').value = state.autor || '';
+      const inNome = el('ms-nome');
+      inNome.value = state.autor || '';
+      /* Nome vindo do login: fica à vista, mas não se digita por cima. */
+      inNome.readOnly = state.autorFixo;
+      inNome.style.opacity = state.autorFixo ? '.65' : '';
+      inNome.style.cursor  = state.autorFixo ? 'not-allowed' : '';
+      el('ms-nota-login').hidden = !state.autorFixo;
       el('ms-chave').value = '';
       el('ms-campo-chave').hidden = !state.exigeChave;
       el('ms-nota-chave').hidden = !state.exigeChave;
@@ -2265,8 +2313,8 @@ const Auth = {
           state.chave = chave;
           try { localStorage.setItem(Auth.K_CHAVE, chave); } catch(e){}
         }
-        state.autor = nome;
-        try { localStorage.setItem(Auth.K_NOME, nome); } catch(e){}
+        state.autor = state.autorFixo ? state.autor : nome;
+        try { localStorage.setItem(Auth.K_NOME, state.autor); } catch(e){}
         fechar(true);
       };
       el('ms-cancel').onclick = () => fechar(false);
