@@ -605,7 +605,7 @@ tfoot td {
 }
 
 /* ============================================================
-   LOADER V3 — Mascote + anel + barra de progresso
+   LOADER V3 — Mascote + anel + fio de progresso no topo
    ============================================================ */
 #loader {
     display: flex;
@@ -690,29 +690,30 @@ tfoot td {
     letter-spacing: 0.02em;
 }
 
-.loader-bar {
-    width: 180px;
-    height: 4px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: var(--border-soft);
-    position: relative;
+/* A barra que ficava aqui dentro do loader era animação em laço: andava
+   sempre igual, tivesse a base carregado ou não. Saiu. O progresso agora é
+   o fio lá em cima, e a largura dele vem das etapas de verdade. */
+
+.fio {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2.5px;
+    /* acima do próprio loader (9999), senão a tela cheia o esconde */
+    z-index: 10001;
+    background: transparent;
+    opacity: 0;
+    transition: opacity .25s ease;
 }
 
-.loader-bar span {
-    position: absolute;
-    top: 0; bottom: 0;
-    left: -40%;
-    width: 40%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, var(--orange), #FF9544);
-    animation: loaderSlide 1.2s ease-in-out infinite;
-}
+.fio.ativo { opacity: 1; }
 
-@keyframes loaderSlide {
-    0%   { left: -40%; }
-    60%  { left: 100%; }
-    100% { left: 100%; }
+.fio span {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #FF8A2E, var(--orange));
+    box-shadow: 0 0 8px rgba(255, 110, 0, .6);
+    transition: width .3s ease;
 }
 
 /* Spinner do estado de erro / tentar novamente */

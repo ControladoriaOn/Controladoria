@@ -42,6 +42,36 @@ const HubLink = {
 };
 
 /* =================================================================
+   QUEM ESTÁ LOGADO, SEGUNDO O CLOUDFLARE ACCESS
+   -----------------------------------------------------------------
+   A ferramenta roda atrás do Access, que já sabe quem entrou. Este
+   endereço é servido pelo próprio Cloudflare, na mesma origem da
+   página, e devolve o e-mail da sessão — sem senha, sem configuração,
+   sem chamada para fora.
+
+   Fora do Access (github.io, arquivo aberto do disco) ele não existe:
+   a função devolve vazio e a gravação segue como antes, sem autor.
+
+   O que isto NÃO é: o e-mail viaja no corpo da mensagem, escrito por
+   esta página. Quem contornar o hub e postar direto no endereço do
+   script pode escrever o e-mail que quiser. Quem impede essa pessoa é
+   a senha de edição. Isto serve para identificar entre os
+   autorizados, não para provar.
+   ================================================================= */
+async function identidadeAccess() {
+    try {
+        const r = await fetch('/cdn-cgi/access/get-identity', { credentials: 'include' });
+        if (!r.ok) return '';
+        const d = await r.json();
+        return String((d && (d.email || d.name)) || '').trim();
+    } catch (e) { return ''; }
+}
+
+/* Pergunta uma vez, no carregamento. Quem grava espera esta promessa,
+   para o autor não sair vazio por uma fração de segundo de diferença. */
+const IDENTIDADE = identidadeAccess().catch(() => '');
+
+/* =================================================================
    Configuração centralizada — Atualizado p/ Modo Claro (V8)
    ================================================================= */
 const Config = Object.freeze({
@@ -203,11 +233,17 @@ const Comprov = (() => {
         toast._t = setTimeout(() => u.toast.classList.remove('show'), 3800);
     };
 
-    const post = (payload) => fetch(Config.APP_SCRIPT_URL, {
-        method: 'POST', mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-    });
+    /* O autor entra aqui, num lugar só: assim toda gravação já sai
+       identificada, inclusive as que forem escritas depois. O backend lê
+       este campo como 'usuario' e registra no log da planilha. */
+    const post = async (payload) => {
+        const usuario = await IDENTIDADE;
+        return fetch(Config.APP_SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.assign({ usuario }, payload)),
+        });
+    };
 
     const reloadNow = async () => {
         // dá um tempo pro Apps Script salvar + reescrever o link, depois recarrega
@@ -1351,29 +1387,60 @@ const App = (() => {
         finally { btn.classList.remove('loading'); btn.innerHTML = origHTML; }
     };
 
+    /* ------------------------------------------------------------------
+       FIO DE PROGRESSO
+       ------------------------------------------------------------------
+       Uma linha só, no alto da janela, como a do YouTube. A largura vem
+       das etapas reais do init logo abaixo — não é animação em laço. Se o
+       fio empacar em 45%, é porque a leitura da base empacou ali, e isso
+       é justamente o que a barrinha antiga não sabia dizer.
+       ------------------------------------------------------------------ */
+    const etapa = (texto, pct) => {
+        const t = document.querySelector('.loader-text');
+        if (t && texto) t.textContent = texto;
+        const fio = $('fio'), fill = $('fio-fill');
+        if (!fio || !fill) return;
+        if (pct >= 100) {
+            fill.style.width = '100%';
+            // deixa o fio chegar ao fim antes de sumir; senão o salto não se vê
+            setTimeout(() => fio.classList.remove('ativo'), 400);
+        } else {
+            fio.classList.add('ativo');
+            fill.style.width = pct + '%';
+        }
+    };
+
     const showError = (message, detail) => {
+        const fio = $('fio'); if (fio) fio.classList.remove('ativo');
         const loader = $('loader'); loader.textContent = '';
         const p = Utils.el('p', message); p.style.color = 'var(--err)'; p.style.fontWeight = '600'; loader.appendChild(p);
         if (detail) { const small = Utils.el('small', detail); small.style.color = 'var(--muted)'; loader.appendChild(small); }
         const btnRetry = Utils.el('button', 'Tentar novamente', 'btn-retry');
         btnRetry.addEventListener('click', () => {
-            loader.textContent = ''; loader.appendChild(Utils.el('div', null, 'spinner')); loader.appendChild(Utils.el('p', 'Sincronizando dados...')); init();
+            loader.textContent = ''; loader.appendChild(Utils.el('div', null, 'spinner')); loader.appendChild(Utils.el('p', 'Sincronizando dados...'));
+            const f = $('fio-fill'); if (f) f.style.width = '0%';
+            init();
         });
         loader.appendChild(btnRetry);
     };
 
     const init = async () => {
+        etapa('Conectando ao servidor...', 8);
         try { await DataService.load(); } catch (err) { showError('Erro ao acessar os dados.', err.message); return; }
+        etapa('Lendo a base...', 45);
         try {
             const st = new Date();
             $('lastSync').textContent = st.toLocaleDateString('pt-BR') + ' ' + st.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
             DataService.processConsolidation(currYear, currMonth);
         } catch (err) { showError('Erro ao processar os dados.', err.message); return; }
+        etapa('Cruzando os dados...', 66);
         try { populateFilters(); populateYears(); initDataBaseSelector(); } catch (err) { showError('Erro ao montar os filtros.', err.message); return; }
+        etapa('Montando a tela...', 82);
         try {
             updateDashboard(); filterSintetico();
             lastDetalhadoFiltered = DataService.getRawData();
             renderDetalhado(applySort(DataService.getRawData(), 'detalhado'));
+            etapa('Pronto', 100);
             $('app-content').style.display = 'flex';
             const loaderEl = $('loader');
             loaderEl.classList.add('fade-out');

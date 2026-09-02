@@ -155,6 +155,11 @@
 </head>
 <body>
 
+<!-- Fio de progresso, no alto da janela. Diferente da barrinha que estava
+     no loader, ele não é enfeite: a largura vem das etapas reais do
+     carregamento, então parar no meio quer dizer que travou de verdade. -->
+<div class="fio" id="fio" aria-hidden="true"><span id="fio-fill"></span></div>
+
 <div class="sidebar-overlay" id="sidebarOverlay" role="presentation"></div>
 
 <aside class="sidebar" id="sidebar" role="navigation" aria-label="Menu principal">
@@ -254,7 +259,6 @@
                 </div>
                 <div class="loader-logo">ON<span>TIME</span></div>
                 <div class="loader-text">Carregando dados do sistema...</div>
-                <div class="loader-bar" aria-hidden="true"><span></span></div>
             </div>
         </div>
 
