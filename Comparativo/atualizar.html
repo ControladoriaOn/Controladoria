@@ -313,6 +313,19 @@
     .cf-opt input { margin-top:3px; accent-color:var(--orange); }
     .cf-opt .opt-title { font-weight:700; color:var(--plum-deep); font-size:13px; }
     .cf-opt .opt-sub { color:var(--plum-soft); font-size:12px; }
+    .campo-senha { margin-bottom:12px; }
+    .campo-senha label {
+      display:block; font-size:12px; font-weight:700; color:var(--plum-deep);
+      margin-bottom:5px;
+    }
+    .campo-senha input {
+      width:100%; box-sizing:border-box; padding:10px 12px; font-size:14px;
+      border:1px solid var(--border); border-radius:10px; background:var(--surface);
+      color:var(--plum-deep); font-family:inherit;
+    }
+    .campo-senha input:focus { outline:none; border-color:var(--orange); }
+    .campo-senha input[readonly] { background:var(--surface-soft); cursor:not-allowed; opacity:.7; }
+
     .cf-foot {
       padding:14px 20px; background:var(--surface-soft);
       border-top:1px solid var(--border-soft);
@@ -447,6 +460,38 @@
   </div>
 </div>
 
+<!-- Quem está gravando e com que autorização. O nome vem do login do hub e
+     não se digita por cima; a senha é o que impede alguém que ache o endereço
+     do script no site de escrever direto na base. -->
+<div class="cf-overlay" id="modal-senha">
+  <div class="cf-modal" role="dialog" aria-modal="true">
+    <div class="cf-body">
+      <h3 class="cf-title"><i class="ph-fill ph-user-check"></i> Quem está gravando</h3>
+      <p class="cf-text">Pedido uma vez neste navegador. Fica registrado na aba
+        <code>Log</code> da planilha, para depois se saber quem mexeu em quê.</p>
+      <div class="campo-senha">
+        <label for="ms-nome">Seu nome</label>
+        <input type="text" id="ms-nome" placeholder="seu nome" autocomplete="name">
+      </div>
+      <div class="campo-senha" id="ms-campo-chave" hidden>
+        <label for="ms-chave">Senha de gravação</label>
+        <input type="password" id="ms-chave" placeholder="senha" autocomplete="current-password">
+      </div>
+      <p class="cf-text" id="ms-nota-login" hidden style="margin-top:10px">
+        Este nome vem do seu login no hub e é o que fica registrado.
+      </p>
+      <p class="cf-text" id="ms-nota-chave" hidden style="margin-top:10px">
+        A senha é a mesma para todo mundo e fica guardada só neste navegador.
+        Quem cuida do script pode trocá-la a qualquer momento.
+      </p>
+    </div>
+    <div class="cf-foot">
+      <button class="btn btn-ghost" id="ms-cancel" type="button">Cancelar</button>
+      <button class="btn btn-primary" id="ms-ok" type="button">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -454,7 +499,7 @@
    CONFIG — cole aqui a URL /exec do App Script de Receita/Custo.
    ============================================================ */
 const CONFIG = {
-  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw4D5Um2qwZQ_MXsSr3OkOFWQIihi5akbLQMnEfqSqQML1RQihqJUEOvsScKuVCSSv_/exec',
+  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwU6vwBf0G3s6tMDqmAYTam2uuAWBHTRdR-7_HfjIEI11_97svT7wK9kWfEkkd6FZ6S5w/exec',
 };
 
 /* ============================================================
@@ -519,6 +564,10 @@ const state = {
   sumRb: 0, sumCusto: 0,
   filter: '',
   sheetCount: 0,
+  autor: '',            // e-mail de quem está logado, vindo do hub
+  autorFixo: false,     // veio do login: não se digita por cima
+  chave: '',            // senha de gravação, guardada só neste navegador
+  exigeChave: false,    // o script respondeu que exige senha
 };
 
 /* ============================================================
@@ -783,6 +832,127 @@ function renderPreview(parsed) {
 }
 
 /* ============================================================
+   QUEM ESTÁ LOGADO, SEGUNDO O CLOUDFLARE ACCESS
+   ------------------------------------------------------------
+   A ferramenta roda atrás do Access, que já sabe quem entrou.
+   Este endereço é servido pelo próprio Cloudflare, na mesma
+   origem da página, e devolve o e-mail da sessão — sem senha,
+   sem configuração, sem chamada para fora.
+
+   Fora do Access (github.io, arquivo do disco) ele não existe:
+   a função devolve vazio e a tela volta a pedir o nome digitado.
+
+   O que isto NÃO é: o e-mail viaja no corpo da mensagem, escrito
+   por esta página. Quem contornar o hub e postar direto no
+   endereço do script pode escrever o e-mail que quiser. Quem
+   impede essa pessoa é a senha. Isto identifica entre os
+   autorizados, não prova.
+   ============================================================ */
+async function identidadeAccess() {
+  try {
+    const r = await fetch('/cdn-cgi/access/get-identity', { credentials:'include' });
+    if (!r.ok) return '';
+    const d = await r.json();
+    return String((d && (d.email || d.name)) || '').trim();
+  } catch (e) { return ''; }
+}
+
+/* ============================================================
+   QUEM GRAVA E COM QUE AUTORIZAÇÃO
+   ------------------------------------------------------------
+   O envio é no-cors: o navegador não deixa ler a resposta do
+   script. Por isso a senha é conferida ANTES, por um GET, na
+   hora de guardá-la. Descobrir que estava errada só depois de
+   mandar substituir a base seria descobrir tarde demais.
+   ============================================================ */
+const Auth = {
+  K_NOME: 'comp_autor',
+  K_CHAVE: 'comp_chave',
+  _pronto: null,
+
+  carregar() {
+    try {
+      state.autor = localStorage.getItem(this.K_NOME) || '';
+      state.chave = localStorage.getItem(this.K_CHAVE) || '';
+    } catch (e) {}
+    this._pronto = identidadeAccess().then(quem => {
+      if (!quem) return;
+      state.autor = quem;
+      state.autorFixo = true;
+      try { localStorage.setItem(this.K_NOME, quem); } catch (e) {}
+    });
+    return this._pronto;
+  },
+
+  precisa() { return state.exigeChave && !state.chave; },
+
+  async conferir(chave) {
+    const url = CONFIG.APP_SCRIPT_URL;
+    try {
+      const r = await fetch(url + '?check=1&chave=' + encodeURIComponent(chave) + '&t=' + Date.now());
+      const d = await r.json();
+      return d && d.chave_ok !== false;
+    } catch (e) {
+      toast('Não consegui conferir a senha agora.', 'error');
+      return false;
+    }
+  },
+
+  /* Senha recusada depois de guardada (alguém trocou no script):
+     esquece a que está aqui, para a próxima ação pedir de novo
+     em vez de falhar calada. */
+  esquecerChave() {
+    state.chave = '';
+    try { localStorage.removeItem(this.K_CHAVE); } catch (e) {}
+  },
+
+  async pedir() {
+    try { await this._pronto; } catch (e) {}
+    return new Promise(resolve => {
+      if (state.autor && !this.precisa()) return resolve(true);
+
+      const m = $('modal-senha');
+      const inNome = $('ms-nome');
+      inNome.value = state.autor || '';
+      inNome.readOnly = state.autorFixo;
+      $('ms-nota-login').hidden = !state.autorFixo;
+      $('ms-chave').value = '';
+      $('ms-campo-chave').hidden = !state.exigeChave;
+      $('ms-nota-chave').hidden = !state.exigeChave;
+      m.classList.add('show');
+      setTimeout(() => $(state.autor && state.exigeChave ? 'ms-chave' : 'ms-nome').focus(), 60);
+
+      const fechar = ok => {
+        m.classList.remove('show');
+        $('ms-ok').onclick = null; $('ms-cancel').onclick = null; m.onkeydown = null;
+        resolve(ok);
+      };
+
+      $('ms-ok').onclick = async () => {
+        const nome = inNome.value.trim();
+        if (!nome) { toast('Escreva seu nome.', 'error'); return; }
+        if (state.exigeChave) {
+          const chave = $('ms-chave').value;
+          if (!chave) { toast('Digite a senha de gravação.', 'error'); return; }
+          const ok = await Auth.conferir(chave);
+          if (!ok) { toast('Senha de gravação incorreta.', 'error'); return; }
+          state.chave = chave;
+          try { localStorage.setItem(Auth.K_CHAVE, chave); } catch (e) {}
+        }
+        state.autor = state.autorFixo ? state.autor : nome;
+        try { localStorage.setItem(Auth.K_NOME, state.autor); } catch (e) {}
+        fechar(true);
+      };
+      $('ms-cancel').onclick = () => fechar(false);
+      m.onkeydown = e => {
+        if (e.key === 'Escape') fechar(false);
+        if (e.key === 'Enter') $('ms-ok').click();
+      };
+    });
+  },
+};
+
+/* ============================================================
    Network
    ============================================================ */
 async function fetchStatus() {
@@ -793,10 +963,18 @@ async function fetchStatus() {
     return;
   }
   try {
-    const r = await fetch(url + '?check=1&v=' + Date.now());
+    const r = await fetch(url + '?check=1&v=' + Date.now() +
+      (state.chave ? ('&chave=' + encodeURIComponent(state.chave)) : ''));
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
     state.sheetCount = j.count || 0;
+    /* A senha guardada vai junto: além de dizer se o script exige chave, a
+       resposta confirma se a que está neste navegador continua valendo. */
+    state.exigeChave = !!j.exige_chave;
+    if (state.exigeChave && state.chave && j.chave_ok === false) {
+      Auth.esquecerChave();
+      toast('A senha de gravação mudou. Vou pedir a nova na próxima gravação.', 'error');
+    }
     if (j.last_update) {
       const dt = new Date(j.last_update);
       const dia = String(dt.getDate()).padStart(2,'0');
@@ -820,6 +998,7 @@ async function enviarRegistros(acao /* 'substituir' | 'anexar' | 'substituir_ano
   const url = CONFIG.APP_SCRIPT_URL;
   if (!url || url.includes('COLE_A_URL')) { toast('⚠️ URL do App Script não configurada!', 'error'); return; }
   if (state.registros.length === 0) { toast('Nada pra enviar.', 'error'); return; }
+  if (!(await Auth.pedir())) return;
 
   const msgOverlay = acao === 'anexar' ? 'Anexando…'
     : acao === 'substituir_ano' ? ('Atualizando ' + (state.ano || 'ano') + '…')
@@ -830,6 +1009,10 @@ async function enviarRegistros(acao /* 'substituir' | 'anexar' | 'substituir_ano
     if (acao === 'anexar') body = { acao:'anexar', registros: state.registros };
     else if (acao === 'substituir_ano') body = { acao:'substituir_ano', registros: state.registros };
     else body = { registros: state.registros };
+    /* A senha e o autor entram aqui, no último instante, para toda gravação
+       sair assinada sem que cada botão precise lembrar disso. */
+    body.chave = state.chave || '';
+    body.usuario = state.autor || '';
     await fetch(url, {
       method:'POST', mode:'no-cors',
       headers:{ 'Content-Type':'application/json' },
@@ -848,12 +1031,13 @@ async function limparTudo() {
   const url = CONFIG.APP_SCRIPT_URL;
   if (!url || url.includes('COLE_A_URL')) { toast('⚠️ URL do App Script não configurada!', 'error'); return; }
   fecharLimpar();
+  if (!(await Auth.pedir())) return;
   showOverlay(true, 'Limpando…');
   try {
     await fetch(url, {
       method:'POST', mode:'no-cors',
       headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ acao:'limpar' }),
+      body: JSON.stringify({ acao:'limpar', chave: state.chave || '', usuario: state.autor || '' }),
     });
     toast('🧹 Aba zerada', 'success');
     setTimeout(fetchStatus, 1500);
@@ -958,8 +1142,15 @@ document.addEventListener('DOMContentLoaded', () => {
   $('ml-confirm-check').addEventListener('change', e => { $('ml-do').disabled = !e.target.checked; });
   $('ml-do').addEventListener('click', limparTudo);
 
+  $('modal-senha').addEventListener('click', e => {
+    if (e.target === $('modal-senha')) $('ms-cancel').click();
+  });
+
   document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharLimpar(); });
 
+  /* Pergunta ao hub quem está logado antes de qualquer coisa; fetchStatus
+     descobre em seguida se o script passou a exigir senha. */
+  Auth.carregar();
   fetchStatus();
 });
 </script>
