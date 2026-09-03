@@ -29,17 +29,23 @@
    por cima da de produção não troca a base sem querer — o endereço muda, o
    comportamento muda junto.
 
-   Na pasta de teste, a URL do script de teste é declarada uma única vez no
-   index.html daquela pasta, assim:
+   ATENÇÃO — o que mudou aqui, e por quê.
 
-       window.URL_TESTE = '.../exec'   (declarado no index.html da pasta)
+   Antes existiam duas URLs e a escolha entre elas era feita pelo nome da
+   pasta: com "teste" no caminho, usava a URL declarada no index.html; sem
+   "teste", usava a que estava escrita como produção. A ideia era boa, mas a
+   URL escrita como produção era a do PAGAMENTOS — copiada junto quando esta
+   ferramenta nasceu a partir dali.
 
-   Se faltar, a cópia de teste não roda: melhor parar com um aviso na cara do
-   que sair gravando na planilha de produção achando que é teste.
+   Isso virou uma armadilha: renomear a pasta de "Fluxo-teste" para "Fluxo de
+   Caixa" faria o fluxo passar a falar com o script do Pagamentos, que exige
+   senha e não conhece as ações de fluxo. Como o envio é no-cors e não lê a
+   resposta, a tela continuaria dizendo "Salvo." e nada seria gravado.
+
+   Agora é uma URL só, escrita num lugar só. O nome da pasta deixou de ter
+   efeito sobre o comportamento: renomear é só renomear.
    ============================================================================ */
-const URL_PRODUCAO = 'https://script.google.com/macros/s/AKfycbwutQ02_VsAX-cKwsNDSKkG-ScJ9ER6XlPVK6_00hNUPRtBlvYDwok0GisJglU3ES2L/exec';
-const EH_TESTE = /teste/i.test(decodeURIComponent(location.pathname));
-const URL_BASE = EH_TESTE ? (window.URL_TESTE || '') : URL_PRODUCAO;
+const URL_BASE = 'https://script.google.com/macros/s/AKfycbxXdtGsm_3aDGqo52LTXjQ4CJu_zuXdivRfS9dnb6B8TYhyWY_E_rFvNYxrxO5BIfRIfA/exec';
 
 const CONFIG = {
   DATA_URL: URL_BASE,
@@ -1446,12 +1452,12 @@ document.addEventListener('DOMContentLoaded', () => {
   el('headerData').textContent = maiuscula(dt.toLocaleDateString('pt-BR',
     { weekday:'long', day:'numeric', month:'long' }));
 
-  if (EH_TESTE) document.body.classList.add('ambiente-teste');
-  if (!CONFIG.DATA_URL){
-    mostrarErro(new Error('Esta é uma cópia de teste e falta declarar a URL do ' +
-      'script de teste. No index.html desta pasta, acrescente: ' +
-      'window.URL_TESTE = "…/exec". Sem isso ela não roda — e não fala com a ' +
-      'base de produção.'));
+  /* Sem URL configurada, a tela para aqui com o motivo na cara, em vez de
+     tentar carregar e falhar de um jeito que não explica nada. */
+  if (!CONFIG.DATA_URL || CONFIG.DATA_URL.indexOf('COLE_A_URL') === 0){
+    mostrarErro(new Error('Falta configurar o endereço do script do fluxo. ' +
+      'No topo do fluxo.js, substitua o valor de URL_BASE pela URL /exec da ' +
+      'implantação do script desta ferramenta.'));
     return;
   }
   el('btnRecarregar').onclick = () => { abrirLoader('Atualizando…'); carregar(); };
