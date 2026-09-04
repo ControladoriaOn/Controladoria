@@ -1637,8 +1637,14 @@ function lerPlanilhaDoAno(wb){
   });
   if (!colunas.length) throw new Error('Achei a aba, mas nenhuma coluna com data.');
 
-  const plano = [], contas = [], config = [], saldos = [], entradas = [];
-  const saidasPorDia = {};
+  const plano = [], contas = [], config = [], saldos = [], entradas = [], saidas = [];
+  const saidasPorDia = {}, entradasPorDia = {};
+  const saldoIniPorDia = {}, saldoFimPorDia = {};
+  /* Os valores de cada linha ficam guardados aqui até o fim da leitura: só
+     depois de conhecer todos os códigos dá para saber quais linhas são
+     subtotais — e subtotal não pode virar lançamento, senão o valor entra
+     duas vezes. */
+  const bruto = [];
   let secao = '';          // 'E' entradas, 'S' saídas, '' fora
   let grupoAtual = '';     // id do grupo dentro do plano
   let empresa = '';        // empresa do bloco de saldos
@@ -1655,6 +1661,9 @@ function lerPlanilhaDoAno(wb){
 
     /* ---- marcos que organizam o arquivo ---- */
     if (chave === 'saldo inicial'){
+      colunas.forEach(c => {
+        if (typeof linha[c.j] === 'number') saldoIniPorDia[c.data] = numero(linha[c.j]);
+      });
       const primeira = colunas.find(c => typeof linha[c.j] === 'number');
       if (primeira){
         config.push({ chave:'saldo_inicial_data',  valor: primeira.data });
@@ -1664,7 +1673,13 @@ function lerPlanilhaDoAno(wb){
       }
       continue;
     }
-    if (chave === 'total entradas'){ secao = 'E'; grupoAtual = ''; continue; }
+    if (chave === 'total entradas'){
+      colunas.forEach(c => {
+        const v = numero(linha[c.j]);
+        if (Math.abs(v) > 0.005) entradasPorDia[c.data] = v;
+      });
+      secao = 'E'; grupoAtual = ''; continue;
+    }
     if (chave === 'total saidas'){
       /* Guardamos o total de saídas de cada dia só para a conferência: é ele
          que vai ser comparado com a soma do relatório de contas a pagar. */
@@ -1674,7 +1689,12 @@ function lerPlanilhaDoAno(wb){
       });
       secao = 'S'; grupoAtual = ''; continue;
     }
-    if (chave === 'saldo final'){    secao = ''; continue; }
+    if (chave === 'saldo final'){
+      colunas.forEach(c => {
+        if (typeof linha[c.j] === 'number') saldoFimPorDia[c.data] = numero(linha[c.j]);
+      });
+      secao = ''; continue;
+    }
     if (chave.indexOf('posicao de saldos') === 0){
       modoSaldos = true; secao = '';
       empresa = String(linha[2] == null ? '' : linha[2]).trim() || 'ON TIME';
@@ -1728,19 +1748,116 @@ function lerPlanilhaDoAno(wb){
       modo: secao === 'S' ? 'auto' : 'manual',
     });
 
-    if (secao === 'E'){
-      colunas.forEach(c => {
-        const v = numero(linha[c.j]);
-        if (Math.abs(v) < 0.005) return;
-        entradas.push({ data: c.data, linha_id: idLinha, valor: v });
-      });
-    }
+    colunas.forEach(c => {
+      const v = numero(linha[c.j]);
+      if (Math.abs(v) < 0.005) return;
+      bruto.push({ data: c.data, id: idLinha, codigo: cod, secao: secao, valor: v });
+    });
   }
+
+  /* ---- subtotais ----------------------------------------------------------
+     A planilha usa códigos encaixados: 2300401 é o guarda-chuva e 230040103 é
+     o detalhe dentro dele, e a linha de cima repete a soma da de baixo. Lidas
+     como se fossem duas contas, os Juros de Antecipação entravam duas vezes —
+     eram vinte mil a mais só em 07/01.
+
+     Quem tem outro código começando pelo seu vira grupo: não lança valor, e a
+     tela passa a somar os filhos, que é o que a planilha mostra. */
+  const codigos = {};
+  plano.forEach(l => { if (l.codigo) codigos[l.secao + '|' + l.codigo] = l.id; });
+
+  const ehSubtotal = {};
+  plano.forEach(l => {
+    if (!l.codigo) return;
+    const meu = l.secao + '|' + l.codigo;
+    const temFilho = Object.keys(codigos).some(k =>
+      k !== meu && k.indexOf(meu) === 0 && k.length > meu.length);
+    if (temFilho){ ehSubtotal[l.id] = true; l.tipo = 'grupo'; l.modo = ''; }
+  });
+
+  /* Com os subtotais promovidos a grupo, cada linha passa a pendurar no
+     subtotal mais próximo — o código mais longo que seja começo do seu. Sem
+     isso a soma do grupo ficaria vazia e a hierarquia da tela, errada. */
+  plano.forEach(l => {
+    if (!l.codigo) return;
+    let melhor = '', paiId = '';
+    Object.keys(codigos).forEach(k => {
+      const parts = k.split('|');
+      if (parts[0] !== l.secao) return;
+      const c = parts[1];
+      if (c === l.codigo || l.codigo.indexOf(c) !== 0) return;
+      if (!ehSubtotal[codigos[k]]) return;
+      if (c.length > melhor.length){ melhor = c; paiId = codigos[k]; }
+    });
+    if (paiId) l.pai = paiId;
+  });
+
+  bruto.forEach(x => {
+    if (ehSubtotal[x.id]) return;                 // o valor dele é a soma dos filhos
+    if (x.secao === 'E') entradas.push({ data: x.data, linha_id: x.id, valor: x.valor });
+    /* A saída viaja pelo CÓDIGO da conta de fluxo, não pelo id da linha: é
+       assim que o realizado é guardado, e é o que faz o total da planilha do
+       ano e o detalhe do relatório caírem na mesma linha. */
+    else saidas.push({ data: x.data, conta_fluxo: x.codigo, valor: x.valor });
+  });
+
+  /* ---- conferência contra os totais da própria planilha -------------------
+     Ler linha a linha e comparar com a linha de total do arquivo é a maneira
+     mais direta de perceber que algo foi contado a mais ou a menos. */
+  conferirTotais_(entradas, entradasPorDia, 'entradas', avisos);
+  conferirTotais_(saidas, saidasPorDia, 'saídas', avisos);
+
+  /* ---- degraus de saldo -------------------------------------------------
+     Dia cujo saldo inicial não é o saldo final da véspera. A planilha fecha
+     com os bancos assim mesmo, porque o ajuste foi feito direto no saldo —
+     mas a ferramenta refaz a conta somando entradas e saídas, e sem esse
+     lançamento a linha Diferença passa a mostrar o degrau todos os dias
+     seguintes. Melhor a pessoa saber disso antes de importar. */
+  const degraus = [];
+  const ultimoMovimento = [].concat(
+    Object.keys(entradasPorDia), Object.keys(saidasPorDia)).sort().pop() || '';
+  let anterior = null;
+  colunas.forEach(c => {
+    const ini = saldoIniPorDia[c.data], fim = saldoFimPorDia[c.data];
+    if (ini === undefined || fim === undefined) return;
+    if (anterior !== null && c.data <= ultimoMovimento){
+      const d = Math.round((ini - anterior) * 100) / 100;
+      if (Math.abs(d) >= 0.01) degraus.push({ data: c.data, valor: d });
+    }
+    anterior = fim;
+  });
 
   if (!plano.length) avisos.push('Não encontrei nenhuma linha de plano de contas.');
   if (!contas.length) avisos.push('Não encontrei o bloco de POSIÇÃO DE SALDOS: as contas bancárias ficaram de fora.');
 
-  return { aba, colunas, plano, contas, config, saldos, entradas, saidasPorDia, avisos };
+  return { aba, colunas, plano, contas, config, saldos, entradas, saidas,
+           saidasPorDia, entradasPorDia, degraus, avisos };
+}
+
+/* Soma o que foi lido linha a linha e compara com a linha de total do arquivo,
+   dia a dia. Diferença aqui é erro de leitura, não de dado — e é melhor
+   aparecer como aviso na tela do que virar um saldo torto três meses depois. */
+function conferirTotais_(lista, totalPorDia, nome, avisos){
+  const lido = {};
+  lista.forEach(x => { lido[x.data] = (lido[x.data] || 0) + x.valor; });
+
+  const dias = {};
+  Object.keys(lido).forEach(d => { dias[d] = true; });
+  Object.keys(totalPorDia).forEach(d => { dias[d] = true; });
+
+  let fora = 0, maior = 0, diaMaior = '';
+  Object.keys(dias).forEach(d => {
+    const dif = Math.round(((lido[d] || 0) - (totalPorDia[d] || 0)) * 100) / 100;
+    if (Math.abs(dif) < 0.01) return;
+    fora++;
+    if (Math.abs(dif) > Math.abs(maior)){ maior = dif; diaMaior = d; }
+  });
+
+  if (fora){
+    avisos.push('As ' + nome + ' que li não fecham com a linha de total da planilha em ' +
+      fora + ' dia(s). A maior diferença é de ' + maior.toLocaleString('pt-BR',
+      { minimumFractionDigits:2, maximumFractionDigits:2 }) + ' em ' + dataBR(diaMaior) + '.');
+  }
 }
 
 
@@ -1945,7 +2062,7 @@ const Importar = {
       ? 'Apaga tudo que a ferramenta guarda hoje. Depois disto a tela volta vazia.'
       : dia
       ? 'Solte o relatório de contas a pagar. Nada é gravado antes de você conferir.'
-      : 'Solte os dois arquivos: o fluxo do ano e a base realizada. Isto substitui o histórico inteiro.';
+      : 'Solte a planilha do fluxo do ano. A base realizada é opcional e serve só para conferir.';
     el('imp-alternar').textContent = limpando ? 'voltar para a importação'
                                   : dia ? 'carga inicial do ano' : 'voltar para atualizar um dia';
 
@@ -1964,12 +2081,14 @@ const Importar = {
 
     corpo.appendChild(this.dropzone());
 
-    if (dia && this.rel) corpo.appendChild(this.resumoRelatorio());
-    if (!dia){
+    if (dia){
+      if (this.rel) corpo.appendChild(this.resumoRelatorio());
+      if (this.rel && this.diasCobertos().length) corpo.appendChild(this.avisoCobertura());
+    } else {
       if (this.ano) corpo.appendChild(this.resumoAno());
       if (this.rel) corpo.appendChild(this.resumoRelatorio());
       if (this.ano && this.rel) corpo.appendChild(this.conferencia());
-      if (this.ano && this.rel) corpo.appendChild(this.confirmacaoAno());
+      if (this.ano) corpo.appendChild(this.confirmacaoAno());
     }
 
     this.atualizarBotao();
@@ -1980,9 +2099,9 @@ const Importar = {
     const z = h('div', { class:'imp-solta', tabindex:'0' }, [
       h('i', { class:'fa-solid fa-cloud-arrow-up' }),
       h('b', { text: dia ? 'Solte aqui o relatório de contas a pagar'
-                         : 'Solte aqui os dois arquivos, ou um de cada vez' }),
+                         : 'Solte aqui a planilha do fluxo do ano' }),
       h('span', { text: dia ? 'um dia, uma semana ou o período que o arquivo trouxer'
-                            : 'o fluxo do ano e a base realizada, em qualquer ordem' }),
+                            : 'a base realizada é opcional, só para conferir os números' }),
     ]);
     const input = h('input', { type:'file', accept:'.xlsx,.xls', multiple:'multiple' });
     input.style.display = 'none';
@@ -2091,6 +2210,11 @@ const Importar = {
       ' em ' + String(new Set(a.contas.map(x => x.empresa)).size) + ' empresa(s)'));
     c.appendChild(this.par('Posições de saldo', a.saldos.length.toLocaleString('pt-BR')));
     c.appendChild(this.par('Lançamentos de entrada', a.entradas.length.toLocaleString('pt-BR')));
+    const totSai = a.saidas.reduce((x, y) => x + y.valor, 0);
+    const diasSai = new Set(a.saidas.map(x => x.data));
+    c.appendChild(this.par('Lançamentos de saída',
+      a.saidas.length.toLocaleString('pt-BR') + '  em ' + diasSai.size + ' dias'));
+    c.appendChild(this.par('Total das saídas', 'R$ ' + dinheiro(totSai)));
     const cfg = {};
     a.config.forEach(x => { cfg[x.chave] = x.valor; });
     if (cfg.saldo_inicial_data){
@@ -2098,6 +2222,19 @@ const Importar = {
         'R$ ' + dinheiro(cfg.saldo_inicial_valor) + '  em ' + dataBR(cfg.saldo_inicial_data)));
     }
     a.avisos.forEach(x => c.appendChild(h('div', { class:'imp-aviso', text:x })));
+
+    /* Os degraus não impedem a carga, mas explicam de antemão o número que vai
+       aparecer na linha Diferença — melhor do que descobrir depois e achar que
+       a importação errou. */
+    (a.degraus || []).forEach(g => {
+      c.appendChild(h('div', { class:'imp-aviso', text:
+        'Em ' + dataBR(g.data) + ' o saldo inicial está ' +
+        (g.valor > 0 ? 'R$ ' + dinheiro(g.valor) + ' acima' : 'R$ ' + dinheiro(-g.valor) + ' abaixo') +
+        ' do saldo final da véspera, sem entrada nem saída que explique. A planilha ' +
+        'fecha com os bancos porque o ajuste foi feito direto no saldo. Aqui a conta é ' +
+        'refeita somando os lançamentos, então a linha Diferença vai mostrar esse valor ' +
+        'a partir desse dia até você lançá-lo na tela.' }));
+    });
     return c;
   },
 
@@ -2108,7 +2245,8 @@ const Importar = {
       h('p', { class:'cf-text', text:
         'As saídas do fluxo do ano contra a soma dos pagamentos, mês a mês. ' +
         'Diferença aqui quer dizer saída que não passou pelo contas a pagar — ' +
-        'juros de antecipação, por exemplo, que o banco desconta direto.' }),
+        'juros de antecipação, por exemplo, que o banco desconta direto. Só ' +
+        'conferência: quem vai ser gravado é o fluxo do ano.' }),
     ]);
 
     const porMes = {};
@@ -2159,8 +2297,9 @@ const Importar = {
     box.appendChild(chk);
     box.appendChild(h('div', { text:
       'Entendi que isto substitui o plano de contas, as contas bancárias, os ' +
-      'saldos, as entradas e todos os pagamentos do período. O que foi digitado ' +
-      'na tela não é apagado.' }));
+      'saldos, as entradas e as saídas do período pelos números da planilha do ' +
+      'ano. Esses dias passam a mostrar o total de cada conta, sem detalhe ' +
+      'título a título. O que foi digitado na tela não é apagado.' }));
     return box;
   },
 
@@ -2199,6 +2338,43 @@ const Importar = {
     return c;
   },
 
+  /* Os dias do relatório que já estão cobertos pela carga do ano. Trocar a
+     fonte de um desses dias é legítimo — passa a ter detalhe título a título —
+     mas leva junto o que não passa pelo contas a pagar, então não pode
+     acontecer sem a pessoa saber. */
+  diasCobertos(){
+    if (!this.rel) return [];
+    const cfg = (state.dados && state.dados.config) || {};
+    const de  = String(cfg.carga_ano_de || '');
+    const ate = String(cfg.carga_ano_ate || '');
+    if (!de || !ate) return [];
+    return this.rel.dias.filter(d => d >= de && d <= ate);
+  },
+
+  avisoCobertura(){
+    const dias = this.diasCobertos();
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-triangle-exclamation'), 'Esses dias vieram da planilha do ano' ]),
+    ]);
+    c.appendChild(h('div', { class:'imp-aviso', text:
+      (dias.length === 1 ? ('O dia ' + dataBR(dias[0]) + ' já está') : ('Dos dias deste arquivo, ' + dias.length + ' já estão')) +
+      ' na base pelo total da planilha do ano, que inclui o que não passa pelo ' +
+      'contas a pagar — juros de antecipação, tarifas. Gravar o relatório faz ' +
+      'esses dias passarem a mostrar o detalhe título a título, e esses valores ' +
+      'somem do total até serem lançados na mão.' }));
+    c.appendChild(h('p', { class:'cf-text', text:
+      'O total da planilha do ano não é apagado: ele fica guardado e volta a ' +
+      'valer se o relatório desses dias for removido.' }));
+
+    const box = h('label', { class:'imp-check' });
+    const chk = h('input', { type:'checkbox', id:'imp-ciente-dia' });
+    chk.onchange = () => this.atualizarBotao();
+    box.appendChild(chk);
+    box.appendChild(h('div', { text:'Entendi, quero trocar esses dias pelo detalhe do relatório.' }));
+    c.appendChild(box);
+    return c;
+  },
+
   par(rot, val){
     return h('div', { class:'imp-linha' }, [
       h('span', { class:'imp-rot', text:rot }), h('b', { text:val }),
@@ -2222,14 +2398,16 @@ const Importar = {
 
     if (this.modo === 'dia'){
       if (!this.rel){ b.disabled = true; b.textContent = 'Confirmar'; return; }
-      b.disabled = false;
+      const cobertos = this.diasCobertos().length;
+      const ciente = !cobertos || (el('imp-ciente-dia') && el('imp-ciente-dia').checked);
+      b.disabled = !ciente;
       const d = this.rel.dias;
       b.textContent = d.length === 1 ? ('Substituir ' + dataBR(d[0]))
                                      : ('Substituir os ' + d.length + ' dias');
       return;
     }
 
-    const pronto = this.ano && this.rel && el('imp-ciente') && el('imp-ciente').checked;
+    const pronto = this.ano && el('imp-ciente') && el('imp-ciente').checked;
     b.disabled = !pronto;
     b.textContent = 'Carregar o ano';
   },
@@ -2352,14 +2530,19 @@ const Importar = {
     }
   },
 
+  /* A carga do ano grava só a planilha do ano: estrutura, saldos, entradas e
+     saídas. O relatório de contas a pagar, se tiver sido solto junto, fica de
+     fora de propósito — ele entrou só para a conferência aparecer na tela. É
+     essa escolha que faz a linha Diferença fechar: os dois lados da conta
+     passam a sair da mesma fonte. */
   async gravarAno(){
     const a = this.ano;
     const blocosSaldo = this.blocosPorDia(a.saldos, 800);
     const blocosEnt   = this.blocosPorDia(a.entradas, 800);
-    const blocosPag   = this.blocosPorMes(this.rel.titulos);
+    const blocosSai   = this.blocosPorDia(a.saidas, 800);
 
     let feito = 0;
-    const total = 1 + blocosSaldo.length + blocosEnt.length + blocosPag.length;
+    const total = 1 + blocosSaldo.length + blocosEnt.length + blocosSai.length;
     const anda = txt => { this.passo(txt, (feito / total) * 100); feito++; };
 
     anda('Plano de contas e contas bancárias…');
@@ -2380,12 +2563,10 @@ const Importar = {
       await this.enviar({ acao:'fluxo_entradas_lote', entradas:b.itens, datas:b.datas });
     }
 
-    for (let i = 0; i < blocosPag.length; i++){
-      const b = blocosPag[i];
-      anda('Pagamentos de ' + MESES_PT[Number(b.mes.slice(5,7)) - 1] + '/' + b.mes.slice(0,4) +
-           '  (' + (i + 1) + ' de ' + blocosPag.length + ')');
-      await this.enviar({ acao:'fluxo_historico_lote', titulos:b.titulos,
-                          datas:this.rel.dias.filter(d => d.slice(0,7) === b.mes) });
+    for (let i = 0; i < blocosSai.length; i++){
+      const b = blocosSai[i];
+      anda('Saídas  (' + (i + 1) + ' de ' + blocosSai.length + ')');
+      await this.enviar({ acao:'fluxo_saidas_lote', saidas:b.itens, datas:b.datas });
     }
   },
 };
