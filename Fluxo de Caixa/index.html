@@ -71,6 +71,10 @@
     <button class="btn btn-ghost btn-sm" id="btnCentavos" type="button" title="Alternar entre a visão compacta e a exata">
       <i class="fa-solid fa-coins"></i> <span>Centavos</span>
     </button>
+    <button class="btn btn-ghost btn-sm" id="btnImportar" type="button" hidden
+            title="Importar o relatório de contas a pagar">
+      <i class="fa-solid fa-file-import"></i> <span>Importar</span>
+    </button>
     <button class="btn btn-primary" id="btnExportar" type="button">
       <i class="fa-solid fa-file-excel"></i> <span>Exportar</span>
     </button>
@@ -136,6 +140,25 @@
       <span class="sal-total" id="sal-total"></span>
       <button class="btn btn-ghost" type="button" data-fechar="modal-saldos">Cancelar</button>
       <button class="btn btn-primary" type="button" id="sal-salvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Importação. Duas portas na mesma tela: a de todo dia, que atualiza um dia
+     ou uma semana, e a carga do ano, escondida atrás de um link porque é usada
+     uma vez e substitui tudo. Nenhuma das duas grava sem mostrar antes. -->
+<div class="modal" id="modal-importar">
+  <div class="modal-box lg">
+    <div class="modal-head">
+      <h3><i class="fa-solid fa-file-import"></i> <span id="imp-titulo">Atualizar um dia</span></h3>
+      <p id="imp-sub">Solte o relatório de contas a pagar. Nada é gravado antes de você conferir.</p>
+    </div>
+    <div class="modal-body" id="imp-corpo"></div>
+    <div class="modal-foot imp-foot">
+      <button class="imp-link" id="imp-alternar" type="button">carga inicial do ano</button>
+      <span class="imp-espaco"></span>
+      <button class="btn btn-ghost" type="button" data-fechar="modal-importar">Fechar</button>
+      <button class="btn btn-primary" id="imp-confirmar" type="button" disabled>Confirmar</button>
     </div>
   </div>
 </div>

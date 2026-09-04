@@ -138,6 +138,7 @@ const state = {
   autor: '',
   primeiraPintura: true,
   podeEditar: false,
+  chave: '',                  // senha de gravação, guardada só nesta sessão
   edicao: null,
   cache: {},            // meses já abertos nesta sessão
 };
@@ -172,6 +173,33 @@ const HubLink = {
   },
 };
 
+/* ---------------------------------------------------------------------------
+   QUEM ESTÁ LOGADO, SEGUNDO O CLOUDFLARE ACCESS
+   ---------------------------------------------------------------------------
+   A ferramenta roda atrás do Access, que já sabe quem entrou. Este endereço é
+   servido pelo próprio Cloudflare, na mesma origem da página, e devolve o
+   e-mail da sessão — sem senha, sem configuração, sem chamada para fora.
+
+   Fora do Access ele não existe: a função devolve vazio e a tela volta a pedir
+   o nome digitado, como antes.
+
+   O que isto NÃO é: o e-mail viaja no corpo da mensagem, escrito por esta
+   página. Quem contornar o hub e postar direto no endereço do script pode
+   escrever o e-mail que quiser. Quem impede essa pessoa é a senha. Isto
+   identifica entre os autorizados, não prova.
+   ------------------------------------------------------------------------- */
+async function identidadeAccess(){
+  try {
+    const r = await fetch('/cdn-cgi/access/get-identity', { credentials:'include' });
+    if (!r.ok) return '';
+    const d = await r.json();
+    return String((d && (d.email || d.name)) || '').trim();
+  } catch(e){ return ''; }
+}
+
+/* Pergunta uma vez, no carregamento. Quem grava espera esta promessa. */
+let IDENTIDADE = null;
+
 function pedirAutor(){
   if (state.autor) return state.autor;
   try { state.autor = sessionStorage.getItem('fluxo_autor') || ''; } catch(e){}
@@ -182,6 +210,67 @@ function pedirAutor(){
   try { sessionStorage.setItem('fluxo_autor', nome); } catch(e){}
   return nome;
 }
+
+/* ---------------------------------------------------------------------------
+   SENHA DE GRAVAÇÃO
+   ---------------------------------------------------------------------------
+   O envio é no-cors: o navegador não deixa ler a resposta do script. Por isso
+   a senha é conferida ANTES, por um GET, na hora de guardá-la. Descobrir que
+   estava errada só depois de mandar gravar seria descobrir tarde demais.
+   ------------------------------------------------------------------------- */
+const Chave = {
+  K: 'fluxo_chave',
+  exigida: false,
+
+  carregar(){
+    try { state.chave = sessionStorage.getItem(this.K) || ''; } catch(e){}
+  },
+
+  async status(){
+    try {
+      const r = await fetch(CONFIG.DATA_URL + '?check=1&t=' + Date.now() +
+        (state.chave ? ('&chave=' + encodeURIComponent(state.chave)) : ''));
+      const d = await r.json();
+      this.exigida = !!d.exige_chave;
+      if (this.exigida && state.chave && d.chave_ok === false){
+        this.esquecer();
+        toast('A senha de gravação mudou. Vou pedir a nova na próxima gravação.', true);
+      }
+    } catch(e){ /* sem status, a gravação ainda tenta e o script decide */ }
+  },
+
+  esquecer(){
+    state.chave = '';
+    try { sessionStorage.removeItem(this.K); } catch(e){}
+  },
+
+  async conferir(chave){
+    try {
+      const r = await fetch(CONFIG.DATA_URL + '?check=1&chave=' +
+                            encodeURIComponent(chave) + '&t=' + Date.now());
+      const d = await r.json();
+      return d && d.chave_ok !== false;
+    } catch(e){
+      toast('Não consegui conferir a senha agora.', true);
+      return false;
+    }
+  },
+
+  /* Devolve true quando pode gravar. Pede a senha só quando o script exige e
+     ela ainda não está guardada nesta sessão. */
+  async garantir(){
+    if (!this.exigida || state.chave) return true;
+    const digitada = (prompt('Senha de gravação do fluxo de caixa:') || '').trim();
+    if (!digitada) return false;
+    if (!(await this.conferir(digitada))){
+      toast('Senha de gravação incorreta.', true);
+      return false;
+    }
+    state.chave = digitada;
+    try { sessionStorage.setItem(this.K, digitada); } catch(e){}
+    return true;
+  },
+};
 
 /* ------------------------------------------------------------- rede --- */
 async function buscarJson(url){
@@ -199,12 +288,22 @@ async function buscarJson(url){
   throw erro;
 }
 
+/* A senha e o autor entram aqui, num lugar só, para toda gravação sair
+   assinada sem que cada botão precise lembrar disso. */
+function assinar(payload){
+  return Object.assign({}, payload, {
+    chave: state.chave || '',
+    usuario: state.autor || '',
+  });
+}
+
 async function gravar(payload, textoOk){
+  if (!(await Chave.garantir())) { toast('Gravação cancelada.', true); return false; }
   try {
     await fetch(CONFIG.DATA_URL, {
       method:'POST', mode:'no-cors',
       headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(assinar(payload)),
     });
     toast(textoOk || 'Salvo.');
     return true;
@@ -1121,12 +1220,13 @@ function redesenhar(){
 }
 
 async function enviarEmSilencio(payload, textoOk){
+  if (!(await Chave.garantir())) { toast('Gravação cancelada.', true); return; }
   fioComeca();
   try {
     await fetch(CONFIG.DATA_URL, {
       method:'POST', mode:'no-cors',
       headers:{ 'Content-Type':'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(assinar(payload)),
     });
     fioTermina();
     if (textoOk) toast(textoOk);
@@ -1445,8 +1545,713 @@ function exportar(){
 /* ============================================================================
    INÍCIO
    ============================================================================ */
+
+/* ============================================================================
+   IMPORTAÇÃO — LEITURA DA PLANILHA DO ANO
+   ----------------------------------------------------------------------------
+   Esta parte lê o "Fluxo de Caixa Realizado", aquele com os dias nas colunas e
+   o plano de contas nas linhas, e devolve tudo já organizado: plano, contas
+   bancárias, saldo de abertura, posição de saldos e entradas.
+
+   O leitor não assume onde as coisas estão. Ele procura pelos textos que
+   organizam a planilha — "Saldo Inicial", "Total Entradas", "Total Saídas",
+   "Saldo Final", "POSIÇÃO DE SALDOS" — e se orienta por eles. Assim, se alguém
+   inserir uma linha no meio do arquivo, o leitor continua funcionando.
+
+   Nada é gravado aqui. A leitura devolve o que entendeu, a tela mostra, e só
+   depois de você confirmar é que alguma coisa sai daqui.
+   ========================================================================== */
+
+function normalizar(t){
+  return String(t == null ? '' : t)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function slug(t){
+  return normalizar(t).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+}
+
+function dataISO(v){
+  if (v instanceof Date && !isNaN(v)){
+    const m = String(v.getMonth() + 1).padStart(2, '0');
+    const d = String(v.getDate()).padStart(2, '0');
+    return v.getFullYear() + '-' + m + '-' + d;
+  }
+  return '';
+}
+
+function numero(v){
+  if (typeof v === 'number') return v;
+  if (v == null || v === '') return 0;
+  const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function lerPlanilhaDoAno(wb){
+  const avisos = [];
+  let matriz = null, aba = '';
+
+  /* A aba certa é a que tem uma linha de cabeçalho com datas de verdade. */
+  for (const nome of wb.SheetNames){
+    const m = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header:1, raw:true, defval:null });
+    const temData = m.slice(0, 12).some(l => (l || []).slice(2).some(c => dataISO(c)));
+    if (temData){ matriz = m; aba = nome; break; }
+  }
+  if (!matriz) throw new Error('Não achei nenhuma aba com dias nas colunas. ' +
+    'Este leitor espera a planilha do fluxo do ano, com as datas no cabeçalho.');
+
+  /* Linha do cabeçalho e quais colunas são dias. */
+  let iCab = -1;
+  for (let i = 0; i < Math.min(matriz.length, 12); i++){
+    if ((matriz[i] || []).slice(2).some(c => dataISO(c))){ iCab = i; break; }
+  }
+  const colunas = [];
+  (matriz[iCab] || []).forEach((c, j) => {
+    const d = dataISO(c);
+    if (d && j >= 2) colunas.push({ j: j, data: d });
+  });
+  if (!colunas.length) throw new Error('Achei a aba, mas nenhuma coluna com data.');
+
+  const plano = [], contas = [], config = [], saldos = [], entradas = [];
+  const saidasPorDia = {};
+  let secao = '';          // 'E' entradas, 'S' saídas, '' fora
+  let grupoAtual = '';     // id do grupo dentro do plano
+  let empresa = '';        // empresa do bloco de saldos
+  let bancoAtual = '';     // id do banco dentro do bloco de saldos
+  let modoSaldos = false;
+  let ordem = 0, ordemConta = 0;
+
+  for (let i = iCab + 1; i < matriz.length; i++){
+    const linha = matriz[i] || [];
+    const cod = linha[0] == null ? '' : String(linha[0]).trim();
+    const desc = linha[1] == null ? '' : String(linha[1]).trim();
+    const chave = normalizar(desc);
+    if (!cod && !desc) continue;
+
+    /* ---- marcos que organizam o arquivo ---- */
+    if (chave === 'saldo inicial'){
+      const primeira = colunas.find(c => typeof linha[c.j] === 'number');
+      if (primeira){
+        config.push({ chave:'saldo_inicial_data',  valor: primeira.data });
+        config.push({ chave:'saldo_inicial_valor', valor: String(numero(linha[primeira.j])) });
+      } else {
+        avisos.push('A linha "Saldo Inicial" não tinha nenhum valor: o saldo de abertura ficou de fora.');
+      }
+      continue;
+    }
+    if (chave === 'total entradas'){ secao = 'E'; grupoAtual = ''; continue; }
+    if (chave === 'total saidas'){
+      /* Guardamos o total de saídas de cada dia só para a conferência: é ele
+         que vai ser comparado com a soma do relatório de contas a pagar. */
+      colunas.forEach(c => {
+        const v = numero(linha[c.j]);
+        if (Math.abs(v) > 0.005) saidasPorDia[c.data] = v;
+      });
+      secao = 'S'; grupoAtual = ''; continue;
+    }
+    if (chave === 'saldo final'){    secao = ''; continue; }
+    if (chave.indexOf('posicao de saldos') === 0){
+      modoSaldos = true; secao = '';
+      empresa = String(linha[2] == null ? '' : linha[2]).trim() || 'ON TIME';
+      bancoAtual = '';
+      continue;
+    }
+    if (chave === 'total' || chave.indexOf('total ') === 0) continue;
+
+    /* ---- bloco das contas bancárias ---- */
+    if (modoSaldos){
+      /* Como distinguir o banco da conta dentro dele: a conta traz o nome do
+         banco e o tipo separados por hífen ("ITAÚ - Conta Corrente"). O banco
+         vem sozinho e em maiúsculas. A segunda regra existe por causa de
+         linhas como "Sócio", que ficam penduradas no banco anterior sem hífen
+         nenhum — sem ela, virariam um banco vazio. */
+      const soMaiusculas = desc === desc.toUpperCase();
+      const ehConta = desc.indexOf('-') >= 0 || (bancoAtual && !soMaiusculas);
+      if (!ehConta){
+        bancoAtual = 'bg-' + slug(empresa) + '-' + slug(desc);
+        contas.push({ ordem: ++ordemConta, id: bancoAtual, empresa: empresa,
+                      descricao: desc, pai: '', tipo: 'grupo', disponivel: '' });
+        continue;
+      }
+      const idConta = 'bc-' + slug(empresa) + '-' + slug(desc);
+      contas.push({ ordem: ++ordemConta, id: idConta, empresa: empresa,
+                    descricao: desc, pai: bancoAtual, tipo: 'conta', disponivel: 'sim' });
+      colunas.forEach(c => {
+        if (typeof linha[c.j] !== 'number') return;
+        saldos.push({ data: c.data, conta_id: idConta, valor: numero(linha[c.j]) });
+      });
+      continue;
+    }
+
+    /* ---- plano de contas ---- */
+    if (!secao) continue;
+
+    if (!cod){
+      grupoAtual = 'g-' + secao.toLowerCase() + '-' + slug(desc);
+      plano.push({ ordem: ++ordem, id: grupoAtual, codigo: '', descricao: desc,
+                   secao: secao, pai: '', tipo: 'grupo', modo: '' });
+      continue;
+    }
+
+    const idLinha = 'l-' + secao.toLowerCase() + '-' + slug(cod + '-' + desc);
+    plano.push({
+      ordem: ++ordem, id: idLinha, codigo: cod, descricao: desc,
+      secao: secao, pai: grupoAtual, tipo: 'linha',
+      /* 'auto' significa alimentada pelo código da conta de fluxo, que é como
+         as saídas chegam do relatório de contas a pagar. As entradas são
+         digitadas, então não são automáticas. */
+      modo: secao === 'S' ? 'auto' : 'manual',
+    });
+
+    if (secao === 'E'){
+      colunas.forEach(c => {
+        const v = numero(linha[c.j]);
+        if (Math.abs(v) < 0.005) return;
+        entradas.push({ data: c.data, linha_id: idLinha, valor: v });
+      });
+    }
+  }
+
+  if (!plano.length) avisos.push('Não encontrei nenhuma linha de plano de contas.');
+  if (!contas.length) avisos.push('Não encontrei o bloco de POSIÇÃO DE SALDOS: as contas bancárias ficaram de fora.');
+
+  return { aba, colunas, plano, contas, config, saldos, entradas, saidasPorDia, avisos };
+}
+
+
+/* ============================================================================
+   IMPORTAÇÃO — LEITURA DO RELATÓRIO DE CONTAS A PAGAR
+   ----------------------------------------------------------------------------
+   O mesmo leitor serve para dois arquivos que só parecem diferentes: a base do
+   ano inteiro, com o cabeçalho na primeira linha, e o relatório de um dia, que
+   tem título em cima e o cabeçalho na quarta. Em vez de assumir onde está o
+   cabeçalho, ele procura a linha que traz "Vencto Real" e "Fluxo Caixa" e se
+   orienta por ela.
+
+   A leitura para no primeiro "TOTAL A PAGAR". Isso descarta de uma vez os
+   totais do rodapé e o bloco de TRANSFERÊNCIA INTERCOMPANY, que vem depois e
+   não é pagamento a fornecedor.
+
+   O que aproveitamos de cada linha: a data do Vencto Real, o código da Conta
+   Fluxo C e o valor da coluna Saldo. O resto vai junto para o detalhe.
+   ========================================================================== */
+
+const COLUNAS_RELATORIO = {
+  banco:       ['banco'],
+  numero:      ['no. titulo', 'no titulo', 'numero', 'no. título'],
+  tipo:        ['tipo'],
+  natureza:    ['natureza'],
+  conta_fluxo: ['conta fluxo c', 'conta fluxo', 'conta fluxo c.'],
+  fluxo_caixa: ['fluxo caixa'],
+  fornecedor:  ['nome fornece', 'fornecedor', 'nome fornecedor'],
+  data:        ['vencto real', 'vencimento real', 'vencto. real'],
+  valor_titulo:['vlr.titulo', 'vlr titulo', 'valor titulo', 'vlr.título'],
+  historico:   ['historico', 'histórico'],
+  saldo:       ['saldo'],
+  bordero:     ['bordero', 'borderô', 'num bordero'],
+};
+
+function acharColunas_(linha){
+  const mapa = {};
+  (linha || []).forEach((c, j) => {
+    const t = normalizar(c);
+    if (!t) return;
+    Object.keys(COLUNAS_RELATORIO).forEach(campo => {
+      if (mapa[campo] === undefined && COLUNAS_RELATORIO[campo].indexOf(t) >= 0) mapa[campo] = j;
+    });
+  });
+  return mapa;
+}
+
+function lerRelatorio(wb){
+  const avisos = [];
+  let matriz = null, aba = '', cols = null, iCab = -1;
+
+  for (const nome of wb.SheetNames){
+    const m = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header:1, raw:true, defval:null });
+    for (let i = 0; i < Math.min(m.length, 15); i++){
+      const c = acharColunas_(m[i]);
+      if (c.data !== undefined && c.conta_fluxo !== undefined){
+        matriz = m; aba = nome; cols = c; iCab = i; break;
+      }
+    }
+    if (matriz) break;
+  }
+  if (!matriz) throw new Error('Não achei o cabeçalho do relatório. ' +
+    'Esperava uma linha com as colunas "Vencto Real" e "Conta Fluxo C".');
+
+  if (cols.saldo === undefined){
+    avisos.push('A coluna "Saldo" não existe neste arquivo: usei o "Vlr.Titulo" como valor pago.');
+  }
+
+  const titulos = [];
+  const porDia = {};
+  const contas = {};
+  let semData = 0, semConta = 0, parouEm = 0;
+  const vistos = {};   // para dar sequência a títulos idênticos no mesmo dia
+
+  for (let i = iCab + 1; i < matriz.length; i++){
+    const l = matriz[i] || [];
+    const texto = l.map(c => normalizar(c)).join(' ');
+
+    /* Fim da parte que interessa. O que vem depois é total e intercompany. */
+    if (texto.indexOf('total a pagar') >= 0 || texto.indexOf('total movimenta') >= 0){
+      parouEm = i + 1; break;
+    }
+
+    const data = dataISO(l[cols.data]);
+    const banco = l[cols.banco] == null ? '' : String(l[cols.banco]).trim();
+    if (!data){
+      if (banco || (l[cols.numero] != null && String(l[cols.numero]).trim())) semData++;
+      continue;
+    }
+
+    const conta = l[cols.conta_fluxo] == null ? '' : String(l[cols.conta_fluxo]).trim();
+    if (!conta){ semConta++; continue; }
+
+    const valor = numero(cols.saldo !== undefined ? l[cols.saldo] : l[cols.valor_titulo]);
+    const numeroTit = l[cols.numero] == null ? '' : String(l[cols.numero]).trim();
+    const forn = l[cols.fornecedor] == null ? '' : String(l[cols.fornecedor]).trim();
+
+    /* No mesmo dia aparecem títulos idênticos de verdade — treze boletos de
+       IPVA com o mesmo número, fornecedor e valor. O contador no fim da chave
+       impede que um apague o outro, e é estável: relendo o mesmo arquivo, a
+       ordem é a mesma. */
+    const base = data + '|' + numeroTit + '|' + normalizar(l[cols.tipo]) + '|' +
+                 normalizar(forn) + '|' + valor.toFixed(2);
+    vistos[base] = (vistos[base] || 0) + 1;
+
+    titulos.push({
+      chave: base + '|' + vistos[base],
+      dt_baixa: data, vencimento: data,
+      numero: numeroTit,
+      tipo: l[cols.tipo] == null ? '' : String(l[cols.tipo]).trim(),
+      natureza: l[cols.natureza] == null ? '' : String(l[cols.natureza]).trim(),
+      conta_fluxo: conta,
+      fluxo_caixa: l[cols.fluxo_caixa] == null ? '' : String(l[cols.fluxo_caixa]).trim(),
+      fornecedor: forn,
+      valor_pago: valor,
+      valor_titulo: numero(l[cols.valor_titulo]),
+      historico: l[cols.historico] == null ? '' : String(l[cols.historico]).trim(),
+      banco: banco,
+      bordero: cols.bordero === undefined || l[cols.bordero] == null ? '' : String(l[cols.bordero]).trim(),
+      origem: 'relatorio',
+    });
+
+    const d = porDia[data] || (porDia[data] = { qtd:0, valor:0 });
+    d.qtd++; d.valor += valor;
+    contas[conta] = (contas[conta] || 0) + valor;
+  }
+
+  if (semData) avisos.push(semData + ' linha(s) sem data em "Vencto Real" ficaram de fora.');
+  if (semConta) avisos.push(semConta + ' linha(s) sem "Conta Fluxo C" ficaram de fora — sem conta, não há onde somar.');
+  if (!titulos.length) throw new Error('O arquivo foi lido, mas nenhuma linha tinha data e conta de fluxo.');
+
+  const dias = Object.keys(porDia).sort();
+  return {
+    aba, titulos, dias, porDia, contas, avisos,
+    total: titulos.reduce((a, t) => a + t.valor_pago, 0),
+    parouEm,
+  };
+}
+
+
+/* ============================================================================
+   IMPORTAÇÃO — A TELA
+   ----------------------------------------------------------------------------
+   Duas portas, porque as duas coisas não se parecem: atualizar um dia é rotina
+   e precisa ser rápido; carregar o ano é uma vez só e substitui tudo, então
+   precisa ser difícil de fazer sem querer.
+
+   A regra que vale para as duas: nada é gravado antes de a tela mostrar o que
+   entendeu do arquivo, e o botão diz exatamente o que vai acontecer — não um
+   "Importar" genérico, mas "Substituir 03/09".
+   ========================================================================== */
+
+const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function dataBR(iso){
+  const p = String(iso).split('-');
+  return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : String(iso);
+}
+
+function dinheiro(v){
+  return (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+
+const Importar = {
+  modo: 'dia',        // 'dia' ou 'ano'
+  rel: null,          // leitura do relatório de contas a pagar
+  ano: null,          // leitura da planilha do fluxo do ano
+  ocupado: false,
+
+  abrir(){
+    this.modo = 'dia'; this.rel = null; this.ano = null; this.ocupado = false;
+    this.render();
+    mostrarModal('modal-importar');
+  },
+
+  alternar(){
+    if (this.ocupado) return;
+    this.modo = this.modo === 'dia' ? 'ano' : 'dia';
+    this.rel = null; this.ano = null;
+    this.render();
+  },
+
+  /* ---------------------------------------------------------------- desenho */
+  render(){
+    const corpo = el('imp-corpo');
+    const dia = this.modo === 'dia';
+
+    el('imp-titulo').textContent = dia ? 'Atualizar um dia' : 'Carga inicial do ano';
+    el('imp-sub').textContent = dia
+      ? 'Solte o relatório de contas a pagar. Nada é gravado antes de você conferir.'
+      : 'Solte os dois arquivos: o fluxo do ano e a base realizada. Isto substitui o histórico inteiro.';
+    el('imp-alternar').textContent = dia ? 'carga inicial do ano' : 'voltar para atualizar um dia';
+
+    corpo.textContent = '';
+    corpo.appendChild(this.dropzone());
+
+    if (dia && this.rel) corpo.appendChild(this.resumoRelatorio());
+    if (!dia){
+      if (this.ano) corpo.appendChild(this.resumoAno());
+      if (this.rel) corpo.appendChild(this.resumoRelatorio());
+      if (this.ano && this.rel) corpo.appendChild(this.conferencia());
+      if (this.ano && this.rel) corpo.appendChild(this.confirmacaoAno());
+    }
+
+    this.atualizarBotao();
+  },
+
+  dropzone(){
+    const dia = this.modo === 'dia';
+    const z = h('div', { class:'imp-solta', tabindex:'0' }, [
+      h('i', { class:'fa-solid fa-cloud-arrow-up' }),
+      h('b', { text: dia ? 'Solte aqui o relatório de contas a pagar'
+                         : 'Solte aqui os dois arquivos, ou um de cada vez' }),
+      h('span', { text: dia ? 'um dia, uma semana ou o período que o arquivo trouxer'
+                            : 'o fluxo do ano e a base realizada, em qualquer ordem' }),
+    ]);
+    const input = h('input', { type:'file', accept:'.xlsx,.xls', multiple:'multiple' });
+    input.style.display = 'none';
+    z.appendChild(input);
+
+    z.onclick = () => { if (!this.ocupado) input.click(); };
+    input.onchange = e => this.receber(Array.from(e.target.files || []));
+    ['dragenter','dragover'].forEach(ev => z.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation(); z.classList.add('sobre');
+    }));
+    ['dragleave','drop'].forEach(ev => z.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation(); z.classList.remove('sobre');
+    }));
+    z.addEventListener('drop', e => this.receber(Array.from(e.dataTransfer.files || [])));
+    return z;
+  },
+
+  /* ---------------------------------------------------------------- leitura */
+  async receber(arquivos){
+    if (this.ocupado || !arquivos.length) return;
+    for (const f of arquivos){
+      try {
+        const buf = await f.arrayBuffer();
+        const wb = XLSX.read(buf, { type:'array', cellDates:true });
+
+        /* Quem decide o que o arquivo é: o próprio arquivo. O relatório tem as
+           colunas "Vencto Real" e "Conta Fluxo C"; a planilha do ano tem os
+           dias no cabeçalho. Tento o relatório primeiro, que é o mais restrito. */
+        let ehRelatorio = true, r = null;
+        try { r = lerRelatorio(wb); } catch(e){ ehRelatorio = false; }
+
+        if (ehRelatorio){
+          this.rel = r; this.rel.arquivo = f.name;
+        } else {
+          if (this.modo === 'dia'){
+            toast('Este arquivo não parece o relatório de contas a pagar.', true);
+            continue;
+          }
+          this.ano = lerPlanilhaDoAno(wb); this.ano.arquivo = f.name;
+        }
+      } catch(err){
+        toast('Não consegui ler "' + f.name + '": ' + (err.message || err), true);
+      }
+    }
+    this.render();
+  },
+
+  /* ---------------------------------------------------------------- resumos */
+  resumoRelatorio(){
+    const r = this.rel;
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-file-invoice-dollar'), 'Pagamentos · ' + (r.arquivo || r.aba) ]),
+    ]);
+    c.appendChild(this.par('Títulos lidos', r.titulos.length.toLocaleString('pt-BR')));
+    c.appendChild(this.par('Contas de fluxo diferentes', String(Object.keys(r.contas).length)));
+    c.appendChild(this.par('Período', r.dias.length === 1 ? dataBR(r.dias[0])
+      : (dataBR(r.dias[0]) + ' a ' + dataBR(r.dias[r.dias.length - 1]) + '  ·  ' + r.dias.length + ' dias')));
+    c.appendChild(this.par('Total', 'R$ ' + dinheiro(r.total)));
+
+    /* Poucos dias: mostra um a um, que é o caso do dia a dia. Muitos: agrupa
+       por mês, senão a lista some da tela. */
+    const t = h('table', { class:'imp-tabela' });
+    const cab = h('tr', null, [ h('th', { text: r.dias.length <= 10 ? 'Dia' : 'Mês' }),
+                                h('th', { class:'num', text:'Títulos' }),
+                                h('th', { class:'num', text:'Valor' }) ]);
+    t.appendChild(h('thead', null, [cab]));
+    const corpo = h('tbody');
+    if (r.dias.length <= 10){
+      r.dias.forEach(d => {
+        corpo.appendChild(h('tr', null, [
+          h('td', { text: dataBR(d) }),
+          h('td', { class:'num', text: String(r.porDia[d].qtd) }),
+          h('td', { class:'num', text: dinheiro(r.porDia[d].valor) }),
+        ]));
+      });
+    } else {
+      const meses = {};
+      r.dias.forEach(d => {
+        const m = d.slice(0, 7);
+        const a = meses[m] || (meses[m] = { qtd:0, valor:0, dias:0 });
+        a.qtd += r.porDia[d].qtd; a.valor += r.porDia[d].valor; a.dias++;
+      });
+      Object.keys(meses).sort().forEach(m => {
+        const nome = MESES_PT[Number(m.slice(5, 7)) - 1] + '/' + m.slice(0, 4);
+        corpo.appendChild(h('tr', null, [
+          h('td', { text: nome + '  (' + meses[m].dias + ' dias)' }),
+          h('td', { class:'num', text: String(meses[m].qtd) }),
+          h('td', { class:'num', text: dinheiro(meses[m].valor) }),
+        ]));
+      });
+    }
+    t.appendChild(corpo);
+    c.appendChild(h('div', { class:'imp-rolagem' }, [t]));
+
+    r.avisos.forEach(a => c.appendChild(h('div', { class:'imp-aviso', text:a })));
+    return c;
+  },
+
+  resumoAno(){
+    const a = this.ano;
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-table-columns'), 'Estrutura do fluxo · ' + (a.arquivo || a.aba) ]),
+    ]);
+    c.appendChild(this.par('Linhas do plano de contas', String(a.plano.length)));
+    c.appendChild(this.par('Contas bancárias', String(a.contas.filter(x => x.tipo === 'conta').length) +
+      ' em ' + String(new Set(a.contas.map(x => x.empresa)).size) + ' empresa(s)'));
+    c.appendChild(this.par('Posições de saldo', a.saldos.length.toLocaleString('pt-BR')));
+    c.appendChild(this.par('Lançamentos de entrada', a.entradas.length.toLocaleString('pt-BR')));
+    const cfg = {};
+    a.config.forEach(x => { cfg[x.chave] = x.valor; });
+    if (cfg.saldo_inicial_data){
+      c.appendChild(this.par('Saldo de abertura',
+        'R$ ' + dinheiro(cfg.saldo_inicial_valor) + '  em ' + dataBR(cfg.saldo_inicial_data)));
+    }
+    a.avisos.forEach(x => c.appendChild(h('div', { class:'imp-aviso', text:x })));
+    return c;
+  },
+
+  /* ------------------------------------------------------------ conferência */
+  conferencia(){
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-scale-balanced'), 'Conferência entre as duas fontes' ]),
+      h('p', { class:'cf-text', text:
+        'As saídas do fluxo do ano contra a soma dos pagamentos, mês a mês. ' +
+        'Diferença aqui quer dizer saída que não passou pelo contas a pagar — ' +
+        'juros de antecipação, por exemplo, que o banco desconta direto.' }),
+    ]);
+
+    const porMes = {};
+    Object.keys(this.ano.saidasPorDia).forEach(d => {
+      const m = d.slice(0, 7);
+      porMes[m] = porMes[m] || { fluxo:0, base:0 };
+      porMes[m].fluxo += this.ano.saidasPorDia[d];
+    });
+    this.rel.dias.forEach(d => {
+      const m = d.slice(0, 7);
+      porMes[m] = porMes[m] || { fluxo:0, base:0 };
+      porMes[m].base += this.rel.porDia[d].valor;
+    });
+
+    const t = h('table', { class:'imp-tabela' });
+    t.appendChild(h('thead', null, [ h('tr', null, [
+      h('th', { text:'Mês' }), h('th', { class:'num', text:'Fluxo do ano' }),
+      h('th', { class:'num', text:'Pagamentos' }), h('th', { class:'num', text:'Diferença' }),
+    ])]));
+    const tb = h('tbody');
+    let tf = 0, tbase = 0;
+    Object.keys(porMes).sort().forEach(m => {
+      const x = porMes[m];
+      tf += x.fluxo; tbase += x.base;
+      const nome = MESES_PT[Number(m.slice(5, 7)) - 1] + '/' + m.slice(0, 4);
+      tb.appendChild(h('tr', null, [
+        h('td', { text: nome }),
+        h('td', { class:'num', text: dinheiro(x.fluxo) }),
+        h('td', { class:'num', text: dinheiro(x.base) }),
+        h('td', { class:'num', text: dinheiro(x.fluxo - x.base) }),
+      ]));
+    });
+    tb.appendChild(h('tr', null, [
+      h('td', null, [ h('b', { text:'Total' }) ]),
+      h('td', { class:'num' }, [ h('b', { text: dinheiro(tf) }) ]),
+      h('td', { class:'num' }, [ h('b', { text: dinheiro(tbase) }) ]),
+      h('td', { class:'num' }, [ h('b', { text: dinheiro(tf - tbase) }) ]),
+    ]));
+    t.appendChild(tb);
+    c.appendChild(h('div', { class:'imp-rolagem' }, [t]));
+    return c;
+  },
+
+  confirmacaoAno(){
+    const box = h('label', { class:'imp-check' });
+    const chk = h('input', { type:'checkbox', id:'imp-ciente' });
+    chk.onchange = () => this.atualizarBotao();
+    box.appendChild(chk);
+    box.appendChild(h('div', { text:
+      'Entendi que isto substitui o plano de contas, as contas bancárias, os ' +
+      'saldos, as entradas e todos os pagamentos do período. O que foi digitado ' +
+      'na tela não é apagado.' }));
+    return box;
+  },
+
+  par(rot, val){
+    return h('div', { class:'imp-linha' }, [
+      h('span', { class:'imp-rot', text:rot }), h('b', { text:val }),
+    ]);
+  },
+
+  /* ------------------------------------------------------------------ botão */
+  atualizarBotao(){
+    const b = el('imp-confirmar');
+    if (this.ocupado){ b.disabled = true; return; }
+
+    if (this.modo === 'dia'){
+      if (!this.rel){ b.disabled = true; b.textContent = 'Confirmar'; return; }
+      b.disabled = false;
+      const d = this.rel.dias;
+      b.textContent = d.length === 1 ? ('Substituir ' + dataBR(d[0]))
+                                     : ('Substituir os ' + d.length + ' dias');
+      return;
+    }
+
+    const pronto = this.ano && this.rel && el('imp-ciente') && el('imp-ciente').checked;
+    b.disabled = !pronto;
+    b.textContent = 'Carregar o ano';
+  },
+
+  /* --------------------------------------------------------------- gravação */
+  passo(texto, pct){
+    const corpo = el('imp-corpo');
+    let barra = el('imp-progresso');
+    if (!barra){
+      corpo.textContent = '';
+      const caixa = h('div', { class:'imp-cartao' }, [
+        h('h4', null, [ icone('fa-cloud-arrow-up'), 'Gravando' ]),
+      ]);
+      barra = h('div', { class:'imp-barra', id:'imp-progresso' }, [ h('span') ]);
+      caixa.appendChild(barra);
+      caixa.appendChild(h('div', { class:'imp-passo', id:'imp-passo' }));
+      corpo.appendChild(caixa);
+    }
+    barra.firstChild.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    el('imp-passo').textContent = texto;
+  },
+
+  async enviar(payload){
+    await fetch(CONFIG.DATA_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(assinar(payload)),
+    });
+    /* O envio é no-cors: não dá para ler a resposta. Damos um respiro entre os
+       blocos para o Apps Script não receber tudo de uma vez e enfileirar. */
+    await new Promise(r => setTimeout(r, 900));
+  },
+
+  /* Blocos por mês. Um envio com 28 mil títulos não passa: o Apps Script tem
+     limite de tempo e de tamanho. Por mês são uns três mil, que passam. */
+  blocosPorMes(titulos){
+    const por = {};
+    titulos.forEach(t => { (por[t.dt_baixa.slice(0, 7)] = por[t.dt_baixa.slice(0, 7)] || []).push(t); });
+    return Object.keys(por).sort().map(m => ({ mes:m, titulos:por[m] }));
+  },
+
+  async confirmar(){
+    if (this.ocupado) return;
+    if (!(await Chave.garantir())){ toast('Gravação cancelada.', true); return; }
+
+    this.ocupado = true;
+    this.atualizarBotao();
+    el('imp-alternar').disabled = true;
+
+    try {
+      if (this.modo === 'ano') await this.gravarAno();
+      else await this.gravarDia();
+
+      this.passo('Pronto. Recarregando a tela…', 100);
+      toast('Importação concluída.');
+      setTimeout(() => { fecharModal('modal-importar'); delete state.cache[state.mes]; carregar(); }, 900);
+    } catch(err){
+      toast('Falhou no meio: ' + (err.message || err), true);
+      this.ocupado = false;
+      this.render();
+    }
+  },
+
+  async gravarDia(){
+    const blocos = this.blocosPorMes(this.rel.titulos);
+    for (let i = 0; i < blocos.length; i++){
+      const b = blocos[i];
+      this.passo('Gravando ' + MESES_PT[Number(b.mes.slice(5,7)) - 1] + '/' + b.mes.slice(0,4) +
+                 '  (' + (i + 1) + ' de ' + blocos.length + ')', (i / blocos.length) * 100);
+      await this.enviar({ acao:'fluxo_historico_lote', titulos:b.titulos,
+                          datas:this.rel.dias.filter(d => d.slice(0,7) === b.mes) });
+    }
+  },
+
+  async gravarAno(){
+    const a = this.ano;
+    let feito = 0;
+    const total = 3 + Math.ceil(a.saldos.length / 800) + this.blocosPorMes(this.rel.titulos).length;
+    const anda = txt => { this.passo(txt, (feito / total) * 100); feito++; };
+
+    anda('Plano de contas e contas bancárias…');
+    await this.enviar({ acao:'fluxo_estrutura', plano:a.plano, contas:a.contas, config:a.config });
+
+    /* Os saldos são a maior lista depois dos títulos: uns três mil registros.
+       Vão em blocos de 800 para caber com folga no limite do Apps Script. */
+    for (let i = 0; i < a.saldos.length; i += 800){
+      anda('Posição de saldos…');
+      await this.enviar({ acao:'fluxo_saldos_lote', saldos:a.saldos.slice(i, i + 800) });
+    }
+
+    anda('Entradas…');
+    await this.enviar({ acao:'fluxo_entradas_lote', entradas:a.entradas });
+
+    const blocos = this.blocosPorMes(this.rel.titulos);
+    for (let i = 0; i < blocos.length; i++){
+      const b = blocos[i];
+      anda('Pagamentos de ' + MESES_PT[Number(b.mes.slice(5,7)) - 1] + '/' + b.mes.slice(0,4) +
+           '  (' + (i + 1) + ' de ' + blocos.length + ')');
+      await this.enviar({ acao:'fluxo_historico_lote', titulos:b.titulos,
+                          datas:this.rel.dias.filter(d => d.slice(0,7) === b.mes) });
+    }
+  },
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   state.podeEditar = HubLink.init();
+
+  /* Quem está logado, e se o script exige senha. As duas coisas em paralelo,
+     sem segurar o desenho da tela. */
+  Chave.carregar();
+  IDENTIDADE = identidadeAccess().then(quem => {
+    if (quem){
+      state.autor = quem;
+      state.autorFixo = true;
+      try { sessionStorage.setItem('fluxo_autor', quem); } catch(e){}
+    }
+  });
+  Chave.status();
 
   const dt = new Date();
   el('headerData').textContent = maiuscula(dt.toLocaleDateString('pt-BR',
@@ -1460,6 +2265,15 @@ document.addEventListener('DOMContentLoaded', () => {
       'implantação do script desta ferramenta.'));
     return;
   }
+  /* O botão de importar só existe para quem entrou pelo hub — é o mesmo
+     critério que libera a edição das células. */
+  if (state.podeEditar){
+    el('btnImportar').hidden = false;
+    el('btnImportar').onclick = () => Importar.abrir();
+    el('imp-alternar').onclick = () => Importar.alternar();
+    el('imp-confirmar').onclick = () => Importar.confirmar();
+  }
+
   el('btnRecarregar').onclick = () => { abrirLoader('Atualizando…'); carregar(); };
   el('btnExportar').onclick = exportar;
   el('btnDias').onclick = () => {
