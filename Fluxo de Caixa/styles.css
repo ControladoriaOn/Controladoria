@@ -424,6 +424,20 @@ table.tabela-simples td.mono{font-family:var(--font-mono);white-space:nowrap}
   font-family:var(--font-body);font-size:12.5px;color:var(--plum-soft);
   text-decoration:underline;text-underline-offset:3px}
 .imp-link:hover{color:var(--orange)}
+/* O link de limpar nasce cinza como o vizinho e só fica vermelho quando o
+   ponteiro chega nele: vermelho o tempo todo vira um botão de pânico piscando
+   num rodapé que se usa todo dia. */
+.imp-link-perigo:hover{color:var(--danger)}
+/* Texto explicativo dentro dos cartões do modal — a conferência do ano e a
+   confirmação da limpeza usam o mesmo. Sem regra ele saía no tamanho padrão
+   do parágrafo, destoando de tudo à volta. */
+.cf-text{margin:10px 0 0;font-size:12.5px;color:var(--plum-soft);line-height:1.55}
+.imp-campo{width:100%;margin-top:10px;padding:10px 12px;border-radius:10px;
+  border:1px solid var(--border);background:var(--surface);font:inherit;
+  font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--plum-deep)}
+.imp-campo:focus{outline:none;border-color:var(--danger);
+  box-shadow:0 0 0 3px var(--danger-soft)}
 
 .imp-solta{border:2px dashed var(--border);border-radius:16px;
   padding:34px 22px;text-align:center;cursor:pointer;

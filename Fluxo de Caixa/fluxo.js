@@ -147,16 +147,26 @@ const state = {
    Mesma regra das outras ferramentas: quem abre o link direto vê, mas não
    digita. Editar é para quem entrou pelo hub. */
 const HubLink = {
-  HUB: '/Controladoria',
-  SELF: '/Controladoria/Fluxo',
   KEY: 'came_from_hub_fluxo',
+
+  /* A pasta desta ferramenta, seja qual for o endereço em que ela esteja:
+     /Fluxo de Caixa/ no domínio do hub, /Controladoria/Fluxo/ no GitHub Pages.
+     Descobrir em vez de fixar é o que faz isto continuar certo quando o
+     endereço muda — foi exatamente assim que quebrou quando o hub saiu do
+     github.io e passou a morar na raiz de hub.ontimelogistica.com.br. */
+  pasta(){
+    return location.pathname.replace(/[^/]*$/, '');
+  },
+
   veioDoHub(){
     try {
       if (document.referrer){
         const ref = new URL(document.referrer);
+        /* Mesma origem e de fora desta pasta: isso é o hub ou outra
+           ferramenta, e o domínio inteiro está atrás do Cloudflare Access.
+           Quem chega digitando o endereço não tem referrer e fica só lendo. */
         if (ref.origin === location.origin &&
-            ref.pathname.indexOf(this.HUB) === 0 &&
-            ref.pathname.indexOf(this.SELF) !== 0) return true;
+            ref.pathname.indexOf(this.pasta()) !== 0) return true;
       }
     } catch(e){}
     try { if (new URLSearchParams(location.search).has('from')) return true; } catch(e){}
@@ -1881,7 +1891,7 @@ function dinheiro(v){
 }
 
 const Importar = {
-  modo: 'dia',        // 'dia' ou 'ano'
+  modo: 'dia',        // 'dia', 'ano' ou 'limpar'
   rel: null,          // leitura do relatório de contas a pagar
   ano: null,          // leitura da planilha do fluxo do ano
   ocupado: false,
@@ -1892,9 +1902,19 @@ const Importar = {
     mostrarModal('modal-importar');
   },
 
+  /* A limpeza mora dentro do modal de importação de propósito: é aqui que se
+     está quando uma carga sai torta e se quer recomeçar. Fora daqui ela seria
+     um botão vermelho no cabeçalho, ao alcance de quem só queria olhar. */
+  abrirLimpeza(){
+    if (this.ocupado) return;
+    this.modo = 'limpar'; this.rel = null; this.ano = null;
+    this.render();
+  },
+
   alternar(){
     if (this.ocupado) return;
-    this.modo = this.modo === 'dia' ? 'ano' : 'dia';
+    if (this.modo === 'limpar') this.modo = 'dia';
+    else this.modo = this.modo === 'dia' ? 'ano' : 'dia';
     this.rel = null; this.ano = null;
     this.render();
   },
@@ -1903,14 +1923,31 @@ const Importar = {
   render(){
     const corpo = el('imp-corpo');
     const dia = this.modo === 'dia';
+    const limpando = this.modo === 'limpar';
 
-    el('imp-titulo').textContent = dia ? 'Atualizar um dia' : 'Carga inicial do ano';
-    el('imp-sub').textContent = dia
+    el('imp-titulo').textContent = limpando ? 'Limpar a base do fluxo'
+                                 : dia ? 'Atualizar um dia' : 'Carga inicial do ano';
+    el('imp-sub').textContent = limpando
+      ? 'Apaga tudo que a ferramenta guarda hoje. Depois disto a tela volta vazia.'
+      : dia
       ? 'Solte o relatório de contas a pagar. Nada é gravado antes de você conferir.'
       : 'Solte os dois arquivos: o fluxo do ano e a base realizada. Isto substitui o histórico inteiro.';
-    el('imp-alternar').textContent = dia ? 'carga inicial do ano' : 'voltar para atualizar um dia';
+    el('imp-alternar').textContent = limpando ? 'voltar para a importação'
+                                  : dia ? 'carga inicial do ano' : 'voltar para atualizar um dia';
+
+    /* O link de limpar some enquanto se está limpando: sair de lá é papel do
+       "voltar", e dois caminhos para a mesma tela só confundem. */
+    const lnk = el('imp-limpar');
+    if (lnk) lnk.hidden = limpando;
 
     corpo.textContent = '';
+
+    if (limpando){
+      corpo.appendChild(this.painelLimpeza());
+      this.atualizarBotao();
+      return;
+    }
+
     corpo.appendChild(this.dropzone());
 
     if (dia && this.rel) corpo.appendChild(this.resumoRelatorio());
@@ -2113,6 +2150,41 @@ const Importar = {
     return box;
   },
 
+  /* ------------------------------------------------------------- limpeza */
+  painelLimpeza(){
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-triangle-exclamation'), 'Apagar tudo e recomeçar' ]),
+    ]);
+
+    c.appendChild(h('div', { class:'imp-aviso imp-perigo', text:
+      'Isto apaga o plano de contas, as contas bancárias, o saldo de abertura, ' +
+      'a posição de saldos de todos os dias, as entradas, os lançamentos ' +
+      'digitados na tela e o histórico título a título de todos os meses. ' +
+      'Não existe cópia de segurança e não há como desfazer.' }));
+
+    /* O que existe hoje, para a decisão ser tomada olhando o tamanho dela e
+       não no escuro. Vem do que a tela já carregou — não custa uma chamada. */
+    const d = state.dados;
+    if (d){
+      c.appendChild(this.par('Linhas do plano de contas', String((d.plano || []).length)));
+      c.appendChild(this.par('Contas bancárias',
+        String((d.contas || []).filter(x => x.tipo !== 'grupo').length)));
+    }
+
+    c.appendChild(h('p', { class:'cf-text', text:
+      'Para confirmar, escreva LIMPAR no campo abaixo. A senha de gravação ' +
+      'também será pedida.' }));
+
+    const inp = h('input', { type:'text', id:'imp-palavra', class:'imp-campo',
+                             placeholder:'LIMPAR', autocomplete:'off',
+                             spellcheck:'false' });
+    inp.oninput = () => this.atualizarBotao();
+    c.appendChild(inp);
+    setTimeout(() => { try { inp.focus(); } catch(e){} }, 50);
+
+    return c;
+  },
+
   par(rot, val){
     return h('div', { class:'imp-linha' }, [
       h('span', { class:'imp-rot', text:rot }), h('b', { text:val }),
@@ -2122,7 +2194,17 @@ const Importar = {
   /* ------------------------------------------------------------------ botão */
   atualizarBotao(){
     const b = el('imp-confirmar');
+    b.classList.toggle('btn-danger',  this.modo === 'limpar');
+    b.classList.toggle('btn-primary', this.modo !== 'limpar');
     if (this.ocupado){ b.disabled = true; return; }
+
+    if (this.modo === 'limpar'){
+      const campo = el('imp-palavra');
+      const ok = campo && campo.value.trim().toUpperCase() === 'LIMPAR';
+      b.disabled = !ok;
+      b.textContent = 'Limpar tudo';
+      return;
+    }
 
     if (this.modo === 'dia'){
       if (!this.rel){ b.disabled = true; b.textContent = 'Confirmar'; return; }
@@ -2184,17 +2266,35 @@ const Importar = {
     el('imp-alternar').disabled = true;
 
     try {
-      if (this.modo === 'ano') await this.gravarAno();
-      else await this.gravarDia();
+      if (this.modo === 'limpar')   await this.limparBase();
+      else if (this.modo === 'ano') await this.gravarAno();
+      else                          await this.gravarDia();
 
-      this.passo('Pronto. Recarregando a tela…', 100);
-      toast('Importação concluída.');
-      setTimeout(() => { fecharModal('modal-importar'); delete state.cache[state.mes]; carregar(); }, 900);
+      const limpou = this.modo === 'limpar';
+      this.passo(limpou ? 'Base apagada. Recarregando a tela…'
+                        : 'Pronto. Recarregando a tela…', 100);
+      toast(limpou ? 'Base do fluxo apagada.' : 'Importação concluída.');
+      /* O cache inteiro cai, não só o mês na tela: uma limpeza mexe em todos
+         os meses, e depois de uma importação o mês vizinho também pode ter
+         mudado por causa do saldo que vem arrastado. */
+      setTimeout(() => { fecharModal('modal-importar'); state.cache = {}; carregar(); }, 900);
     } catch(err){
       toast('Falhou no meio: ' + (err.message || err), true);
       this.ocupado = false;
       this.render();
     }
+  },
+
+  /* Uma chamada só, com a palavra digitada indo junto: o script confere a
+     senha e a palavra antes de apagar qualquer coisa. Como o envio é no-cors
+     e não dá para ler a resposta, quem diz se funcionou é a tela recarregada
+     logo depois — e a aba Log da planilha, que registra quem apagou. */
+  async limparBase(){
+    const palavra = (el('imp-palavra') || {}).value || '';
+    this.passo('Apagando a base…', 40);
+    await this.enviar({ acao:'fluxo_limpar', confirmar: palavra.trim().toUpperCase() });
+    this.passo('Conferindo…', 80);
+    await new Promise(r => setTimeout(r, 1200));
   },
 
   async gravarDia(){
@@ -2271,6 +2371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     el('btnImportar').hidden = false;
     el('btnImportar').onclick = () => Importar.abrir();
     el('imp-alternar').onclick = () => Importar.alternar();
+    el('imp-limpar').onclick = () => Importar.abrirLimpeza();
     el('imp-confirmar').onclick = () => Importar.confirmar();
   }
 
