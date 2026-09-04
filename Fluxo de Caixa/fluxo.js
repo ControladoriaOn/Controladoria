@@ -2263,6 +2263,36 @@ const Importar = {
     await new Promise(r => setTimeout(r, 900));
   },
 
+  /* Blocos de DIAS INTEIROS. O tamanho é aproximado de propósito: o corte só
+     acontece na virada de um dia, nunca no meio dele.
+
+     Isso não é capricho. Do outro lado, o script substitui por dia: quando um
+     dia chega, ele apaga o que havia naquele dia e grava o que veio. Um bloco
+     que trouxesse metade das contas de um dia apagaria a outra metade que
+     chegou no bloco anterior — foi exatamente o que aconteceu na primeira
+     carga, em que a lista saía ordenada por conta e cada bloco derrubava o
+     anterior, sobrando só as últimas contas.
+
+     Um dia sozinho maior que o limite vai inteiro assim mesmo: parti-lo é
+     justamente o que não pode acontecer. */
+  blocosPorDia(lista, max){
+    const por = {};
+    lista.forEach(x => { (por[x.data] = por[x.data] || []).push(x); });
+
+    const blocos = [];
+    let itens = [], datas = [];
+    Object.keys(por).sort().forEach(d => {
+      if (itens.length && itens.length + por[d].length > max){
+        blocos.push({ itens: itens, datas: datas });
+        itens = []; datas = [];
+      }
+      itens = itens.concat(por[d]);
+      datas.push(d);
+    });
+    if (itens.length) blocos.push({ itens: itens, datas: datas });
+    return blocos;
+  },
+
   /* Blocos por mês. Um envio com 28 mil títulos não passa: o Apps Script tem
      limite de tempo e de tamanho. Por mês são uns três mil, que passam. */
   blocosPorMes(titulos){
@@ -2324,28 +2354,36 @@ const Importar = {
 
   async gravarAno(){
     const a = this.ano;
+    const blocosSaldo = this.blocosPorDia(a.saldos, 800);
+    const blocosEnt   = this.blocosPorDia(a.entradas, 800);
+    const blocosPag   = this.blocosPorMes(this.rel.titulos);
+
     let feito = 0;
-    const total = 3 + Math.ceil(a.saldos.length / 800) + this.blocosPorMes(this.rel.titulos).length;
+    const total = 1 + blocosSaldo.length + blocosEnt.length + blocosPag.length;
     const anda = txt => { this.passo(txt, (feito / total) * 100); feito++; };
 
     anda('Plano de contas e contas bancárias…');
     await this.enviar({ acao:'fluxo_estrutura', plano:a.plano, contas:a.contas, config:a.config });
 
-    /* Os saldos são a maior lista depois dos títulos: uns três mil registros.
-       Vão em blocos de 800 para caber com folga no limite do Apps Script. */
-    for (let i = 0; i < a.saldos.length; i += 800){
-      anda('Posição de saldos…');
-      await this.enviar({ acao:'fluxo_saldos_lote', saldos:a.saldos.slice(i, i + 800) });
+    /* Os saldos são a maior lista depois dos títulos: uns três mil registros,
+       catorze contas por dia. Cada bloco leva dias completos e diz quais são,
+       para o script poder limpar o dia inteiro antes de gravar. */
+    for (let i = 0; i < blocosSaldo.length; i++){
+      const b = blocosSaldo[i];
+      anda('Posição de saldos  (' + (i + 1) + ' de ' + blocosSaldo.length + ')');
+      await this.enviar({ acao:'fluxo_saldos_lote', saldos:b.itens, datas:b.datas });
     }
 
-    anda('Entradas…');
-    await this.enviar({ acao:'fluxo_entradas_lote', entradas:a.entradas });
+    for (let i = 0; i < blocosEnt.length; i++){
+      const b = blocosEnt[i];
+      anda(blocosEnt.length > 1 ? ('Entradas  (' + (i + 1) + ' de ' + blocosEnt.length + ')') : 'Entradas…');
+      await this.enviar({ acao:'fluxo_entradas_lote', entradas:b.itens, datas:b.datas });
+    }
 
-    const blocos = this.blocosPorMes(this.rel.titulos);
-    for (let i = 0; i < blocos.length; i++){
-      const b = blocos[i];
+    for (let i = 0; i < blocosPag.length; i++){
+      const b = blocosPag[i];
       anda('Pagamentos de ' + MESES_PT[Number(b.mes.slice(5,7)) - 1] + '/' + b.mes.slice(0,4) +
-           '  (' + (i + 1) + ' de ' + blocos.length + ')');
+           '  (' + (i + 1) + ' de ' + blocosPag.length + ')');
       await this.enviar({ acao:'fluxo_historico_lote', titulos:b.titulos,
                           datas:this.rel.dias.filter(d => d.slice(0,7) === b.mes) });
     }
