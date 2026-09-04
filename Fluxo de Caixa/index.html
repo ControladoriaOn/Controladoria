@@ -26,24 +26,7 @@
   <span class="grao"></span>
 </div>
 
-<div class="fio" id="fio"><span id="fio-fill"></span></div>
-
-<!-- o carregamento é a própria tabela se preenchendo -->
-<div id="loader">
-  <div class="load-palco">
-    <div class="load-card">
-      <div class="load-brilho" aria-hidden="true"></div>
-      <div class="load-mascote">
-        <div class="load-ring"></div>
-        <img src="../logo-mascote.jpg" alt="" onerror="this.style.display='none'">
-      </div>
-      <div class="load-text" id="load-text">Lendo o fluxo…</div>
-      <div class="load-barra"><span id="load-barra-fill"></span></div>
-      <div class="load-pct" id="load-pct">0%</div>
-    </div>
-    <div class="esq-tabela" aria-hidden="true"></div>
-  </div>
-</div>
+<div class="fio" id="fio" aria-hidden="true"><span id="fio-fill"></span></div>
 
 <header>
   <div class="marca">
@@ -84,7 +67,23 @@
   </div>
 </header>
 
-<main class="content" id="content"></main>
+<main class="content" id="content">
+  <!-- Esqueleto do carregamento. Não é uma tela por cima da página: é a própria
+       página vazia, com os blocos nos lugares onde a barra do mês e a tabela vão
+       nascer. O cabeçalho aparece de verdade desde o primeiro instante, e quem
+       diz o andamento é o fio laranja lá em cima. -->
+  <div id="loader" role="status" aria-live="polite" aria-label="Carregando">
+    <div class="sk-barra">
+      <div class="sk-bloco sk-botao"></div>
+      <div class="sk-bloco sk-mes"></div>
+      <div class="sk-bloco sk-botao"></div>
+      <div class="sk-espaco"></div>
+      <div class="sk-bloco sk-resumo"></div>
+    </div>
+    <div class="sk-bloco sk-tabela"></div>
+  </div>
+  <div id="painel"></div>
+</main>
 
 <!-- detalhe de uma célula: os títulos que formam aquele número -->
 <div class="modal" id="modal-detalhe">

@@ -347,34 +347,46 @@ table.tabela-simples td.mono{font-family:var(--font-mono);white-space:nowrap}
 .note.info{background:var(--info-soft);color:#1E3A8A}
 .note.danger{background:var(--danger-soft);color:#7F1D1D}
 
-/* -------------------------------------------------------------- loader */
-#loader{position:fixed;inset:0;z-index:9000;display:flex;align-items:flex-start;
-  justify-content:center;padding:94px 26px 0;background:var(--bg);
+/* ---------------------------------------------------------- carregamento
+   A tela creme por cima de tudo saiu. No lugar, a página já aparece com a
+   forma que vai ter: a barra do mês e o bloco da tabela desenhados vazios,
+   com o cabeçalho de verdade acima. O andamento fica por conta do fio
+   laranja no alto, cuja largura vem das etapas reais do carregamento. */
+#loader{display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;
   transition:opacity .3s ease, visibility .3s}
 #loader.out{opacity:0;visibility:hidden;pointer-events:none}
-.load-palco{position:relative;width:min(1600px,100%);display:grid;gap:20px}
-.load-card{position:relative;overflow:hidden;border-radius:var(--radius-md);
-  padding:18px 20px;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:10px;min-height:126px;
-  background:linear-gradient(150deg,#2A0B2A 0%,#3D1238 58%,#2A0B2A 100%);
-  box-shadow:0 16px 36px -20px rgba(42,11,42,.7)}
-.load-brilho{position:absolute;width:230px;height:230px;top:-100px;right:-80px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,110,0,.42),transparent 68%);filter:blur(30px)}
-.load-mascote{position:relative;width:52px;height:52px;display:grid;place-items:center}
-.load-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.14);
-  border-top-color:var(--orange);animation:spin .9s linear infinite}
-.load-mascote img{width:38px;height:38px;border-radius:50%;object-fit:cover}
-.load-text{font-family:var(--font-display);font-size:13.5px;font-weight:600;color:#fff;
-  text-align:center;min-height:19px}
-.load-barra{width:min(260px,80%);height:4px;border-radius:99px;background:rgba(255,255,255,.14);overflow:hidden}
-.load-barra span{display:block;height:100%;width:0%;border-radius:99px;
-  background:linear-gradient(90deg,#FF8A2E,var(--orange));transition:width .3s ease}
-.load-pct{font-family:var(--font-mono);font-size:10.5px;color:rgba(255,255,255,.55)}
-.esq-tabela{height:340px;border-radius:var(--radius);border:1px solid var(--border);
-  background:linear-gradient(100deg,var(--surface) 30%,var(--surface-soft) 50%,var(--surface) 70%);
-  background-size:220% 100%;animation:brilho 1.4s ease-in-out infinite .15s}
-@keyframes brilho{0%{background-position:180% 0}100%{background-position:-60% 0}}
-#loader .btn{margin:0 auto}
+#painel{display:none;flex-direction:column;gap:14px;flex:1;min-height:0}
+
+/* O pulso é lento e de pouca amplitude de propósito: diz "ainda estou
+   carregando" sem fingir que mede progresso. Quem mede é o fio. */
+@keyframes skPulso{0%,100%{opacity:1}50%{opacity:.55}}
+.sk-bloco{background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:var(--radius);box-shadow:var(--shadow-sm);
+  animation:skPulso 1.9s ease-in-out infinite}
+.sk-barra{display:flex;align-items:center;gap:10px}
+.sk-espaco{flex:1}
+.sk-botao{width:38px;height:38px;border-radius:var(--radius-sm)}
+.sk-mes{width:186px;height:38px;border-radius:var(--radius-sm)}
+.sk-resumo{width:min(320px,38%);height:38px;border-radius:var(--radius-sm)}
+.sk-tabela{flex:1;min-height:260px}
+/* Cada bloco entra um instante depois do anterior: a página se monta de cima
+   para baixo, em vez de piscar inteira de uma vez. */
+.sk-mes{animation-delay:.08s}
+.sk-resumo{animation-delay:.16s}
+.sk-tabela{animation-delay:.22s}
+
+/* Falha na carga: a mensagem toma o lugar do esqueleto, no miolo da página. */
+.erro-carga{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;flex:1;padding:40px 20px;text-align:center}
+.erro-carga h3{font-family:var(--font-display);font-size:15px;color:var(--danger)}
+.erro-carga p{max-width:420px;font-size:13px;color:var(--muted);line-height:1.55}
+
+@media (max-width:640px){
+  .sk-resumo{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .sk-bloco{animation:none}
+}
 
 .fio{position:fixed;top:0;left:0;right:0;height:2.5px;z-index:9500;background:transparent;
   opacity:0;transition:opacity .25s}

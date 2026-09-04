@@ -326,11 +326,12 @@ async function gravar(payload, textoOk){
 /* ============================================================================
    CARGA
    ============================================================================ */
+/* O andamento da primeira carga aparece só no fio laranja do alto. O texto
+   continua chegando aqui para quem lê a tela por leitor de voz — e para não
+   ter que mudar as chamadas se um dia ele voltar a ser mostrado. */
 function etapaLoader(texto, pct){
-  const t = el('load-text'), f = el('load-barra-fill'), p = el('load-pct');
-  if (t) t.textContent = texto;
-  if (f) f.style.width = pct + '%';
-  if (p) p.textContent = pct + '%';
+  const l = el('loader');
+  if (l && texto) l.setAttribute('aria-label', texto);
   const fio = el('fio'), ff = el('fio-fill');
   if (fio && ff){ fio.classList.toggle('ativo', pct < 100); ff.style.width = pct + '%'; }
 }
@@ -372,6 +373,15 @@ function fioComeca(){
   clearTimeout(fioComeca._t);
   fioComeca._t = setTimeout(() => { ff.style.width = '75%'; }, 260);
 }
+/* Enquanto a base não responde não existe progresso para medir — mas um fio
+   parado em 14% por cinco segundos parece travado. Ele anda até pouco mais da
+   metade e espera ali, o que é honesto: a leitura começou, falta o resto. */
+function fioPrimeiraCarga(){
+  etapaLoader('Lendo o fluxo…', 14);
+  clearTimeout(fioPrimeiraCarga._t);
+  fioPrimeiraCarga._t = setTimeout(() => etapaLoader('Lendo o fluxo…', 55), 500);
+}
+
 function fioTermina(){
   const fio = el('fio'), ff = el('fio-fill');
   if (!fio) return;
@@ -381,10 +391,10 @@ function fioTermina(){
 }
 
 async function carregar(primeira){
-  if (primeira) etapaLoader('Lendo o fluxo…', 14); else fioComeca();
+  if (primeira) fioPrimeiraCarga(); else fioComeca();
   try {
     state.dados = await buscarMes(state.mes);
-    if (primeira){ etapaLoader('Somando o mês…', 66); await respira(50); }
+    if (primeira){ clearTimeout(fioPrimeiraCarga._t); etapaLoader('Somando o mês…', 66); await respira(50); }
     calcular();
     if (primeira){ etapaLoader('Montando a tabela…', 88); await respira(50); }
     render();
@@ -425,29 +435,33 @@ function adiantar(mes){
   if (!state.cache[mes]) buscarMes(mes).catch(() => {});
 }
 
+/* A troca do esqueleto pela tabela acontece no mesmo instante, sem desmanche:
+   o esqueleto some e o painel aparece no mesmo quadro, e por isso não existe
+   aquele piscar de branco entre um e outro. */
 function esconderLoader(){
   const l = el('loader');
-  l.classList.add('out');
-  setTimeout(() => { l.style.display = 'none'; }, 360);
+  if (l){ l.classList.add('out'); l.style.display = 'none'; }
+  const p = el('painel');
+  if (p) p.style.display = 'flex';
 }
-function abrirLoader(texto){
-  const l = el('loader');
-  etapaLoader(texto || 'Carregando…', 10);
-  l.style.display = 'flex';
-  l.classList.remove('out');
-}
+
 function mostrarErro(e){
   const l = el('loader');
+  const p = el('painel');
+  if (p) p.style.display = 'none';
+  if (!l) return;
   l.classList.remove('out');
   l.style.display = 'flex';
   l.innerHTML = '';
-  l.appendChild(h('div', { class:'load-text', style:'color:var(--danger);font-weight:700',
-    text:'Não consegui carregar o fluxo.' }));
-  l.appendChild(h('div', { class:'load-text', style:'max-width:380px;text-align:center;color:var(--muted)',
-    text: String(e && e.message || e) }));
+  const caixa = h('div', { class:'erro-carga' }, [
+    h('h3', { text:'Não consegui carregar o fluxo.' }),
+    h('p',  { text: String(e && e.message || e) }),
+  ]);
   const b = h('button', { class:'btn btn-primary' }, [icone('fa-rotate'), 'Tentar de novo']);
   b.onclick = () => location.reload();
-  l.appendChild(b);
+  caixa.appendChild(b);
+  l.appendChild(caixa);
+  etapaLoader('Falhou', 100);
 }
 
 /* ============================================================================
@@ -632,7 +646,7 @@ function render(){
   const antigo = document.querySelector('.grade-wrap');
   const rolagem = antigo ? { x: antigo.scrollLeft, y: antigo.scrollTop } : null;
 
-  const c = el('content');
+  const c = el('painel');
   c.innerHTML = '';
   c.appendChild(barraMes());
   c.appendChild(secaoTabela());
@@ -2375,7 +2389,10 @@ document.addEventListener('DOMContentLoaded', () => {
     el('imp-confirmar').onclick = () => Importar.confirmar();
   }
 
-  el('btnRecarregar').onclick = () => { abrirLoader('Atualizando…'); carregar(); };
+  /* Recarregar não volta ao esqueleto: a tabela já está na tela e trocá-la por
+     blocos cinzas seria piscada. Quem avisa que algo está acontecendo é o fio,
+     como na troca de mês. */
+  el('btnRecarregar').onclick = () => carregar();
   el('btnExportar').onclick = exportar;
   el('btnDias').onclick = () => {
     state.soUteis = !state.soUteis;
