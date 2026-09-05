@@ -204,6 +204,16 @@ td.col-total{background:#F6F2F6;font-weight:700}
 tbody tr:hover td{background:rgba(255,110,0,.04)}
 tbody tr:hover td.col-nome{background:#FFF9F3}
 
+/* Numa linha que fica parada enquanto a tabela corre por baixo, fundo com
+   transparência deixa ver o que está passando atrás — era o que acontecia ao
+   passar o mouse: os 4% de laranja do hover apagavam o fundo sólido e a linha
+   de trás aparecia através dela. Dentro das fixas, toda cor é sólida. */
+tr.fixa td.nao-util{background:#F1ECF1}
+tr.fixa td.hoje{background:#FFF4E9}
+tr.fixa td.previsto{background:#EDF2FE}
+tbody tr.fixa:hover td,tbody tr.fixa:hover td.col-nome{background:#F1E8F1}
+tbody tr.fixa.l-total:hover td,tbody tr.fixa.l-total:hover td.col-nome{background:#EDE4ED}
+
 .nome-box{display:flex;align-items:center;gap:7px;min-width:0}
 .nome-box .cod{font-family:var(--font-mono);font-size:9.5px;color:var(--subtle);flex-shrink:0}
 .nome-box .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

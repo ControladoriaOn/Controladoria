@@ -771,6 +771,25 @@ function secaoTabela(){
   const d = state.dados, c = state.calc;
   const dias = diasVisiveis();
   const sec = h('div', { class:'section' });
+
+  /* Registro cuja conta de fluxo não existe no plano. Ele agora aparece na
+     linha "Sem classificação" e entra no total — mas continuar aparecendo ali
+     em silêncio esconderia o que precisa ser resolvido, que é a conta faltando
+     no plano. Por isso o aviso, com o código na cara. */
+  const semCasa = (d.orfaos || []).filter(o => Math.abs(Number(o.valor) || 0) >= 0.005);
+  if (semCasa.length){
+    const total = semCasa.reduce((a, o) => a + (Number(o.valor) || 0), 0);
+    sec.appendChild(h('div', { class:'note danger' }, [
+      icone('fa-triangle-exclamation'),
+      h('div', { text:
+        (semCasa.length === 1 ? 'Uma conta de fluxo deste mês não existe no plano: '
+                              : semCasa.length + ' contas de fluxo deste mês não existem no plano: ') +
+        semCasa.map(o => o.conta_fluxo + ' (' + dinheiro(o.valor) + ')').join(', ') +
+        '. Somam ' + dinheiro(total) + ' e estão na linha "Sem classificação". ' +
+        'Enquanto ficarem assim, o número aparece no total mas não tem onde ser explicado.' }),
+    ]));
+  }
+
   const card = h('div', { class:'card' });
 
   /* Fecha ou abre tudo de uma vez — os grupos do plano e os bancos. Fica antes
