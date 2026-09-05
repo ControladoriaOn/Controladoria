@@ -88,7 +88,7 @@ function fmtNum(v){
   if (v === undefined || v === null || v === '') return '';
   const n = num(v);
   if (!n) return '–';                      // zero contábil
-  const casas = state.exato ? 2 : (Math.abs(n) < 100 ? 2 : 0);
+  const casas = 2;
   return n.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
 }
 const fmtGrade = fmtNum;
@@ -133,7 +133,7 @@ const state = {
   dados: null,
   calc: null,
   soUteis: true,        // dia sem movimento nem saldo fica escondido
-  exato: false,         // centavos à mostra
+  exato: true,          // centavos sempre à mostra; o modo compacto saiu
   recolhidos: {},       // grupos fechados
   autor: '',
   primeiraPintura: true,
@@ -625,11 +625,17 @@ function calcular(){
 
 /* Colunas que aparecem: dia útil sempre; fim de semana e feriado só quando
    tiveram movimento ou saldo informado — senão a tabela vira um deserto. */
+/* Fim de semana e feriado só aparecem quando têm movimento de verdade.
+
+   Antes a posição de saldos também segurava o dia na tela, e fazia sentido:
+   saldo informado num sábado era sinal de que alguém tinha trabalhado ali. Com
+   a carga do ano isso deixou de valer — a planilha repete o saldo dos bancos em
+   todos os dias do calendário, então todo sábado passou a ter saldo e o botão
+   de dias úteis parecia quebrado, sem esconder nada. */
 function diasVisiveis(){
   const c = state.calc, d = state.dados;
   if (!state.soUteis) return d.dias;
-  return d.dias.filter(x =>
-    x.util || c.totEnt[x.data] || c.totSai[x.data] || c.temSaldo[x.data]);
+  return d.dias.filter(x => x.util || c.totEnt[x.data] || c.totSai[x.data]);
 }
 
 /* ============================================================================
@@ -1087,7 +1093,15 @@ function linhaTr(l, dias){
 function classeValor(l, v){
   if (l.kind !== 'dif') return '';
   if (v === undefined || v === null) return '';
-  return Math.abs(num(v)) < 0.01 ? ' v-ok' : ' v-alerta';
+  /* Três faixas, porque um centavo de arredondamento não é a mesma coisa que
+     mil reais faltando. Fechado é verde; até um real é poeira de arredondamento
+     e fica discreto; acima disso é vermelho, que é o que pede investigação. */
+  /* Arredonda antes de comparar, senão 0,009 e 0,011 aparecem os dois como
+     "0,01" na tela e saem pintados de cores diferentes. */
+  const x = Math.round(Math.abs(num(v)) * 100) / 100;
+  if (!x)     return ' v-ok';
+  if (x <= 1) return ' v-poeira';
+  return ' v-alerta';
 }
 
 function celula(l, dia, v){
@@ -2677,19 +2691,6 @@ document.addEventListener('DOMContentLoaded', () => {
   el('btnDias').onclick = () => {
     state.soUteis = !state.soUteis;
     el('btnDias').querySelector('span').textContent = state.soUteis ? 'Dias úteis' : 'Todos os dias';
-    render();
-  };
-  try { state.exato = sessionStorage.getItem('fluxo_exato') === '1'; } catch(e){}
-  const pintarCentavos = () => {
-    const b = el('btnCentavos');
-    b.querySelector('span').textContent = state.exato ? 'Compacto' : 'Centavos';
-    b.classList.toggle('ligado', state.exato);
-  };
-  pintarCentavos();
-  el('btnCentavos').onclick = () => {
-    state.exato = !state.exato;
-    try { sessionStorage.setItem('fluxo_exato', state.exato ? '1' : '0'); } catch(e){}
-    pintarCentavos();
     render();
   };
   el('lanc-salvar').onclick = salvarLancamento;

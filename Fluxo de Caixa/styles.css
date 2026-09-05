@@ -166,7 +166,13 @@ select.filtro:focus{border-color:var(--orange)}
 .leg-edit{background:var(--orange-soft);border:1px solid #FFD9B8}
 .leg-dica{color:var(--subtle);font-weight:500}
 
-.grade-wrap{overflow:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
+/* A área da tabela precisa de fundo próprio, e opaco. O cartão em volta é
+   branco com 94% de opacidade — bonito nas bordas, mas as células do corpo não
+   têm cor nenhuma, então os brilhos laranja do fundo da página atravessavam a
+   tabela e apareciam como faixas atrás dos números. Só sumiam onde o mouse
+   passava, porque aí o hover pintava a célula. */
+.grade-wrap{overflow:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;
+  background:var(--surface)}
 table.grade{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
 table.grade th,table.grade td{
   border-bottom:1px solid var(--border-soft);
@@ -273,9 +279,18 @@ tr.l-saldo-total td.col-nome,tr.l-bancos td.col-nome{background:#F3EDF3}
 tr.l-dif td{font-weight:700}
 tr.l-dif td.col-nome{font-weight:700;color:var(--plum)}
 td.v-ok{color:var(--ok)}
+/* Poeira de arredondamento: existe, mas não é problema. Fica visível e calada,
+   sem o vermelho que faz procurar erro onde não há. */
+td.v-poeira{color:var(--subtle)}
 td.v-alerta{color:var(--danger);background:rgba(254,226,226,.55)!important}
 
-td.editavel{cursor:pointer;box-shadow:inset 0 -2px 0 rgba(255,110,0,.18)}
+/* O traço laranja marca a célula em que dá para digitar. Ele ficava aceso o
+   tempo todo, em todas as células de todas as linhas, e o resultado eram
+   listras laranja atravessando a tabela inteira — parte do "estranho" que
+   sumia quando o mouse passava por cima. Agora ele acende na linha sob o
+   ponteiro: a dica continua, a poluição some. */
+td.editavel{cursor:pointer}
+tbody tr:hover td.editavel{box-shadow:inset 0 -2px 0 rgba(255,110,0,.28)}
 td.editavel:hover{background:var(--orange-soft)!important;color:var(--orange-deep)}
 td.editavel:empty::after{content:'+';color:transparent}
 td.editavel:hover:empty::after{color:var(--orange)}
