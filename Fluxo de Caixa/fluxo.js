@@ -1615,11 +1615,35 @@ function slug(t){
   return normalizar(t).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 }
 
+/* Data do cabeçalho. Aceita a célula de data de verdade e também a data
+   DIGITADA COMO TEXTO — "28/02/2026". Parece detalhe, mas custou caro: no
+   arquivo do ano, uma única coluna entre 365 estava assim, e como o leitor só
+   entendia célula de data, o dia 28/02 inteiro foi ignorado. Sumiram o
+   rendimento do mês, um imposto e a posição de saldos daquele dia, e o fluxo
+   passou a fechar 22.672,30 abaixo dos bancos de março em diante. */
 function dataISO(v){
   if (v instanceof Date && !isNaN(v)){
     const m = String(v.getMonth() + 1).padStart(2, '0');
     const d = String(v.getDate()).padStart(2, '0');
     return v.getFullYear() + '-' + m + '-' + d;
+  }
+  if (typeof v === 'string'){
+    const t = v.trim();
+    /* dd/mm/aaaa e dd/mm/aa, com barra, traço ou ponto. Nada de mm/dd: esta
+       planilha é brasileira, e adivinhar a ordem seria pior do que não ler. */
+    const m = t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/);
+    if (m){
+      const dia = Number(m[1]), mes = Number(m[2]);
+      let ano = Number(m[3]);
+      if (ano < 100) ano += 2000;
+      if (dia >= 1 && dia <= 31 && mes >= 1 && mes <= 12){
+        const d = new Date(ano, mes - 1, dia);
+        /* Confere se a data existe mesmo: 31/02 vira 03/03 no Date. */
+        if (d.getDate() === dia && d.getMonth() === mes - 1){
+          return ano + '-' + String(mes).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
+        }
+      }
+    }
   }
   return '';
 }
@@ -1649,10 +1673,18 @@ function lerPlanilhaDoAno(wb){
   for (let i = 0; i < Math.min(matriz.length, 12); i++){
     if ((matriz[i] || []).slice(2).some(c => dataISO(c))){ iCab = i; break; }
   }
-  const colunas = [];
+  const colunas = [], ignoradas = [];
+  /* Cabeçalhos que são coluna de fechamento, não dia. Ficam de fora sem
+     alarde — o resto que ficar de fora vira aviso. */
+  const NAO_E_DIA = /^(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|total|totais|acumulado|%|descricao|descrição|media|média)$/;
+
   (matriz[iCab] || []).forEach((c, j) => {
+    if (j < 2) return;
     const d = dataISO(c);
-    if (d && j >= 2) colunas.push({ j: j, data: d });
+    if (d){ colunas.push({ j: j, data: d }); return; }
+    const t = normalizar(c);
+    if (!t || NAO_E_DIA.test(t)) return;
+    ignoradas.push({ j: j, texto: String(c).trim() });
   });
   if (!colunas.length) throw new Error('Achei a aba, mas nenhuma coluna com data.');
 
@@ -1697,6 +1729,7 @@ function lerPlanilhaDoAno(wb){
         const v = numero(linha[c.j]);
         if (Math.abs(v) > 0.005) entradasPorDia[c.data] = v;
       });
+      ignoradas.forEach(x => { x.movimento = (x.movimento || 0) + Math.abs(numero(linha[x.j])); });
       secao = 'E'; grupoAtual = ''; continue;
     }
     if (chave === 'total saidas'){
@@ -1706,6 +1739,7 @@ function lerPlanilhaDoAno(wb){
         const v = numero(linha[c.j]);
         if (Math.abs(v) > 0.005) saidasPorDia[c.data] = v;
       });
+      ignoradas.forEach(x => { x.movimento = (x.movimento || 0) + Math.abs(numero(linha[x.j])); });
       secao = 'S'; grupoAtual = ''; continue;
     }
     if (chave === 'saldo final'){
@@ -1823,6 +1857,14 @@ function lerPlanilhaDoAno(wb){
   /* ---- conferência contra os totais da própria planilha -------------------
      Ler linha a linha e comparar com a linha de total do arquivo é a maneira
      mais direta de perceber que algo foi contado a mais ou a menos. */
+  /* Coluna com movimento que não virou dia. Antes isso passava em silêncio e
+     o buraco só aparecia semanas depois, como saldo que não emenda. */
+  ignoradas.filter(x => (x.movimento || 0) > 0.005).forEach(x => {
+    avisos.push('A coluna "' + x.texto + '" tem movimento, mas o cabeçalho dela não é ' +
+      'uma data que eu saiba ler, então ela ficou de fora. Se for um dia, escreva a ' +
+      'data na primeira linha dessa coluna no formato 28/02/2026 e importe de novo.');
+  });
+
   conferirTotais_(entradas, entradasPorDia, 'entradas', avisos);
   conferirTotais_(saidas, saidasPorDia, 'saídas', avisos);
 

@@ -256,6 +256,12 @@ tbody tr.l-saldo-ini:hover td,tbody tr.l-saldo-fim:hover td,
 tbody tr.l-saldo-ini:hover td.col-nome,tbody tr.l-saldo-fim:hover td.col-nome{
   background:#3A243A;color:#fff}
 
+/* Nas duas linhas escuras o destaque do dia de hoje precisa ser escuro também.
+   Quando as cores das linhas fixas viraram sólidas, o creme do "hoje" passou a
+   cobrir o fundo escuro em vez de tingi-lo, e abria um buraco claro na faixa. */
+tr.fixa.l-saldo-ini td.hoje,tr.fixa.l-saldo-fim td.hoje{background:#4A2A33}
+tbody tr.l-saldo-ini:hover td.hoje,tbody tr.l-saldo-fim:hover td.hoje{background:#5A3340}
+
 tr.l-cabec-saldo td{background:var(--surface-soft);font-family:var(--font-display);
   font-size:12.5px;font-weight:600;color:var(--plum)}
 tr.l-cabec-saldo td.col-nome{background:var(--surface-soft)}
