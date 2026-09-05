@@ -266,6 +266,11 @@ tbody tr.l-saldo-ini:hover td.col-nome,tbody tr.l-saldo-fim:hover td.col-nome{
    Quando as cores das linhas fixas viraram sólidas, o creme do "hoje" passou a
    cobrir o fundo escuro em vez de tingi-lo, e abria um buraco claro na faixa. */
 tr.fixa.l-saldo-ini td.hoje,tr.fixa.l-saldo-fim td.hoje{background:#4A2A33}
+/* E o mesmo vale para o fim de semana: a cor sólida clara das linhas fixas
+   apagava o texto branco das duas linhas escuras. Aqui o dia não útil é um
+   ameixa um pouco mais claro, que se distingue sem cegar. */
+tr.fixa.l-saldo-ini td.nao-util,tr.fixa.l-saldo-fim td.nao-util{background:#3B2A3B}
+tbody tr.l-saldo-ini:hover td.nao-util,tbody tr.l-saldo-fim:hover td.nao-util{background:#4A374A}
 tbody tr.l-saldo-ini:hover td.hoje,tbody tr.l-saldo-fim:hover td.hoje{background:#5A3340}
 
 tr.l-cabec-saldo td{background:var(--surface-soft);font-family:var(--font-display);
