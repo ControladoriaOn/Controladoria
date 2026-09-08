@@ -370,15 +370,20 @@ function etapaLoader(texto, pct){
 }
 const respira = ms => new Promise(r => setTimeout(r, ms));
 
-/* fresco=true faz o script pular o cache dele e ler a planilha. É o que o
-   botão Atualizar manda e o que o modo edição pede ao entrar: quem vai lançar
-   precisa ver o estado de agora, não a cópia guardada de horas atrás. */
-async function buscarMes(mes, fresco){
+/* A tela busca o ANO inteiro de uma vez e guarda. Virar o mês passa a ser
+   desenhar outro pedaço do que já está na memória, e não uma nova consulta —
+   é isso que permite mostrar o fim do mês anterior junto com o começo do
+   seguinte sem pagar uma ida ao script a cada troca.
+
+   fresco=true pula o cache do lado do script. É o que o botão Atualizar manda
+   e o que o modo edição pede ao entrar: quem vai lançar precisa ver o estado
+   de agora, não a cópia guardada de horas atrás. */
+async function buscarAno(ano, fresco){
   const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') +
-              'fluxo=' + mes + (fresco ? '&fresco=1' : '') + '&v=' + Date.now();
+              'fluxo_ano=' + ano + (fresco ? '&fresco=1' : '') + '&v=' + Date.now();
   const d = await buscarJson(url);
   if (!d || d.ok === false) throw new Error((d && d.erro) || 'resposta vazia');
-  guardar(mes, d);
+  state.cache[ano] = d;
   return d;
 }
 
@@ -429,7 +434,8 @@ function fioTermina(){
 async function carregar(primeira, fresco){
   if (primeira) fioPrimeiraCarga(); else fioComeca();
   try {
-    state.dados = await buscarMes(state.mes, fresco);
+    const ano = state.mes.slice(0, 4);
+    state.dados = (!fresco && state.cache[ano]) || await buscarAno(ano, fresco);
     if (primeira){ clearTimeout(fioPrimeiraCarga._t); etapaLoader('Somando o mês…', 66); await respira(50); }
     calcular();
     if (primeira){ etapaLoader('Montando a tabela…', 88); await respira(50); }
@@ -439,41 +445,15 @@ async function carregar(primeira, fresco){
       await respira(150);
       esconderLoader();
     } else fioTermina();
-    vizinhos();
   } catch(e){
     if (primeira) mostrarErro(e);
     else { fioTermina(); toast('Não consegui abrir o mês: ' + (e.message || e), true); }
   }
 }
 
-/* O mês vizinho é buscado em silêncio, mas um de cada vez e só depois que a
-   tela já está pronta. O Apps Script atende uma execução por vez para o mesmo
-   usuário: pedir três meses juntos põe o mês que você está olhando atrás dos
-   outros dois na fila. Por isso a espera é longa, e por isso isto anda devagar
-   de propósito. */
-function vizinhos(){
-  clearTimeout(vizinhos._t);
-  vizinhos._t = setTimeout(async () => {
-    for (const m of [addMes(state.mes, -1), addMes(state.mes, 1)]){
-      if (state.cache[m] || m !== addMes(state.mes, -1) && !state.cache[addMes(state.mes,-1)]) {
-        // segue adiante mesmo assim, mas nunca em paralelo
-      }
-      if (state.cache[m]) continue;
-      try { await buscarMes(m); } catch(e){ return; }
-      await respira(300);
-      if (state.mes !== m && !state.cache[state.mes]) return;  // o usuário mudou de ideia
-    }
-  }, 2500);
-}
+/* Não existe mais mês vizinho para buscar em silêncio: o ano inteiro já veio
+   na primeira consulta, e virar o mês é só redesenhar. */
 
-/* Passar o mouse na seta é um bom palpite de para onde a pessoa vai. */
-function adiantar(mes){
-  if (!state.cache[mes]) buscarMes(mes).catch(() => {});
-}
-
-/* A troca do esqueleto pela tabela acontece no mesmo instante, sem desmanche:
-   o esqueleto some e o painel aparece no mesmo quadro, e por isso não existe
-   aquele piscar de branco entre um e outro. */
 function esconderLoader(){
   const l = el('loader');
   if (l){ l.classList.add('out'); l.style.display = 'none'; }
@@ -661,6 +641,30 @@ function calcular(){
 
 /* Colunas que aparecem: dia útil sempre; fim de semana e feriado só quando
    tiveram movimento ou saldo informado — senão a tabela vira um deserto. */
+/* Quantos dias do mês vizinho aparecem de cada lado. Cinco cobre a virada
+   inteira — inclusive quando o mês acaba numa sexta e o seguinte começa numa
+   segunda — sem alargar a tabela a ponto de atrapalhar. */
+const DIAS_EMPRESTADOS = 5;
+
+/* Os dias que a tabela desenha: o mês em foco, mais os últimos dias do mês
+   anterior e os primeiros do seguinte. Os emprestados vêm marcados com
+   fora:true — aparecem esmaecidos e ficam de fora dos totais, que continuam
+   sendo do mês. É a emenda entre meses sem confundir o fechamento. */
+function diasDaJanela(){
+  const d = state.dados;
+  if (!d || !d.dias) return [];
+  const mes = state.mes;
+  const doMes = d.dias.filter(x => x.data.slice(0, 7) === mes);
+  if (!doMes.length) return d.dias.map(x => Object.assign({}, x, { fora: false }));
+
+  const antes = d.dias.filter(x => x.data < doMes[0].data).slice(-DIAS_EMPRESTADOS);
+  const depois = d.dias.filter(x => x.data > doMes[doMes.length - 1].data).slice(0, DIAS_EMPRESTADOS);
+
+  return antes.map(x => Object.assign({}, x, { fora: true }))
+    .concat(doMes.map(x => Object.assign({}, x, { fora: false })))
+    .concat(depois.map(x => Object.assign({}, x, { fora: true })));
+}
+
 /* Fim de semana e feriado só aparecem quando têm movimento de verdade.
 
    Antes a posição de saldos também segurava o dia na tela, e fazia sentido:
@@ -669,9 +673,10 @@ function calcular(){
    todos os dias do calendário, então todo sábado passou a ter saldo e o botão
    de dias úteis parecia quebrado, sem esconder nada. */
 function diasVisiveis(){
-  const c = state.calc, d = state.dados;
-  if (!state.soUteis) return d.dias;
-  return d.dias.filter(x => x.util || c.totEnt[x.data] || c.totSai[x.data]);
+  const c = state.calc;
+  const janela = diasDaJanela();
+  if (!state.soUteis) return janela;
+  return janela.filter(x => x.util || c.totEnt[x.data] || c.totSai[x.data]);
 }
 
 /* ============================================================================
@@ -693,9 +698,22 @@ function render(){
   c.appendChild(barraMes());
   c.appendChild(secaoTabela());
 
-  if (rolagem){
-    const novo = document.querySelector('.grade-wrap');
-    if (novo){ novo.scrollLeft = rolagem.x; novo.scrollTop = rolagem.y; }
+  const grade = document.querySelector('.grade-wrap');
+  if (state.rolarParaMes && grade){
+    /* Ao trocar de mês, a tabela começa no dia 1: os dias emprestados ficam
+       logo atrás, a um empurrão de rolagem, sem roubar espaço de quem só quer
+       ver o mês. A rolagem vertical é preservada, para não perder o lugar na
+       lista de contas.
+
+       Feito duas vezes de propósito: no primeiro desenho as larguras ainda são
+       as da fonte de sistema, e quando a fonte da página chega tudo se desloca.
+       Sem a segunda passada, a tabela abria alguns dias adiantada. */
+    if (rolagem) grade.scrollTop = rolagem.y;
+    rolarAteOMes();
+    setTimeout(rolarAteOMes, 300);
+    state.rolarParaMes = false;
+  } else if (rolagem && grade){
+    grade.scrollLeft = rolagem.x; grade.scrollTop = rolagem.y;
   }
   /* A animação de entrada é para a primeira pintura. Repetida a cada
      atualização, ela vira piscada. */
@@ -705,6 +723,16 @@ function render(){
     setTimeout(() => document.body.classList.remove('entrando'), 700);
   }
   empilharFixas();
+}
+
+/* Deixa o primeiro dia do mês encostado na coluna dos nomes. */
+function rolarAteOMes(){
+  const grade = document.querySelector('.grade-wrap');
+  if (!grade) return;
+  const primeira = grade.querySelector('th.col-dia:not(.col-fora)');
+  const nome = grade.querySelector('th.col-nome');
+  if (!primeira || !nome) return;
+  grade.scrollLeft = Math.max(0, primeira.offsetLeft - nome.offsetWidth);
 }
 
 /* Cada linha que acompanha a rolagem para logo abaixo da anterior. As alturas
@@ -758,10 +786,8 @@ function barraMes(){
   const nav = h('div', { class:'mes-nav' });
   const ant = h('button', { class:'btn btn-ghost btn-sm', type:'button', title:'Mês anterior' }, [icone('fa-chevron-left')]);
   ant.onclick = () => irPara(addMes(state.mes, -1));
-  ant.onmouseenter = () => adiantar(addMes(state.mes, -1));
   const prox = h('button', { class:'btn btn-ghost btn-sm', type:'button', title:'Próximo mês' }, [icone('fa-chevron-right')]);
   prox.onclick = () => irPara(addMes(state.mes, 1));
-  prox.onmouseenter = () => adiantar(addMes(state.mes, 1));
   const sel = h('select', { class:'filtro' });
   const meses = (d.meses || []).slice();
   if (meses.indexOf(state.mes) < 0) meses.push(state.mes);
@@ -772,9 +798,10 @@ function barraMes(){
   nav.appendChild(sel);
   nav.appendChild(prox);
 
-  const ultimo = c.dias[c.dias.length - 1];
+  const doMes = datasDoMes();
+  const ultimo = doMes[doMes.length - 1] || c.dias[c.dias.length - 1];
   const resumo = h('div', { class:'mes-resumo' }, [
-    kpi('Saldo inicial', c.sdIni[c.dias[0]], 'info'),
+    kpi('Saldo inicial', c.sdIni[doMes[0] || c.dias[0]], 'info'),
     kpi('Entradas', somaMes(c.totEnt), 'ok'),
     kpi('Saídas', somaMes(c.totSai), 'orange'),
     kpi('Saldo final', c.sdFim[ultimo], 'plum'),
@@ -784,8 +811,15 @@ function barraMes(){
   sec.appendChild(resumo);
   return sec;
 }
+/* As datas do mês em foco. Os totais e os KPIs somam só estas: os dias
+   emprestados dos meses vizinhos estão ali para dar contexto, não para entrar
+   na conta do mês. */
+function datasDoMes(){
+  return state.calc.dias.filter(d => d.slice(0, 7) === state.mes);
+}
+
 function somaMes(mapa){
-  return state.calc.dias.reduce((s, d) => s + num(mapa[d]), 0);
+  return datasDoMes().reduce((s, d) => s + num(mapa[d]), 0);
 }
 function kpi(rotulo, valor, classe){
   return h('div', { class:'mini-kpi ' + (classe || '') }, [
@@ -794,15 +828,16 @@ function kpi(rotulo, valor, classe){
   ]);
 }
 
+/* Trocar de mês dentro do ano carregado não consulta nada: o cálculo já foi
+   feito para o ano inteiro, e só muda o pedaço desenhado. Trocar de ano, sim,
+   busca — e o ano visitado fica guardado. */
 function irPara(mes){
   if (mes === state.mes) return;
+  const anoAntes = state.mes.slice(0, 4);
   state.mes = mes;
-  const guardado = state.cache[mes];
-  if (guardado){            // mês já visitado: aparece na hora
-    state.dados = guardado;
-    calcular();
+  state.rolarParaMes = true;
+  if (mes.slice(0, 4) === anoAntes && state.dados){
     render();
-    vizinhos();
     return;
   }
   carregar();
@@ -865,10 +900,15 @@ function secaoTabela(){
   tr.appendChild(h('th', { class:'col-nome', text:'Descrição' }));
   dias.forEach(x => {
     const p = x.data.split('-');
-    const th = h('th', { class:'col-dia' + (x.util ? '' : ' nao-util') + (x.data === c.hoje ? ' hoje' : ''),
-                         title: x.feriado || '' }, [
+    /* O dia emprestado do mês vizinho leva o nome do mês embaixo, no lugar do
+       dia da semana: sem isso, 30 e 31 no começo da tabela passariam por dias
+       do mês que está sendo olhado. */
+    const th = h('th', { class:'col-dia' + (x.util ? '' : ' nao-util') +
+                         (x.data === c.hoje ? ' hoje' : '') + (x.fora ? ' col-fora' : ''),
+                         title: x.feriado || (x.fora ? nomeMes(x.data.slice(0, 7)) : '') }, [
       h('span', { class:'d-num', text: p[2] + '/' + p[1] }),
-      h('span', { class:'d-dow', text: x.feriado ? 'feriado' : DOW[x.dow] }),
+      h('span', { class:'d-dow', text: x.fora ? MESES_PT[Number(p[1]) - 1].slice(0, 3).toLowerCase()
+                                     : (x.feriado ? 'feriado' : DOW[x.dow]) }),
     ]);
     tr.appendChild(th);
   });
@@ -1098,19 +1138,22 @@ function linhaTr(l, dias){
   let total = 0;
   dias.forEach(x => {
     const v = pegar(x.data);
-    if (v !== undefined && v !== null) total += num(v);
+    /* Dia emprestado do mês vizinho não entra no total: ele está na tela para
+       mostrar a emenda, não para somar no fechamento do mês. */
+    if (!x.fora && v !== undefined && v !== null) total += num(v);
     tr.appendChild(celula(l, x, v));
   });
 
   /* Total do mês: soma nas linhas de movimento; nas de saldo, a última foto. */
+  const doMes = dias.filter(x => !x.fora);
   let tv = total;
-  if (l.kind === 'saldo-ini') tv = c.sdIni[dias[0] ? dias[0].data : c.dias[0]];
+  if (l.kind === 'saldo-ini') tv = c.sdIni[(doMes[0] || dias[0] || {}).data || c.dias[0]];
   else if (l.kind === 'saldo-fim' || l.kind === 'bancos' || l.kind === 'dif' ||
            l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' ||
            l.kind === 'saldo-total'){
     tv = undefined;
-    for (let i = dias.length - 1; i >= 0; i--){
-      const v = pegar(dias[i].data);
+    for (let i = doMes.length - 1; i >= 0; i--){
+      const v = pegar(doMes[i].data);
       if (v !== undefined && v !== null){ tv = v; break; }
     }
   }
@@ -1143,6 +1186,7 @@ function classeValor(l, v){
 function celula(l, dia, v){
   const c = state.calc;
   const cls = ['num'];
+  if (dia.fora) cls.push('col-fora');
   if (!dia.util) cls.push('nao-util');
   if (dia.data === c.hoje) cls.push('hoje');
   cls.push(classeValor(l, v).trim());
@@ -2798,5 +2842,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (p && /^\d{4}-\d{2}$/.test(p)) state.mes = p;
   } catch(e){}
 
+  state.rolarParaMes = true;
   carregar(true);
 });
