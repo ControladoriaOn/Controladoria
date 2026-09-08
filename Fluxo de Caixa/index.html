@@ -51,6 +51,10 @@
     <button class="btn btn-ghost btn-sm" id="btnDias" type="button" title="Mostrar ou esconder os dias sem movimento">
       <i class="fa-solid fa-calendar-week"></i> <span>Dias úteis</span>
     </button>
+    <button class="btn btn-ghost btn-sm" id="btnEditar" type="button"
+            title="Entrar em modo edição para lançar e importar">
+      <i class="fa-solid fa-pen"></i> <span>Editar</span>
+    </button>
     <button class="btn btn-ghost btn-sm" id="btnImportar" type="button" hidden
             title="Importar o relatório de contas a pagar">
       <i class="fa-solid fa-file-import"></i> <span>Importar</span>
@@ -156,6 +160,26 @@
       <span class="imp-espaco"></span>
       <button class="btn btn-ghost" type="button" data-fechar="modal-importar">Fechar</button>
       <button class="btn btn-primary" id="imp-confirmar" type="button" disabled>Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Senha de gravação. Antes isso era o prompt do navegador, que não diz de
+     onde vem nem o que vai acontecer, e em alguns navegadores nem aparece. -->
+<div class="modal" id="modal-senha">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3><i class="fa-solid fa-lock"></i> Modo edição</h3>
+      <p>Digite a senha de gravação do fluxo de caixa para lançar, importar ou limpar.</p>
+    </div>
+    <div class="modal-body">
+      <input type="password" id="senha-campo" class="imp-campo" autocomplete="off"
+             placeholder="senha de gravação" style="text-transform:none;letter-spacing:normal">
+      <div class="note info" id="senha-nota" hidden></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" data-fechar="modal-senha">Cancelar</button>
+      <button class="btn btn-primary" id="senha-ok" type="button">Entrar</button>
     </div>
   </div>
 </div>

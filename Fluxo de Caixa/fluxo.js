@@ -270,15 +270,48 @@ const Chave = {
      ela ainda não está guardada nesta sessão. */
   async garantir(){
     if (!this.exigida || state.chave) return true;
-    const digitada = (prompt('Senha de gravação do fluxo de caixa:') || '').trim();
-    if (!digitada) return false;
-    if (!(await this.conferir(digitada))){
-      toast('Senha de gravação incorreta.', true);
-      return false;
-    }
-    state.chave = digitada;
-    try { sessionStorage.setItem(this.K, digitada); } catch(e){}
-    return true;
+    return await this.pedir();
+  },
+
+  /* Pede a senha numa janela da própria ferramenta. A senha fica guardada
+     enquanto a aba estiver aberta: uma vez por sessão, não a cada gravação. */
+  pedir(nota){
+    return new Promise(resolve => {
+      const campo = el('senha-campo'), ok = el('senha-ok'), aviso = el('senha-nota');
+      campo.value = '';
+      aviso.hidden = !nota;
+      if (nota) aviso.textContent = nota;
+      mostrarModal('modal-senha');
+      setTimeout(() => { try { campo.focus(); } catch(e){} }, 60);
+
+      const fechar = valor => {
+        ok.onclick = null; campo.onkeydown = null;
+        document.removeEventListener('fluxo:modal-fechado', aoFechar);
+        fecharModal('modal-senha');
+        resolve(valor);
+      };
+      const aoFechar = e => { if (e.detail === 'modal-senha') fechar(false); };
+      document.addEventListener('fluxo:modal-fechado', aoFechar);
+
+      const tentar = async () => {
+        const digitada = (campo.value || '').trim();
+        if (!digitada) return;
+        ok.disabled = true;
+        const vale = await this.conferir(digitada);
+        ok.disabled = false;
+        if (!vale){
+          aviso.hidden = false;
+          aviso.textContent = 'Senha incorreta. Tente de novo.';
+          campo.value = ''; campo.focus();
+          return;
+        }
+        state.chave = digitada;
+        try { sessionStorage.setItem(this.K, digitada); } catch(e){}
+        fechar(true);
+      };
+      ok.onclick = tentar;
+      campo.onkeydown = e => { if (e.key === 'Enter') tentar(); };
+    });
   },
 };
 
@@ -337,9 +370,12 @@ function etapaLoader(texto, pct){
 }
 const respira = ms => new Promise(r => setTimeout(r, ms));
 
-async function buscarMes(mes){
+/* fresco=true faz o script pular o cache dele e ler a planilha. É o que o
+   botão Atualizar manda e o que o modo edição pede ao entrar: quem vai lançar
+   precisa ver o estado de agora, não a cópia guardada de horas atrás. */
+async function buscarMes(mes, fresco){
   const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') +
-              'fluxo=' + mes + '&v=' + Date.now();
+              'fluxo=' + mes + (fresco ? '&fresco=1' : '') + '&v=' + Date.now();
   const d = await buscarJson(url);
   if (!d || d.ok === false) throw new Error((d && d.erro) || 'resposta vazia');
   guardar(mes, d);
@@ -390,10 +426,10 @@ function fioTermina(){
   setTimeout(() => { fio.classList.remove('ativo'); ff.style.width = '0%'; }, 220);
 }
 
-async function carregar(primeira){
+async function carregar(primeira, fresco){
   if (primeira) fioPrimeiraCarga(); else fioComeca();
   try {
-    state.dados = await buscarMes(state.mes);
+    state.dados = await buscarMes(state.mes, fresco);
     if (primeira){ clearTimeout(fioPrimeiraCarga._t); etapaLoader('Somando o mês…', 66); await respira(50); }
     calcular();
     if (primeira){ etapaLoader('Montando a tabela…', 88); await respira(50); }
@@ -815,7 +851,7 @@ function secaoTabela(){
       h('span', {}, [ h('i', { class:'leg leg-prev' }), 'previsto' ]),
       h('span', {}, [ h('i', { class:'leg leg-edit' }), 'digitado' ]),
       state.podeEditar ? h('span', { class:'leg-dica' }, [ icone('fa-hand-pointer'), 'clique numa célula para ver ou lançar' ])
-                       : h('span', { class:'leg-dica' }, [ icone('fa-eye'), 'somente leitura — entre pelo hub para lançar' ]),
+                       : h('span', { class:'leg-dica' }, [ icone('fa-eye'), 'somente leitura — clique em Editar para lançar' ]),
     ]),
   ]);
   card.appendChild(legenda);
@@ -1546,7 +1582,10 @@ async function salvarSaldos(){
 
 /* ---------------------------------------------------------------- modais */
 function mostrarModal(id){ el(id).classList.add('show'); }
-function fecharModal(id){ el(id).classList.remove('show'); }
+function fecharModal(id){
+  el(id).classList.remove('show');
+  document.dispatchEvent(new CustomEvent('fluxo:modal-fechado', { detail: id }));
+}
 
 /* ============================================================================
    EXPORTAÇÃO — mesmo desenho da planilha que a equipe já usa
@@ -2646,8 +2685,51 @@ const Importar = {
   },
 };
 
+/* ============================================================================
+   MODO EDIÇÃO
+   ----------------------------------------------------------------------------
+   Antes, quem entrasse pelo hub já chegava com tudo clicável e a senha só
+   aparecia na hora de gravar. Era uma regra invisível: a mesma pessoa, com o
+   mesmo endereço, tinha ou não permissão dependendo de como tinha chegado ali.
+
+   Agora a tela abre em leitura, sempre. Para lançar, importar ou limpar,
+   entra-se em modo edição: a senha é pedida uma vez por sessão e os dados são
+   relidos na hora, para ninguém lançar em cima de uma tela velha.
+   ========================================================================== */
+const Edicao = {
+  async alternar(){
+    if (state.podeEditar){ this.sair(); return; }
+
+    if (!(await Chave.garantir())) return;
+
+    state.podeEditar = true;
+    this.pintar();
+    toast('Modo edição. Buscando os números mais recentes…');
+    await carregar(false, true);
+  },
+
+  sair(){
+    state.podeEditar = false;
+    this.pintar();
+    render();
+    toast('Modo leitura.');
+  },
+
+  pintar(){
+    const b = el('btnEditar');
+    if (!b) return;
+    b.querySelector('span').textContent = state.podeEditar ? 'Editando' : 'Editar';
+    b.classList.toggle('ligado', state.podeEditar);
+    b.title = state.podeEditar ? 'Sair do modo edição' : 'Entrar em modo edição para lançar e importar';
+    const imp = el('btnImportar');
+    if (imp) imp.hidden = !state.podeEditar;
+  },
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-  state.podeEditar = HubLink.init();
+  /* O hub continua servindo para mostrar o botão de voltar, mas não decide
+     mais quem pode editar: isso agora é o modo edição, com senha. */
+  HubLink.init();
 
   /* Quem está logado, e se o script exige senha. As duas coisas em paralelo,
      sem segurar o desenho da tela. */
@@ -2673,20 +2755,18 @@ document.addEventListener('DOMContentLoaded', () => {
       'implantação do script desta ferramenta.'));
     return;
   }
-  /* O botão de importar só existe para quem entrou pelo hub — é o mesmo
-     critério que libera a edição das células. */
-  if (state.podeEditar){
-    el('btnImportar').hidden = false;
-    el('btnImportar').onclick = () => Importar.abrir();
-    el('imp-alternar').onclick = () => Importar.alternar();
-    el('imp-limpar').onclick = () => Importar.abrirLimpeza();
-    el('imp-confirmar').onclick = () => Importar.confirmar();
-  }
+  el('btnImportar').onclick = () => Importar.abrir();
+  el('imp-alternar').onclick = () => Importar.alternar();
+  el('imp-limpar').onclick = () => Importar.abrirLimpeza();
+  el('imp-confirmar').onclick = () => Importar.confirmar();
+  el('btnEditar').onclick = () => Edicao.alternar();
+  Edicao.pintar();
 
   /* Recarregar não volta ao esqueleto: a tabela já está na tela e trocá-la por
      blocos cinzas seria piscada. Quem avisa que algo está acontecendo é o fio,
-     como na troca de mês. */
-  el('btnRecarregar').onclick = () => carregar();
+     como na troca de mês. E agora ele pede dados frescos de verdade: antes
+     podia devolver a mesma cópia guardada e parecer que nada tinha mudado. */
+  el('btnRecarregar').onclick = () => carregar(false, true);
   el('btnExportar').onclick = exportar;
   el('btnDias').onclick = () => {
     state.soUteis = !state.soUteis;
