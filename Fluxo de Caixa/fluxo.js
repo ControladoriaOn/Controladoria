@@ -134,6 +134,7 @@ const state = {
   calc: null,
   soUteis: true,        // dia sem movimento nem saldo fica escondido
   exato: true,          // centavos sempre à mostra; o modo compacto saiu
+  visao: 'mes',         // 'mes' = dias do mês em foco; 'ano' = um mês por coluna
   recolhidos: {},       // grupos fechados
   autor: '',
   primeiraPintura: true,
@@ -696,7 +697,7 @@ function render(){
   const c = el('painel');
   c.innerHTML = '';
   c.appendChild(barraMes());
-  c.appendChild(secaoTabela());
+  c.appendChild(state.visao === 'ano' ? secaoTabelaAno() : secaoTabela());
 
   const grade = document.querySelector('.grade-wrap');
   if (state.rolarParaMes && grade){
@@ -784,10 +785,21 @@ function barraMes(){
   const sec = h('div', { class:'section barra-mes' });
 
   const nav = h('div', { class:'mes-nav' });
+  /* As setas só levam a meses que existem na lista. No último mês com dados,
+     a seta da direita fica apagada em vez de sumir: assim os outros botões não
+     pulam de lugar quando se chega na ponta. */
+  const lista = (d.meses || []).slice().sort();
+  const temMes = m => lista.indexOf(m) >= 0;
+  const mesAnterior = addMes(state.mes, -1), mesSeguinte = addMes(state.mes, 1);
+
   const ant = h('button', { class:'btn btn-ghost btn-sm', type:'button', title:'Mês anterior' }, [icone('fa-chevron-left')]);
-  ant.onclick = () => irPara(addMes(state.mes, -1));
+  ant.disabled = !temMes(mesAnterior);
+  if (ant.disabled) ant.title = 'Não há mês anterior com dados';
+  ant.onclick = () => irPara(mesAnterior);
   const prox = h('button', { class:'btn btn-ghost btn-sm', type:'button', title:'Próximo mês' }, [icone('fa-chevron-right')]);
-  prox.onclick = () => irPara(addMes(state.mes, 1));
+  prox.disabled = !temMes(mesSeguinte);
+  if (prox.disabled) prox.title = 'Não há mês seguinte com dados';
+  prox.onclick = () => irPara(mesSeguinte);
   const sel = h('select', { class:'filtro' });
   const meses = (d.meses || []).slice();
   if (meses.indexOf(state.mes) < 0) meses.push(state.mes);
@@ -844,6 +856,135 @@ function irPara(mes){
 }
 
 /* --------------------------------------------------------------- tabela */
+/* ============================================================================
+   VISÃO POR MÊS
+   ----------------------------------------------------------------------------
+   As mesmas linhas e os mesmos grupos, com doze colunas no lugar dos dias.
+   Movimento vira o total do mês; saldo vira o fechamento do mês. É a leitura
+   que faltava para comparar os finais de mês sem rolar 365 colunas — e ela
+   cabe inteira na tela, sem esperar nada, porque o ano já está na memória. */
+function mesesDoAno(){
+  const d = state.dados;
+  const vistos = {};
+  (d.dias || []).forEach(x => { vistos[x.data.slice(0, 7)] = true; });
+  return Object.keys(vistos).sort();
+}
+
+function secaoTabelaAno(){
+  const d = state.dados, c = state.calc;
+  const meses = mesesDoAno();
+  const datasPorMes = {};
+  meses.forEach(m => { datasPorMes[m] = c.dias.filter(x => x.slice(0, 7) === m); });
+
+  const sec = h('div', { class:'section' });
+  const card = h('div', { class:'card' });
+
+  const tudo = tudoFechado();
+  const btnTudo = h('button', { class:'btn-agrupar', type:'button',
+    title: tudo ? 'Abrir todos os grupos' : 'Fechar todos os grupos' },
+    [ icone(tudo ? 'fa-angles-down' : 'fa-angles-up') ]);
+  btnTudo.onclick = () => alternarTudo();
+
+  card.appendChild(h('div', { class:'card-bar' }, [
+    btnTudo,
+    h('div', { class:'card-bar-title' }, [ icone('fa-calendar'), 'Fechamento de ' + state.mes.slice(0, 4) ]),
+    h('div', { class:'legenda' }, [
+      h('span', { class:'leg-dica' }, [ icone('fa-hand-pointer'), 'clique num mês para abrir os dias dele' ]),
+    ]),
+  ]));
+
+  const wrap = h('div', { class:'grade-wrap' });
+  const tbl = h('table', { class:'grade' });
+
+  const thead = h('thead');
+  const tr = h('tr');
+  tr.appendChild(h('th', { class:'col-nome', text:'Descrição' }));
+  meses.forEach(m => {
+    const th = h('th', { class:'col-dia col-mes' + (m === state.mes ? ' col-foco' : ''),
+                         title:'Abrir os dias de ' + nomeMes(m) }, [
+      h('span', { class:'d-num', text: MESES_PT[Number(m.slice(5, 7)) - 1] }),
+      h('span', { class:'d-dow', text: m.slice(0, 4) }),
+    ]);
+    th.onclick = () => {
+      state.visao = 'mes'; state.rolarParaMes = true;
+      document.dispatchEvent(new CustomEvent('fluxo:visao'));
+      irOuRedesenhar(m);
+    };
+    tr.appendChild(th);
+  });
+  tr.appendChild(h('th', { class:'col-total', text:'Total do ano' }));
+  thead.appendChild(tr);
+  tbl.appendChild(thead);
+
+  const tbody = h('tbody');
+  linhasDaTela().forEach(l => tbody.appendChild(linhaTrAno(l, meses, datasPorMes)));
+  tbl.appendChild(tbody);
+
+  wrap.appendChild(tbl);
+  card.appendChild(wrap);
+  sec.appendChild(card);
+  return sec;
+}
+
+function linhaTrAno(l, meses, datasPorMes){
+  const c = state.calc;
+  if (l.kind === 'espaco'){
+    const tr = h('tr', { class:'l-espaco' });
+    tr.appendChild(h('td', { colspan: meses.length + 2 }));
+    return tr;
+  }
+  const acompanha = l.kind === 'saldo-ini' || l.kind === 'saldo-fim' || l.kind === 'total';
+  const cadeia = l.cadeia || [];
+  const tr = h('tr', { class:'l-' + l.kind + (l.nivel ? ' nivel-' + l.nivel : '') +
+                              (l.classe ? ' ' + l.classe : '') + (acompanha ? ' fixa' : '') +
+                              (cadeia.some(fechado) ? ' oculta' : '') });
+  if (cadeia.length) tr.setAttribute('data-cadeia', cadeia.join(' '));
+
+  const nome = h('td', { class:'col-nome' });
+  const box = h('div', { class:'nome-box' });
+  const chaveGrupo = l.kind === 'grupo' ? l.linha.id : (l.grupo || '');
+  if (chaveGrupo){
+    tr.setAttribute('data-grupo', chaveGrupo);
+    const estaFechado = fechado(chaveGrupo);
+    const b = h('button', { class:'toggle', type:'button', title: estaFechado ? 'abrir' : 'fechar' },
+      [ icone(estaFechado ? 'fa-chevron-right' : 'fa-chevron-down') ]);
+    b.onclick = e => {
+      e.stopPropagation();
+      state.recolhidos[chaveGrupo] = !fechado(chaveGrupo);
+      guardarGrupos();
+      aplicarGrupos();
+    };
+    box.appendChild(b);
+  }
+  if (l.codigo) box.appendChild(h('span', { class:'cod', text: l.codigo }));
+  box.appendChild(h('span', { class:'txt', text: l.label }));
+  nome.appendChild(box);
+  tr.appendChild(nome);
+
+  meses.forEach(m => {
+    const v = agregar(l, datasPorMes[m]);
+    const td = h('td', { class:'num col-mes' + (m === state.mes ? ' col-foco' : '') + classeValor(l, v) });
+    td.textContent = (v === undefined || v === null) ? '' : fmtGrade(v);
+    if (v) td.title = nomeMes(m) + ' · ' + fmtExato(v);
+    tr.appendChild(td);
+  });
+
+  /* Total do ano: a mesma regra, aplicada ao ano inteiro. */
+  const tv = agregar(l, c.dias);
+  const tdTot = h('td', { class:'col-total num' + classeValor(l, tv) });
+  tdTot.textContent = (tv === undefined || tv === null) ? '' : fmtGrade(tv);
+  if (tv) tdTot.title = fmtExato(tv);
+  tr.appendChild(tdTot);
+  return tr;
+}
+
+/* Trocar de mês estando na visão do ano não precisa buscar nada quando o mês é
+   do ano que já está carregado. */
+function irOuRedesenhar(mes){
+  if (mes === state.mes){ render(); return; }
+  irPara(mes);
+}
+
 function secaoTabela(){
   const d = state.dados, c = state.calc;
   const dias = diasVisiveis();
@@ -1088,6 +1229,35 @@ function paiFechado(id){
   return false;
 }
 
+/* O valor de uma linha para um conjunto de dias. Movimento soma; saldo mostra
+   a última foto do período, porque somar saldo não quer dizer nada. É a mesma
+   regra da coluna de total e das colunas da visão por mês — escrita uma vez
+   só, para as duas não divergirem com o tempo. */
+function agregar(l, datas){
+  const c = state.calc;
+  const pegar = l.get || (() => undefined);
+  if (!datas.length) return undefined;
+
+  if (l.kind === 'saldo-ini') return c.sdIni[datas[0]];
+
+  const foto = l.kind === 'saldo-fim' || l.kind === 'bancos' || l.kind === 'dif' ||
+               l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' || l.kind === 'saldo-total';
+  if (foto){
+    for (let i = datas.length - 1; i >= 0; i--){
+      const v = pegar(datas[i]);
+      if (v !== undefined && v !== null) return v;
+    }
+    return undefined;
+  }
+
+  let soma = 0, achou = false;
+  datas.forEach(d => {
+    const v = pegar(d);
+    if (v !== undefined && v !== null){ soma += num(v); achou = true; }
+  });
+  return achou ? soma : undefined;
+}
+
 function linhaTr(l, dias){
   const c = state.calc;
   if (l.kind === 'espaco'){
@@ -1145,18 +1315,7 @@ function linhaTr(l, dias){
   });
 
   /* Total do mês: soma nas linhas de movimento; nas de saldo, a última foto. */
-  const doMes = dias.filter(x => !x.fora);
-  let tv = total;
-  if (l.kind === 'saldo-ini') tv = c.sdIni[(doMes[0] || dias[0] || {}).data || c.dias[0]];
-  else if (l.kind === 'saldo-fim' || l.kind === 'bancos' || l.kind === 'dif' ||
-           l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' ||
-           l.kind === 'saldo-total'){
-    tv = undefined;
-    for (let i = doMes.length - 1; i >= 0; i--){
-      const v = pegar(doMes[i].data);
-      if (v !== undefined && v !== null){ tv = v; break; }
-    }
-  }
+  const tv = agregar(l, dias.filter(x => !x.fora).map(x => x.data));
   const tdTot = h('td', { class:'col-total num' + classeValor(l, tv) });
   if (l.kind === 'dif' && tv !== undefined && tv !== null){
     const z = Math.abs(num(tv)) < 0.005 ? 0 : num(tv);
@@ -1634,6 +1793,44 @@ function fecharModal(id){
 /* ============================================================================
    EXPORTAÇÃO — mesmo desenho da planilha que a equipe já usa
    ============================================================================ */
+/* ============================================================================
+   REGISTRO DE USO
+   ----------------------------------------------------------------------------
+   Abrir e exportar não mudam nada, então não pedem senha — mas ficam na aba
+   Log com quem, quando e o quê. Serve para enxergar depois quem andou baixando
+   o fluxo. É registro, não tranca: sem senha, vale entre quem já tem acesso.
+
+   A abertura é registrada uma vez por sessão do navegador. Sem isso, recarregar
+   a página cinco vezes viraria cinco linhas e o registro perderia a serventia.
+   ========================================================================== */
+const Registro = {
+  K: 'fluxo_abertura_registrada',
+
+  enviar(tipo, detalhe){
+    try {
+      fetch(CONFIG.DATA_URL, {
+        method:'POST', mode:'no-cors',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify({ acao:'fluxo_registro', tipo: tipo,
+                               detalhe: detalhe || '', usuario: state.autor || '' }),
+      });
+    } catch(e){ /* registro não pode atrapalhar o uso da tela */ }
+  },
+
+  async abertura(){
+    try { if (sessionStorage.getItem(this.K) === '1') return; } catch(e){}
+    /* Espera o e-mail do Access chegar: registrar sem saber quem é seria
+       uma linha inútil. */
+    try { await IDENTIDADE; } catch(e){}
+    try { sessionStorage.setItem(this.K, '1'); } catch(e){}
+    this.enviar('abertura', 'ano ' + state.mes.slice(0, 4));
+  },
+
+  exportacao(quantosDias, periodo){
+    this.enviar('exportacao', periodo + ' · ' + quantosDias + ' dia(s)');
+  },
+};
+
 function exportar(){
   if (typeof XLSX === 'undefined'){ toast('Biblioteca de planilha carregando…', true); return; }
   const c = state.calc, dias = diasVisiveis();
@@ -1679,6 +1876,7 @@ function exportar(){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Fluxo ' + state.mes);
   XLSX.writeFile(wb, 'fluxo-de-caixa-' + state.mes + '.xlsx');
+  Registro.exportacao(dias.length, nomeMes(state.mes));
   toast('Planilha gerada.');
 }
 
@@ -2812,6 +3010,24 @@ document.addEventListener('DOMContentLoaded', () => {
      podia devolver a mesma cópia guardada e parecer que nada tinha mudado. */
   el('btnRecarregar').onclick = () => carregar(false, true);
   el('btnExportar').onclick = exportar;
+
+  /* Alterna entre os dias do mês e o fechamento de cada mês do ano. O botão de
+     dias úteis some na visão do ano: lá não há dia para esconder. */
+  const pintarVisao = () => {
+    const b = el('btnVisao');
+    const noAno = state.visao === 'ano';
+    b.querySelector('span').textContent = noAno ? 'Ver o mês' : 'Ver o ano';
+    b.classList.toggle('ligado', noAno);
+    el('btnDias').hidden = noAno;
+  };
+  pintarVisao();
+  el('btnVisao').onclick = () => {
+    state.visao = state.visao === 'ano' ? 'mes' : 'ano';
+    pintarVisao();
+    state.rolarParaMes = state.visao === 'mes';
+    render();
+  };
+  document.addEventListener('fluxo:visao', pintarVisao);
   el('btnDias').onclick = () => {
     state.soUteis = !state.soUteis;
     el('btnDias').querySelector('span').textContent = state.soUteis ? 'Dias úteis' : 'Todos os dias';
@@ -2843,5 +3059,5 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch(e){}
 
   state.rolarParaMes = true;
-  carregar(true);
+  carregar(true).then(() => Registro.abertura());
 });

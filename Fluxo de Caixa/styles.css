@@ -98,6 +98,9 @@ header{
 .btn-danger:hover:not(:disabled){background:var(--danger-soft);border-color:var(--danger)}
 .btn-sm{padding:7px 12px;font-size:12px;border-radius:9px}
 .btn-ghost.ligado{background:var(--orange-soft);border-color:#FFD9B8;color:var(--orange-deep)}
+/* Seta sem para onde ir: fica no lugar, apagada. Some do caminho sem fazer os
+   outros botões pularem quando se chega no primeiro ou no último mês. */
+.mes-nav .btn:disabled{opacity:.35;cursor:default;border-color:var(--border-soft)}
 
 /* ------------------------------------------------------------- conteúdo */
 .content{position:relative;z-index:1;padding:16px 26px 18px;margin:0 auto;width:100%;
@@ -198,9 +201,27 @@ th.col-dia .d-dow{display:block;font-size:9.5px;font-weight:600;color:var(--subt
 th.col-dia.nao-util{background:#F1ECF1}
 th.col-dia.nao-util .d-num{color:var(--subtle)}
 /* Dias emprestados do mês vizinho: presentes para mostrar a emenda, mas em
-   segundo plano — não são do mês que está sendo fechado. */
-th.col-dia.col-fora{background:var(--surface-soft);opacity:.75}
-th.col-dia.col-fora .d-num{color:var(--subtle)}
+   segundo plano — não são do mês que está sendo fechado.
+
+   Sem opacidade aqui: o cabeçalho fica parado enquanto a tabela corre por
+   baixo, e opacidade nele não clareia a cor, deixa a faixa translúcida — os
+   números das linhas apareciam através do dia. Cor mais clara, sólida. */
+/* Visão por mês: colunas mais largas, porque cabem doze e os números são
+   somas do mês inteiro. O mês que estava em foco fica marcado, para não se
+   perder a referência ao trocar de visão. */
+th.col-mes{width:132px;min-width:132px}
+th.col-mes{cursor:pointer}
+th.col-mes:hover{background:var(--orange-soft)}
+th.col-mes .d-num{font-family:var(--font-display);font-size:12.5px;text-transform:none}
+th.col-mes.col-foco{background:var(--orange-soft)}
+th.col-mes.col-foco .d-num{color:var(--orange-deep)}
+td.col-mes.col-foco{background:#FFFBF6}
+tr.l-saldo-ini td.col-mes.col-foco,tr.l-saldo-fim td.col-mes.col-foco{background:#4A2A33}
+tr.l-total td.col-mes.col-foco{background:#F6EDE6}
+
+th.col-dia.col-fora{background:#F4F0F4}
+th.col-dia.col-fora .d-num{color:var(--subtle);font-weight:600}
+th.col-dia.col-fora .d-dow{color:#B9AEC0}
 td.col-fora{color:var(--plum-soft);background:#FCFAFC}
 tr.l-saldo-ini td.col-fora,tr.l-saldo-fim td.col-fora{background:#3B2F3B;color:#E7DCE7}
 tr.l-total td.col-fora{background:#F7F3F7}
