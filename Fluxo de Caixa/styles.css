@@ -738,3 +738,61 @@ td.recem-mudada{animation:brilhoCelula 1.1s ease-out}
    apagado, com o motivo escrito logo acima. */
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn:disabled:hover{background:none;border-color:var(--border)}
+
+/* ============================================================================
+   TÍTULOS DE UMA CÉLULA — resumo, filtro e a lista
+   ----------------------------------------------------------------------------
+   A lista sozinha respondia "quais títulos", mas não "isso é muito?". Os
+   quatro números do topo respondem, e a barra ao lado do valor mostra a
+   concentração sem obrigar ninguém a somar de cabeça.
+   ============================================================================ */
+.det-chips{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.det-chip{flex:1;min-width:112px;border:1px solid var(--border-soft);border-radius:12px;
+  padding:9px 12px;background:var(--surface-soft)}
+.det-chip .k{font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--subtle);line-height:1.3}
+.det-chip .v{font-size:15px;font-weight:700;color:var(--plum-deep);margin-top:3px;
+  font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.det-chip.forte{background:var(--orange-soft);border-color:#FFD9B5}
+.det-chip.forte .v{color:var(--orange-deep)}
+
+.det-barra{display:flex;gap:8px;margin-bottom:10px}
+.det-busca{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--border);
+  border-radius:11px;font-family:inherit;font-size:12.5px;color:var(--ink);background:var(--surface)}
+.det-busca::placeholder{color:var(--subtle)}
+.det-busca:focus{outline:none;border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(255,110,0,.14)}
+.det-ord{display:flex;gap:2px;background:var(--surface-soft);border-radius:11px;padding:3px;
+  flex-shrink:0}
+.det-ord button{border:none;background:none;font-family:inherit;font-size:11.5px;font-weight:600;
+  color:var(--plum-soft);padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  transition:background .12s, color .12s}
+.det-ord button:hover{color:var(--plum-deep)}
+.det-ord button.on{background:var(--surface);color:var(--plum-deep);box-shadow:var(--shadow-sm)}
+
+.det-lista{border-top:1px solid var(--border-soft);margin:0 -24px;padding:0 24px}
+table.det-tabela td{vertical-align:middle}
+.det-banco{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.3px;
+  padding:2px 6px;border-radius:5px;background:var(--surface-soft);color:var(--plum-soft);
+  white-space:nowrap}
+.det-fora{color:var(--warn);font-weight:700}
+td.det-val{position:relative;white-space:nowrap}
+td.det-val .n{font-family:var(--font-mono);font-weight:600;font-variant-numeric:tabular-nums}
+td.det-val .p{font-size:10px;color:var(--subtle);margin-top:1px;font-family:var(--font-body)}
+.det-barra-val{position:absolute;left:0;bottom:0;height:2px;background:var(--orange);opacity:.45}
+
+.det-pe{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.det-tot{flex:1;font-size:12px;color:var(--plum-soft);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.det-tot b{color:var(--plum-deep);font-family:var(--font-mono)}
+
+/* ---- esqueleto da espera ---- */
+.det-sk .sk{background:linear-gradient(90deg,var(--surface-soft) 25%,var(--border) 37%,var(--surface-soft) 63%);
+  background-size:400% 100%;animation:skPassa 1.3s ease-in-out infinite;border-radius:6px;height:11px}
+.det-sk .sk-k{width:52px;height:8px}
+.det-sk .sk-v{width:88px;height:13px;margin-top:6px}
+.det-sk .sk-min{height:9px;margin-top:5px}
+.det-sk-linha{display:flex;align-items:center;gap:14px;padding:11px 0;
+  border-bottom:1px solid var(--border-soft)}
+@keyframes skPassa{0%{background-position:100% 50%}100%{background-position:0 50%}}
+@media (prefers-reduced-motion: reduce){ .det-sk .sk{animation:none} }

@@ -455,6 +455,7 @@ async function buscarAno(ano, fresco, semPrevisto){
               (semPrevisto ? '&sem_previsto=1' : '') + '&v=' + Date.now();
   const d = expandirPayload(await buscarJson(url));
   if (!d || d.ok === false) throw new Error((d && d.erro) || 'resposta vazia');
+  if (fresco) Titulos.esquecer();
   /* Quando se pede a resposta sem a projeção, ela volta com a lista vazia. A
      projeção não muda com o que se está prestes a lançar, então a que já
      estava na mão continua valendo — sem isso o mês corrente perderia o
@@ -1692,88 +1693,272 @@ function blocoAjustes(l, dia){
   return box;
 }
 
+/* ============================================================================
+   OS TÍTULOS DE UMA CÉLULA
+   ----------------------------------------------------------------------------
+   Cada clique buscava uma conta de fluxo, e o script do outro lado varria as
+   cinco planilhas mensais em volta para responder. Custava o mesmo que trazer
+   o dia inteiro — então agora traz o dia inteiro, e a tela guarda. Do segundo
+   clique em diante, naquele dia, nada vai à rede.
+   ========================================================================== */
+const Titulos = {
+  porDia: {},           // data -> lista de títulos do dia, todas as contas
+
+  async doDia(data){
+    if (this.porDia[data]) return this.porDia[data];
+    const url = CONFIG.DATA_URL + '?fluxo_detalhe=' + data + '&v=' + Date.now();
+    const r = await buscarJson(url);
+    if (!r || !r.ok) throw new Error((r && r.erro) || 'sem resposta');
+    this.porDia[data] = r.linhas || [];
+    return this.porDia[data];
+  },
+
+  /* Gravar muda o passado: o que estava guardado deixa de valer. */
+  esquecer(){ this.porDia = {}; },
+};
+
+/* O esqueleto é a forma da lista chegando. A caixa branca vazia que havia
+   antes não dizia se ia demorar dois segundos ou se tinha quebrado. */
+function esqueletoTitulos(){
+  const box = h('div', { class:'det-sk' });
+  box.appendChild(h('div', { class:'det-chips' }, [1,2].map(() =>
+    h('div', { class:'det-chip' }, [
+      h('div', { class:'sk sk-k' }), h('div', { class:'sk sk-v' }) ]))));
+  const larg = [[70,190,120,96],[70,150,100,78],[70,172,132,88],[70,160,110,84]];
+  larg.forEach(w => {
+    box.appendChild(h('div', { class:'det-sk-linha' }, [
+      h('div', { class:'sk', style:'width:' + w[0] + 'px' }),
+      h('div', {}, [ h('div', { class:'sk', style:'width:' + w[1] + 'px' }),
+                     h('div', { class:'sk sk-min', style:'width:' + w[2] + 'px' }) ]),
+      h('div', { class:'sk', style:'width:' + w[3] + 'px;margin-left:auto' }),
+    ]));
+  });
+  return box;
+}
+
+function chip(rotulo, valor, forte){
+  return h('div', { class:'det-chip' + (forte ? ' forte' : '') }, [
+    h('div', { class:'k', text: rotulo }),
+    h('div', { class:'v', text: valor }),
+  ]);
+}
+
 async function abrirDetalheTitulos(l, dia){
+  el('det-pe').innerHTML = '';
   el('det-titulo').textContent = l.label;
-  el('det-sub').textContent = fmtData(dia.data) + ' · carregando…';
-  el('det-corpo').innerHTML = '';
+  el('det-sub').textContent = fmtData(dia.data) + ' · buscando os títulos…';
+  const corpo = el('det-corpo');
+  corpo.innerHTML = '';
   mostrarModal('modal-detalhe');
 
   if (dia.data >= state.calc.hoje){
     el('det-sub').textContent = fmtData(dia.data) + ' · previsto, ainda não pago';
-    el('det-corpo').appendChild(h('div', { class:'empty' }, [
+    corpo.appendChild(h('div', { class:'empty' }, [
       icone('fa-clock'),
       'Este valor é previsão: são títulos em aberto com vencimento neste dia. ' +
       'O detalhe título a título está no painel de pagamentos.',
     ]));
-    el('det-corpo').appendChild(blocoAjustes(l, dia));
+    corpo.appendChild(blocoAjustes(l, dia));
     return;
   }
 
-  try {
-    const url = CONFIG.DATA_URL + '?fluxo_detalhe=' + dia.data +
-                '&conta=' + encodeURIComponent(l.linha.codigo) + '&v=' + Date.now();
-    const r = await buscarJson(url);
-    if (!r || !r.ok) throw new Error((r && r.erro) || 'sem resposta');
-    const c = state.calc, k = l.linha.id + '|' + dia.data;
-    const auto = c.autoCel[k] || 0, ajuste = c.ajusteCel[k] || 0;
-    const corpo = el('det-corpo');
-    corpo.innerHTML = '';
+  /* Só desenha o esqueleto quando a resposta não está na mão. Piscar um
+     esqueleto por 20 milissegundos é pior que não piscar nada. */
+  const jaTem = !!Titulos.porDia[dia.data];
+  if (!jaTem) corpo.appendChild(esqueletoTitulos());
 
-    /* Sem título no histórico mas com valor na tela: o número veio da migração
-       da planilha antiga, que guardou só o total do dia. Dizer "nada neste dia"
-       ali seria mentira — o valor está na cara de quem pergunta. */
-    if (!r.linhas.length){
-      el('det-sub').textContent = fmtData(dia.data) +
-        (auto ? (' · ' + fmtExato(auto)) : ' · sem valor do relatório');
-      corpo.appendChild(h('div', { class:'note info' }, [
-        icone('fa-circle-info'),
-        h('span', { text: auto
-          ? ('Este valor veio da migração da planilha antiga, que guardava só o total ' +
-             'do dia por conta de fluxo — o detalhe título a título está na base do Excel. ' +
-             'A partir do momento em que o relatório de baixas passa a alimentar o fluxo, ' +
-             'a lista aparece aqui.')
-          : 'Nenhum título neste dia nesta conta.' }),
-      ]));
-      if (ajuste) corpo.appendChild(h('div', { class:'note warn', style:'margin-top:10px' }, [
-        icone('fa-pen'),
-        h('span', { text:'Há ajuste lançado à mão neste dia: R$ ' + fmtExato(ajuste) +
-                          '. O valor na tela é R$ ' + fmtExato(auto + ajuste) + '.' }),
-      ]));
-      corpo.appendChild(blocoAjustes(l, dia));
-      return;
+  try {
+    const doDia = await Titulos.doDia(dia.data);
+    const codigo = String(l.linha.codigo || '');
+    const linhas = doDia.filter(x => String(x.conta_fluxo) === codigo);
+    const total = linhas.reduce((a, x) => a + (Number(x.valor) || 0), 0);
+    pintarTitulos(l, dia, linhas, Math.round(total * 100) / 100);
+  } catch(e){
+    el('det-sub').textContent = 'não consegui carregar o detalhe';
+    corpo.innerHTML = '';
+    corpo.appendChild(h('div', { class:'note danger' }, [
+      icone('fa-triangle-exclamation'),
+      h('span', { text: String(e.message || e) }),
+    ]));
+    corpo.appendChild(blocoAjustes(l, dia));
+  }
+}
+
+function pintarTitulos(l, dia, linhas, total){
+  const c = state.calc, k = l.linha.id + '|' + dia.data;
+  const auto = c.autoCel[k] || 0, ajuste = c.ajusteCel[k] || 0;
+  const corpo = el('det-corpo');
+  corpo.innerHTML = '';
+
+  /* Sem título no histórico mas com valor na tela: o número veio da migração
+     da planilha antiga, que guardou só o total do dia. Dizer "nada neste dia"
+     ali seria mentira — o valor está na cara de quem pergunta. */
+  if (!linhas.length){
+    el('det-sub').textContent = fmtData(dia.data) +
+      (auto ? (' · ' + fmtExato(auto)) : ' · sem valor do relatório');
+    corpo.appendChild(h('div', { class:'note info' }, [
+      icone('fa-circle-info'),
+      h('span', { text: auto
+        ? ('Este valor veio da migração da planilha antiga, que guardava só o total ' +
+           'do dia por conta de fluxo — o detalhe título a título está na base do Excel. ' +
+           'A partir do momento em que o relatório de baixas passa a alimentar o fluxo, ' +
+           'a lista aparece aqui.')
+        : 'Nenhum título neste dia nesta conta.' }),
+    ]));
+    if (ajuste) corpo.appendChild(h('div', { class:'note warn', style:'margin-top:10px' }, [
+      icone('fa-pen'),
+      h('span', { text:'Há ajuste lançado à mão neste dia: R$ ' + fmtExato(ajuste) +
+                        '. O valor na tela é R$ ' + fmtExato(auto + ajuste) + '.' }),
+    ]));
+    corpo.appendChild(blocoAjustes(l, dia));
+    return;
+  }
+
+  /* No caso normal todo mundo foi baixado no próprio dia, e uma coluna que
+     repete a mesma data vinte vezes só ocupa espaço. Ela vira uma frase no
+     subtítulo, e só volta à tabela quando algum título destoa. */
+  const destoam = linhas.filter(x => String(x.dt_baixa).slice(0, 10) !== dia.data);
+  el('det-sub').textContent = fmtData(dia.data) +
+    (destoam.length
+      ? (' · ' + destoam.length + ' baixado(s) em outro dia')
+      : ' · todos baixados no mesmo dia') +
+    (ajuste ? ('  ·  ajuste de ' + fmtExato(ajuste)) : '');
+
+  const saidasDoDia = Math.abs(num(c.totSai[dia.data]) || 0);
+  const maior = linhas.reduce((a, x) => Math.max(a, Number(x.valor) || 0), 0);
+  const chips = h('div', { class:'det-chips' }, [
+    chip('Títulos', String(linhas.length)),
+    chip('Total da conta', fmtExato(total), true),
+    saidasDoDia ? chip('Do total de saídas do dia',
+      (100 * Math.abs(total) / saidasDoDia).toFixed(1).replace('.', ',') + '%') : null,
+    chip('Maior título', fmtExato(maior)),
+  ].filter(Boolean));
+  corpo.appendChild(chips);
+
+  /* Filtro e ordenação só aparecem quando há lista o bastante para se perder
+     nela. Numa conta com três títulos eles seriam enfeite. */
+  const estado = { busca:'', ordem:'valor' };
+  const tabela = h('div', { class:'det-lista' });
+
+  if (linhas.length > 10){
+    const campo = h('input', { type:'search', class:'det-busca',
+      placeholder:'filtrar por favorecido, número ou histórico' });
+    const botoes = h('div', { class:'det-ord' });
+    [['valor','maior valor'], ['fornecedor','favorecido'], ['numero','número']].forEach(o => {
+      const b = h('button', { type:'button', class: o[0] === estado.ordem ? 'on' : '', text:o[1] });
+      b.onclick = () => {
+        estado.ordem = o[0];
+        botoes.querySelectorAll('button').forEach((x, i) =>
+          x.classList.toggle('on', [['valor'],['fornecedor'],['numero']][i][0] === estado.ordem));
+        desenhar();
+      };
+      botoes.appendChild(b);
+    });
+    campo.oninput = () => { estado.busca = campo.value.trim().toLowerCase(); desenhar(); };
+    corpo.appendChild(h('div', { class:'det-barra' }, [campo, botoes]));
+  }
+
+  corpo.appendChild(tabela);
+  const rodape = el('det-pe');
+
+  function desenhar(){
+    let vis = linhas;
+    if (estado.busca){
+      const t = estado.busca;
+      vis = vis.filter(x =>
+        String(x.fornecedor || '').toLowerCase().indexOf(t) >= 0 ||
+        String(x.numero || '').toLowerCase().indexOf(t) >= 0 ||
+        String(x.historico || '').toLowerCase().indexOf(t) >= 0);
     }
-    el('det-sub').textContent = fmtData(dia.data) + ' · ' + r.linhas.length +
-      ' título(s) · ' + fmtExato(r.total) +
-      (ajuste ? ('  ·  ajuste de ' + fmtExato(ajuste)) : '');
-    const tbl = h('table', { class:'tabela-simples' }, [
-      h('thead', {}, [ h('tr', {}, [
-        h('th', { text:'Número' }), h('th', { text:'Favorecido' }),
-        h('th', { text:'Baixa' }), h('th', { class:'num', text:'Valor' }),
-      ])]),
-    ]);
+    vis = vis.slice().sort((a, b) =>
+      estado.ordem === 'valor' ? (Number(b.valor) || 0) - (Number(a.valor) || 0)
+      : estado.ordem === 'fornecedor'
+        ? String(a.fornecedor || '').localeCompare(String(b.fornecedor || ''), 'pt-BR')
+        : String(a.numero || '').localeCompare(String(b.numero || ''), 'pt-BR'));
+
+    tabela.innerHTML = '';
+    const tbl = h('table', { class:'tabela-simples det-tabela' });
+    const cab = [ h('th', { text:'Número' }), h('th', { text:'Favorecido' }) ];
+    if (destoam.length) cab.push(h('th', { text:'Baixa' }));
+    cab.push(h('th', { text:'Banco' }));
+    cab.push(h('th', { class:'num', text:'Valor' }));
+    tbl.appendChild(h('thead', {}, [ h('tr', {}, cab) ]));
+
     const tb = h('tbody');
-    r.linhas.forEach(x => {
-      tb.appendChild(h('tr', {}, [
+    const soma = vis.reduce((a, x) => a + Math.abs(Number(x.valor) || 0), 0) || 1;
+    vis.forEach(x => {
+      const v = Number(x.valor) || 0;
+      const parte = 100 * Math.abs(v) / soma;
+      const cels = [
         h('td', { class:'mono', text: x.numero || '—' }),
         h('td', {}, [ h('div', { class:'forn' }, [
           x.fornecedor || '—',
-          h('small', { text: String(x.historico || '').slice(0, 60) }),
+          h('small', { text: String(x.historico || '').slice(0, 70) }),
         ])]),
-        h('td', { class:'mono', text: fmtData(x.dt_baixa) }),
-        h('td', { class:'num', text: fmtExato(x.valor) }),
+      ];
+      if (destoam.length){
+        const fora = String(x.dt_baixa).slice(0, 10) !== dia.data;
+        cels.push(h('td', { class:'mono' + (fora ? ' det-fora' : ''),
+                            text: fmtData(x.dt_baixa) }));
+      }
+      cels.push(h('td', {}, [ x.banco ? h('span', { class:'det-banco', text: x.banco }) : '' ]));
+      cels.push(h('td', { class:'num det-val' }, [
+        h('div', { class:'n', text: fmtExato(v) }),
+        h('div', { class:'p', text: parte.toFixed(1).replace('.', ',') + '%' }),
+        h('div', { class:'det-barra-val', style:'width:' + Math.min(100, parte) + '%' }),
       ]));
+      tb.appendChild(h('tr', {}, cels));
     });
     tbl.appendChild(tb);
-    corpo.appendChild(tbl);
-    corpo.appendChild(blocoAjustes(l, dia));
-  } catch(e){
-    el('det-sub').textContent = 'não consegui carregar o detalhe';
-    el('det-corpo').appendChild(h('div', { class:'note danger', text: String(e.message || e) }));
+    tabela.appendChild(tbl);
+
+    if (!vis.length) tabela.appendChild(h('div', { class:'empty' }, [
+      icone('fa-magnifying-glass'), 'Nenhum título com esse texto.' ]));
+
+    const somaVis = vis.reduce((a, x) => a + (Number(x.valor) || 0), 0);
+    rodape.innerHTML = '';
+    rodape.appendChild(h('span', { class:'det-tot' }, [
+      vis.length + (vis.length === 1 ? ' título · ' : ' títulos · '),
+      h('b', { text: fmtExato(somaVis) }),
+    ]));
+    const copiar = h('button', { class:'btn btn-ghost btn-sm', type:'button' },
+      [ icone('fa-copy'), 'Copiar lista' ]);
+    copiar.onclick = () => copiarTitulos(l, dia, vis);
+    rodape.appendChild(copiar);
   }
+
+  desenhar();
+  corpo.appendChild(blocoAjustes(l, dia));
+}
+
+/* Copia em texto separado por tabulação: cola direto numa planilha, em
+   colunas, sem ninguém precisar tratar nada. */
+function copiarTitulos(l, dia, linhas){
+  const cab = ['Número', 'Favorecido', 'Histórico', 'Vencimento', 'Baixa', 'Banco', 'Valor'];
+  const corpo = linhas.map(x => [
+    x.numero || '', x.fornecedor || '', String(x.historico || '').replace(/\s+/g, ' '),
+    fmtData(x.vencimento), fmtData(x.dt_baixa), x.banco || '',
+    fmtExato(x.valor),
+  ].join('\t'));
+  const txt = [l.label + ' · ' + fmtData(dia.data), cab.join('\t')].concat(corpo).join('\n');
+  const pronto = () => toast(linhas.length + ' título(s) copiados. Cole numa planilha.');
+  try {
+    navigator.clipboard.writeText(txt).then(pronto, () => copiarNaMarra(txt, pronto));
+  } catch(e){ copiarNaMarra(txt, pronto); }
+}
+function copiarNaMarra(txt, pronto){
+  const ta = h('textarea', { style:'position:fixed;left:-9999px;top:0' });
+  ta.value = txt;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); pronto(); }
+  catch(e){ toast('Não consegui copiar. Selecione a lista à mão.', true); }
+  document.body.removeChild(ta);
 }
 
 /* --- linhas digitadas: um dia pode ter mais de um lançamento --- */
 function abrirLancamentos(l, dia){
+  el('det-pe').innerHTML = '';
   const lista = state.calc.lancPorCel[l.linha.id + '|' + dia.data] || [];
   if (!state.podeEditar && !lista.length) return;
   if (lista.length > 1 || (!state.podeEditar && lista.length)){
@@ -1856,6 +2041,7 @@ async function excluirLancamento(){
    antes de reler — é o mesmo compasso da tela de envio do painel. */
 function recarregarDepois(){
   delete state.cache[state.mes];
+  Titulos.esquecer();
   fioComeca();
   setTimeout(() => carregar(), 1500);
 }
@@ -3451,7 +3637,7 @@ const Importar = {
       /* O cache inteiro cai, não só o mês na tela: uma limpeza mexe em todos
          os meses, e depois de uma importação o mês vizinho também pode ter
          mudado por causa do saldo que vem arrastado. */
-      setTimeout(() => { fecharModal('modal-importar'); state.cache = {}; carregar(); }, 900);
+      setTimeout(() => { fecharModal('modal-importar'); state.cache = {}; Titulos.esquecer(); carregar(); }, 900);
     } catch(err){
       toast('Falhou no meio: ' + (err.message || err), true);
       this.ocupado = false;
