@@ -514,6 +514,10 @@ table.tabela-simples td.mono{font-family:var(--font-mono);white-space:nowrap}
   font-family:var(--font-body);font-size:12.5px;color:var(--plum-soft);
   text-decoration:underline;text-underline-offset:3px}
 .imp-link:hover{color:var(--orange)}
+/* Desabilitado tem que parecer desabilitado: sem isto o link continuava com
+   cara de clicável enquanto uma importação estava em curso. */
+.imp-link:disabled{opacity:.4;cursor:not-allowed;text-decoration:none}
+.imp-link:disabled:hover{color:var(--plum-soft)}
 /* O link de limpar nasce cinza como o vizinho e só fica vermelho quando o
    ponteiro chega nele: vermelho o tempo todo vira um botão de pânico piscando
    num rodapé que se usa todo dia. */
@@ -598,12 +602,21 @@ table.tabela-simples td.mono{font-family:var(--font-mono);white-space:nowrap}
 @keyframes veuEntra{from{opacity:0}to{opacity:1}}
 
 /* senha: o olho e o aviso de Caps Lock */
+/* O campo da senha é o mesmo componente do campo de confirmação da limpeza,
+   e herdava duas coisas que não servem aqui: a margem de cima, que empurrava o
+   olho para fora do campo pela metade, e o foco vermelho, que num campo de
+   senha lê como erro antes de a pessoa ter errado nada. */
 .campo-senha{position:relative}
-.campo-senha .imp-campo{padding-right:44px;text-transform:none;letter-spacing:normal}
-.olho{position:absolute;right:6px;top:50%;transform:translateY(-50%);
-  width:32px;height:32px;border:none;background:none;cursor:pointer;
-  color:var(--subtle);border-radius:8px;transition:color .15s, background .15s}
+.campo-senha .imp-campo{margin-top:0;padding-right:46px;
+  text-transform:none;letter-spacing:normal}
+.campo-senha .imp-campo:focus{border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(255,110,0,.14)}
+.olho{position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  width:34px;height:34px;border:none;background:none;cursor:pointer;
+  display:grid;place-items:center;font-size:14px;line-height:1;
+  color:var(--subtle);border-radius:9px;transition:color .15s, background .15s}
 .olho:hover{color:var(--orange-deep);background:var(--orange-soft)}
+.olho:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
 .note.info i,.note.danger i{margin-top:1px}
 
 /* a tabela entrando ao trocar de mês ou de visão */

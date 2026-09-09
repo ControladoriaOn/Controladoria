@@ -243,11 +243,33 @@ const Chave = {
     try { state.chave = sessionStorage.getItem(this.K) || ''; } catch(e){}
   },
 
+  /* Uma consulta só, para as duas perguntas: o script exige senha, e a que
+     está guardada nesta sessão ainda vale. Vai pela rota que não abre planilha
+     nenhuma — a antiga contava seis tabelas do outro lado só para responder
+     isso, e entrava na fila do Apps Script junto com a carga do ano. */
+  async perguntar(chave){
+    const url = CONFIG.DATA_URL + '?senha=1&t=' + Date.now() +
+      (chave === undefined ? '' : ('&chave=' + encodeURIComponent(chave)));
+    const r = await fetch(url);
+    const d = await r.json();
+    /* Script antigo não conhece a rota nova e devolve outra coisa — aí a
+       pergunta vai pelo caminho de antes, que é lento mas responde. Erro
+       declarado (ok:false) não é isso: é o script dizendo que falhou, e
+       insistir por outra rota só trocaria uma falha por outra, com o risco de
+       a segunda responder por engano. */
+    if (d && d.ok === false) return d;
+    if (!d || d.exige_chave === undefined){
+      const r2 = await fetch(CONFIG.DATA_URL + '?check=1&t=' + Date.now() +
+        (chave === undefined ? '' : ('&chave=' + encodeURIComponent(chave))));
+      return await r2.json();
+    }
+    return d;
+  },
+
   async status(){
     try {
-      const r = await fetch(CONFIG.DATA_URL + '?check=1&t=' + Date.now() +
-        (state.chave ? ('&chave=' + encodeURIComponent(state.chave)) : ''));
-      const d = await r.json();
+      const d = await this.perguntar(state.chave || undefined);
+      if (!d || d.ok === false) return;
       this.exigida = !!d.exige_chave;
       if (this.exigida && state.chave && d.chave_ok === false){
         this.esquecer();
@@ -261,16 +283,17 @@ const Chave = {
     try { sessionStorage.removeItem(this.K); } catch(e){}
   },
 
+  /* Devolve 'ok', 'errada' ou 'falhou' — três coisas diferentes que antes
+     viravam a mesma frase na tela. Dizer "senha incorreta" quando na verdade o
+     script não respondeu manda a pessoa digitar de novo o que já estava certo,
+     que foi exatamente o que aconteceu. */
   async conferir(chave){
-    try {
-      const r = await fetch(CONFIG.DATA_URL + '?check=1&chave=' +
-                            encodeURIComponent(chave) + '&t=' + Date.now());
-      const d = await r.json();
-      return d && d.chave_ok !== false;
-    } catch(e){
-      toast('Não consegui conferir a senha agora.', true);
-      return false;
-    }
+    let d;
+    try { d = await this.perguntar(chave); }
+    catch(e){ return 'falhou'; }
+    if (!d || d.ok === false) return 'falhou';
+    if (!d.exige_chave) return 'ok';
+    return d.chave_ok === true ? 'ok' : 'errada';
   },
 
   /* Devolve true quando pode gravar. Pede a senha só quando o script exige e
@@ -326,13 +349,25 @@ const Chave = {
       const aoFechar = e => { if (e.detail === 'modal-senha') fechar(false); };
       document.addEventListener('fluxo:modal-fechado', aoFechar);
 
+      const rotuloOk = ok.textContent;
       const tentar = async () => {
         const digitada = (campo.value || '').trim();
         if (!digitada) return;
-        ok.disabled = true;
-        const vale = await this.conferir(digitada);
-        ok.disabled = false;
-        if (!vale){
+        /* A janela ficava parada, sem dizer nada, enquanto a conferência ia e
+           voltava. Agora o botão conta o que está acontecendo. */
+        ok.disabled = true; ok.textContent = 'Conferindo…';
+        aviso.hidden = true;
+        const r = await this.conferir(digitada);
+        ok.disabled = false; ok.textContent = rotuloOk;
+
+        if (r === 'falhou'){
+          aviso.hidden = false;
+          aviso.textContent = 'Não consegui falar com o script agora — a senha não foi conferida. ' +
+                              'Tente de novo em alguns segundos.';
+          campo.focus(); campo.select();
+          return;
+        }
+        if (r === 'errada'){
           aviso.hidden = false;
           aviso.textContent = 'Senha incorreta. Tente de novo.';
           campo.value = ''; campo.focus();
@@ -454,7 +489,10 @@ async function buscarAno(ano, fresco, semPrevisto){
               'fluxo_ano=' + ano + '&fmt=2' + (fresco ? '&fresco=1' : '') +
               (semPrevisto ? '&sem_previsto=1' : '') + '&v=' + Date.now();
   const d = expandirPayload(await buscarJson(url));
-  if (!d || d.ok === false) throw new Error((d && d.erro) || 'resposta vazia');
+  /* Sem plano não é payload: é erro que passou pela guarda de ok. Barrar aqui
+     evita que ele entre no cache e contamine as trocas de mês seguintes. */
+  if (!d || d.ok === false || !Array.isArray(d.plano) || !Array.isArray(d.dias))
+    throw new Error((d && d.erro) || 'resposta incompleta do script');
   if (fresco) Titulos.esquecer();
   /* Quando se pede a resposta sem a projeção, ela volta com a lista vazia. A
      projeção não muda com o que se está prestes a lançar, então a que já
@@ -486,20 +524,6 @@ async function baseMudou(){
 
 /* Guarda os meses já abertos, mas não todos: seis é mais do que qualquer um
    navega numa sessão, e evita a página ir engordando sozinha. */
-function guardar(mes, d){
-  state.cache[mes] = d;
-  const chaves = Object.keys(state.cache);
-  if (chaves.length > 6){
-    chaves.sort();
-    const longe = chaves.reduce((a, b) =>
-      Math.abs(mesesEntre(a, state.mes)) > Math.abs(mesesEntre(b, state.mes)) ? a : b);
-    if (longe !== state.mes) delete state.cache[longe];
-  }
-}
-function mesesEntre(a, b){
-  const pa = a.split('-'), pb = b.split('-');
-  return (+pa[0] * 12 + +pa[1]) - (+pb[0] * 12 + +pb[1]);
-}
 
 /* O fio no alto da janela basta para trocar de mês. A tela cheia de
    carregamento é para quando a página abre, não para uma troca de coluna. */
@@ -633,7 +657,10 @@ function calcular(){
     if (r.data >= hoje && k in prev) return;   // o previsto já responde por este dia
     põe(r.linha_id, r.data, num(r.valor));
     autoCel[k] = (autoCel[k] || 0) + num(r.valor);
-    qtdPorCel[k] = num(r.qtd);
+    /* Somar, não substituir: várias contas de fluxo caem na mesma linha —
+       sempre é o caso de "Sem classificação", que recebe todos os códigos
+       fora do plano. Antes valia a contagem do último código lido. */
+    qtdPorCel[k] = (qtdPorCel[k] || 0) + num(r.qtd);
   });
   Object.keys(prev).forEach(k => {
     const p = k.split('|');
@@ -1114,8 +1141,12 @@ function secaoTabela(){
     sec.appendChild(h('div', { class:'note danger' }, [
       icone('fa-triangle-exclamation'),
       h('div', { text:
-        (semCasa.length === 1 ? 'Uma conta de fluxo deste mês não existe no plano: '
-                              : semCasa.length + ' contas de fluxo deste mês não existem no plano: ') +
+        /* O período, não o mês: os órfãos vêm do payload inteiro, que desde a
+           carga do ano é o ano todo. Dizer "deste mês" mandava a controladoria
+           procurar em março um valor que era de agosto — e o aviso ficava
+           idêntico em todos os meses, como se nada saísse do lugar. */
+        (semCasa.length === 1 ? 'Uma conta de fluxo do ano não existe no plano: '
+                              : semCasa.length + ' contas de fluxo do ano não existem no plano: ') +
         semCasa.map(o => o.conta_fluxo + ' (' + dinheiro(o.valor) + ')').join(', ') +
         '. Somam ' + dinheiro(total) + ' e estão na linha "Sem classificação". ' +
         'Enquanto ficarem assim, o número aparece no total mas não tem onde ser explicado.' }),
@@ -1344,14 +1375,6 @@ function tudoFechado(){
          !state.calc.empresas.some(e => !fechado('emp:' + e));
 }
 
-function paiFechado(id){
-  let p = id;
-  while (p){
-    if (state.recolhidos[p]) return true;
-    p = state.calc.porId[p] ? state.calc.porId[p].pai : '';
-  }
-  return false;
-}
 
 /* O valor de uma linha para um conjunto de dias. Movimento soma; saldo mostra
    a última foto do período, porque somar saldo não quer dizer nada. É a mesma
@@ -1633,8 +1656,11 @@ function aplicarNaCelula(l, dia, lanc, texto){
   } }, null);
 }
 
+
+/* Digitou numa célula: o número muda na tela na hora e o envio vai atrás.
+   A linha que guardava state.cache[state.mes] saiu — era chave do cache mensal
+   antigo, que ninguém lê desde que o ano passou a vir de uma vez. */
 function redesenhar(){
-  state.cache[state.mes] = state.dados;
   calcular();
   render();
 }
@@ -1653,7 +1679,7 @@ async function enviarEmSilencio(payload, textoOk){
   } catch(e){
     fioTermina();
     toast('Não consegui gravar: ' + (e.message || e) + '. Recarregando…', true);
-    delete state.cache[state.mes];
+    esquecerOAno();
     setTimeout(() => carregar(), 1200);
   }
 }
@@ -1769,8 +1795,7 @@ async function abrirDetalheTitulos(l, dia){
 
   try {
     const doDia = await Titulos.doDia(dia.data);
-    const codigo = String(l.linha.codigo || '');
-    const linhas = doDia.filter(x => String(x.conta_fluxo) === codigo);
+    const linhas = titulosDaLinha(doDia, l);
     const total = linhas.reduce((a, x) => a + (Number(x.valor) || 0), 0);
     pintarTitulos(l, dia, linhas, Math.round(total * 100) / 100);
   } catch(e){
@@ -1782,6 +1807,25 @@ async function abrirDetalheTitulos(l, dia){
     ]));
     corpo.appendChild(blocoAjustes(l, dia));
   }
+}
+
+/* Quais títulos do dia pertencem a esta linha da tabela.
+   ----------------------------------------------------------------------------
+   Quase sempre é o código da conta de fluxo batendo com o do título. A exceção
+   é a linha "Sem classificação", que existe justamente para recolher os
+   códigos que o plano não conhece — e que nasce sem código nenhum. Filtrar por
+   código vazio devolvia lista vazia SEMPRE, e a tela então dizia que o valor
+   vinha da migração da planilha antiga. Dizia isso mesmo quando os títulos
+   tinham acabado de ser importados: eles estavam lá, só não eram procurados. */
+function titulosDaLinha(doDia, l){
+  const codigo = String((l.linha && l.linha.codigo) || '');
+  if (codigo) return doDia.filter(x => String(x.conta_fluxo) === codigo);
+  if (l.linha && l.linha.id === 'l-s-sem-classificacao'){
+    const noPlano = {};
+    (state.dados.plano || []).forEach(p => { if (p.codigo) noPlano[String(p.codigo)] = true; });
+    return doDia.filter(x => !noPlano[String(x.conta_fluxo)]);
+  }
+  return [];
 }
 
 function pintarTitulos(l, dia, linhas, total){
@@ -2039,9 +2083,19 @@ async function excluirLancamento(){
 
 /* O Apps Script responde sem corpo (no-cors), então esperamos um instante
    antes de reler — é o mesmo compasso da tela de envio do painel. */
-function recarregarDepois(){
-  delete state.cache[state.mes];
+/* Depois de gravar, a tela tem que voltar da planilha, não do que ela já
+   tinha. Aqui apagava-se a chave do mês — resto da época em que se carregava
+   mês a mês. Desde que o ano inteiro passou a vir de uma vez, quem manda é a
+   chave do ano, e apagar a do mês não apagava nada: a tela recarregava do
+   cache e mostrava o número velho. */
+function esquecerOAno(){
+  delete state.cache[state.mes.slice(0, 4)];
+  delete state.cache[state.mes];          // resto do cache mensal antigo
   Titulos.esquecer();
+}
+
+function recarregarDepois(){
+  esquecerOAno();
   fioComeca();
   setTimeout(() => carregar(), 1500);
 }
@@ -2250,8 +2304,62 @@ function abaCruzada(titulo, subtitulo, linhas, colunas, rotuloTotal, valor){
   ws['!rows'] = [{ hpt:21 }, { hpt:17 }, { hpt:14 }, { hpt:6 }, { hpt:28 }];
   const ate = Math.min(5, largura - 1);
   ws['!merges'] = [0,1,2].map(r => ({ s:{ r:r, c:0 }, e:{ r:r, c:ate } }));
-  ws['!freeze'] = { xSplit:1, ySplit:5 };
   return ws;
+}
+
+/* ----------------------------------------------------------------------------
+   CONGELAR PAINÉIS
+   ----------------------------------------------------------------------------
+   A biblioteca que geramos aqui não escreve painel congelado: pedir ws['!freeze']
+   não dá erro nenhum e simplesmente não sai no arquivo. Na aba do dia a dia,
+   com duzentas colunas, isso significa rolar até setembro e perder de vista a
+   coluna com o nome da linha — que é justamente o que se está lendo.
+
+   Então o arquivo é gerado, aberto como o zip que ele é, e a marca do painel é
+   escrita no XML da aba antes de ir para o disco. Se qualquer parte disso não
+   existir no navegador de quem está usando, cai no caminho de sempre: arquivo
+   sem congelamento, que é o que se tinha até agora.
+   -------------------------------------------------------------------------- */
+function baixarPlanilha(wb, nome, paineis){
+  try {
+    if (!XLSX.CFB || !XLSX.CFB.read) throw new Error('sem CFB');
+    const buf = XLSX.write(wb, { type:'array', bookType:'xlsx' });
+    const cfb = XLSX.CFB.read(new Uint8Array(buf), { type:'array' });
+    let mudou = false;
+
+    cfb.FullPaths.forEach((caminho, i) => {
+      const m = /xl\/worksheets\/sheet(\d+)\.xml$/.exec(caminho);
+      if (!m) return;
+      const aba = wb.SheetNames[Number(m[1]) - 1];
+      const alvo = paineis[aba];
+      if (!alvo) return;
+      const ent = cfb.FileIndex[i];
+      let xml = '';
+      for (let k = 0; k < ent.content.length; k++) xml += String.fromCharCode(ent.content[k]);
+      const pane = '<sheetViews><sheetView workbookViewId="0"><pane' +
+        (alvo.x ? (' xSplit="' + alvo.x + '"') : '') +
+        (alvo.y ? (' ySplit="' + alvo.y + '"') : '') +
+        ' topLeftCell="' + alvo.cel + '" activePane="bottomRight" state="frozen"/>' +
+        '</sheetView></sheetViews>';
+      const novo = xml.replace(/<sheetViews>[\s\S]*?<\/sheetViews>/, pane);
+      if (novo === xml) return;
+      const bytes = new Uint8Array(novo.length);
+      for (let k = 0; k < novo.length; k++) bytes[k] = novo.charCodeAt(k) & 255;
+      ent.content = bytes; ent.size = bytes.length;
+      mudou = true;
+    });
+
+    if (!mudou) throw new Error('nada para congelar');
+    const saida = XLSX.CFB.write(cfb, { type:'array', fileType:'zip', compression:true });
+    const url = URL.createObjectURL(new Blob([saida],
+      { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = nome;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch(e){
+    XLSX.writeFile(wb, nome);
+  }
 }
 
 function abaConferencia(ate){
@@ -2493,7 +2601,11 @@ function exportarExcel(op){
 
   XLSX.utils.book_append_sheet(wb, abaConferencia(limiteDoMes(op.ate)), 'Conferência');
 
-  XLSX.writeFile(wb, nomeArquivo(op, 'xlsx'));
+  baixarPlanilha(wb, nomeArquivo(op, 'xlsx'), {
+    'Dia a dia':   { x:1, y:5, cel:'B6' },
+    'Fechamento':  { x:1, y:5, cel:'B6' },
+    'Conferência': { x:0, y:5, cel:'A6' },
+  });
   fecharModal('modal-exportar');
   Registro.exportacao(op, 'Excel');
   toast('Planilha gerada.');
@@ -3167,6 +3279,7 @@ const Importar = {
 
   abrir(){
     this.modo = 'dia'; this.rel = null; this.ano = null; this.ocupado = false;
+    el('imp-alternar').disabled = false;
     this.render();
     mostrarModal('modal-importar');
   },
@@ -3641,6 +3754,9 @@ const Importar = {
     } catch(err){
       toast('Falhou no meio: ' + (err.message || err), true);
       this.ocupado = false;
+      /* Sem isto o link da carga do ano ficava desabilitado para sempre — e
+         sem estilo de desabilitado, então parecia clicável e não era. */
+      el('imp-alternar').disabled = false;
       this.render();
     }
   },
@@ -3752,7 +3868,12 @@ const Edicao = {
     try { mudou = await baseMudou(); }
     finally { if (!mudou) fecharVeu(); }
 
-    if (!mudou){ toast('Modo edição ligado.'); return; }
+    /* Redesenhar é obrigatório aqui: quem decide se a célula aceita clique é
+       o desenho, e a tabela na tela foi desenhada em modo leitura. Sem isto o
+       botão fica laranja, o Importar aparece, e clicar numa célula não faz
+       nada — só no caminho em que a base mudou, porque lá o carregar()
+       redesenha por tabela. */
+    if (!mudou){ render(); toast('Modo edição ligado.'); return; }
 
     /* Recarga sem a projeção: é a leitura mais pesada do outro lado e não
        muda nada do que se vai lançar. A projeção que já está na tela fica. */
@@ -3791,7 +3912,6 @@ document.addEventListener('DOMContentLoaded', () => {
   IDENTIDADE = identidadeAccess().then(quem => {
     if (quem){
       state.autor = quem;
-      state.autorFixo = true;
       try { sessionStorage.setItem('fluxo_autor', quem); } catch(e){}
     }
   });
