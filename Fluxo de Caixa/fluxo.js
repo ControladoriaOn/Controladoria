@@ -411,12 +411,49 @@ const respira = ms => new Promise(r => setTimeout(r, ms));
    fresco=true pula o cache do lado do script. É o que o botão Atualizar manda
    e o que o modo edição pede ao entrar: quem vai lançar precisa ver o estado
    de agora, não a cópia guardada de horas atrás. */
+/* ----------------------------------------------------------------------------
+   O ano chega embrulhado: a lista de colunas uma vez só, as linhas como
+   valores puros e um dicionário com os textos que se repetem. Isso derrubou o
+   payload de 729 kB para 165 kB — e com ele o 404 que fazia a busca falhar
+   duas vezes antes de acertar. Aqui é onde ele volta a ser o que sempre foi;
+   do desembrulho para a frente, nenhuma outra linha da tela mudou.
+
+   Resposta no formato antigo passa reta: é o que deixa trocar o script e este
+   arquivo em ordens diferentes sem quebrar nada no meio. */
+const TABELAS_COMPACTAS = ['saldos', 'realizado', 'previsto', 'lancamentos', 'dias', 'orfaos'];
+
+function expandirTabela(t, dic){
+  if (Array.isArray(t)) return t;
+  if (!t || !Array.isArray(t.c)) return [];
+  const cols = t.c, marcadas = t.d || [], linhas = t.l || [];
+  const ehDic = cols.map((c, i) => marcadas.indexOf(i) >= 0);
+  return linhas.map(row => {
+    const o = {};
+    for (let i = 0; i < cols.length; i++){
+      const v = row[i];
+      o[cols[i]] = (ehDic[i] && v !== null && v !== undefined) ? dic[v] : v;
+    }
+    return o;
+  });
+}
+
+function expandirPayload(d){
+  if (!d || d.fmt !== 2) return d;
+  const dic = d.dic || [];
+  TABELAS_COMPACTAS.forEach(nome => {
+    if (d[nome] !== undefined) d[nome] = expandirTabela(d[nome], dic);
+  });
+  delete d.dic;
+  delete d.fmt;
+  return d;
+}
+
 async function buscarAno(ano, fresco, semPrevisto){
   const anterior = state.cache[ano];
   const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') +
-              'fluxo_ano=' + ano + (fresco ? '&fresco=1' : '') +
+              'fluxo_ano=' + ano + '&fmt=2' + (fresco ? '&fresco=1' : '') +
               (semPrevisto ? '&sem_previsto=1' : '') + '&v=' + Date.now();
-  const d = await buscarJson(url);
+  const d = expandirPayload(await buscarJson(url));
   if (!d || d.ok === false) throw new Error((d && d.erro) || 'resposta vazia');
   /* Quando se pede a resposta sem a projeção, ela volta com a lista vazia. A
      projeção não muda com o que se está prestes a lançar, então a que já
