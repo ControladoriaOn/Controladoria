@@ -1950,8 +1950,14 @@ const Registro = {
     this.enviar('abertura', 'ano ' + state.mes.slice(0, 4));
   },
 
-  exportacao(quantosDias, periodo){
-    this.enviar('exportacao', periodo + ' · ' + quantosDias + ' dia(s)');
+  /* O registro passa a dizer o recorte, não só o tamanho: saber que alguém
+     baixou "jan a jul, sintético, em PDF" explica muito mais do que "212
+     dias". */
+  exportacao(op, formato){
+    this.enviar('exportacao',
+      formato + ' · ' + rotuloPeriodo(op.ate) +
+      ' · ' + (op.nivel === 'sintetico' ? 'sintético' : 'analítico') +
+      (op.diaADia ? ' · dia a dia' : ''));
   },
 };
 
@@ -1999,18 +2005,15 @@ function estiloLinha(l){
 /* Uma aba de tabela cruzada: as linhas do plano contra um conjunto de colunas.
    Serve tanto para os dias do mês quanto para os doze meses do ano — é a
    mesma tabela, só muda o que cada coluna representa. */
-function abaCruzada(titulo, subtitulo, quem, colunas, rotuloTotal, valor){
-  const linhas = linhasDaTela().filter(l => l.kind !== 'espaco' || true);
-  const largura = 2 + colunas.length + 1;
+function abaCruzada(titulo, subtitulo, linhas, colunas, rotuloTotal, valor){
+  const largura = 1 + colunas.length + 1;
   const aoa = [];
 
   aoa.push(['ON TIME · Fluxo de Caixa']);
   aoa.push([titulo]);
   aoa.push([subtitulo]);
-  aoa.push(['Exportado por ' + (quem || 'não identificado') + ' em ' +
-            new Date().toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' })]);
   aoa.push([]);
-  aoa.push(['Código', 'Descrição'].concat(colunas.map(c => c.rotulo)).concat([rotuloTotal]));
+  aoa.push(['Descrição'].concat(colunas.map(c => c.rotulo)).concat([rotuloTotal]));
 
   const mapa = [];   // linha da planilha -> linha da tela (para o estilo)
   linhas.forEach(l => {
@@ -2021,7 +2024,7 @@ function abaCruzada(titulo, subtitulo, quem, colunas, rotuloTotal, valor){
       return (v === undefined || v === null) ? '' : Math.round(num(v) * 100) / 100;
     });
     const t = valor(l, { total:true });
-    aoa.push([l.codigo || '', nome].concat(vals)
+    aoa.push([nome].concat(vals)
              .concat([(t === undefined || t === null) ? '' : Math.round(num(t) * 100) / 100]));
     mapa.push(l);
   });
@@ -2032,25 +2035,22 @@ function abaCruzada(titulo, subtitulo, quem, colunas, rotuloTotal, valor){
   põe(0, 0, { font:{ bold:true, sz:15, color:{ rgb: COR.plum } } });
   põe(1, 0, { font:{ bold:true, sz:12, color:{ rgb: COR.laranja } } });
   põe(2, 0, { font:{ sz:10, color:{ rgb: COR.suave } } });
-  põe(3, 0, { font:{ sz:9, italic:true, color:{ rgb: COR.suave } } });
 
   const cab = { font:{ bold:true, sz:9, color:{ rgb: COR.plumTxt } },
                 fill:{ patternType:'solid', fgColor:{ rgb: COR.plum } },
                 alignment:{ horizontal:'center', vertical:'center', wrapText:true } };
-  for (let c = 0; c < largura; c++) põe(5, c, cab);
+  for (let c = 0; c < largura; c++) põe(4, c, cab);
 
   mapa.forEach((l, i) => {
     if (!l) return;
-    const r = 6 + i;
+    const r = 5 + i;
     const s = estiloLinha(l);
-    const sCod = Object.assign({}, s, { font: Object.assign({}, s.font, { sz:8, color:{ rgb: s.font.color.rgb === COR.plumTxt ? COR.plumTxt : COR.suave } }) });
-    põe(r, 0, sCod);
-    põe(r, 1, Object.assign({}, s, { alignment:{ horizontal:'left', vertical:'center' } }));
+    põe(r, 0, Object.assign({}, s, { alignment:{ horizontal:'left', vertical:'center' } }));
     colunas.forEach((col, j) => {
       const sv = Object.assign({}, s, { numFmt: FMT_NUM,
         alignment:{ horizontal:'right', vertical:'center' } });
       if (col.fora && !s.fill) sv.fill = { patternType:'solid', fgColor:{ rgb: COR.foraDoMes } };
-      põe(r, 2 + j, sv);
+      põe(r, 1 + j, sv);
     });
     const sT = Object.assign({}, s, { numFmt: FMT_NUM,
       alignment:{ horizontal:'right', vertical:'center' },
@@ -2059,28 +2059,28 @@ function abaCruzada(titulo, subtitulo, quem, colunas, rotuloTotal, valor){
     põe(r, largura - 1, sT);
   });
 
-  ws['!cols'] = [{ wch:10 }, { wch:38 }]
-    .concat(colunas.map(() => ({ wch:14 }))).concat([{ wch:16 }]);
-  ws['!rows'] = [{ hpt:21 }, { hpt:17 }, { hpt:14 }, { hpt:13 }, { hpt:6 }, { hpt:28 }];
-  const ate = Math.min(6, largura - 1);
-  ws['!merges'] = [0,1,2,3].map(r => ({ s:{ r:r, c:0 }, e:{ r:r, c:ate } }));
+  ws['!cols'] = [{ wch:40 }]
+    .concat(colunas.map(() => ({ wch:14 }))).concat([{ wch:17 }]);
+  ws['!rows'] = [{ hpt:21 }, { hpt:17 }, { hpt:14 }, { hpt:6 }, { hpt:28 }];
+  const ate = Math.min(5, largura - 1);
+  ws['!merges'] = [0,1,2].map(r => ({ s:{ r:r, c:0 }, e:{ r:r, c:ate } }));
+  ws['!freeze'] = { xSplit:1, ySplit:5 };
   return ws;
 }
 
-function abaConferencia(quem){
+function abaConferencia(ate){
   const c = state.calc;
   const aoa = [];
   aoa.push(['ON TIME · Fluxo de Caixa']);
   aoa.push(['Conferência do saldo contra a posição dos bancos']);
   aoa.push(['Cada dia com posição informada: o saldo que a conta do fluxo produz, ' +
             'o que os bancos mostram, e a diferença entre os dois.']);
-  aoa.push(['Exportado por ' + (quem || 'não identificado') + ' em ' +
-            new Date().toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' })]);
   aoa.push([]);
   aoa.push(['Dia', 'Saldo calculado', 'Total nos bancos', 'Diferença', 'Situação']);
 
   const linhas = [];
   c.dias.forEach(d => {
+    if (ate && d > ate) return;
     if (!c.temSaldo[d]) return;
     const calc = num(c.sdFim[d]), banco = num(c.totBancos[d]);
     const dif = Math.round((banco - calc) * 100) / 100;
@@ -2094,14 +2094,13 @@ function abaConferencia(quem){
   põe(0, 0, { font:{ bold:true, sz:15, color:{ rgb: COR.plum } } });
   põe(1, 0, { font:{ bold:true, sz:12, color:{ rgb: COR.laranja } } });
   põe(2, 0, { font:{ sz:10, color:{ rgb: COR.suave } } });
-  põe(3, 0, { font:{ sz:9, italic:true, color:{ rgb: COR.suave } } });
   for (let cc = 0; cc < 5; cc++)
-    põe(5, cc, { font:{ bold:true, sz:9, color:{ rgb: COR.plumTxt } },
+    põe(4, cc, { font:{ bold:true, sz:9, color:{ rgb: COR.plumTxt } },
                  fill:{ patternType:'solid', fgColor:{ rgb: COR.plum } },
                  alignment:{ horizontal:'center', vertical:'center' } });
 
   linhas.forEach((l, i) => {
-    const r = 6 + i;
+    const r = 5 + i;
     const base = { border:{ bottom:{ style:'hair', color:{ rgb: COR.borda } } },
                    alignment:{ vertical:'center' } };
     põe(r, 0, Object.assign({}, base, { font:{ sz:10 }, alignment:{ horizontal:'center' } }));
@@ -2116,48 +2115,323 @@ function abaConferencia(quem){
       alignment:{ horizontal:'center' } }));
   });
   ws['!cols'] = [{ wch:12 }, { wch:20 }, { wch:20 }, { wch:14 }, { wch:18 }];
-  ws['!rows'] = [{ hpt:21 }, { hpt:17 }, { hpt:14 }, { hpt:13 }, { hpt:6 }, { hpt:24 }];
-  ws['!merges'] = [0,1,2,3].map(r => ({ s:{ r:r, c:0 }, e:{ r:r, c:4 } }));
+  ws['!rows'] = [{ hpt:21 }, { hpt:17 }, { hpt:14 }, { hpt:6 }, { hpt:24 }];
+  ws['!merges'] = [0,1,2].map(r => ({ s:{ r:r, c:0 }, e:{ r:r, c:4 } }));
   return ws;
 }
 
-function exportar(){
-  if (typeof XLSX === 'undefined'){ toast('Biblioteca de planilha carregando…', true); return; }
+/* ----------------------------------------------------------------------------
+   O RECORTE
+   ----------------------------------------------------------------------------
+   O período começa sempre em janeiro: fechamento é acumulado, e um relatório
+   que começa no meio do ano não fecha com nada. O que se escolhe é onde ele
+   termina — e é isso que decide quais colunas existem e como se chama a
+   coluna de acumulado. Nada de "Total do ano" num arquivo que vai só até
+   julho. */
+function limiteDoMes(mes){
+  const p = mes.split('-');
+  const ultimo = new Date(Number(p[0]), Number(p[1]), 0).getDate();
+  return mes + '-' + String(ultimo).padStart(2, '0');
+}
+
+function mesesAteAqui(){
+  const ano = state.mes.slice(0, 4);
+  const hoje = new Date();
+  const ultimo = (String(hoje.getFullYear()) === ano) ? (hoje.getMonth() + 1) : 12;
+  const out = [];
+  for (let m = 1; m <= ultimo; m++) out.push(ano + '-' + String(m).padStart(2, '0'));
+  return out;
+}
+
+/* O mês fechado mais recente é o anterior ao corrente. É quase sempre o que
+   se quer conferir, então é o que vem preenchido. */
+function mesPadraoExport(){
+  const lista = mesesAteAqui();
+  return lista.length > 1 ? lista[lista.length - 2] : lista[lista.length - 1];
+}
+
+function rotuloPeriodo(ate){
+  const m = Number(ate.slice(5, 7)) - 1;
+  return m === 0 ? ('janeiro de ' + ate.slice(0, 4))
+                 : ('janeiro a ' + MESES_PT_LONGO[m] + ' de ' + ate.slice(0, 4));
+}
+function rotuloAcumulado(ate){
+  const m = Number(ate.slice(5, 7)) - 1;
+  return m === 0 ? 'Total de jan' : ('Acumulado jan–' + MESES_PT[m]);
+}
+const MESES_PT_LONGO = ['janeiro','fevereiro','março','abril','maio','junho',
+                        'julho','agosto','setembro','outubro','novembro','dezembro'];
+
+/* Sintético não é um relatório diferente: é o mesmo, com as folhas podadas.
+   Ficam os saldos, os totais de cada seção e os grupos — o suficiente para
+   ver para onde o dinheiro foi sem virar uma parede de contas. Na posição de
+   saldos vale a mesma régua: o total de cada empresa fica, a conta bancária
+   individual sai. */
+const KINDS_SINTETICO = { 'saldo-ini':1, 'total':1, 'grupo':1, 'saldo-fim':1,
+                          'cabec-saldo':1, 'saldo-total':1, 'bancos':1, 'dif':1,
+                          'espaco':1 };
+function linhasDoNivel(nivel){
+  const todas = linhasDaTela();
+  if (nivel !== 'sintetico') return todas;
+  const podadas = todas.filter(l => KINDS_SINTETICO[l.kind]);
+  /* Podar deixa espaços grudados e espaço sobrando nas pontas. */
+  const out = [];
+  podadas.forEach(l => {
+    if (l.kind === 'espaco' && (!out.length || out[out.length - 1].kind === 'espaco')) return;
+    out.push(l);
+  });
+  while (out.length && out[out.length - 1].kind === 'espaco') out.pop();
+  return out;
+}
+
+function colunasMeses(ate){
   const c = state.calc;
-  const quem = state.autor || '';
-  const wb = XLSX.utils.book_new();
-
-  const dias = diasVisiveis();
-  const colDias = dias.map(x => ({
-    rotulo: x.data.slice(8, 10) + '/' + x.data.slice(5, 7),
-    datas: [x.data], fora: x.fora,
-  }));
-  XLSX.utils.book_append_sheet(wb, abaCruzada(
-    nomeMes(state.mes),
-    'Dia a dia, com a virada dos meses vizinhos em cinza — elas não entram no total',
-    quem, colDias, 'Total do mês',
-    (l, col) => col.total ? agregar(l, dias.filter(x => !x.fora).map(x => x.data))
-                          : agregar(l, col.datas)),
-    'Fluxo ' + state.mes);
-
-  const meses = mesesDoAno();
-  const colMeses = meses.map(m => ({
+  return mesesAteAqui().filter(m => m <= ate).map(m => ({
     rotulo: MESES_PT[Number(m.slice(5, 7)) - 1] + '/' + m.slice(2, 4),
     datas: c.dias.filter(d => d.slice(0, 7) === m), fora:false,
   }));
+}
+function colunasDias(ate){
+  const fim = limiteDoMes(ate);
+  return state.calc.dias.filter(d => d <= fim).map(d => ({
+    rotulo: d.slice(8, 10) + '/' + d.slice(5, 7), datas:[d], fora:false,
+  }));
+}
+function datasDoPeriodo(ate){
+  const fim = limiteDoMes(ate);
+  return state.calc.dias.filter(d => d <= fim);
+}
+
+/* ----------------------------------------------------------------------------
+   A JANELA DE OPÇÕES
+   -------------------------------------------------------------------------- */
+function abrirExportar(){
+  const sel = el('exp-ate');
+  const lista = mesesAteAqui();
+  const escolhido = sel.value && lista.indexOf(sel.value) >= 0 ? sel.value : mesPadraoExport();
+  sel.innerHTML = '';
+  lista.forEach(m => sel.appendChild(h('option', {
+    value:m, text: nomeMes(m), selected: m === escolhido })));
+
+  const dia = el('exp-dia'), aviso = el('exp-aviso'), pdf = el('exp-pdf');
+  const pintar = () => {
+    pdf.disabled = dia.checked;
+    aviso.hidden = !dia.checked;
+  };
+  dia.onchange = pintar;
+  pintar();
+
+  el('exp-xlsx').onclick = () => exportarExcel(opcoesExport());
+  pdf.onclick = () => exportarPdf(opcoesExport());
+  mostrarModal('modal-exportar');
+}
+
+function opcoesExport(){
+  const nivel = document.querySelector('input[name="exp-nivel"]:checked');
+  return {
+    ate: el('exp-ate').value,
+    diaADia: el('exp-dia').checked,
+    nivel: nivel ? nivel.value : 'analitico',
+  };
+}
+
+/* ----------------------------------------------------------------------------
+   EXCEL
+   -------------------------------------------------------------------------- */
+function exportarExcel(op){
+  if (typeof XLSX === 'undefined'){ toast('Biblioteca de planilha carregando…', true); return; }
+  const linhas = linhasDoNivel(op.nivel);
+  const doPeriodo = datasDoPeriodo(op.ate);
+  const rotTotal = rotuloAcumulado(op.ate);
+  const wb = XLSX.utils.book_new();
+
+  if (op.diaADia){
+    const cols = colunasDias(op.ate);
+    XLSX.utils.book_append_sheet(wb, abaCruzada(
+      'Dia a dia · ' + rotuloPeriodo(op.ate),
+      'Uma coluna por dia, de 01/01 até o fim do mês escolhido',
+      linhas, cols, rotTotal,
+      (l, col) => col.total ? agregar(l, doPeriodo) : agregar(l, col.datas)),
+      'Dia a dia');
+  }
+
+  const cols = colunasMeses(op.ate);
   XLSX.utils.book_append_sheet(wb, abaCruzada(
-    'Fechamento de ' + state.mes.slice(0, 4),
+    'Fechamento · ' + rotuloPeriodo(op.ate),
     'Um mês por coluna: movimento somado, saldo no fechamento do mês',
-    quem, colMeses, 'Total do ano',
-    (l, col) => col.total ? agregar(l, c.dias) : agregar(l, col.datas)),
-    'Fechamento por mês');
+    linhas, cols, rotTotal,
+    (l, col) => col.total ? agregar(l, doPeriodo) : agregar(l, col.datas)),
+    'Fechamento');
 
-  XLSX.utils.book_append_sheet(wb, abaConferencia(quem), 'Conferência');
+  XLSX.utils.book_append_sheet(wb, abaConferencia(limiteDoMes(op.ate)), 'Conferência');
 
-  const nome = 'fluxo-de-caixa-' + state.mes + '.xlsx';
-  XLSX.writeFile(wb, nome);
-  Registro.exportacao(dias.length, nomeMes(state.mes));
+  XLSX.writeFile(wb, nomeArquivo(op, 'xlsx'));
+  fecharModal('modal-exportar');
+  Registro.exportacao(op, 'Excel');
   toast('Planilha gerada.');
+}
+
+function nomeArquivo(op, ext){
+  const ini = 'jan', fim = MESES_PT[Number(op.ate.slice(5, 7)) - 1];
+  return 'fluxo-de-caixa-' + op.ate.slice(0, 4) + '-' + ini + '-' + fim +
+         (op.nivel === 'sintetico' ? '-sintetico' : '') +
+         (op.diaADia ? '-dia-a-dia' : '') + '.' + ext;
+}
+
+/* ----------------------------------------------------------------------------
+   PDF
+   ----------------------------------------------------------------------------
+   A biblioteca só é buscada quando alguém pede um PDF. Carregá-la na abertura
+   custaria a todo mundo, todo dia, por causa de um botão que a maioria não
+   clica.
+   -------------------------------------------------------------------------- */
+const Pdf = {
+  pronto: false,
+  FONTES: [
+    ['https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js',
+     'https://cdn.jsdelivr.net/npm/jspdf-autotable@5.0.8/dist/jspdf.plugin.autotable.min.js'],
+    ['https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js',
+     'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.8/jspdf.plugin.autotable.min.js'],
+  ],
+
+  script(url){
+    return new Promise((ok, falha) => {
+      const t = document.createElement('script');
+      t.src = url; t.async = false;
+      t.onload = ok;
+      t.onerror = () => falha(new Error('não carregou ' + url));
+      document.head.appendChild(t);
+    });
+  },
+
+  async garantir(){
+    if (this.pronto || (window.jspdf && window.jspdf.jsPDF)){ this.pronto = true; return true; }
+    for (const par of this.FONTES){
+      try {
+        await this.script(par[0]);
+        await this.script(par[1]);
+        if (window.jspdf && window.jspdf.jsPDF){ this.pronto = true; return true; }
+      } catch(e){ /* tenta a próxima origem */ }
+    }
+    return false;
+  },
+};
+
+const COR_PDF = {
+  plum:[45,27,45], branco:[255,255,255], laranja:[255,110,0], verde:[22,121,74],
+  cinza:[244,240,244], cinzaEsc:[235,228,235], texto:[26,15,26], suave:[107,94,107],
+  verdeClaro:[233,245,238], laranjaClaro:[253,238,224], linha:[232,226,232],
+};
+
+function fmtPdf(v){
+  if (v === undefined || v === null || v === '') return '';
+  /* Arredondar antes de decidir se é zero: sem isso, uma diferença de um
+     milésimo de centavo virava "-0,00" em vermelho na linha da conferência,
+     que é justamente onde um sinal de menos assusta. */
+  const n = Math.round(num(v) * 100) / 100;
+  if (!n) return '–';
+  return n.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+
+async function exportarPdf(op){
+  const btn = el('exp-pdf');
+  btn.disabled = true;
+  const ok = await Pdf.garantir();
+  btn.disabled = false;
+  if (!ok){
+    toast('Não consegui carregar o gerador de PDF. Verifique a conexão e tente de novo.', true);
+    return;
+  }
+
+  const linhas = linhasDoNivel(op.nivel);
+  const cols = colunasMeses(op.ate);
+  const doPeriodo = datasDoPeriodo(op.ate);
+  const rotTotal = rotuloAcumulado(op.ate);
+
+  const cabecalho = ['Descrição'].concat(cols.map(c => c.rotulo)).concat([rotTotal]);
+  const corpo = [], kinds = [];
+  linhas.forEach(l => {
+    if (l.kind === 'espaco') return;                 // o PDF já respira pelo estilo
+    const nome = (l.nivel ? '   '.repeat(l.nivel) : '') + l.label;
+    corpo.push([nome]
+      .concat(cols.map(c => fmtPdf(agregar(l, c.datas))))
+      .concat([fmtPdf(agregar(l, doPeriodo))]));
+    kinds.push(l);
+  });
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
+  const larg = doc.internal.pageSize.getWidth();
+
+  /* Muitos meses e a fonte encolhe sozinha, em vez de a última coluna cair
+     fora da página. */
+  const n = cabecalho.length;
+  const corpoSz = n <= 9 ? 7.5 : n <= 12 ? 6.5 : 5.8;
+
+  doc.autoTable({
+    head: [cabecalho],
+    body: corpo,
+    startY: 78,
+    margin: { top:78, left:28, right:28, bottom:34 },
+    styles: { font:'helvetica', fontSize:corpoSz, cellPadding:{ top:3, bottom:3, left:5, right:5 },
+              lineColor:COR_PDF.linha, lineWidth:.3, textColor:COR_PDF.texto,
+              overflow:'ellipsize' },
+    headStyles: { fillColor:COR_PDF.plum, textColor:COR_PDF.branco, fontSize:corpoSz,
+                  fontStyle:'bold', halign:'right', valign:'middle' },
+    columnStyles: Object.assign({ 0:{ halign:'left', cellWidth: n <= 9 ? 150 : 120 } },
+      (() => { const o = {}; for (let i = 1; i < n; i++) o[i] = { halign:'right' }; return o; })()),
+    didParseCell(dados){
+      if (dados.section === 'head'){ if (!dados.column.index) dados.cell.styles.halign = 'left'; return; }
+      const l = kinds[dados.row.index];
+      if (!l) return;
+      const ultima = dados.column.index === n - 1;
+      if (l.kind === 'saldo-ini' || l.kind === 'saldo-fim'){
+        dados.cell.styles.fillColor = COR_PDF.plum;
+        dados.cell.styles.textColor = COR_PDF.branco;
+        dados.cell.styles.fontStyle = 'bold';
+      } else if (l.kind === 'total'){
+        const ent = l.classe === 't-ent';
+        dados.cell.styles.fillColor = ent ? COR_PDF.verdeClaro : COR_PDF.laranjaClaro;
+        dados.cell.styles.textColor = ent ? COR_PDF.verde : COR_PDF.laranja;
+        dados.cell.styles.fontStyle = 'bold';
+      } else if (l.kind === 'grupo' || l.kind === 'cabec-saldo' ||
+                 l.kind === 'saldo-grupo' || l.kind === 'saldo-total' || l.kind === 'bancos'){
+        dados.cell.styles.fillColor = COR_PDF.cinza;
+        dados.cell.styles.fontStyle = 'bold';
+      } else if (l.kind === 'dif'){
+        dados.cell.styles.textColor = COR_PDF.suave;
+        dados.cell.styles.fontStyle = 'bold';
+      }
+      if (ultima && !dados.cell.styles.fillColor) dados.cell.styles.fillColor = COR_PDF.cinzaEsc;
+      if (ultima) dados.cell.styles.fontStyle = 'bold';
+      /* Negativo em vermelho, como na tela e na planilha. */
+      const txt = String(dados.cell.raw || '');
+      if (dados.column.index && txt.charAt(0) === '-' &&
+          dados.cell.styles.textColor !== COR_PDF.branco){
+        dados.cell.styles.textColor = [192, 57, 43];
+      }
+    },
+    didDrawPage(){
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+      doc.setTextColor.apply(doc, COR_PDF.plum);
+      doc.text('ON TIME · Fluxo de Caixa', 28, 36);
+      doc.setFontSize(11); doc.setTextColor.apply(doc, COR_PDF.laranja);
+      doc.text('Fechamento · ' + rotuloPeriodo(op.ate) +
+               (op.nivel === 'sintetico' ? '  ·  sintético' : ''), 28, 54);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+      doc.setTextColor.apply(doc, COR_PDF.suave);
+      doc.text('Um mês por coluna: movimento somado, saldo no fechamento do mês', 28, 68);
+
+      const p = doc.internal.getNumberOfPages();
+      doc.setFontSize(8); doc.setTextColor.apply(doc, COR_PDF.suave);
+      doc.text('página ' + p, larg - 28, doc.internal.pageSize.getHeight() - 18, { align:'right' });
+    },
+  });
+
+  doc.save(nomeArquivo(op, 'pdf'));
+  fecharModal('modal-exportar');
+  Registro.exportacao(op, 'PDF');
+  toast('PDF gerado.');
 }
 
 /* ============================================================================
@@ -3322,7 +3596,7 @@ document.addEventListener('DOMContentLoaded', () => {
     abrirVeu('Buscando os números mais recentes…');
     try { await carregar(false, true); } finally { fecharVeu(); }
   };
-  el('btnExportar').onclick = exportar;
+  el('btnExportar').onclick = abrirExportar;
 
   /* Alterna entre os dias do mês e o fechamento de cada mês do ano. O botão de
      dias úteis some na visão do ano: lá não há dia para esconder. */

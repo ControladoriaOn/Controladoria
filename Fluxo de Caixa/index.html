@@ -200,6 +200,58 @@
   </div>
 </div>
 
+<!-- Exportar. Antes o botão baixava na hora o mês que estivesse aberto, e
+     conferir um fechamento de janeiro a julho virava sete downloads e um
+     copia-e-cola. Agora ele pergunta o recorte primeiro: o período sempre
+     começa em janeiro, você escolhe onde ele termina, e diz se quer a
+     estrutura inteira ou só os totais. -->
+<div class="modal" id="modal-exportar">
+  <div class="modal-box sm">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-exportar" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3><i class="fa-solid fa-file-export"></i> Exportar</h3>
+      <p>O período começa sempre em janeiro. Escolha até onde ele vai.</p>
+    </div>
+    <div class="modal-body">
+      <label class="exp-campo">
+        <span class="exp-rot">Até quando</span>
+        <select id="exp-ate" class="filtro"></select>
+      </label>
+
+      <div class="exp-bloco">
+        <label class="exp-opcao">
+          <input type="checkbox" id="exp-dia">
+          <span><b>Dia a dia</b>
+            <em>uma coluna por dia, de 01/01 até o fim do mês escolhido</em></span>
+        </label>
+      </div>
+
+      <div class="exp-bloco">
+        <label class="exp-opcao">
+          <input type="radio" name="exp-nivel" value="analitico" checked>
+          <span><b>Analítico</b>
+            <em>a estrutura inteira, conta por conta</em></span>
+        </label>
+        <label class="exp-opcao">
+          <input type="radio" name="exp-nivel" value="sintetico">
+          <span><b>Sintético</b>
+            <em>saldos, os totais de entrada e saída e os grupos</em></span>
+        </label>
+      </div>
+
+      <div class="note info" id="exp-aviso" hidden>
+        <i class="fa-solid fa-circle-info"></i>
+        <div>Dia a dia sai só em Excel: são centenas de colunas, que não cabem numa página.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" data-fechar="modal-exportar">Cancelar</button>
+      <button class="btn btn-ghost" id="exp-pdf" type="button"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+      <button class="btn btn-primary" id="exp-xlsx" type="button"><i class="fa-solid fa-file-excel"></i> Excel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Véu de espera. A tabela continua na tela, coberta: trocá-la por um
      esqueleto seria uma piscada pior que a própria espera. -->
 <div class="veu" id="veu" hidden>
