@@ -809,3 +809,36 @@ td.det-val .p{font-size:10px;color:var(--subtle);margin-top:1px;font-family:var(
   border-bottom:1px solid var(--border-soft)}
 @keyframes skPassa{0%{background-position:100% 50%}100%{background-position:0 50%}}
 @media (prefers-reduced-motion: reduce){ .det-sk .sk{animation:none} }
+
+/* ============================================================================
+   A CÉLULA QUE ESTÁ SENDO GRAVADA
+   ----------------------------------------------------------------------------
+   O aviso de que o envio ainda está em curso ficava num fio de dois pixels no
+   alto da tela, longe de onde a pessoa está olhando. Agora ele fica na própria
+   célula que ela acabou de digitar: apagada enquanto vai, acesa quando volta
+   (a animação de sempre), vermelha se não foi.
+   ============================================================================ */
+td.cel-indo{opacity:.45;position:relative}
+td.cel-indo::after{content:'';position:absolute;top:4px;right:4px;
+  width:5px;height:5px;border-radius:50%;background:var(--orange);
+  animation:celPulsa 1s ease-in-out infinite}
+@keyframes celPulsa{0%,100%{opacity:.35}50%{opacity:1}}
+
+td.cel-falhou{position:relative;background:#FDECEA!important;color:var(--danger)!important}
+td.cel-falhou::after{content:'';position:absolute;top:4px;right:4px;
+  width:5px;height:5px;border-radius:50%;background:var(--danger)}
+
+@media (prefers-reduced-motion: reduce){ td.cel-indo::after{animation:none;opacity:1} }
+
+/* ============================================================================
+   O DETALHE ROLA NA LISTA, NÃO NO CORPO INTEIRO
+   ----------------------------------------------------------------------------
+   Quem rolava era o corpo do modal, e o cabeçalho da tabela grudava no topo
+   dele — deixando descoberta a faixa do respiro interno, com as linhas
+   passando por trás. Agora quem rola é a lista: o vão some, e os quatro
+   números e o filtro deixam de sumir junto com a rolagem.
+   ============================================================================ */
+#modal-detalhe .modal-body{overflow:hidden;display:flex;flex-direction:column;min-height:0}
+#modal-detalhe .det-lista{flex:1;min-height:0;overflow-y:auto;
+  border-top:1px solid var(--border-soft)}
+#modal-detalhe .det-lista table.det-tabela thead th{top:0}

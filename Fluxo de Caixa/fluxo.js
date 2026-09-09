@@ -148,6 +148,7 @@ const state = {
   edicao: null,
   cache: {},            // meses já abertos nesta sessão
   carregadoEm: 0,       // quando o payload em uso chegou (Date.now)
+  pendentes: {},        // células com gravação em curso: 'indo' ou 'falhou'
 };
 
 /* ------------------------------------------------ veio pelo hub? ------
@@ -826,6 +827,14 @@ function render(){
      reaparecer. */
   if (state.animarTroca){ tabela.classList.add('trocou'); state.animarTroca = false; }
   c.appendChild(tabela);
+
+  /* Células com gravação em curso: a marca vive em state, então ela sobrevive
+     ao redesenho que acontece logo depois de digitar. */
+  Object.keys(state.pendentes).forEach(k => {
+    const p = k.split('|');
+    const td = document.querySelector('td[data-linha="' + p[0] + '"][data-dia="' + p[1] + '"]');
+    if (td) td.classList.add(state.pendentes[k] === 'falhou' ? 'cel-falhou' : 'cel-indo');
+  });
 
   /* Acende a célula que acabou de receber lançamento e esquece o pedido, para
      não piscar de novo no próximo desenho. */
@@ -1640,8 +1649,10 @@ function aplicarNaCelula(l, dia, lanc, texto){
   if (v === null && lanc){                               // apagou: exclui o lançamento
     const i = lista.findIndex(x => x.id === lanc.id);
     if (i >= 0) lista.splice(i, 1);
+    marcarCelula(l.linha.id, dia.data, 'indo');
     redesenhar();
-    enviarEmSilencio({ acao:'fluxo_excluir', id: lanc.id }, 'Lançamento excluído.');
+    enviarEmSilencio({ acao:'fluxo_excluir', id: lanc.id }, 'Lançamento excluído.',
+                     { linha_id: l.linha.id, data: dia.data });
     return;
   }
 
@@ -1649,11 +1660,12 @@ function aplicarNaCelula(l, dia, lanc, texto){
   if (lanc) lanc.valor = v;
   else lista.push({ id: id, data: dia.data, linha_id: l.linha.id, valor: v,
                     descricao: '', autor: state.autor, quando: '', desfeito: false });
+  marcarCelula(l.linha.id, dia.data, 'indo');
   redesenhar();
   enviarEmSilencio({ acao:'fluxo_lancamento', lancamento: {
     id: id, data: dia.data, linha_id: l.linha.id, valor: v,
     descricao: lanc ? (lanc.descricao || '') : '', autor: state.autor,
-  } }, null);
+  } }, null, { linha_id: l.linha.id, data: dia.data });
 }
 
 
@@ -1665,8 +1677,38 @@ function redesenhar(){
   render();
 }
 
-async function enviarEmSilencio(payload, textoOk){
-  if (!(await Chave.garantir())) { toast('Gravação cancelada.', true); return; }
+/* ----------------------------------------------------------------------------
+   O SINAL FICA NA CÉLULA
+   ----------------------------------------------------------------------------
+   Digitou um valor: ele aparece na hora e o envio vai atrás. O único aviso de
+   que o envio ainda estava acontecendo era o fio de dois pixels no alto — longe
+   de onde a pessoa está olhando, que é a célula que ela acabou de digitar.
+
+   Agora a marca fica na própria célula: apagada enquanto vai, acesa quando
+   volta, vermelha se não foi. E fica guardada em state, não só no DOM, porque
+   qualquer redesenho perderia a classe no meio do caminho. */
+function marcarCelula(linhaId, data, estado){
+  const chave = linhaId + '|' + data;
+  if (estado) state.pendentes[chave] = estado;
+  else delete state.pendentes[chave];
+  const td = document.querySelector(
+    'td[data-linha="' + linhaId + '"][data-dia="' + data + '"]');
+  if (!td) return;
+  td.classList.remove('cel-indo', 'cel-falhou');
+  if (estado === 'indo')   td.classList.add('cel-indo');
+  if (estado === 'falhou') td.classList.add('cel-falhou');
+  if (estado === null){
+    td.classList.add('recem-mudada');
+    setTimeout(() => td.classList.remove('recem-mudada'), 1300);
+  }
+}
+
+async function enviarEmSilencio(payload, textoOk, celula){
+  if (!(await Chave.garantir())) {
+    if (celula) marcarCelula(celula.linha_id, celula.data, null);
+    toast('Gravação cancelada.', true);
+    return;
+  }
   fioComeca();
   try {
     await fetch(CONFIG.DATA_URL, {
@@ -1675,9 +1717,11 @@ async function enviarEmSilencio(payload, textoOk){
       body: JSON.stringify(assinar(payload)),
     });
     fioTermina();
+    if (celula) marcarCelula(celula.linha_id, celula.data, null);
     if (textoOk) toast(textoOk);
   } catch(e){
     fioTermina();
+    if (celula) marcarCelula(celula.linha_id, celula.data, 'falhou');
     toast('Não consegui gravar: ' + (e.message || e) + '. Recarregando…', true);
     esquecerOAno();
     setTimeout(() => carregar(), 1200);
@@ -1817,6 +1861,14 @@ async function abrirDetalheTitulos(l, dia){
    código vazio devolvia lista vazia SEMPRE, e a tela então dizia que o valor
    vinha da migração da planilha antiga. Dizia isso mesmo quando os títulos
    tinham acabado de ser importados: eles estavam lá, só não eram procurados. */
+/* A lista vem do script, na chave contas_manuais da aba FluxoConfig. Se por
+   algum motivo não vier, a tela não inventa: trata como se não houvesse. */
+function contaManual(l){
+  const cod = String((l.linha && l.linha.codigo) || '');
+  if (!cod) return false;
+  return ((state.dados && state.dados.contas_manuais) || []).indexOf(cod) >= 0;
+}
+
 function titulosDaLinha(doDia, l){
   const codigo = String((l.linha && l.linha.codigo) || '');
   if (codigo) return doDia.filter(x => String(x.conta_fluxo) === codigo);
@@ -1838,6 +1890,22 @@ function pintarTitulos(l, dia, linhas, total){
      da planilha antiga, que guardou só o total do dia. Dizer "nada neste dia"
      ali seria mentira — o valor está na cara de quem pergunta. */
   if (!linhas.length){
+    /* Há contas que nunca passam pelo relatório de contas a pagar: juros de
+       antecipação e o principal e os juros dos empréstimos, que o banco
+       desconta na própria liquidação. Nelas não existe título a mostrar, e
+       falar em migração da planilha antiga seria mentira. */
+    if (contaManual(l)){
+      el('det-sub').textContent = fmtData(dia.data) +
+        (auto ? (' · ' + fmtExato(auto)) : ' · sem valor');
+      corpo.appendChild(h('div', { class:'note info' }, [
+        icone('fa-hand'),
+        h('span', { text: 'Esta conta não vem do relatório de contas a pagar. O valor é lançado ' +
+          'à mão ou vem da planilha do fluxo de caixa — o banco desconta esses valores na própria ' +
+          'liquidação da operação, então não existe título a pagar para listar aqui.' }),
+      ]));
+      corpo.appendChild(blocoAjustes(l, dia));
+      return;
+    }
     el('det-sub').textContent = fmtData(dia.data) +
       (auto ? (' · ' + fmtExato(auto)) : ' · sem valor do relatório');
     corpo.appendChild(h('div', { class:'note info' }, [
@@ -3248,6 +3316,56 @@ function lerRelatorio(wb){
 }
 
 
+/* Tira do relatório as contas que nunca vêm dele.
+   ----------------------------------------------------------------------------
+   Juros de antecipação e o principal e os juros dos empréstimos o banco
+   desconta na liquidação: não nasce título a pagar. Se o relatório trouxer
+   alguma linha desses códigos — acontece quando alguém classifica à mão no
+   Totvs — ela é ruído: gravada, seria ignorada na leitura de qualquer jeito, e
+   ainda apareceria no detalhe da célula como se explicasse o número.
+
+   Tirar aqui, e não no script, é o que permite dizer na tela o que foi tirado
+   antes de gravar qualquer coisa. */
+function tirarContasManuais(r){
+  const manuais = (state.dados && state.dados.contas_manuais) || [];
+  if (!manuais.length) return r;
+
+  const fora = {}, dentro = [];
+  r.titulos.forEach(t => {
+    if (manuais.indexOf(String(t.conta_fluxo)) >= 0){
+      const a = fora[t.conta_fluxo] || { qtd:0, valor:0 };
+      a.qtd++; a.valor += (Number(t.valor_pago) || 0);
+      fora[t.conta_fluxo] = a;
+      return;
+    }
+    dentro.push(t);
+  });
+  const codigos = Object.keys(fora);
+  if (!codigos.length) return r;
+
+  /* Refaz o que dependia da lista, senão o resumo mostraria um total que não
+     é o que vai ser gravado. */
+  const porDia = {}, contas = {};
+  dentro.forEach(t => {
+    const d = porDia[t.dt_baixa] || (porDia[t.dt_baixa] = { qtd:0, valor:0 });
+    d.qtd++; d.valor += t.valor_pago;
+    contas[t.conta_fluxo] = (contas[t.conta_fluxo] || 0) + t.valor_pago;
+  });
+  const soma = codigos.reduce((a, c) => a + fora[c].valor, 0);
+  const qtd  = codigos.reduce((a, c) => a + fora[c].qtd, 0);
+
+  return Object.assign({}, r, {
+    titulos: dentro, porDia: porDia, contas: contas,
+    dias: Object.keys(porDia).sort(),
+    total: dentro.reduce((a, t) => a + t.valor_pago, 0),
+    recusados: { codigos: codigos, qtd: qtd, valor: soma, porConta: fora },
+    avisos: (r.avisos || []).concat([
+      qtd + ' título(s) de contas que não vêm do relatório ficaram de fora (' +
+      codigos.join(', ') + ', somando ' + dinheiro(soma) + '). ' +
+      'O valor dessas contas vem da planilha do fluxo ou de lançamento à mão.']),
+  });
+}
+
 /* ============================================================================
    IMPORTAÇÃO — A TELA
    ----------------------------------------------------------------------------
@@ -3385,7 +3503,7 @@ const Importar = {
         try { r = lerRelatorio(wb); } catch(e){ ehRelatorio = false; }
 
         if (ehRelatorio){
-          this.rel = r; this.rel.arquivo = f.name;
+          this.rel = tirarContasManuais(r); this.rel.arquivo = f.name;
         } else {
           if (this.modo === 'dia'){
             toast('Este arquivo não parece o relatório de contas a pagar.', true);
@@ -3744,13 +3862,27 @@ const Importar = {
       else                          await this.gravarDia();
 
       const limpou = this.modo === 'limpar';
-      this.passo(limpou ? 'Base apagada. Recarregando a tela…'
-                        : 'Pronto. Recarregando a tela…', 100);
-      toast(limpou ? 'Base do fluxo apagada.' : 'Importação concluída.');
+      const quantos = (this.rel && this.rel.titulos) ? this.rel.titulos.length : 0;
+      const dias = (this.rel && this.rel.dias) ? this.rel.dias.length : 0;
+      this.passo(limpou ? 'Base apagada. Relendo…' : 'Gravado. Relendo…', 100);
+
+      /* Gravar leva segundos; reler leva mais. Antes, dessa hora em diante o
+         único sinal de que algo ainda acontecia era o fio de dois pixels no
+         alto da tela — e a tabela embaixo continuava clicável, mostrando
+         números que já não eram os da planilha. Agora a janela sai de cena e a
+         tabela fica coberta até os números novos estarem desenhados. */
+      fecharModal('modal-importar');
+      abrirVeu(limpou ? 'Base apagada. Relendo os números…' : 'Gravado. Relendo os números…');
       /* O cache inteiro cai, não só o mês na tela: uma limpeza mexe em todos
          os meses, e depois de uma importação o mês vizinho também pode ter
          mudado por causa do saldo que vem arrastado. */
-      setTimeout(() => { fecharModal('modal-importar'); state.cache = {}; Titulos.esquecer(); carregar(); }, 900);
+      state.cache = {}; Titulos.esquecer();
+      await new Promise(r => setTimeout(r, 900));   // o script ainda está gravando
+      try { await carregar(false, true); }
+      finally { fecharVeu(); }
+      toast(limpou ? 'Base do fluxo apagada.'
+                   : ('Importação concluída · ' + quantos.toLocaleString('pt-BR') +
+                      ' título(s) em ' + dias + ' dia(s).'));
     } catch(err){
       toast('Falhou no meio: ' + (err.message || err), true);
       this.ocupado = false;
