@@ -279,14 +279,40 @@ const Chave = {
   pedir(nota){
     return new Promise(resolve => {
       const campo = el('senha-campo'), ok = el('senha-ok'), aviso = el('senha-nota');
+      const olho = el('senha-olho'), caps = el('senha-caps');
       campo.value = '';
+      campo.type = 'password';
       aviso.hidden = !nota;
       if (nota) aviso.textContent = nota;
+      caps.hidden = true;
+
+      /* Ver o que se digitou. Sem isso não dá para achar o erro numa senha
+         longa — e errar sem saber onde é o que mais irrita. */
+      const olhar = mostrar => {
+        campo.type = mostrar ? 'text' : 'password';
+        olho.innerHTML = '<i class="fa-solid fa-eye' + (mostrar ? '-slash' : '') + '"></i>';
+        olho.title = mostrar ? 'Esconder a senha' : 'Mostrar a senha';
+        campo.focus();
+      };
+      olho.onclick = () => olhar(campo.type === 'password');
+      olhar(false);
+
+      /* Caps Lock ligado é a causa mais comum de errar uma senha certa. */
+      const verCaps = e => {
+        try { caps.hidden = !e.getModifierState('CapsLock'); } catch(err){}
+      };
+      campo.addEventListener('keydown', verCaps);
+      campo.addEventListener('keyup', verCaps);
+
       mostrarModal('modal-senha');
       setTimeout(() => { try { campo.focus(); } catch(e){} }, 60);
 
       const fechar = valor => {
-        ok.onclick = null; campo.onkeydown = null;
+        ok.onclick = null; campo.onkeydown = null; olho.onclick = null;
+        campo.removeEventListener('keydown', verCaps);
+        campo.removeEventListener('keyup', verCaps);
+        campo.type = 'password';
+        campo.value = '';
         document.removeEventListener('fluxo:modal-fechado', aoFechar);
         fecharModal('modal-senha');
         resolve(valor);
@@ -311,7 +337,7 @@ const Chave = {
         fechar(true);
       };
       ok.onclick = tentar;
-      campo.onkeydown = e => { if (e.key === 'Enter') tentar(); };
+      campo.onkeydown = e => { verCaps(e); if (e.key === 'Enter') tentar(); };
     });
   },
 };
@@ -697,7 +723,24 @@ function render(){
   const c = el('painel');
   c.innerHTML = '';
   c.appendChild(barraMes());
-  c.appendChild(state.visao === 'ano' ? secaoTabelaAno() : secaoTabela());
+  const tabela = state.visao === 'ano' ? secaoTabelaAno() : secaoTabela();
+  /* A animação de troca é só para mês e visão. A cada gravação seria piscada:
+     quem acabou de digitar quer ver o número mudar, não a tabela inteira
+     reaparecer. */
+  if (state.animarTroca){ tabela.classList.add('trocou'); state.animarTroca = false; }
+  c.appendChild(tabela);
+
+  /* Acende a célula que acabou de receber lançamento e esquece o pedido, para
+     não piscar de novo no próximo desenho. */
+  if (state.destacar){
+    const alvo = document.querySelector(
+      'td[data-linha="' + state.destacar.linha_id + '"][data-dia="' + state.destacar.data + '"]');
+    if (alvo){
+      alvo.classList.add('recem-mudada');
+      setTimeout(() => alvo.classList.remove('recem-mudada'), 1300);
+    }
+    state.destacar = null;
+  }
 
   const grade = document.querySelector('.grade-wrap');
   if (state.rolarParaMes && grade){
@@ -848,6 +891,7 @@ function irPara(mes){
   const anoAntes = state.mes.slice(0, 4);
   state.mes = mes;
   state.rolarParaMes = true;
+  state.animarTroca = true;
   if (mes.slice(0, 4) === anoAntes && state.dados){
     render();
     return;
@@ -1151,7 +1195,17 @@ function fechado(chave){ return !!state.recolhidos[chave]; }
 function aplicarGrupos(){
   document.querySelectorAll('table.grade tr[data-cadeia]').forEach(tr => {
     const cadeia = tr.getAttribute('data-cadeia').split(' ');
-    tr.classList.toggle('oculta', cadeia.some(fechado));
+    const escondia = tr.classList.contains('oculta');
+    const esconde = cadeia.some(fechado);
+    tr.classList.toggle('oculta', esconde);
+    /* Linha que acabou de aparecer entra deslizando. Só a que apareceu: quem
+       já estava na tela não tem por que se mexer. */
+    if (escondia && !esconde){
+      tr.classList.remove('abrindo');
+      void tr.offsetWidth;              // reinicia a animação
+      tr.classList.add('abrindo');
+      setTimeout(() => tr.classList.remove('abrindo'), 260);
+    }
   });
   document.querySelectorAll('table.grade tr[data-grupo]').forEach(tr => {
     const estaFechado = fechado(tr.getAttribute('data-grupo'));
@@ -1715,6 +1769,10 @@ async function salvarLancamento(){
     },
   };
   fecharModal('modal-lanc');
+  /* Guarda onde o número mudou, para a tabela recarregada acender aquela
+     célula: sem isso, o valor novo aparece no meio de trinta colunas iguais e
+     quem digitou fica procurando o próprio lançamento. */
+  state.destacar = { linha_id: payload.lancamento.linha_id, data: payload.lancamento.data };
   if (await gravar(payload, 'Lançamento salvo.')) recarregarDepois();
 }
 
@@ -1791,9 +1849,6 @@ function fecharModal(id){
 }
 
 /* ============================================================================
-   EXPORTAÇÃO — mesmo desenho da planilha que a equipe já usa
-   ============================================================================ */
-/* ============================================================================
    REGISTRO DE USO
    ----------------------------------------------------------------------------
    Abrir e exportar não mudam nada, então não pedem senha — mas ficam na aba
@@ -1831,51 +1886,207 @@ const Registro = {
   },
 };
 
-function exportar(){
-  if (typeof XLSX === 'undefined'){ toast('Biblioteca de planilha carregando…', true); return; }
-  const c = state.calc, dias = diasVisiveis();
-  const aoa = [];
-  aoa.push(['ON TIME', 'Fluxo de Caixa · ' + nomeMes(state.mes)]);
-  aoa.push([]);
-  aoa.push(['', 'Descrição'].concat(dias.map(x => new Date(x.data + 'T12:00:00'))).concat(['Total do mês']));
+/* ============================================================================
+   EXPORTAÇÃO — modelo novo
+   ----------------------------------------------------------------------------
+   O arquivo antigo era a tabela crua: código, nome e números, sem hierarquia
+   visível, sem dizer de que período era nem quem gerou. Quem recebia por
+   e-mail tinha que perguntar.
 
-  const linhas = linhasDaTela();
+   Agora o arquivo se explica sozinho: cabeçalho com o período e a autoria, a
+   mesma leitura visual da tela — saldo em faixa escura, entradas em verde,
+   saídas em laranja, fim de semana em cinza — e três abas: o período que
+   está aberto, o fechamento de cada mês do ano, e a conferência do saldo
+   contra a posição dos bancos.
+   ========================================================================== */
+const COR = {
+  plum:'2D1B2D', plumTxt:'FFFFFF', laranja:'FF6E00', laranjaClaro:'FDEEE0',
+  verde:'16794A', verdeClaro:'E9F5EE', cinza:'F4F0F4', cinzaEsc:'EBE4EB',
+  borda:'E8E2E8', texto:'1A0F1A', suave:'6B5E6B', vermelho:'C0392B',
+  foraDoMes:'FAF7FA',
+};
+const FMT_NUM = '_-* #,##0.00_-;[Red]-* #,##0.00_-;_-* "–"_-;_-@_-';
+
+function estiloLinha(l){
+  const base = { alignment:{ vertical:'center' },
+                 border:{ bottom:{ style:'hair', color:{ rgb: COR.borda } } } };
+  if (l.kind === 'saldo-ini' || l.kind === 'saldo-fim')
+    return Object.assign({}, base, { font:{ bold:true, sz:10, color:{ rgb: COR.plumTxt } },
+      fill:{ patternType:'solid', fgColor:{ rgb: COR.plum } } });
+  if (l.kind === 'total'){
+    const ent = l.classe === 't-ent';
+    return Object.assign({}, base, { font:{ bold:true, sz:10, color:{ rgb: ent ? COR.verde : COR.laranja } },
+      fill:{ patternType:'solid', fgColor:{ rgb: ent ? COR.verdeClaro : COR.laranjaClaro } } });
+  }
+  if (l.kind === 'grupo' || l.kind === 'cabec-saldo' || l.kind === 'saldo-grupo' ||
+      l.kind === 'saldo-total' || l.kind === 'bancos')
+    return Object.assign({}, base, { font:{ bold:true, sz:10, color:{ rgb: COR.texto } },
+      fill:{ patternType:'solid', fgColor:{ rgb: COR.cinza } } });
+  if (l.kind === 'dif')
+    return Object.assign({}, base, { font:{ bold:true, sz:10, color:{ rgb: COR.suave } } });
+  return Object.assign({}, base, { font:{ sz:10, color:{ rgb: COR.texto } } });
+}
+
+/* Uma aba de tabela cruzada: as linhas do plano contra um conjunto de colunas.
+   Serve tanto para os dias do mês quanto para os doze meses do ano — é a
+   mesma tabela, só muda o que cada coluna representa. */
+function abaCruzada(titulo, subtitulo, quem, colunas, rotuloTotal, valor){
+  const linhas = linhasDaTela().filter(l => l.kind !== 'espaco' || true);
+  const largura = 2 + colunas.length + 1;
+  const aoa = [];
+
+  aoa.push(['ON TIME · Fluxo de Caixa']);
+  aoa.push([titulo]);
+  aoa.push([subtitulo]);
+  aoa.push(['Exportado por ' + (quem || 'não identificado') + ' em ' +
+            new Date().toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' })]);
+  aoa.push([]);
+  aoa.push(['Código', 'Descrição'].concat(colunas.map(c => c.rotulo)).concat([rotuloTotal]));
+
+  const mapa = [];   // linha da planilha -> linha da tela (para o estilo)
   linhas.forEach(l => {
-    if (l.kind === 'espaco'){ aoa.push([]); return; }
-    const cod = l.codigo || '';
-    const nome = (l.nivel ? '   '.repeat(l.nivel) : '') + l.label;
-    const pegar = l.get || (() => undefined);
-    const vals = dias.map(x => {
-      const v = pegar(x.data);
+    if (l.kind === 'espaco'){ aoa.push([]); mapa.push(null); return; }
+    const nome = (l.nivel ? '    '.repeat(l.nivel) : '') + l.label;
+    const vals = colunas.map(c => {
+      const v = valor(l, c);
       return (v === undefined || v === null) ? '' : Math.round(num(v) * 100) / 100;
     });
-    let tot = vals.reduce((s, v) => s + (typeof v === 'number' ? v : 0), 0);
-    if (l.kind !== 'linha' && l.kind !== 'grupo' && l.kind !== 'total'){
-      tot = '';
-      for (let i = vals.length - 1; i >= 0; i--){ if (typeof vals[i] === 'number'){ tot = vals[i]; break; } }
-    }
-    aoa.push([cod, nome].concat(vals).concat([tot]));
+    const t = valor(l, { total:true });
+    aoa.push([l.codigo || '', nome].concat(vals)
+             .concat([(t === undefined || t === null) ? '' : Math.round(num(t) * 100) / 100]));
+    mapa.push(l);
   });
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates:true });
-  ws['!cols'] = [{ wch:11 }, { wch:34 }].concat(dias.map(() => ({ wch:13 }))).concat([{ wch:15 }]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const põe = (r, c, s) => { const a = XLSX.utils.encode_cell({ r:r, c:c }); if (ws[a]) ws[a].s = s; };
 
-  const FMT = '_-* #,##0.00_-;\\-* #,##0.00_-;_-* "-"??_-;_-@_-';
-  const total = aoa.length, cols = 2 + dias.length + 1;
-  for (let r = 3; r < total; r++){
-    for (let cc = 2; cc < cols; cc++){
-      const addr = XLSX.utils.encode_cell({ r: r, c: cc });
-      if (ws[addr]) ws[addr].z = FMT;
-    }
-  }
-  dias.forEach((x, i) => {
-    const addr = XLSX.utils.encode_cell({ r: 2, c: 2 + i });
-    if (ws[addr]) ws[addr].z = 'dd/mm';
+  põe(0, 0, { font:{ bold:true, sz:15, color:{ rgb: COR.plum } } });
+  põe(1, 0, { font:{ bold:true, sz:12, color:{ rgb: COR.laranja } } });
+  põe(2, 0, { font:{ sz:10, color:{ rgb: COR.suave } } });
+  põe(3, 0, { font:{ sz:9, italic:true, color:{ rgb: COR.suave } } });
+
+  const cab = { font:{ bold:true, sz:9, color:{ rgb: COR.plumTxt } },
+                fill:{ patternType:'solid', fgColor:{ rgb: COR.plum } },
+                alignment:{ horizontal:'center', vertical:'center', wrapText:true } };
+  for (let c = 0; c < largura; c++) põe(5, c, cab);
+
+  mapa.forEach((l, i) => {
+    if (!l) return;
+    const r = 6 + i;
+    const s = estiloLinha(l);
+    const sCod = Object.assign({}, s, { font: Object.assign({}, s.font, { sz:8, color:{ rgb: s.font.color.rgb === COR.plumTxt ? COR.plumTxt : COR.suave } }) });
+    põe(r, 0, sCod);
+    põe(r, 1, Object.assign({}, s, { alignment:{ horizontal:'left', vertical:'center' } }));
+    colunas.forEach((col, j) => {
+      const sv = Object.assign({}, s, { numFmt: FMT_NUM,
+        alignment:{ horizontal:'right', vertical:'center' } });
+      if (col.fora && !s.fill) sv.fill = { patternType:'solid', fgColor:{ rgb: COR.foraDoMes } };
+      põe(r, 2 + j, sv);
+    });
+    const sT = Object.assign({}, s, { numFmt: FMT_NUM,
+      alignment:{ horizontal:'right', vertical:'center' },
+      font: Object.assign({}, s.font, { bold:true }) });
+    if (!sT.fill) sT.fill = { patternType:'solid', fgColor:{ rgb: COR.cinzaEsc } };
+    põe(r, largura - 1, sT);
   });
 
+  ws['!cols'] = [{ wch:10 }, { wch:38 }]
+    .concat(colunas.map(() => ({ wch:14 }))).concat([{ wch:16 }]);
+  ws['!rows'] = [{ hpt:21 }, { hpt:17 }, { hpt:14 }, { hpt:13 }, { hpt:6 }, { hpt:28 }];
+  const ate = Math.min(6, largura - 1);
+  ws['!merges'] = [0,1,2,3].map(r => ({ s:{ r:r, c:0 }, e:{ r:r, c:ate } }));
+  return ws;
+}
+
+function abaConferencia(quem){
+  const c = state.calc;
+  const aoa = [];
+  aoa.push(['ON TIME · Fluxo de Caixa']);
+  aoa.push(['Conferência do saldo contra a posição dos bancos']);
+  aoa.push(['Cada dia com posição informada: o saldo que a conta do fluxo produz, ' +
+            'o que os bancos mostram, e a diferença entre os dois.']);
+  aoa.push(['Exportado por ' + (quem || 'não identificado') + ' em ' +
+            new Date().toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' })]);
+  aoa.push([]);
+  aoa.push(['Dia', 'Saldo calculado', 'Total nos bancos', 'Diferença', 'Situação']);
+
+  const linhas = [];
+  c.dias.forEach(d => {
+    if (!c.temSaldo[d]) return;
+    const calc = num(c.sdFim[d]), banco = num(c.totBancos[d]);
+    const dif = Math.round((banco - calc) * 100) / 100;
+    linhas.push([d, Math.round(calc * 100) / 100, Math.round(banco * 100) / 100, dif,
+                 !dif ? 'fecha' : (Math.abs(dif) <= 1 ? 'arredondamento' : 'CONFERIR')]);
+  });
+  linhas.forEach(l => aoa.push(l));
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const põe = (r, cc, s) => { const a = XLSX.utils.encode_cell({ r:r, c:cc }); if (ws[a]) ws[a].s = s; };
+  põe(0, 0, { font:{ bold:true, sz:15, color:{ rgb: COR.plum } } });
+  põe(1, 0, { font:{ bold:true, sz:12, color:{ rgb: COR.laranja } } });
+  põe(2, 0, { font:{ sz:10, color:{ rgb: COR.suave } } });
+  põe(3, 0, { font:{ sz:9, italic:true, color:{ rgb: COR.suave } } });
+  for (let cc = 0; cc < 5; cc++)
+    põe(5, cc, { font:{ bold:true, sz:9, color:{ rgb: COR.plumTxt } },
+                 fill:{ patternType:'solid', fgColor:{ rgb: COR.plum } },
+                 alignment:{ horizontal:'center', vertical:'center' } });
+
+  linhas.forEach((l, i) => {
+    const r = 6 + i;
+    const base = { border:{ bottom:{ style:'hair', color:{ rgb: COR.borda } } },
+                   alignment:{ vertical:'center' } };
+    põe(r, 0, Object.assign({}, base, { font:{ sz:10 }, alignment:{ horizontal:'center' } }));
+    for (let cc = 1; cc <= 3; cc++)
+      põe(r, cc, Object.assign({}, base, { numFmt: FMT_NUM, font:{ sz:10 },
+        alignment:{ horizontal:'right' } }));
+    const sit = l[4];
+    põe(r, 4, Object.assign({}, base, {
+      font:{ sz:10, bold: sit === 'CONFERIR',
+             color:{ rgb: sit === 'CONFERIR' ? COR.vermelho : (sit === 'fecha' ? COR.verde : COR.suave) } },
+      fill: sit === 'CONFERIR' ? { patternType:'solid', fgColor:{ rgb:'FDECEA' } } : undefined,
+      alignment:{ horizontal:'center' } }));
+  });
+  ws['!cols'] = [{ wch:12 }, { wch:20 }, { wch:20 }, { wch:14 }, { wch:18 }];
+  ws['!rows'] = [{ hpt:21 }, { hpt:17 }, { hpt:14 }, { hpt:13 }, { hpt:6 }, { hpt:24 }];
+  ws['!merges'] = [0,1,2,3].map(r => ({ s:{ r:r, c:0 }, e:{ r:r, c:4 } }));
+  return ws;
+}
+
+function exportar(){
+  if (typeof XLSX === 'undefined'){ toast('Biblioteca de planilha carregando…', true); return; }
+  const c = state.calc;
+  const quem = state.autor || '';
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Fluxo ' + state.mes);
-  XLSX.writeFile(wb, 'fluxo-de-caixa-' + state.mes + '.xlsx');
+
+  const dias = diasVisiveis();
+  const colDias = dias.map(x => ({
+    rotulo: x.data.slice(8, 10) + '/' + x.data.slice(5, 7),
+    datas: [x.data], fora: x.fora,
+  }));
+  XLSX.utils.book_append_sheet(wb, abaCruzada(
+    nomeMes(state.mes),
+    'Dia a dia, com a virada dos meses vizinhos em cinza — elas não entram no total',
+    quem, colDias, 'Total do mês',
+    (l, col) => col.total ? agregar(l, dias.filter(x => !x.fora).map(x => x.data))
+                          : agregar(l, col.datas)),
+    'Fluxo ' + state.mes);
+
+  const meses = mesesDoAno();
+  const colMeses = meses.map(m => ({
+    rotulo: MESES_PT[Number(m.slice(5, 7)) - 1] + '/' + m.slice(2, 4),
+    datas: c.dias.filter(d => d.slice(0, 7) === m), fora:false,
+  }));
+  XLSX.utils.book_append_sheet(wb, abaCruzada(
+    'Fechamento de ' + state.mes.slice(0, 4),
+    'Um mês por coluna: movimento somado, saldo no fechamento do mês',
+    quem, colMeses, 'Total do ano',
+    (l, col) => col.total ? agregar(l, c.dias) : agregar(l, col.datas)),
+    'Fechamento por mês');
+
+  XLSX.utils.book_append_sheet(wb, abaConferencia(quem), 'Conferência');
+
+  const nome = 'fluxo-de-caixa-' + state.mes + '.xlsx';
+  XLSX.writeFile(wb, nome);
   Registro.exportacao(dias.length, nomeMes(state.mes));
   toast('Planilha gerada.');
 }
@@ -2927,6 +3138,20 @@ const Importar = {
   },
 };
 
+/* A tela continua à vista, coberta por um véu, enquanto algo demora. Trocar a
+   tabela por um esqueleto nessas horas seria pior que a espera: some o número
+   que a pessoa estava olhando. */
+function abrirVeu(texto){
+  const v = el('veu');
+  if (!v) return;
+  el('veu-texto').textContent = texto || 'Um instante…';
+  v.hidden = false;
+}
+function fecharVeu(){
+  const v = el('veu');
+  if (v) v.hidden = true;
+}
+
 /* ============================================================================
    MODO EDIÇÃO
    ----------------------------------------------------------------------------
@@ -2946,8 +3171,10 @@ const Edicao = {
 
     state.podeEditar = true;
     this.pintar();
-    toast('Modo edição. Buscando os números mais recentes…');
-    await carregar(false, true);
+    abrirVeu('Entrando em modo edição — buscando os números mais recentes…');
+    try { await carregar(false, true); }
+    finally { fecharVeu(); }
+    toast('Modo edição ligado.');
   },
 
   sair(){
@@ -3008,7 +3235,10 @@ document.addEventListener('DOMContentLoaded', () => {
      blocos cinzas seria piscada. Quem avisa que algo está acontecendo é o fio,
      como na troca de mês. E agora ele pede dados frescos de verdade: antes
      podia devolver a mesma cópia guardada e parecer que nada tinha mudado. */
-  el('btnRecarregar').onclick = () => carregar(false, true);
+  el('btnRecarregar').onclick = async () => {
+    abrirVeu('Buscando os números mais recentes…');
+    try { await carregar(false, true); } finally { fecharVeu(); }
+  };
   el('btnExportar').onclick = exportar;
 
   /* Alterna entre os dias do mês e o fechamento de cada mês do ano. O botão de
@@ -3025,6 +3255,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.visao = state.visao === 'ano' ? 'mes' : 'ano';
     pintarVisao();
     state.rolarParaMes = state.visao === 'mes';
+    state.animarTroca = true;
     render();
   };
   document.addEventListener('fluxo:visao', pintarVisao);
@@ -3040,12 +3271,14 @@ document.addEventListener('DOMContentLoaded', () => {
     b.onclick = () => fecharModal(b.getAttribute('data-fechar'));
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') document.querySelectorAll('.modal.show').forEach(m => m.classList.remove('show'));
+    if (e.key === 'Escape') document.querySelectorAll('.modal.show')
+      .forEach(m => fecharModal(m.id));
     if (e.key === 'Enter' && el('modal-lanc').classList.contains('show')) salvarLancamento();
   });
-  document.querySelectorAll('.modal').forEach(m => {
-    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
-  });
+  /* Clicar fora não fecha mais. Fechava até quando não se queria: arrastar
+     para selecionar um número e soltar o botão fora da caixa contava como
+     clique no fundo, e o que estava digitado ia embora. Agora fecham o X, o
+     Cancelar e o Esc — os três de propósito. */
 
   lerGrupos();
   window.addEventListener('resize', () => empilharFixas());

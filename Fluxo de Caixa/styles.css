@@ -23,6 +23,8 @@
   --col-nome:270px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* o atributo hidden precisa vencer display:flex/grid/block */
+[hidden]{display:none!important}
 html{height:100%}
 body{
   font-family:var(--font-body); font-size:14px; color:var(--ink);
@@ -360,7 +362,15 @@ td.detalhe:hover{text-decoration:underline dotted;text-underline-offset:3px}
   max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);
   animation:fadeUp .2s ease-out}
 .modal-box.sm{max-width:430px}
-.modal-head{padding:20px 24px 14px;border-bottom:1px solid var(--border-soft)}
+.modal-head{position:relative;padding:20px 48px 14px 24px;border-bottom:1px solid var(--border-soft)}
+/* O X é o jeito de sair, junto com o Cancelar e o Esc. Clicar fora não fecha:
+   arrastar para selecionar um número e soltar fora da caixa fechava a janela
+   e levava junto o que estava digitado. */
+.modal-x{position:absolute;top:14px;right:14px;width:32px;height:32px;
+  display:grid;place-items:center;border:none;background:none;cursor:pointer;
+  color:var(--subtle);border-radius:9px;font-size:15px;
+  transition:color .15s, background .15s}
+.modal-x:hover{color:var(--plum-deep);background:var(--surface-soft)}
 .modal-head h3{font-family:var(--font-display);font-weight:600;font-size:19px;
   display:flex;align-items:center;gap:10px}
 .modal-head h3 i{color:var(--orange);font-size:17px}
@@ -564,3 +574,63 @@ table.tabela-simples td.mono{font-family:var(--font-mono);white-space:nowrap}
 .imp-barra span{display:block;height:100%;width:0%;border-radius:99px;
   background:linear-gradient(90deg,#FF8A2E,var(--orange));transition:width .3s ease}
 .imp-passo{font-size:12.5px;color:var(--plum-soft);text-align:center}
+
+
+/* ============================================================
+   VÉU, SENHA À VISTA E AS ANIMAÇÕES
+   ------------------------------------------------------------
+   Movimento aqui serve para explicar o que aconteceu — de onde
+   veio um número novo, que a tabela trocou de mês, que a tela
+   está esperando algo. Nada dura mais que dois décimos, porque
+   quem usa isso todo dia não quer assistir a uma animação pela
+   milésima vez.
+   ============================================================ */
+
+/* espera que cobre a tabela sem apagá-la */
+.veu{position:fixed;inset:0;z-index:8000;display:flex;align-items:center;
+  justify-content:center;background:rgba(250,247,245,.72);backdrop-filter:blur(2px);
+  animation:veuEntra .16s ease-out}
+.veu-caixa{display:flex;align-items:center;gap:12px;padding:14px 20px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);font-size:13px;font-weight:600;color:var(--plum-deep)}
+.veu-giro{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);
+  border-top-color:var(--orange);animation:spin .8s linear infinite}
+@keyframes veuEntra{from{opacity:0}to{opacity:1}}
+
+/* senha: o olho e o aviso de Caps Lock */
+.campo-senha{position:relative}
+.campo-senha .imp-campo{padding-right:44px;text-transform:none;letter-spacing:normal}
+.olho{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:32px;height:32px;border:none;background:none;cursor:pointer;
+  color:var(--subtle);border-radius:8px;transition:color .15s, background .15s}
+.olho:hover{color:var(--orange-deep);background:var(--orange-soft)}
+.note.info i,.note.danger i{margin-top:1px}
+
+/* a tabela entrando ao trocar de mês ou de visão */
+@keyframes trocaEntra{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.section.trocou{animation:trocaEntra .18s ease-out both}
+
+/* linhas de um grupo que acabou de abrir */
+@keyframes linhaEntra{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+tbody tr.abrindo td{animation:linhaEntra .16s ease-out both}
+
+/* a célula que acabou de receber um lançamento */
+@keyframes brilhoCelula{
+  0%{background:var(--orange);color:#fff}
+  60%{background:var(--orange-soft);color:var(--orange-deep)}
+  100%{background:transparent}
+}
+td.recem-mudada{animation:brilhoCelula 1.1s ease-out}
+
+/* modais chegando com um leve avanço, em vez de aparecerem prontos */
+.modal .modal-box{transition:transform .18s ease-out, opacity .18s ease-out}
+.modal:not(.show) .modal-box{transform:translateY(8px) scale(.985);opacity:0}
+.modal.show .modal-box{transform:none;opacity:1}
+
+/* resposta ao clique nos botões do cabeçalho */
+.btn:active:not(:disabled){transform:translateY(1px) scale(.985)}
+
+@media (prefers-reduced-motion:reduce){
+  .section.trocou,tbody tr.abrindo td,td.recem-mudada,.veu{animation:none}
+  .modal .modal-box{transition:none}
+}

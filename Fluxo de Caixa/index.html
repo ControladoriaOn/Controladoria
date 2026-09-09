@@ -93,6 +93,7 @@
 <div class="modal" id="modal-detalhe">
   <div class="modal-box">
     <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-detalhe" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
       <h3><i class="fa-solid fa-list-ul"></i> <span id="det-titulo">Detalhe</span></h3>
       <p id="det-sub"></p>
     </div>
@@ -107,6 +108,7 @@
 <div class="modal" id="modal-lanc">
   <div class="modal-box sm">
     <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-lanc" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
       <h3><i class="fa-solid fa-pen"></i> <span id="lanc-titulo">Lançar</span></h3>
       <p id="lanc-sub"></p>
     </div>
@@ -135,6 +137,7 @@
 <div class="modal" id="modal-saldos">
   <div class="modal-box">
     <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-saldos" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
       <h3><i class="fa-solid fa-building-columns"></i> <span id="sal-titulo">Posição de saldos</span></h3>
       <p id="sal-sub"></p>
     </div>
@@ -153,6 +156,7 @@
 <div class="modal" id="modal-importar">
   <div class="modal-box lg">
     <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-importar" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
       <h3><i class="fa-solid fa-file-import"></i> <span id="imp-titulo">Atualizar um dia</span></h3>
       <p id="imp-sub">Solte o relatório de contas a pagar. Nada é gravado antes de você conferir.</p>
     </div>
@@ -172,18 +176,36 @@
 <div class="modal" id="modal-senha">
   <div class="modal-box">
     <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-senha" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
       <h3><i class="fa-solid fa-lock"></i> Modo edição</h3>
       <p>Digite a senha de gravação do fluxo de caixa para lançar, importar ou limpar.</p>
     </div>
     <div class="modal-body">
-      <input type="password" id="senha-campo" class="imp-campo" autocomplete="off"
-             placeholder="senha de gravação" style="text-transform:none;letter-spacing:normal">
-      <div class="note info" id="senha-nota" hidden></div>
+      <div class="campo-senha">
+        <input type="password" id="senha-campo" class="imp-campo" autocomplete="off"
+               placeholder="senha de gravação">
+        <button type="button" id="senha-olho" class="olho" title="Mostrar a senha"
+                aria-label="Mostrar a senha"><i class="fa-solid fa-eye"></i></button>
+      </div>
+      <div class="note info" id="senha-caps" hidden>
+        <i class="fa-solid fa-arrow-up"></i>
+        <div>Caps Lock está ligado — a senha diferencia maiúsculas de minúsculas.</div>
+      </div>
+      <div class="note danger" id="senha-nota" hidden></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" type="button" data-fechar="modal-senha">Cancelar</button>
       <button class="btn btn-primary" id="senha-ok" type="button">Entrar</button>
     </div>
+  </div>
+</div>
+
+<!-- Véu de espera. A tabela continua na tela, coberta: trocá-la por um
+     esqueleto seria uma piscada pior que a própria espera. -->
+<div class="veu" id="veu" hidden>
+  <div class="veu-caixa">
+    <div class="veu-giro"></div>
+    <span id="veu-texto">Buscando os números mais recentes…</span>
   </div>
 </div>
 
