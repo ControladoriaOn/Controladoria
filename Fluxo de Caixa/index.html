@@ -204,39 +204,54 @@
      conferir um fechamento de janeiro a julho virava sete downloads e um
      copia-e-cola. Agora ele pergunta o recorte primeiro: o período sempre
      começa em janeiro, você escolhe onde ele termina, e diz se quer a
-     estrutura inteira ou só os totais. -->
-<div class="modal" id="modal-exportar">
-  <div class="modal-box sm">
-    <div class="modal-head">
-      <button class="modal-x" type="button" data-fechar="modal-exportar" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
-      <h3><i class="fa-solid fa-file-export"></i> Exportar</h3>
-      <p>O período começa sempre em janeiro. Escolha até onde ele vai.</p>
-    </div>
-    <div class="modal-body">
-      <label class="exp-campo">
-        <span class="exp-rot">Até quando</span>
-        <select id="exp-ate" class="filtro"></select>
-      </label>
+     estrutura inteira ou só os totais.
 
-      <div class="exp-bloco">
-        <label class="exp-opcao">
-          <input type="checkbox" id="exp-dia">
-          <span><b>Dia a dia</b>
-            <em>uma coluna por dia, de 01/01 até o fim do mês escolhido</em></span>
-        </label>
+     O dia a dia fica com quadradinho, e não com bolinha, de propósito: ele é
+     independente do nível. Dá para pedir um dia a dia analítico e um dia a
+     dia sintético — e a forma do controle é o que conta isso antes de
+     qualquer texto explicar. -->
+<div class="modal" id="modal-exportar">
+  <div class="modal-box exp-box">
+    <div class="exp-head">
+      <div class="exp-icone"><i class="fa-solid fa-file-export"></i></div>
+      <div class="exp-titulo">
+        <h3>Exportar relatório</h3>
+        <p>O período começa sempre em janeiro. Escolha até onde ele vai.</p>
+      </div>
+      <button class="modal-x" type="button" data-fechar="modal-exportar" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="exp-corpo">
+      <div class="exp-secao">Período</div>
+      <div class="exp-periodo">
+        <select id="exp-ate" class="exp-select" aria-label="Até quando"></select>
+        <div class="exp-chip"><i class="fa-solid fa-calendar-days"></i><span id="exp-chip-txt">—</span></div>
       </div>
 
-      <div class="exp-bloco">
-        <label class="exp-opcao">
-          <input type="radio" name="exp-nivel" value="analitico" checked>
-          <span><b>Analítico</b>
-            <em>a estrutura inteira, conta por conta</em></span>
-        </label>
-        <label class="exp-opcao">
-          <input type="radio" name="exp-nivel" value="sintetico">
-          <span><b>Sintético</b>
-            <em>saldos, os totais de entrada e saída e os grupos</em></span>
-        </label>
+      <div class="exp-secao">Estrutura</div>
+      <label class="exp-cartao" data-cartao="dia">
+        <span class="exp-ico"><i class="fa-solid fa-table-cells"></i></span>
+        <span class="exp-txt"><b>Dia a dia</b><em>Uma coluna por dia, de 01/01 até o fim do mês escolhido</em></span>
+        <input type="checkbox" id="exp-dia" class="exp-input">
+        <span class="exp-marca exp-marca-quad"></span>
+      </label>
+      <label class="exp-cartao" data-cartao="analitico">
+        <span class="exp-ico"><i class="fa-solid fa-list-ul"></i></span>
+        <span class="exp-txt"><b>Analítico</b><em>A estrutura inteira, conta por conta</em></span>
+        <input type="radio" name="exp-nivel" value="analitico" class="exp-input" checked>
+        <span class="exp-marca"></span>
+      </label>
+      <label class="exp-cartao" data-cartao="sintetico">
+        <span class="exp-ico"><i class="fa-solid fa-layer-group"></i></span>
+        <span class="exp-txt"><b>Sintético</b><em>Saldos, os totais de entrada e saída e os grupos</em></span>
+        <input type="radio" name="exp-nivel" value="sintetico" class="exp-input">
+        <span class="exp-marca"></span>
+      </label>
+
+      <div class="exp-secao">Formato de saída</div>
+      <div class="exp-formato" role="group" aria-label="Formato de saída">
+        <button type="button" class="exp-fmt" data-fmt="pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+        <button type="button" class="exp-fmt ativo" data-fmt="xlsx"><i class="fa-solid fa-file-excel"></i> Excel</button>
       </div>
 
       <div class="note info" id="exp-aviso" hidden>
@@ -244,10 +259,11 @@
         <div>Dia a dia sai só em Excel: são centenas de colunas, que não cabem numa página.</div>
       </div>
     </div>
-    <div class="modal-foot">
+
+    <div class="exp-pe">
+      <span class="exp-sumario" id="exp-sumario"></span>
       <button class="btn btn-ghost" type="button" data-fechar="modal-exportar">Cancelar</button>
-      <button class="btn btn-ghost" id="exp-pdf" type="button"><i class="fa-solid fa-file-pdf"></i> PDF</button>
-      <button class="btn btn-primary" id="exp-xlsx" type="button"><i class="fa-solid fa-file-excel"></i> Excel</button>
+      <button class="btn btn-primary" id="exp-gerar" type="button"><i class="fa-solid fa-download"></i> Exportar</button>
     </div>
   </div>
 </div>

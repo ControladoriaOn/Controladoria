@@ -637,22 +637,102 @@ td.recem-mudada{animation:brilhoCelula 1.1s ease-out}
 
 /* ============================================================================
    EXPORTAR — as opções do recorte
-   ============================================================================ */
-.exp-campo{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.exp-rot{font-size:12.5px;font-weight:650;color:var(--plum-deep);white-space:nowrap}
-.exp-campo .filtro{flex:1}
+   ----------------------------------------------------------------------------
+   Cada escolha é um cartão inteiro clicável, não um rótulo ao lado de um
+   ponto de seis pixels. O que está marcado se vê de longe: fio laranja,
+   fundo claro e o ícone acendendo junto.
 
-.exp-bloco{border:1px solid var(--border);border-radius:var(--radius-md);
-  padding:4px 2px;margin-bottom:12px}
-.exp-opcao{display:flex;gap:11px;align-items:flex-start;padding:10px 12px;
-  border-radius:var(--radius-sm);cursor:pointer;transition:background .12s}
-.exp-opcao:hover{background:var(--surface-soft)}
-.exp-opcao input{margin-top:2px;accent-color:var(--orange);width:15px;height:15px;
-  flex-shrink:0;cursor:pointer}
-.exp-opcao span{display:block;line-height:1.35}
-.exp-opcao b{display:block;font-size:13px;font-weight:600;color:var(--plum-deep)}
-.exp-opcao em{display:block;font-style:normal;font-size:11.5px;color:var(--plum-soft);
+   O dia a dia usa quadrado e os níveis usam círculo. É a convenção de sempre
+   — quadrado soma, círculo escolhe — e aqui ela carrega a regra do relatório:
+   o dia a dia é independente do nível, então marcá-lo não desmarca nada.
+   ============================================================================ */
+.exp-box{max-width:520px}
+
+.exp-head{position:relative;display:flex;gap:14px;align-items:flex-start;
+  padding:22px 52px 18px 22px}
+.exp-icone{width:44px;height:44px;border-radius:13px;flex-shrink:0;
+  display:grid;place-items:center;font-size:18px;
+  background:var(--orange-soft);color:var(--orange)}
+.exp-titulo h3{font-family:var(--font-display);font-weight:600;font-size:19px;
+  color:var(--plum-deep);line-height:1.25}
+.exp-titulo p{margin-top:4px;font-size:12.5px;color:var(--plum-soft);line-height:1.45}
+
+.exp-corpo{padding:0 22px 20px;overflow-y:auto}
+.exp-secao{font-size:10.5px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--subtle);margin:16px 0 9px}
+.exp-secao:first-child{margin-top:0}
+
+/* ---- período ---- */
+.exp-periodo{display:flex;gap:10px;align-items:stretch}
+.exp-select{flex:1;min-width:0;appearance:none;
+  padding:13px 38px 13px 15px;border:1px solid var(--border);border-radius:14px;
+  background:var(--surface) url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B5E6B' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 13px center/16px;
+  font-family:inherit;font-size:14px;font-weight:600;color:var(--plum-deep);cursor:pointer;
+  transition:border-color .15s, box-shadow .15s}
+.exp-select:hover{border-color:var(--plum-soft)}
+.exp-select:focus{outline:none;border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(255,110,0,.14)}
+.exp-chip{display:flex;align-items:center;gap:8px;padding:0 15px;flex-shrink:0;
+  border:1px solid var(--border-soft);border-radius:14px;background:var(--surface-soft);
+  font-size:12.5px;font-weight:600;color:var(--plum-soft);white-space:nowrap}
+.exp-chip i{font-size:12px;color:var(--subtle)}
+
+/* ---- os cartões de estrutura ---- */
+.exp-cartao{display:flex;align-items:center;gap:13px;position:relative;
+  padding:13px 15px;margin-bottom:9px;cursor:pointer;
+  border:1.5px solid var(--border);border-radius:15px;background:var(--surface);
+  transition:border-color .15s, background .15s, box-shadow .15s}
+.exp-cartao:hover{border-color:var(--plum-soft)}
+.exp-cartao.sel{border-color:var(--orange);background:var(--orange-soft)}
+.exp-cartao:last-of-type{margin-bottom:0}
+
+.exp-ico{width:38px;height:38px;border-radius:11px;flex-shrink:0;
+  display:grid;place-items:center;font-size:15px;
+  background:var(--surface-soft);color:var(--plum-soft);transition:background .15s, color .15s}
+.exp-cartao.sel .exp-ico{background:#FFE2C7;color:var(--orange-deep)}
+
+.exp-txt{flex:1;min-width:0;line-height:1.35}
+.exp-txt b{display:block;font-size:14px;font-weight:650;color:var(--plum-deep)}
+.exp-txt em{display:block;font-style:normal;font-size:12px;color:var(--plum-soft);
   margin-top:2px}
+
+/* O controle nativo continua lá, invisível: é ele que o teclado e o leitor de
+   tela enxergam. O que se pinta é a marca ao lado. */
+.exp-input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.exp-marca{width:21px;height:21px;flex-shrink:0;border-radius:50%;
+  border:2px solid var(--border);background:var(--surface);
+  display:grid;place-items:center;transition:border-color .15s}
+.exp-marca-quad{border-radius:7px}
+.exp-cartao.sel .exp-marca{border-color:var(--orange)}
+.exp-cartao.sel .exp-marca::after{content:'';width:10px;height:10px;border-radius:50%;
+  background:var(--orange)}
+.exp-cartao.sel .exp-marca-quad::after{width:11px;height:6px;border-radius:0;
+  background:none;border:2.5px solid var(--orange);border-top:none;border-right:none;
+  transform:rotate(-45deg) translate(1px,-2px)}
+.exp-input:focus-visible + .exp-marca{box-shadow:0 0 0 3px rgba(255,110,0,.2)}
+
+/* ---- formato de saída ---- */
+.exp-formato{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;
+  background:var(--surface-soft);border-radius:14px}
+.exp-fmt{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 10px;border:1px solid transparent;border-radius:11px;background:none;
+  font-family:inherit;font-size:13.5px;font-weight:600;color:var(--plum-soft);
+  cursor:pointer;transition:background .15s, color .15s, box-shadow .15s}
+.exp-fmt:hover:not(:disabled):not(.ativo){color:var(--plum-deep)}
+.exp-fmt.ativo{background:var(--surface);border-color:var(--border-soft);
+  color:var(--plum-deep);box-shadow:var(--shadow-sm)}
+.exp-fmt.ativo[data-fmt="xlsx"] i{color:var(--ok)}
+.exp-fmt.ativo[data-fmt="pdf"] i{color:#C0392B}
+.exp-fmt:disabled{opacity:.4;cursor:not-allowed}
+
+#exp-aviso{margin-top:12px}
+
+/* ---- rodapé ---- */
+.exp-pe{display:flex;align-items:center;gap:10px;padding:14px 22px;
+  background:var(--surface-soft);border-top:1px solid var(--border-soft)}
+.exp-sumario{flex:1;min-width:0;font-size:12px;color:var(--plum-soft);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-sumario b{color:var(--plum-deep);font-weight:650}
 
 /* Botão desligado por regra, não por falta de permissão: continua à vista,
    apagado, com o motivo escrito logo acima. */

@@ -2205,6 +2205,8 @@ function datasDoPeriodo(ate){
 /* ----------------------------------------------------------------------------
    A JANELA DE OPÇÕES
    -------------------------------------------------------------------------- */
+let formatoExport = 'xlsx';
+
 function abrirExportar(){
   const sel = el('exp-ate');
   const lista = mesesAteAqui();
@@ -2213,17 +2215,56 @@ function abrirExportar(){
   lista.forEach(m => sel.appendChild(h('option', {
     value:m, text: nomeMes(m), selected: m === escolhido })));
 
-  const dia = el('exp-dia'), aviso = el('exp-aviso'), pdf = el('exp-pdf');
-  const pintar = () => {
-    pdf.disabled = dia.checked;
-    aviso.hidden = !dia.checked;
+  sel.onchange = pintarExportar;
+  document.querySelectorAll('#modal-exportar .exp-input').forEach(i => { i.onchange = pintarExportar; });
+  document.querySelectorAll('#modal-exportar .exp-fmt').forEach(b => {
+    b.onclick = () => { if (b.disabled) return; formatoExport = b.dataset.fmt; pintarExportar(); };
+  });
+  el('exp-gerar').onclick = () => {
+    const op = opcoesExport();
+    if (op.formato === 'pdf') exportarPdf(op); else exportarExcel(op);
   };
-  dia.onchange = pintar;
-  pintar();
 
-  el('exp-xlsx').onclick = () => exportarExcel(opcoesExport());
-  pdf.onclick = () => exportarPdf(opcoesExport());
+  pintarExportar();
   mostrarModal('modal-exportar');
+}
+
+/* Um lugar só decide como a janela fica: o que está escolhido, o que está
+   proibido e o que o rodapé promete. Antes eram três trechos combinando entre
+   si de longe, e era só questão de tempo até um deles esquecer do outro. */
+function pintarExportar(){
+  const dia = el('exp-dia').checked;
+
+  document.querySelectorAll('#modal-exportar .exp-cartao').forEach(c => {
+    const inp = c.querySelector('.exp-input');
+    c.classList.toggle('sel', !!(inp && inp.checked));
+  });
+
+  /* Dia a dia são centenas de colunas: não existe página que as receba. O
+     botão do PDF não some, fica apagado com o motivo escrito embaixo — sumir
+     deixaria a pessoa procurando o que ela viu ali um instante atrás. */
+  const btPdf = document.querySelector('#modal-exportar .exp-fmt[data-fmt="pdf"]');
+  btPdf.disabled = dia;
+  if (dia && formatoExport === 'pdf') formatoExport = 'xlsx';
+  el('exp-aviso').hidden = !dia;
+  document.querySelectorAll('#modal-exportar .exp-fmt').forEach(b => {
+    b.classList.toggle('ativo', b.dataset.fmt === formatoExport);
+  });
+
+  const op = opcoesExport();
+  const meses = colunasMeses(op.ate).length;
+  const cap = m => m.charAt(0).toUpperCase() + m.slice(1);
+  const janAte = 'Jan – ' + cap(MESES_PT[Number(op.ate.slice(5, 7)) - 1]) +
+                 '/' + op.ate.slice(0, 4);
+  el('exp-chip-txt').textContent = meses + (meses === 1 ? ' mês' : ' meses') + ' · ' + janAte;
+  el('exp-sumario').innerHTML = '';
+  el('exp-sumario').appendChild(h('span', {}, [
+    janAte + ' · ',
+    h('b', { text: op.nivel === 'sintetico' ? 'Sintético' : 'Analítico' }),
+    op.diaADia ? ' · dia a dia' : '',
+    ' · ',
+    h('b', { text: op.formato === 'pdf' ? 'PDF' : 'Excel' }),
+  ]));
 }
 
 function opcoesExport(){
@@ -2232,6 +2273,7 @@ function opcoesExport(){
     ate: el('exp-ate').value,
     diaADia: el('exp-dia').checked,
     nivel: nivel ? nivel.value : 'analitico',
+    formato: (el('exp-dia').checked && formatoExport === 'pdf') ? 'xlsx' : formatoExport,
   };
 }
 
@@ -2334,7 +2376,7 @@ function fmtPdf(v){
 }
 
 async function exportarPdf(op){
-  const btn = el('exp-pdf');
+  const btn = el('exp-gerar');
   btn.disabled = true;
   const ok = await Pdf.garantir();
   btn.disabled = false;
