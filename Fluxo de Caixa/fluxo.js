@@ -51,6 +51,11 @@ const CONFIG = {
   DATA_URL: URL_BASE,
   RETRIES: 3,
   BACKOFF_MS: 600,
+  /* Tempo que a tela confia no carimbo. Passado isso, entrar em modo edição
+     recarrega de qualquer jeito — o carimbo não enxerga edição feita à mão
+     direto na planilha, e uma aba esquecida aberta a manhã inteira é
+     justamente o caso em que isso importa. */
+  IDADE_MAX_MS: 20 * 60 * 1000,
 };
 
 /* ------------------------------------------------------------------ DOM */
@@ -142,6 +147,7 @@ const state = {
   chave: '',                  // senha de gravação, guardada só nesta sessão
   edicao: null,
   cache: {},            // meses já abertos nesta sessão
+  carregadoEm: 0,       // quando o payload em uso chegou (Date.now)
 };
 
 /* ------------------------------------------------ veio pelo hub? ------
@@ -405,13 +411,39 @@ const respira = ms => new Promise(r => setTimeout(r, ms));
    fresco=true pula o cache do lado do script. É o que o botão Atualizar manda
    e o que o modo edição pede ao entrar: quem vai lançar precisa ver o estado
    de agora, não a cópia guardada de horas atrás. */
-async function buscarAno(ano, fresco){
+async function buscarAno(ano, fresco, semPrevisto){
+  const anterior = state.cache[ano];
   const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') +
-              'fluxo_ano=' + ano + (fresco ? '&fresco=1' : '') + '&v=' + Date.now();
+              'fluxo_ano=' + ano + (fresco ? '&fresco=1' : '') +
+              (semPrevisto ? '&sem_previsto=1' : '') + '&v=' + Date.now();
   const d = await buscarJson(url);
   if (!d || d.ok === false) throw new Error((d && d.erro) || 'resposta vazia');
+  /* Quando se pede a resposta sem a projeção, ela volta com a lista vazia. A
+     projeção não muda com o que se está prestes a lançar, então a que já
+     estava na mão continua valendo — sem isso o mês corrente perderia o
+     previsto ao entrar em modo edição. */
+  if (d.previsto_omitido && anterior && anterior.previsto) d.previsto = anterior.previsto;
   state.cache[ano] = d;
+  state.carregadoEm = Date.now();
   return d;
+}
+
+/* Mudou alguma coisa na base desde que esta tela carregou? Uma consulta de
+   bytes, que não abre planilha nenhuma do outro lado. Na dúvida — resposta
+   estranha, rede caída, tela velha demais — devolve true: recarregar à toa
+   custa tempo, não recarregar quando devia custa um lançamento em cima de
+   número errado. */
+async function baseMudou(){
+  const meu = state.dados && state.dados.carimbo;
+  if (!meu) return true;
+  if (Date.now() - (state.carregadoEm || 0) > CONFIG.IDADE_MAX_MS) return true;
+  try {
+    const r = await fetch(CONFIG.DATA_URL + '?carimbo=1&v=' + Date.now());
+    if (!r.ok) return true;
+    const d = await r.json();
+    if (!d || d.ok === false || !d.carimbo) return true;
+    return String(d.carimbo) !== String(meu);
+  } catch(e){ return true; }
 }
 
 /* Guarda os meses já abertos, mas não todos: seis é mais do que qualquer um
@@ -458,11 +490,11 @@ function fioTermina(){
   setTimeout(() => { fio.classList.remove('ativo'); ff.style.width = '0%'; }, 220);
 }
 
-async function carregar(primeira, fresco){
+async function carregar(primeira, fresco, semPrevisto){
   if (primeira) fioPrimeiraCarga(); else fioComeca();
   try {
     const ano = state.mes.slice(0, 4);
-    state.dados = (!fresco && state.cache[ano]) || await buscarAno(ano, fresco);
+    state.dados = (!fresco && state.cache[ano]) || await buscarAno(ano, fresco, semPrevisto);
     if (primeira){ clearTimeout(fioPrimeiraCarga._t); etapaLoader('Somando o mês…', 66); await respira(50); }
     calcular();
     if (primeira){ etapaLoader('Montando a tabela…', 88); await respira(50); }
@@ -3171,8 +3203,22 @@ const Edicao = {
 
     state.podeEditar = true;
     this.pintar();
-    abrirVeu('Entrando em modo edição — buscando os números mais recentes…');
-    try { await carregar(false, true); }
+
+    /* Antes, entrar em edição remontava o ano inteiro na planilha por
+       precaução — quarenta e cinco segundos parado, quase sempre para
+       descobrir que nada tinha mudado. Agora a pergunta vem primeiro, e ela é
+       barata: só se a base mudou é que vale a espera. */
+    abrirVeu('Conferindo se a base mudou…');
+    let mudou;
+    try { mudou = await baseMudou(); }
+    finally { if (!mudou) fecharVeu(); }
+
+    if (!mudou){ toast('Modo edição ligado.'); return; }
+
+    /* Recarga sem a projeção: é a leitura mais pesada do outro lado e não
+       muda nada do que se vai lançar. A projeção que já está na tela fica. */
+    abrirVeu('A base mudou — buscando os números mais recentes…');
+    try { await carregar(false, true, true); }
     finally { fecharVeu(); }
     toast('Modo edição ligado.');
   },
