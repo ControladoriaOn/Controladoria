@@ -252,21 +252,18 @@ function recortes(){
     },
     /* À tarde, quando o relatório do dia chega, este cartão deixa de ser o que
        vai sair e passa a ser o que saiu. O de ontem e o de amanhã não mudam. */
+    /* Chegou o relatório com a data de hoje: ele é a verdade do dia. O que
+       estava previsto para hoje e não saiu deixa de aparecer — quem manda é a
+       baixa, não a expectativa da manhã. O devolvido pelo banco também não
+       entra: está oculto, e o cartão de Pago mostra só o que saiu de fato. */
     hoje: r.temEfetivoHoje ? {
       rotulo: 'Pago hoje',
       icone: 'fa-circle-check', classe: 'ok',
       valor: r.efetivoHoje.valor, qtd: r.efetivoHoje.qtd,
-      /* O devolvido pelo banco também volta a ser previsto, então contar os
-         dois seria contar a mesma linha duas vezes: aqui ele aparece só como
-         devolução, e "ainda previsto" fica com o que sobrou além dela. */
-      sub: r.efetivoHoje.qtd + (r.efetivoHoje.qtd === 1 ? ' pago' : ' pagos')
+      sub: r.efetivoHoje.qtd + (r.efetivoHoje.qtd === 1 ? ' título pago' : ' títulos pagos')
            + (r.devolvidosHoje.qtd ? (' · ' + r.devolvidosHoje.qtd + ' devolvido(s) pelo banco, R$ '
-              + fmtBR(r.devolvidosHoje.valor)) : '')
-           + ((r.previstoSobrou.qtd - r.devolvidosHoje.qtd) > 0
-              ? (' · ' + (r.previstoSobrou.qtd - r.devolvidosHoje.qtd) + ' ainda previsto(s), R$ '
-                 + fmtBR(r.previstoSobrou.valor - r.devolvidosHoje.valor)) : ''),
-      linhas: L.filter(x => x.fonte === 'baixa' && x.dt_baixa === r.dataRef)
-               .concat(previsto.filter(x => emAberto(x) && x.vencimento === r.dataRef)),
+              + fmtBR(r.devolvidosHoje.valor)) : ''),
+      linhas: L.filter(x => x.fonte === 'baixa' && x.dt_baixa === r.dataRef),
     } : {
       rotulo: 'Previsto para hoje',
       icone: 'fa-calendar-day', classe: 'info',
@@ -399,8 +396,9 @@ function secaoKPIs(){
       h('div', { class:'marco-sub', text: rec.sub }),
     ]);
 
-    // só o cartão do dia mostra o quanto do previsto já saiu
-    if (k === 'hoje'){
+    // só o cartão do dia mostra o quanto do previsto já saiu, e só enquanto
+    // o dia não fechou: depois do relatório de hoje não há mais previsão
+    if (k === 'hoje' && !r.temEfetivoHoje){
       const prev = R.hoje.valor + R.pago.valor;
       const frac = prev > 0 ? Math.min(1, R.pago.valor / prev) : 0;
       if (r.aguardandoHoje.qtd){

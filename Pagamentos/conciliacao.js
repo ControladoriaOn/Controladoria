@@ -673,8 +673,10 @@ function resumir(conc, dataRef, baixas){
     if (!lista.length) return null;
     const ate = lista.filter(d => d < dataRef);
     if (ate.length) return ate[ate.length-1];
-    const depois = lista.filter(d => d > dataRef);
-    return depois.length ? null : lista[lista.length-1];
+    /* Só veio o relatório de hoje: o cartão de trás fica vazio em vez de
+       repetir o mesmo dia nos dois — o pago de ontem simplesmente não foi
+       carregado, e dizer isso é mais honesto do que duplicar o número. */
+    return null;
   };
   r.dataPago = escolher(datasRelatorio) || escolher(r.datasBaixa);
   if (r.dataPago){
@@ -987,13 +989,14 @@ function abaRelatorio_(XLSXref, linhas, titulo, naturezas, rotuloTotal, comMotiv
 /* O arquivo sai com uma ou duas abas. A segunda só existe quando o banco
    devolveu algum pagamento: ele não entra no Descritivo, senão o TOTAL A PAGAR
    contaria dinheiro que não saiu, mas também não pode simplesmente sumir. */
-function exportarRelatorio(linhas, dataRef, naturezas, recorte, devolvidas){
+function exportarRelatorio(linhas, dataRef, naturezas, recorte, devolvidas, opcoes){
+  const op = opcoes || {};
   if (typeof XLSX === 'undefined') throw new Error('Biblioteca de planilha não carregada.');
   const visiveis = (linhas || []).filter(x => !x.oculto);
   const devol = (devolvidas || []).filter(ehDevolvido);
   if (!visiveis.length && !devol.length) throw new Error('Nada para exportar.');
 
-  const cab = 'RELATÓRIO CONTAS A PAGAR ON TIME - ' + fmtData(dataRef) +
+  const cab = (op.titulo || 'RELATÓRIO CONTAS A PAGAR ON TIME - ' + fmtData(dataRef)) +
     (recorte ? ('  ·  ' + recorte) : '');
 
   const wb = XLSX.utils.book_new();
@@ -1007,8 +1010,8 @@ function exportarRelatorio(linhas, dataRef, naturezas, recorte, devolvidas){
                     'TOTAL DEVOLVIDO', true), 'Retorno');
   }
 
-  const nome = dataRef.replace(/-/g,'_') + '_RELATORIO_CONTAS_A_PAGAR' +
-    (recorte ? ('_' + norm(recorte).replace(/[^a-z0-9]+/g,'_')) : '') + '.xlsx';
+  const nome = op.nome || (dataRef.replace(/-/g,'_') + '_RELATORIO_CONTAS_A_PAGAR' +
+    (recorte ? ('_' + norm(recorte).replace(/[^a-z0-9]+/g,'_')) : '') + '.xlsx');
   XLSX.writeFile(wb, nome);
   return { linhas: visiveis.length, devolvidas: devol.length, arquivo: nome };
 }

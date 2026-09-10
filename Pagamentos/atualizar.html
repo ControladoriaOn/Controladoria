@@ -29,153 +29,205 @@
     --font-display:'Fraunces',serif; --font-body:'Manrope',sans-serif;
     --font-mono:'JetBrains Mono',monospace;
     --shadow:0 1px 2px rgba(45,27,45,.04), 0 8px 24px -12px rgba(45,27,45,.12);
+    --lin-h:34px;           /* altura da linha na lista — a virtualização depende dela */
   }
   *,*::before,*::after{box-sizing:border-box}
-  html,body{margin:0;padding:0}
+  html,body{margin:0;padding:0;height:100%}
+  [hidden]{display:none!important}
   body{
     font-family:var(--font-body); font-size:14px; color:var(--plum-deep);
-    background:
-      radial-gradient(900px 600px at 88% -12%, rgba(255,110,0,.06), transparent 60%),
-      radial-gradient(800px 620px at -10% 108%, rgba(60,0,60,.05), transparent 58%),
-      var(--bg);
-    background-attachment:fixed; min-height:100vh; -webkit-font-smoothing:antialiased;
+    background:var(--bg); -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; overflow:hidden;
   }
 
-  /* ---------- header ---------- */
+  /* ============================ cabeçalho ============================ */
   .page-header{
     background:linear-gradient(135deg,#1A0F1A 0%,var(--plum-deep) 100%);
-    color:#fff; padding:26px 32px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+    color:#fff; padding:12px 22px 10px; display:flex; align-items:center; gap:16px;
+    flex-wrap:wrap; flex:0 0 auto;
   }
-  .page-header .head-text{flex:1; min-width:230px}
-  .page-header h1{font-family:var(--font-display); font-weight:500; font-size:25px; margin:0 0 4px}
+  .page-header .head-text{flex:1; min-width:200px; display:flex; align-items:baseline; gap:10px}
+  .page-header h1{font-family:var(--font-display); font-weight:500; font-size:19px; margin:0}
   .page-header h1 i{color:var(--orange); margin-right:8px}
-  .page-header p{margin:0; opacity:.7; font-size:13px}
-  .head-right{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .page-header p{margin:0; opacity:.55; font-size:12px}
+  .head-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
   .status-pill{
-    display:flex; align-items:center; gap:8px; padding:8px 14px;
+    display:flex; align-items:center; gap:8px; padding:6px 12px;
     background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.1);
-    border-radius:999px; font-size:12.5px; white-space:nowrap;
+    border-radius:999px; font-size:12px; white-space:nowrap;
   }
   .status-pill .dot{width:7px;height:7px;border-radius:50%;background:#22C55E;flex-shrink:0}
   .status-pill .dot.warn{background:#F59E0B} .status-pill .dot.off{background:#9CA3AF}
   .btn-back{
-    display:inline-flex; align-items:center; gap:8px; padding:10px 16px;
+    display:inline-flex; align-items:center; gap:8px; padding:8px 14px;
     background:var(--orange); color:#fff; border:1px solid var(--orange);
-    border-radius:10px; text-decoration:none; font-weight:600; font-size:13px;
+    border-radius:10px; text-decoration:none; font-weight:600; font-size:12.5px;
     box-shadow:0 6px 18px -8px rgba(255,110,0,.55); transition:all .15s;
   }
   .btn-back:hover{background:var(--orange-deep); transform:translateY(-1px)}
 
-  main{max-width:1180px; margin:0 auto; padding:26px 22px 90px}
-  section{margin-bottom:22px}
+  /* ===================== trilho de cartões (KPIs) ===================== */
+  /* A linha do tempo do dia: ontem, hoje, amanhã. O cartão escolhido é o
+     recorte que a lista mostra — clicar nele é trocar de lista. */
+  .trilho{
+    background:linear-gradient(135deg,#1A0F1A 0%,var(--plum-deep) 100%);
+    padding:0 22px 18px; display:flex; gap:10px; align-items:stretch; flex:0 0 auto;
+  }
+  .marco{
+    flex:1; min-width:0; padding:11px 14px 12px; border-radius:14px; cursor:pointer;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.10);
+    position:relative; transition:transform .18s, background .18s, border-color .18s;
+  }
+  .marco:hover{background:rgba(255,255,255,.10)}
+  .marco .m-rot{
+    font-size:10px; letter-spacing:.09em; text-transform:uppercase; font-weight:800; color:#A695A6;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .marco .m-val{font-family:var(--font-display); font-size:21px; font-weight:700; color:#fff; margin-top:3px; line-height:1.1}
+  .marco .m-sub{font-size:11px; color:#8E7C8E; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .marco.on{
+    background:linear-gradient(160deg,#fff,#FFF6EC); border-color:#fff; transform:translateY(-3px);
+    box-shadow:0 14px 30px -14px rgba(0,0,0,.55);
+  }
+  .marco.on .m-rot{color:var(--orange-deep)}
+  .marco.on .m-val{color:var(--plum-deep)}
+  .marco.on .m-sub{color:var(--plum-soft)}
+  .marco.on::after{
+    content:''; position:absolute; left:50%; bottom:-17px; width:14px; height:14px;
+    background:#FFF6EC; transform:translateX(-50%) rotate(45deg);
+  }
+  .marco.alerta .m-val{color:#FFB4A8}
+  .marco.on.alerta .m-val{color:var(--danger)}
 
-  /* ---------- dropzone ---------- */
-  /* faixa enxuta: ela é o começo do fluxo, não a estrela da tela */
+  /* ===================== faixa de arquivos / dropzone ===================== */
+  .faixa{
+    flex:0 0 auto; display:flex; align-items:center; gap:12px; padding:8px 22px;
+    background:var(--surface); border-bottom:1px solid var(--border);
+  }
   .dropzone{
-    display:flex; align-items:center; gap:14px; cursor:pointer;
+    display:flex; align-items:center; gap:12px; cursor:pointer; flex:1; min-width:0;
     background:var(--surface); border:1.5px dashed var(--border); border-radius:var(--radius-sm);
-    padding:14px 18px; transition:all .18s; box-shadow:var(--shadow);
+    padding:9px 14px; transition:all .18s;
   }
   .dropzone:hover,.dropzone.drag{border-color:var(--orange); background:var(--orange-soft)}
-  .dropzone > i{font-size:20px; color:var(--orange); flex-shrink:0}
-  .dz-texto{display:flex; flex-direction:column; gap:2px; flex:1; min-width:0}
-  .dz-texto strong{font-size:13.5px; font-weight:700}
-  .dz-texto span{font-size:12px; color:var(--plum-soft)}
+  .dropzone > i{font-size:17px; color:var(--orange); flex-shrink:0}
+  .dz-texto{display:flex; align-items:baseline; gap:8px; flex:1; min-width:0; flex-wrap:wrap}
+  .dz-texto strong{font-size:13px; font-weight:700}
+  .dz-texto span{font-size:11.5px; color:var(--plum-soft)}
   .btn-pick{
-    flex-shrink:0; padding:8px 16px; background:var(--surface-soft); color:var(--plum);
+    flex-shrink:0; padding:6px 13px; background:var(--surface-soft); color:var(--plum);
     border:1px solid var(--border); border-radius:9px; font-family:inherit;
-    font-weight:600; font-size:12.5px; cursor:pointer; transition:all .15s;
+    font-weight:600; font-size:12px; cursor:pointer; transition:all .15s;
   }
   .btn-pick:hover{background:#fff; border-color:var(--orange); color:var(--orange-deep)}
-  @media (max-width:620px){
-    .dropzone{flex-wrap:wrap}
-    .dz-texto{flex-basis:100%; order:2}
+  .arq-resumo{
+    display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:12px; color:var(--plum-soft);
   }
+  .arq-tag{
+    display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px;
+    background:var(--surface-soft); border:1px solid var(--border); white-space:nowrap;
+  }
+  .arq-tag.err{background:var(--danger-soft); border-color:#F3C8C8; color:var(--danger)}
+  .arq-tag button{
+    border:none; background:none; padding:0; cursor:pointer; color:#B9A9B9; font-size:11px;
+  }
+  .arq-tag button:hover{color:var(--danger)}
+  .link-fino{
+    border:none; background:none; padding:0; cursor:pointer; color:var(--plum-soft);
+    font-family:inherit; font-size:12px; text-decoration:underline; text-underline-offset:2px;
+  }
+  .link-fino:hover{color:var(--orange-deep)}
 
-  /* ---------- cards / arquivos ---------- */
-  .card{
-    background:var(--surface); border:1px solid var(--border-soft);
-    border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;
+  /* ===================== barra de trabalho ===================== */
+  .barra{
+    flex:0 0 auto; display:flex; align-items:center; gap:9px; padding:8px 22px;
+    background:var(--surface); border-bottom:1px solid var(--border); flex-wrap:wrap;
   }
-  .card-head{
-    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
-    padding:16px 20px; border-bottom:1px solid var(--border-soft);
+  .busca{position:relative; flex:0 0 280px; max-width:100%}
+  .busca i{position:absolute; left:11px; top:50%; transform:translateY(-50%);
+    color:#B9A9B9; font-size:12.5px; pointer-events:none}
+  .busca input{
+    width:100%; padding:7px 12px 7px 31px; background:var(--bg);
+    border:1px solid var(--border); border-radius:9px; font-family:inherit;
+    font-size:12.5px; color:var(--plum-deep); outline:none; transition:all .15s;
   }
-  .card-head h3{
-    margin:0; font-family:var(--font-display); font-weight:500; font-size:17px;
-    display:flex; align-items:center; gap:9px;
+  .busca input:focus{border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.1); background:#fff}
+  .chips-linha{display:flex; gap:6px; flex-wrap:wrap}
+  .chip{
+    display:inline-flex; align-items:center; gap:6px; padding:5px 11px;
+    background:var(--surface-soft); border:1px solid var(--border); border-radius:999px;
+    font-family:inherit; font-size:12px; font-weight:700; color:var(--plum-soft);
+    cursor:pointer; transition:all .14s; white-space:nowrap;
   }
-  .card-head h3 i{color:var(--orange); font-size:16px}
-  .card-head .sub{color:var(--plum-soft); font-size:12.5px; margin:2px 0 0}
-  .card-body{padding:16px 20px}
+  .chip:hover{border-color:var(--orange); color:var(--orange-deep)}
+  .chip .cnt{
+    font-family:var(--font-mono); font-size:10.5px; font-weight:700;
+    background:rgba(0,0,0,.07); padding:1px 5px; border-radius:5px;
+  }
+  .chip.active{background:var(--plum-deep); border-color:var(--plum-deep); color:#fff}
+  .chip.active .cnt{background:rgba(255,255,255,.18)}
+  .chip.t-bol{background:#EFEAFB; border-color:#DCD2F5; color:#5B3FA8}
+  .chip.t-nf{background:var(--orange-soft); border-color:#FFD9B8; color:var(--orange-deep)}
+  .chip.t-pa{background:#E4F1FE; border-color:#C6E1FB; color:#1B6FBF}
+  .chip.t-pc{background:#E7F7F1; border-color:#C7EBDE; color:#12795A}
+  .chip.t-rb{background:#FDECF3; border-color:#F8D3E3; color:#B0246A}
+  .chip.t-px{background:#FDF3D9; border-color:#F5E4B0; color:#8A6410}
+  .chip.t-ted{background:#E9EEF5; border-color:#D3DDEA; color:#3C5A80}
+  .chip.t-ciot{background:#F0EAE2; border-color:#E0D4C4; color:#7A5A2E}
+  .chip.t-adi,.chip.t-res{background:#F3E8F3; border-color:#E5D2E5; color:#7A2E7A}
+  .chip.active[class*="t-"]{background:var(--plum-deep); border-color:var(--plum-deep); color:#fff}
+  .barra .direita{margin-left:auto; display:flex; align-items:center; gap:10px;
+    font-size:11.5px; color:var(--plum-soft)}
+  .seletor-dens{display:flex; gap:4px; align-items:center}
+  .seletor-dens button{
+    border:none; background:none; font-family:inherit; font-size:11.5px; cursor:pointer;
+    color:var(--plum-soft); padding:2px 4px; border-radius:5px;
+  }
+  .seletor-dens button.on{color:var(--plum-deep); font-weight:800; background:var(--surface-soft)}
+  .mais-recortes{position:relative}
+  .mais-recortes > button{
+    border:1px solid var(--border); background:var(--surface-soft); border-radius:999px;
+    padding:5px 11px; font-family:inherit; font-size:12px; font-weight:700;
+    color:var(--plum-soft); cursor:pointer;
+  }
+  .mais-recortes > button:hover{border-color:var(--orange); color:var(--orange-deep)}
+  .menu-recortes{
+    position:absolute; right:0; top:calc(100% + 6px); z-index:60; min-width:250px;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    box-shadow:0 18px 40px -16px rgba(26,15,26,.35); padding:6px; display:none;
+  }
+  .menu-recortes.aberto{display:block}
+  .menu-recortes button{
+    width:100%; display:flex; align-items:center; gap:9px; padding:8px 10px;
+    border:none; background:none; font-family:inherit; font-size:12.5px; text-align:left;
+    color:var(--plum); border-radius:8px; cursor:pointer;
+  }
+  .menu-recortes button:hover{background:var(--surface-soft)}
+  .menu-recortes button.on{background:var(--orange-soft); color:var(--orange-deep); font-weight:700}
+  .menu-recortes .cnt{margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--plum-soft)}
 
-  .file-row{
-    display:flex; align-items:center; gap:12px; padding:9px 0;
-    border-bottom:1px solid var(--border-soft); font-size:13px;
+  /* ===================== roteiro de conferência ===================== */
+  .roteiro-faixa{
+    flex:0 0 auto; position:relative; background:var(--warn-soft); color:#7C2D12;
+    border-bottom:1px solid #F3E2B7;
   }
-  .file-row:last-child{border-bottom:none}
-  .file-row i{font-size:17px}
-  .file-row.ok i{color:var(--ok)} .file-row.err i{color:var(--danger)}
-  .file-row .name{flex:1; font-weight:600; color:var(--plum); word-break:break-all}
-  .file-row .meta{color:var(--plum-soft); font-size:12px; text-align:right}
-  .file-del{
-    flex-shrink:0; width:28px; height:28px; display:inline-flex; align-items:center;
-    justify-content:center; border:none; background:none; border-radius:8px;
-    color:#B9A9B9; cursor:pointer; font-size:14px; transition:all .14s;
-  }
-  .file-del:hover{background:var(--danger-soft); color:var(--danger)}
-
-  /* ---------- resumo em números ---------- */
-  .grid-kpi{display:grid; grid-template-columns:repeat(auto-fit,minmax(178px,1fr)); gap:12px}
-  .kpi{
-    background:var(--surface); border:1px solid var(--border-soft);
-    border-radius:var(--radius-sm); padding:15px 16px; box-shadow:var(--shadow);
-  }
-  .kpi .k-label{
-    font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--plum-soft); display:flex; align-items:center; gap:6px;
-  }
-  .kpi .k-value{font-family:var(--font-display); font-size:23px; font-weight:600; margin-top:7px; line-height:1.1}
-  .kpi .k-sub{font-size:11.5px; color:var(--plum-soft); margin-top:3px}
-  .kpi.ok .k-value{color:var(--ok)} .kpi.warn .k-value{color:var(--warn)}
-  .kpi.danger .k-value{color:var(--danger)} .kpi.info .k-value{color:var(--info)}
-
-  /* ---------- abas de conferência ---------- */
-  .tabs{display:flex; gap:6px; flex-wrap:wrap; padding:14px 20px 0}
-  .tab{
-    display:inline-flex; align-items:center; gap:7px; padding:8px 14px;
-    background:var(--surface-soft); border:1px solid var(--border);
-    border-radius:999px; font-size:12.5px; font-weight:600; color:var(--plum-soft);
-    cursor:pointer; transition:all .14s; font-family:inherit;
-  }
-  .tab:hover{border-color:var(--orange); color:var(--orange-deep)}
-  .tab.active{background:var(--plum-deep); border-color:var(--plum-deep); color:#fff}
-  .tab .cnt{
-    font-family:var(--font-mono); font-size:11px; font-weight:700;
-    background:rgba(0,0,0,.07); padding:1px 6px; border-radius:5px;
-  }
-  .tab.active .cnt{background:rgba(255,255,255,.18)}
-
-  /* ---------- tabela ---------- */
-  .tbl-wrap{overflow-x:auto; -webkit-overflow-scrolling:touch}
-  .roteiro{
-    border:1px solid var(--border); border-radius:var(--radius-sm);
-    overflow:hidden; margin-bottom:14px; background:var(--surface);
-  }
-  .roteiro.ok{border-color:#CBE7D7}
+  .roteiro-faixa.ok{background:var(--ok-soft); color:var(--ok); border-bottom-color:#CBE7D7}
   .roteiro-cab{
-    width:100%; display:flex; align-items:center; gap:10px; padding:12px 16px;
-    background:var(--warn-soft); border:none; font-family:inherit; font-size:13px;
-    font-weight:700; color:#7C2D12; cursor:pointer; text-align:left;
+    width:100%; display:flex; align-items:center; gap:9px; padding:7px 22px;
+    background:none; border:none; font-family:inherit; font-size:12.5px; font-weight:700;
+    color:inherit; cursor:pointer; text-align:left;
   }
-  .roteiro.ok .roteiro-cab{background:var(--ok-soft); color:var(--ok)}
   .roteiro-cab .roteiro-seta{margin-left:auto; transition:transform .2s}
   .roteiro-cab.aberto .roteiro-seta{transform:rotate(180deg)}
-  .roteiro-corpo{display:none}
+  .roteiro-corpo{
+    display:none; position:absolute; left:0; right:0; top:100%; z-index:55;
+    background:var(--surface); border-bottom:1px solid var(--border);
+    box-shadow:0 18px 40px -18px rgba(26,15,26,.35); max-height:52vh; overflow:auto;
+  }
   .roteiro-corpo.aberto{display:block}
   .roteiro-item{
-    display:flex; align-items:flex-start; gap:10px; padding:11px 16px;
-    border-top:1px solid var(--border-soft); font-size:12.5px; line-height:1.5;
+    display:flex; align-items:flex-start; gap:10px; padding:10px 22px;
+    border-top:1px solid var(--border-soft); font-size:12.5px; line-height:1.5; color:var(--plum-deep);
   }
   .roteiro-item.feito{opacity:.5}
   .roteiro-item.erro{border-left:3px solid var(--danger)}
@@ -187,105 +239,97 @@
   }
   .roteiro-check:hover{color:var(--orange)}
   .roteiro-texto{flex:1}
-  .conf-barra{
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    padding:12px 20px; border-bottom:1px solid var(--border-soft);
-  }
-  .busca{position:relative; flex:1; min-width:180px}
-  .busca i{position:absolute; left:11px; top:50%; transform:translateY(-50%);
-    color:#B9A9B9; font-size:13px; pointer-events:none}
-  .busca input{
-    width:100%; padding:9px 12px 9px 32px; background:var(--bg);
-    border:1px solid var(--border); border-radius:9px; font-family:inherit;
-    font-size:13px; color:var(--plum-deep); outline:none; transition:all .15s;
-  }
-  .busca input:focus{border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.1); background:#fff}
-  .chips-linha{display:flex; gap:6px; flex-wrap:wrap}
-  .chip{
-    display:inline-flex; align-items:center; gap:7px; padding:7px 13px;
-    background:var(--surface-soft); border:1px solid var(--border); border-radius:999px;
-    font-family:inherit; font-size:12.5px; font-weight:600; color:var(--plum-soft);
-    cursor:pointer; transition:all .14s; white-space:nowrap;
-  }
-  .chip:hover{border-color:var(--orange); color:var(--orange-deep)}
-  .chip .cnt{
-    font-family:var(--font-mono); font-size:11px; font-weight:700;
-    background:rgba(0,0,0,.07); padding:1px 6px; border-radius:5px;
-  }
-  .chip.active{background:var(--plum-deep); border-color:var(--plum-deep); color:#fff}
-  .chip.active .cnt{background:rgba(255,255,255,.18)}
-  /* cor por tipo, a mesma leitura rápida do painel */
-  .chip.t-bol{background:#EFEAFB; border-color:#DCD2F5; color:#5B3FA8}
-  .chip.t-nf{background:var(--orange-soft); border-color:#FFD9B8; color:var(--orange-deep)}
-  .chip.t-pa{background:#E4F1FE; border-color:#C6E1FB; color:#1B6FBF}
-  .chip.t-pc{background:#E7F7F1; border-color:#C7EBDE; color:#12795A}
-  .chip.t-rb{background:#FDECF3; border-color:#F8D3E3; color:#B0246A}
-  .chip.t-px{background:#FDF3D9; border-color:#F5E4B0; color:#8A6410}
-  .chip.t-ted{background:#E9EEF5; border-color:#D3DDEA; color:#3C5A80}
-  .chip.t-ciot{background:#F0EAE2; border-color:#E0D4C4; color:#7A5A2E}
-  .chip.t-adi,.chip.t-res{background:#F3E8F3; border-color:#E5D2E5; color:#7A2E7A}
-  .chip.active[class*="t-"]{background:var(--plum-deep); border-color:var(--plum-deep); color:#fff}
-  .paginacao{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    flex-wrap:wrap; padding:10px 20px; font-size:12.5px; font-weight:600; color:var(--plum-soft);
-  }
-  .paginacao.topo{border-bottom:1px solid var(--border-soft); background:var(--surface-soft)}
-  .paginacao.baixo{border-top:1px solid var(--border-soft)}
-  .conf-total{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    padding:12px 20px; border-top:1px solid var(--border);
-    background:var(--surface-soft); font-size:13px; color:var(--plum-soft);
-  }
-  .conf-total strong{font-family:var(--font-display); font-size:16px; color:var(--plum-deep)}
-  table{width:100%; border-collapse:separate; border-spacing:0; text-align:left}
-  th{
-    padding:11px 14px; font-size:10.5px; font-weight:700; letter-spacing:.05em;
-    text-transform:uppercase; color:var(--plum-soft); background:var(--surface-soft);
-    border-bottom:1px solid var(--border); white-space:nowrap;
-  }
-  td{
-    padding:10px 14px; font-size:12.5px; border-bottom:1px solid var(--border-soft);
-    vertical-align:top;
-  }
-  tbody tr:hover td{background:rgba(255,110,0,.03)}
-  td.num{font-family:var(--font-mono); text-align:right; white-space:nowrap}
-  td.mono{font-family:var(--font-mono); white-space:nowrap}
-  .forn{font-weight:600; color:var(--plum-deep)}
-  .forn small{display:block; font-weight:400; color:var(--plum-soft); font-size:11px; margin-top:2px}
-  .empty{padding:34px 20px; text-align:center; color:var(--plum-soft); font-size:13px}
 
-  .badge{
-    display:inline-block; padding:2px 8px; border-radius:999px; font-size:10.5px;
-    font-weight:700; text-transform:uppercase; letter-spacing:.03em; white-space:nowrap;
+  /* ===================== lista virtualizada ===================== */
+  .lista-wrap{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; background:var(--surface)}
+  .grade-cab, .lin{
+    display:grid; align-items:center;
+    grid-template-columns:30px 64px 96px minmax(200px,1.5fr) minmax(110px,1fr) 86px 88px 112px 152px 24px 92px;
+    gap:0;
   }
-  .b-ok{background:var(--ok-soft); color:var(--ok)}
-  .b-warn{background:var(--warn-soft); color:var(--warn)}
-  .b-danger{background:var(--danger-soft); color:var(--danger)}
-  .b-info{background:var(--info-soft); color:var(--info)}
-  .b-mute{background:var(--surface-soft); color:var(--plum-soft)}
-  .b-orange{background:var(--orange-soft); color:var(--orange-deep)}
+  .grade-cab{
+    flex:0 0 auto; padding:0 22px; height:30px; background:var(--surface-soft);
+    border-bottom:1px solid var(--border); font-size:10px; font-weight:800;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--plum-soft);
+  }
+  .grade-cab > div{padding:0 6px; white-space:nowrap; overflow:hidden}
+  .grade-cab .num{text-align:right}
+  .vp{flex:1 1 auto; min-height:0; overflow:auto; position:relative}
+  .vp-total{position:relative; width:100%}
+  .vp-janela{position:absolute; left:0; right:0; top:0}
+  .lin{
+    padding:0 22px; height:var(--lin-h); border-bottom:1px solid var(--border-soft);
+    cursor:default; background:var(--surface);
+  }
+  body.confortavel{--lin-h:46px}
+  .lin:nth-child(even){background:#FDFCFD}
+  .lin:hover{background:var(--orange-soft)}
+  .lin.sel{background:#FFF3E4}
+  .lin.oculta{opacity:.45}
+  .lin.editada{box-shadow:inset 3px 0 0 var(--orange)}
+  .lin > div{padding:0 6px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .lin .num{text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums}
+  .lin .mono{font-family:var(--font-mono); font-size:11.5px}
+  .lin .forn{font-weight:700; color:var(--plum-deep); font-size:12.5px}
+  .lin .apr{color:var(--plum-soft); font-size:11.5px}
+  .lin .val{font-weight:700; font-size:12.5px}
+  .lin .val small{display:block; font-weight:400; color:var(--plum-soft); font-size:10px; line-height:1.1}
+  .lin .acao{display:flex; gap:6px; justify-content:flex-end; opacity:0; transition:opacity .12s}
+  .lin:hover .acao, .lin.sel .acao{opacity:1}
+  .lin .acao button{
+    border:none; background:none; padding:0; cursor:pointer; font-family:inherit;
+    font-size:11.5px; font-weight:700; color:var(--orange-deep);
+  }
+  .lin .acao button.fraco{color:var(--plum-soft); font-weight:600}
+  .lin .acao button:hover{text-decoration:underline}
+  .lin input[type=checkbox]{accent-color:var(--orange); cursor:pointer}
+  .cel-edit{
+    width:100%; padding:3px 6px; border:1px solid var(--orange); border-radius:6px;
+    font-family:var(--font-mono); font-size:12px; outline:none;
+    box-shadow:0 0 0 3px rgba(255,110,0,.12); background:#fff;
+  }
+  .cel-edit.texto{font-family:inherit}
+  .editavel{cursor:text; border-radius:5px}
+  .editavel:hover{background:rgba(255,110,0,.10); box-shadow:inset 0 0 0 1px rgba(255,110,0,.35)}
+  .sinal{
+    width:17px; height:17px; border-radius:50%; display:inline-flex; align-items:center;
+    justify-content:center; font-size:10px; font-weight:800; cursor:help;
+  }
+  .sinal.s-valor{background:var(--danger-soft); color:var(--danger)}
+  .sinal.s-aprox{background:var(--info-soft); color:var(--info)}
+  .sinal.s-ok{background:var(--ok-soft); color:var(--ok)}
+  .empty{padding:40px 20px; text-align:center; color:var(--plum-soft); font-size:13px}
 
-  .note{
-    display:flex; gap:10px; align-items:flex-start; padding:12px 16px;
-    border-radius:var(--radius-sm); font-size:12.5px; line-height:1.55; margin-bottom:12px;
+  /* ===================== barra de seleção e rodapé ===================== */
+  .sel-barra{
+    flex:0 0 auto; display:flex; align-items:center; gap:14px; padding:7px 22px;
+    background:var(--plum-deep); color:#fff; font-size:12.5px;
   }
-  .note i{font-size:15px; flex-shrink:0; margin-top:1px}
-  .note.warn{background:var(--warn-soft); color:#7C2D12}
-  .note.info{background:var(--info-soft); color:#1E3A8A}
-  .note.danger{background:var(--danger-soft); color:#7F1D1D}
+  .sel-barra b{color:#FFC79A}
+  .sel-barra button{
+    border:none; background:none; color:#fff; font-family:inherit; font-size:12.5px;
+    cursor:pointer; text-decoration:underline; text-underline-offset:2px; padding:0;
+  }
+  .sel-barra button:hover{color:#FFC79A}
+  .sel-barra .fim{margin-left:auto; color:#A695A6}
+  .rodape{
+    flex:0 0 auto; display:flex; align-items:center; gap:9px; padding:9px 22px;
+    background:var(--surface); border-top:1px solid var(--border); flex-wrap:wrap;
+  }
+  .rodape .so-icone{padding:8px 11px}
+  .rodape .total{margin-left:auto; display:flex; align-items:baseline; gap:12px; white-space:nowrap}
+  .rodape .total strong{font-family:var(--font-display); font-size:17px}
+  .rodape .quebra{font-size:11.5px; color:var(--plum-soft)}
+  .rodape .hint{font-size:11.5px; color:var(--plum-soft); width:100%}
 
-  /* ---------- ações ---------- */
-  .actions{
-    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    padding:18px 20px; background:var(--surface); border:1px solid var(--border-soft);
-    border-radius:var(--radius); box-shadow:var(--shadow);
-  }
+  /* ===================== botões, selos, avisos ===================== */
   .btn{
-    display:inline-flex; align-items:center; gap:8px; padding:11px 18px;
-    border-radius:10px; font-family:inherit; font-weight:600; font-size:13px;
+    display:inline-flex; align-items:center; gap:8px; padding:8px 14px;
+    border-radius:10px; font-family:inherit; font-weight:600; font-size:12.5px;
     border:1px solid transparent; cursor:pointer; transition:all .15s;
   }
   .btn:disabled{opacity:.45; cursor:not-allowed}
+  .btn-sm{padding:5px 10px; font-size:12px}
   .btn-tag{
     margin-left:8px; padding:1px 7px; border-radius:999px; font-size:11px;
     font-weight:700; background:rgba(255,255,255,.25);
@@ -299,9 +343,59 @@
   .btn-ghost:hover:not(:disabled){background:var(--surface-soft)}
   .btn-danger{background:var(--surface); color:var(--danger); border-color:var(--danger-soft)}
   .btn-danger:hover:not(:disabled){background:var(--danger-soft); border-color:var(--danger)}
-  .actions .hint{margin-left:auto; color:var(--plum-soft); font-size:12.5px}
+  .badge{
+    display:inline-block; padding:2px 7px; border-radius:999px; font-size:10px;
+    font-weight:700; text-transform:uppercase; letter-spacing:.03em; white-space:nowrap;
+  }
+  .b-ok{background:var(--ok-soft); color:var(--ok)}
+  .b-warn{background:var(--warn-soft); color:var(--warn)}
+  .b-danger{background:var(--danger-soft); color:var(--danger)}
+  .b-info{background:var(--info-soft); color:var(--info)}
+  .b-mute{background:var(--surface-soft); color:var(--plum-soft)}
+  .b-orange{background:var(--orange-soft); color:var(--orange-deep)}
+  .tipo-sel{min-width:34px; text-align:center; padding:2px 5px}
+  .note{
+    display:flex; gap:10px; align-items:flex-start; padding:11px 15px;
+    border-radius:var(--radius-sm); font-size:12.5px; line-height:1.55; margin:10px 22px;
+  }
+  .note i{font-size:15px; flex-shrink:0; margin-top:1px}
+  .note.warn{background:var(--warn-soft); color:#7C2D12}
+  .note.info{background:var(--info-soft); color:#1E3A8A}
+  .note.danger{background:var(--danger-soft); color:#7F1D1D}
 
-  /* ---------- overlay / toast / modal ---------- */
+  /* ===================== tabelas antigas (recortes de diagnóstico) ===================== */
+  .tbl-wrap{overflow:auto; flex:1 1 auto; min-height:0}
+  table{width:100%; border-collapse:separate; border-spacing:0; text-align:left}
+  th{
+    padding:9px 12px; font-size:10px; font-weight:800; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--plum-soft); background:var(--surface-soft);
+    border-bottom:1px solid var(--border); white-space:nowrap; position:sticky; top:0; z-index:2;
+  }
+  td{padding:8px 12px; font-size:12.5px; border-bottom:1px solid var(--border-soft); vertical-align:top}
+  tbody tr:hover td{background:rgba(255,110,0,.03)}
+  td.num{font-family:var(--font-mono); text-align:right; white-space:nowrap}
+  td.mono{font-family:var(--font-mono); white-space:nowrap}
+  .forn{font-weight:600; color:var(--plum-deep)}
+  .forn small{display:block; font-weight:400; color:var(--plum-soft); font-size:11px; margin-top:2px}
+  .paginacao{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    flex-wrap:wrap; padding:8px 22px; font-size:12px; font-weight:600; color:var(--plum-soft);
+    background:var(--surface-soft); border-bottom:1px solid var(--border-soft); flex:0 0 auto;
+  }
+  .acoes-linha{display:flex; gap:2px; justify-content:flex-end}
+  .btn-icon{
+    width:26px; height:26px; padding:0; display:inline-flex; align-items:center;
+    justify-content:center; border-radius:7px; background:none; border:1px solid transparent;
+    color:#B9A9B9; cursor:pointer; font-size:12px; transition:all .14s;
+  }
+  .btn-icon:hover{background:var(--orange-soft); color:var(--orange-deep)}
+  .btn-icon.perigo:hover{background:var(--danger-soft); color:var(--danger)}
+  tr.editada td{background:rgba(255,110,0,.05)}
+  tr.oculta td{opacity:.5}
+  .antes{display:block; font-weight:400; color:#A89CB0; font-size:10.5px;
+    margin-top:2px; text-decoration:line-through}
+
+  /* ===================== overlay / toast / modais ===================== */
   .overlay{
     position:fixed; inset:0; background:rgba(26,15,26,.62); backdrop-filter:blur(4px);
     display:flex; align-items:center; justify-content:center; z-index:1500;
@@ -318,8 +412,6 @@
     border-radius:50%; animation:spin .7s linear infinite;
   }
   @keyframes spin{to{transform:rotate(360deg)}}
-  /* fio de progresso no alto: a tela busca a base ao abrir, e sem isso ela
-     parecia parada */
   .fio{
     position:fixed; top:0; left:0; right:0; height:2.5px; z-index:9500;
     opacity:0; transition:opacity .25s; pointer-events:none;
@@ -346,9 +438,10 @@
   .cf-overlay.show{display:flex}
   .cf-modal{
     background:var(--surface); border-radius:16px; width:100%; max-width:440px;
-    box-shadow:0 24px 60px rgba(26,15,26,.4); overflow:hidden;
+    box-shadow:0 24px 60px rgba(26,15,26,.4); overflow:hidden; max-height:90vh; display:flex; flex-direction:column;
   }
-  .cf-body{padding:22px 24px 18px}
+  .cf-modal.largo{max-width:620px}
+  .cf-body{padding:22px 24px 18px; overflow:auto}
   .cf-title{
     font-family:var(--font-display); font-weight:500; font-size:19px; margin:0 0 8px;
     display:flex; align-items:center; gap:10px;
@@ -366,81 +459,58 @@
   .campo.wide{grid-column:1/-1}
   .campo label{font-size:10.5px; font-weight:700; letter-spacing:.06em;
     text-transform:uppercase; color:var(--plum-soft)}
-  .campo input{
+  .campo input, .campo select{
     padding:10px 12px; background:var(--bg); border:1px solid var(--border);
     border-radius:9px; font-family:inherit; font-size:13px; color:var(--plum-deep);
     outline:none; transition:all .15s; width:100%;
   }
-  .campo input:focus{border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.1); background:#fff}
+  .campo input:focus, .campo select:focus{border-color:var(--orange); box-shadow:0 0 0 3px rgba(255,110,0,.1); background:#fff}
   .campo .orig{font-size:10.5px; color:#A89CB0}
-  .acoes-linha{display:flex; gap:2px; justify-content:flex-end}
-  .btn-icon{
-    width:28px; height:28px; padding:0; display:inline-flex; align-items:center;
-    justify-content:center; border-radius:7px; background:none; border:1px solid transparent;
-    color:#B9A9B9; cursor:pointer; font-size:12.5px; transition:all .14s;
-  }
-  .btn-icon:hover{background:var(--orange-soft); color:var(--orange-deep)}
-  .btn-icon.perigo:hover{background:var(--danger-soft); color:var(--danger)}
-  tr.editada td{background:rgba(255,110,0,.05)}
-  tr.oculta td{opacity:.5}
-  .antes{display:block; font-weight:400; color:#A89CB0; font-size:10.5px;
-    margin-top:2px; text-decoration:line-through}
   .cf-foot{
     padding:14px 20px; background:var(--surface-soft); border-top:1px solid var(--border-soft);
-    display:flex; justify-content:flex-end; gap:10px;
+    display:flex; justify-content:flex-end; gap:10px; flex:0 0 auto;
   }
 
-  @media (max-width:720px){
-    .page-header{padding:20px 18px}
-    .page-header h1{font-size:21px}
-    main{padding:18px 14px 70px}
-    .dropzone{padding:30px 16px}
-    .card-head,.card-body,.actions{padding-left:16px; padding-right:16px}
-    .tabs{padding:12px 16px 0}
-    td,th{padding:9px 11px}
-    .actions .hint{margin-left:0; width:100%}
+  /* ---- caixinha de confirmação de valor, agora dentro do modal/dobra ---- */
+  .confirma{margin-top:6px;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+  .confirma-ops{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .confirma .op{
+    font-family:var(--font-mono); font-size:10px; line-height:1;
+    padding:4px 7px; border-radius:var(--radius-sm); cursor:pointer;
+    border:1px solid var(--border); background:var(--surface); color:var(--plum-soft);
   }
+  .confirma .op:hover{border-color:var(--plum);color:var(--plum-deep);background:var(--surface-soft)}
+  .confirma .op.sugerida{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
+  .confirma .op.ativa{border-color:var(--plum);background:var(--plum);color:#fff;font-weight:600}
+  .confirma-pe{display:flex;gap:8px;align-items:baseline;justify-content:flex-end;flex-wrap:wrap}
+  .confirma-pe .outro{
+    border:0; background:none; padding:0; cursor:pointer; font-size:10px;
+    color:var(--plum-soft); text-decoration:underline; text-underline-offset:2px;
+  }
+  .confirma-pe .outro:hover{color:var(--plum-deep)}
+  .confirma-nota{font-size:10px;color:var(--plum-soft);text-align:right;max-width:230px}
+  .confirma-nota.ok{color:var(--ok)}
+  .confirma.pronta .confirma-nota{color:var(--plum)}
+  .forn small.motivo-retorno{color:var(--danger);font-style:italic}
+  mark{background:#FFE9A8;color:inherit;border-radius:3px;padding:0 1px}
 
-/* -------------------------------------------------- caixinha de confirmação
-   Fluig e Totvs discordando no valor. Os dois números viram botão dentro da
-   própria célula: um clique resolve, sem abrir janela nenhuma. A sugestão,
-   quando existe, é a que a retenção do título explica — e ainda assim é só
-   uma sugestão, com contorno, nunca preenchida como se já fosse a escolha. */
-.confirma{margin-top:6px;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
-.confirma-ops{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
-.confirma .op{
-  font-family:var(--font-mono); font-size:10px; line-height:1;
-  padding:4px 7px; border-radius:var(--radius-sm); cursor:pointer;
-  border:1px solid var(--border); background:var(--surface); color:var(--plum-soft);
-  transition:background .12s, border-color .12s, color .12s;
-}
-.confirma .op:hover{border-color:var(--plum);color:var(--plum-deep);background:var(--surface-soft)}
-.confirma .op.sugerida{border-color:var(--ok);color:var(--ok);background:var(--ok-soft)}
-.confirma .op.ativa{border-color:var(--plum);background:var(--plum);color:#fff;font-weight:600}
-.confirma-pe{display:flex;gap:8px;align-items:baseline;justify-content:flex-end;flex-wrap:wrap}
-.confirma-pe .outro{
-  border:0; background:none; padding:0; cursor:pointer; font-size:10px;
-  color:var(--plum-soft); text-decoration:underline; text-underline-offset:2px;
-}
-.confirma-pe .outro:hover{color:var(--plum-deep)}
-.confirma-nota{font-size:10px;color:var(--plum-soft);text-align:right;max-width:230px}
-.confirma-nota.ok{color:var(--ok)}
-.confirma.pronta .confirma-nota{color:var(--plum)}
-
-/* motivo que o banco devolveu, na linha do pagamento recusado */
-.forn small.motivo-retorno{color:var(--danger);font-style:italic}
-
-.conf-quebra{margin-left:auto;margin-right:14px;font-size:11px;color:var(--plum-soft)}
-
-mark{background:#FFE9A8;color:inherit;border-radius:3px;padding:0 1px}
+  /* a tela é de computador; no celular vira leitura, com rolagem lateral */
+  @media (max-width:900px){
+    body{overflow:auto; height:auto}
+    .lista-wrap{overflow-x:auto}
+    .grade-cab, .lin{min-width:1080px}
+    .vp{overflow:visible; max-height:none}
+    .trilho{overflow-x:auto}
+    .marco{min-width:170px}
+  }
 </style>
 </head>
 <body>
 
 <header class="page-header">
   <div class="head-text">
-    <h1><i class="fa-solid fa-cloud-arrow-up"></i>Atualizar Pagamentos</h1>
-    <p>Suba os relatórios do Totvs e do Fluig. A tela concilia os dois e mostra o resultado antes de gravar.</p>
+    <h1><i class="fa-solid fa-cloud-arrow-up"></i>Conferência de pagamentos</h1>
+    <p id="head-dia"></p>
   </div>
   <div class="head-right">
     <div class="status-pill" id="status-pill" title="Situação da base">
@@ -453,64 +523,53 @@ mark{background:#FFE9A8;color:inherit;border-radius:3px;padding:0 1px}
 
 <div class="fio" id="fio"><span></span></div>
 
-<main>
+<!-- a linha do tempo do dia: cada cartão é um recorte da lista de baixo -->
+<div class="trilho" id="trilho" hidden></div>
 
+<!-- entrada de arquivos: faixa fina, some de cena assim que o trabalho começa -->
+<div class="faixa" id="faixa">
   <section class="dropzone" id="dz" tabindex="0" role="button" aria-label="Arraste os arquivos ou clique para escolher">
     <i class="fa-solid fa-cloud-arrow-up"></i>
     <div class="dz-texto">
       <strong>Arraste os relatórios aqui</strong>
-      <span>Totvs, Fluig ou o relatório do dia — pode soltar todos de uma vez</span>
+      <span>Totvs, Fluig, o relatório do dia ou o retorno do banco — pode soltar todos de uma vez</span>
     </div>
     <button class="btn-pick" id="btn-pick" type="button">Escolher arquivos</button>
     <input type="file" id="file-input" hidden multiple accept=".csv,.xlsx,.xls">
   </section>
+  <div class="arq-resumo" id="arq-resumo" hidden></div>
+</div>
 
-  <section class="card" id="files-wrap" hidden>
-    <div class="card-head">
-      <h3><i class="fa-solid fa-file-circle-check"></i> Arquivos lidos</h3>
-    </div>
-    <div class="card-body" id="file-list"></div>
-  </section>
+<div class="roteiro-faixa" id="roteiro" hidden></div>
+<div class="barra" id="barra" hidden></div>
+<div class="sel-barra" id="sel-barra" hidden></div>
+<div class="lista-wrap" id="lista-wrap" hidden></div>
 
-  <section id="resumo-wrap" hidden>
-    <div class="grid-kpi" id="grid-kpi"></div>
-  </section>
-
-  <section class="card" id="conf-wrap" hidden>
-    <div class="card-head">
-      <div>
-        <h3><i class="fa-solid fa-code-compare"></i> Conferência</h3>
-        <p class="sub">O que casou entre Fluig e Totvs, e o que ficou de fora. Confira antes de enviar.</p>
-      </div>
-    </div>
-    <div class="tabs" id="conf-tabs"></div>
-    <div id="conf-notes" style="padding:14px 20px 0"></div>
-    <div class="tbl-wrap" id="conf-table"></div>
-  </section>
-
-  <section class="actions" id="actions-wrap" hidden>
-    <button class="btn btn-primary" id="btn-enviar">
-      <i class="fa-solid fa-cloud-arrow-up"></i> Enviar para a base
-    </button>
-    <button class="btn btn-ghost" id="btn-ciot">
-      <i class="fa-solid fa-truck-fast"></i> CIOT do dia
-    </button>
-    <button class="btn btn-ghost" id="btn-novo">
-      <i class="fa-solid fa-plus"></i> Novo título
-    </button>
-    <button class="btn btn-ghost" id="btn-relatorio">
-      <i class="fa-solid fa-file-excel"></i> Relatório em Excel
-    </button>
-    <button class="btn btn-danger" id="btn-limpar">
-      <i class="fa-solid fa-eraser"></i> Limpar base
-    </button>
-    <button class="btn btn-ghost" id="btn-reset">
-      <i class="fa-solid fa-rotate-left"></i> Recomeçar
-    </button>
-    <span class="hint" id="hint"></span>
-  </section>
-
-</main>
+<div class="rodape" id="rodape" hidden>
+  <button class="btn btn-primary" id="btn-enviar">
+    <i class="fa-solid fa-cloud-arrow-up"></i> Enviar para a base
+  </button>
+  <button class="btn btn-ghost" id="btn-ciot">
+    <i class="fa-solid fa-truck-fast"></i> CIOT do dia
+  </button>
+  <button class="btn btn-ghost" id="btn-novo">
+    <i class="fa-solid fa-plus"></i> Novo título
+  </button>
+  <button class="btn btn-ghost" id="btn-relatorio">
+    <i class="fa-solid fa-file-excel"></i> Relatório
+  </button>
+  <button class="btn btn-ghost" id="btn-base-fluxo" title="Gera o arquivo no modelo que o Fluxo de Caixa lê">
+    <i class="fa-solid fa-file-arrow-down"></i> Base do fluxo
+  </button>
+  <button class="btn btn-danger so-icone" id="btn-limpar" title="Limpar a base de operação">
+    <i class="fa-solid fa-eraser"></i>
+  </button>
+  <button class="btn btn-ghost so-icone" id="btn-reset" title="Recomeçar: esquece os arquivos lidos">
+    <i class="fa-solid fa-rotate-left"></i>
+  </button>
+  <div class="total" id="rodape-total"></div>
+  <span class="hint" id="hint"></span>
+</div>
 
 <div class="overlay" id="overlay">
   <div class="overlay-box"><div class="spinner"></div><div id="overlay-text">Processando…</div></div>
@@ -535,6 +594,24 @@ mark{background:#FFE9A8;color:inherit;border-radius:3px;padding:0 1px}
     <div class="cf-foot">
       <button class="btn btn-ghost" id="ml-cancel">Cancelar</button>
       <button class="btn btn-danger" id="ml-do" disabled><i class="fa-solid fa-trash"></i> Limpar</button>
+    </div>
+  </div>
+</div>
+
+<div class="cf-overlay" id="modalPergunta">
+  <div class="cf-modal" role="dialog" aria-modal="true">
+    <div class="cf-body">
+      <h3 class="cf-title"><i class="fa-solid fa-layer-group" style="color:var(--orange)"></i>
+        <span id="mp-titulo">Alterar</span></h3>
+      <p class="cf-text" id="mp-texto"></p>
+      <div class="campo wide">
+        <label id="mp-rot">Novo valor</label>
+        <input type="text" id="mp-campo">
+      </div>
+    </div>
+    <div class="cf-foot">
+      <button class="btn btn-ghost" id="mp-cancel" type="button">Cancelar</button>
+      <button class="btn btn-primary" id="mp-ok" type="button">Aplicar</button>
     </div>
   </div>
 </div>
@@ -1315,6 +1392,9 @@ const state = {
   conc: null, resumo: null, pagos: [],
   aba: 'aPagarHoje',
   busca: '', filtroTipo: '', pagina: 1,
+  listas: {},                  // recortes prontos, calculados uma vez por render
+  selecao: {},                 // títulos marcados para ação em lote
+  confortavel: false,          // altura da linha na lista
   conferidos: {},              // pontos do roteiro já marcados como vistos
   roteiroAberto: false,
   base: null, ajustes: [], orfaos: [],
@@ -1330,6 +1410,7 @@ const TIPO_ROTULO = {
   nf_servico: ['NFs de Serviço (Fluig)','nf_servico'],
   nf_titulo:  ['Contas (Fluig)','nf_titulo'],
   reembolso:  ['Reembolsos (Fluig)','reembolso'],
+  retornos:   ['Retorno do banco','retornos'],
   naturezas:  ['Mapa de naturezas','naturezas'],
   desconhecido: ['Não reconhecido','err'],
 };
@@ -1355,24 +1436,41 @@ function h(tag, attrs, filhos){
 const badge = (txt, cls) => h('span', { class:'badge ' + cls, text:txt });
 
 /* ---------------------------- arquivos ---------------------------- */
+/* ---------------------------- arquivos lidos ----------------------------
+   A entrada é o começo do trabalho, não o trabalho. Depois que o primeiro
+   relatório é lido, a área de arrastar encolhe e vira uma linha de etiquetas —
+   a tela inteira passa a ser a conferência. */
+const ORDEM_ARQ = { totvs:0, totvs_xlsx:0, baixas:1, relatorio:2, retornos:3,
+                    nf_servico:4, nf_titulo:5, reembolso:6, naturezas:7, desconhecido:9 };
+
 function renderArquivos(){
-  const wrap = el('files-wrap'), list = el('file-list');
-  if (!state.files.length){ wrap.hidden = true; return; }
-  wrap.hidden = false; list.textContent = '';
-  const ordem = { totvs:0, totvs_xlsx:0, nf_servico:1, nf_titulo:2, reembolso:3, naturezas:4, desconhecido:9 };
-  [...state.files].sort((a,b) => (ordem[a.tipo]??99) - (ordem[b.tipo]??99)).forEach(f => {
+  const dz = el('dz'), resumo = el('arq-resumo');
+  if (!state.files.length){
+    dz.hidden = false; resumo.hidden = true; resumo.textContent = '';
+    return;
+  }
+  dz.hidden = true; resumo.hidden = false; resumo.textContent = '';
+
+  const lidos = state.files.filter(f => f.ok).length;
+  resumo.appendChild(h('span', { style:'font-weight:700;color:var(--plum-deep)',
+    text: lidos + (lidos === 1 ? ' relatório lido' : ' relatórios lidos') }));
+
+  [...state.files].sort((a,b) => (ORDEM_ARQ[a.tipo] ?? 99) - (ORDEM_ARQ[b.tipo] ?? 99)).forEach(f => {
     const rot = TIPO_ROTULO[f.tipo] || TIPO_ROTULO.desconhecido;
-    const btnX = h('button', { class:'file-del', type:'button', title:'Tirar este arquivo da lista' },
+    const x = h('button', { type:'button', title:'Tirar este arquivo e o que veio dele' },
       [ h('i', { class:'fa-solid fa-xmark' }) ]);
-    btnX.addEventListener('click', () => removerArquivo(f));
-    const row = h('div', { class:'file-row ' + (f.ok ? 'ok' : 'err') }, [
-      h('i', { class: f.ok ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark' }),
-      h('div', { class:'name' }, [ f.nome, h('small', { style:'display:block;font-weight:400;color:var(--plum-soft)', text: rot[0] }) ]),
-      h('div', { class:'meta', text: f.ok ? (f.count + ' registro(s)') : (f.err || 'não reconhecido') }),
-      btnX,
-    ]);
-    list.appendChild(row);
+    x.addEventListener('click', () => removerArquivo(f));
+    resumo.appendChild(h('span', { class:'arq-tag' + (f.ok ? '' : ' err'), title: f.nome }, [
+      h('span', { text: rot[0] }),
+      h('span', { style:'color:var(--plum-soft)',
+        text: f.ok ? (f.count + '') : (f.err ? 'erro' : 'não reconhecido') }),
+      x,
+    ]));
   });
+
+  const mais = h('button', { class:'link-fino', type:'button', text:'trocar ou somar arquivos' });
+  mais.addEventListener('click', () => { el('dz').hidden = false; });
+  resumo.appendChild(mais);
 }
 
 /* Tira um arquivo da lista e, junto, os dados que vieram dele. Serve para
@@ -1386,49 +1484,105 @@ function removerArquivo(f){
     state.store.baixas = []; state.diagBaixas = null;
   } else if (f.tipo === 'relatorio'){
     state.store.relatorio = []; state.diagRelatorio = null;
-  } else if (f.tipo === 'nf_servico'){ state.store.nf_servico = []; }
+  } else if (f.tipo === 'retornos'){ state.store.retornos = []; state.diagRetornos = null; }
+  else if (f.tipo === 'nf_servico'){ state.store.nf_servico = []; }
   else if (f.tipo === 'nf_titulo'){   state.store.nf_titulo  = []; }
   else if (f.tipo === 'reembolso'){   state.store.reembolso  = []; }
   else if (f.tipo === 'naturezas'){   state.naturezas = null; }
-  state.aba = 'aPagarHoje';
+  state.aba = abaPadrao();
+  state.selecao = {};
   recalcular();
   render();
   toast('Removido: ' + f.nome);
 }
 
-/* ---------------------------- números ---------------------------- */
-function kpi(label, valor, sub, cls){
-  return h('div', { class:'kpi ' + (cls||'') }, [
-    h('div', { class:'k-label', text: label }),
-    h('div', { class:'k-value', text: valor }),
-    h('div', { class:'k-sub', text: sub || '' }),
-  ]);
+/* ============================================================================
+   O TRILHO — a linha do tempo do dia
+   ----------------------------------------------------------------------------
+   Cada cartão é um recorte da mesma lista, na ordem em que o dia acontece:
+   o que saiu ontem, o que está saindo hoje, o que falta aprovar, o que sai
+   amanhã e o que o banco devolveu. Clicar no cartão troca a lista de baixo —
+   não existe menu de abas competindo com ele.
+   ============================================================================ */
+function cartoesDoDia(){
+  const r = state.resumo, L = state.listas || {};
+  if (!r) return [];
+  const qtd = k => (L[k] ? L[k].linhas.filter(x => !x.oculto).length : 0);
+  const cs = [];
+
+  cs.push({ k:'pagoEm',
+    rot: r.dataPago ? ('Pago em ' + fmtData(r.dataPago)) : 'Pago',
+    val: r.pago.valor,
+    sub: r.dataPago ? (r.pago.qtd + ' títulos baixados') : 'sem relatório de baixas' });
+
+  /* O relatório com a data de hoje fecha o dia: o que valia como previsto para
+     hoje deixa de existir na tela, e o cartão passa a mostrar o que saiu. */
+  if (r.temEfetivoHoje){
+    cs.push({ k:'pagoHoje', rot:'Pago hoje', val: r.efetivoHoje.valor,
+      sub: r.efetivoHoje.qtd + (r.efetivoHoje.qtd === 1 ? ' pago' : ' pagos') + ' · verdade do dia' });
+  } else {
+    cs.push({ k:'aPagarHoje', rot:'A pagar hoje', val: r.aPagarHoje.valor,
+      sub: r.abertoHoje.qtd + ' no Totvs · ' + r.foraTotvsHoje.qtd + ' só no Fluig' });
+  }
+
+  const fa = (r.aguardandoHoje.valor + r.aguardandoAmanha.valor);
+  cs.push({ k:'faltaAprovar', rot:'Falta aprovar', val: fa,
+    sub: qtd('faltaAprovar') + ' título(s) · hoje e amanhã' });
+
+  cs.push({ k:'aPagarAmanha', rot:'A pagar amanhã', val: r.aPagarAmanha.valor,
+    sub: fmtData(r.amanha) + ' · ' + r.abertoAmanha.qtd + ' no Totvs · ' + r.foraTotvsAmanha.qtd + ' só no Fluig' });
+
+  if (r.devolvidos.qtd){
+    cs.push({ k:'devolvidos', rot:'Devolvidos pelo banco', val: r.devolvidos.valor, alerta:true,
+      sub: r.devolvidos.qtd + ' título(s) · fora do painel' });
+  }
+  return cs;
 }
-function renderResumo(){
-  const wrap = el('resumo-wrap'), grid = el('grid-kpi');
-  if (!state.resumo){ wrap.hidden = true; return; }
+
+/* Qual cartão fica escolhido quando a tela abre ou quando o recorte atual
+   deixa de existir: o dia corrente, que é onde o trabalho acontece. */
+function abaPadrao(){
   const r = state.resumo;
-  wrap.hidden = false; grid.textContent = '';
-  const money = b => 'R$ ' + fmtBR0(b.valor);
-  const qtd = b => b.qtd + ' título(s)';
+  return (r && r.temEfetivoHoje) ? 'pagoHoje' : 'aPagarHoje';
+}
 
-  grid.appendChild(kpi(r.dataPago ? ('Pago em ' + fmtData(r.dataPago)) : 'Pago',
-    money(r.pago),
-    r.dataPago ? qtd(r.pago) : 'sem relatório de baixas', 'ok'));
-  grid.appendChild(kpi('A pagar hoje', money(r.aPagarHoje),
-    r.abertoHoje.qtd + ' no Totvs + ' + r.foraTotvsHoje.qtd + ' só no Fluig', 'info'));
-  grid.appendChild(kpi('Falta aprovar · hoje', money(r.aguardandoHoje),
-    qtd(r.aguardandoHoje) + ' · já dentro do "a pagar"', 'warn'));
-  grid.appendChild(kpi('A pagar amanhã', money(r.aPagarAmanha),
-    r.abertoAmanha.qtd + ' no Totvs + ' + r.foraTotvsAmanha.qtd + ' só no Fluig · ' + fmtData(r.amanha), 'info'));
-  grid.appendChild(kpi('Falta aprovar · amanhã', money(r.aguardandoAmanha),
-    qtd(r.aguardandoAmanha) + ' · já dentro do "a pagar"', 'warn'));
-  if (r.atrasado.qtd) grid.appendChild(kpi('Vencido e em aberto', money(r.atrasado), qtd(r.atrasado), 'danger'));
-  if (r.semTituloAprovado.qtd) grid.appendChild(kpi('Aprovado sem título', money(r.semTituloAprovado), qtd(r.semTituloAprovado), 'danger'));
-
+function renderTrilho(){
+  const box = el('trilho');
+  const cs = cartoesDoDia();
+  if (!cs.length){ box.hidden = true; box.textContent = ''; return; }
+  box.hidden = false; box.textContent = '';
+  cs.forEach(c => {
+    const on = state.aba === c.k;
+    const card = h('div', {
+      class:'marco' + (on ? ' on' : '') + (c.alerta ? ' alerta' : ''),
+      role:'button', tabindex:'0', 'aria-pressed': on ? 'true' : 'false',
+    }, [
+      h('div', { class:'m-rot', text: c.rot }),
+      h('div', { class:'m-val', text: 'R$ ' + fmtBR0(c.val) }),
+      h('div', { class:'m-sub', text: c.sub }),
+    ]);
+    const ir = () => {
+      if (state.aba === c.k) return;
+      state.aba = c.k; state.filtroTipo = ''; state.selecao = {};
+      renderTrilho(); renderConferencia();
+    };
+    card.addEventListener('click', ir);
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); ir(); }
+    });
+    box.appendChild(card);
+  });
 }
 
 /* ---------------------------- conferência ---------------------------- */
+/* As listas de trabalho ficam guardadas em state.listas: o trilho, a barra e a
+   lista leem do mesmo lugar, e a conta pesada roda uma vez por render. */
+function montarListas(){
+  state.listas = state.conc ? listasDaAba() : {};
+  if (state.conc && !state.listas[state.aba]) state.aba = abaPadrao();
+  return state.listas;
+}
+
 function listasDaAba(){
   const c = state.conc, r = state.resumo;
 
@@ -1448,20 +1602,9 @@ function listasDaAba(){
   const listas = {
     pagoEm: {
       rotulo: r.dataPago ? ('Pago em ' + fmtData(r.dataPago)) : 'Pago',
-      icone:'fa-circle-check', unificada:true,
+      icone:'fa-circle-check', unificada:true, pago:true,
       linhas: uni.filter(x => x.fonte === 'baixa' && x.dt_baixa !== r.dataRef
                               && (!r.dataPago || x.dt_baixa === r.dataPago)),
-    },
-    /* O dia fechando: chegou o relatório com a data de hoje, esta aba deixa de
-       ser o que vai sair e passa a ser o que saiu — com o que sobrou de
-       previsto logo abaixo, que é o que estava para sair e não saiu. */
-    aPagarHoje: r.temEfetivoHoje ? {
-      rotulo:'Pago hoje', icone:'fa-circle-check', unificada:true,
-      linhas: uni.filter(x => x.fonte === 'baixa' && x.dt_baixa === r.dataRef)
-                .concat(previsto.filter(x => x.vencimento === r.dataRef)),
-    } : {
-      rotulo:'A pagar hoje', icone:'fa-calendar-day', unificada:true,
-      linhas: previsto.filter(x => x.vencimento === r.dataRef),
     },
     aPagarAmanha: {
       rotulo:'A pagar amanhã', icone:'fa-calendar-plus', unificada:true,
@@ -1483,6 +1626,22 @@ function listasDaAba(){
     },
   };
 
+  /* O dia fechando: chegou o relatório com a data de hoje, e o que estava
+     previsto para hoje deixa de valer. Quem manda é a baixa — o previsto que
+     não saiu sai da tela junto com o cartão, sem virar linha órfã no meio da
+     conferência. */
+  if (r.temEfetivoHoje){
+    listas.pagoHoje = {
+      rotulo:'Pago hoje', icone:'fa-circle-check', unificada:true, pago:true,
+      linhas: uni.filter(x => x.fonte === 'baixa' && x.dt_baixa === r.dataRef),
+    };
+  } else {
+    listas.aPagarHoje = {
+      rotulo:'A pagar hoje', icone:'fa-calendar-day', unificada:true,
+      linhas: previsto.filter(x => x.vencimento === r.dataRef),
+    };
+  }
+
   return Object.assign(listas, {
     todos:       { rotulo:'Tudo',                 icone:'fa-list',            linhas: c.itens },
     casados:     { rotulo:'Casados com o Totvs',  icone:'fa-link',            linhas: c.itens.filter(i => i.par) },
@@ -1492,6 +1651,7 @@ function listasDaAba(){
     antigos:     { rotulo:'De solicitação antiga', icone:'fa-clock-rotate-left', linhas: c.soTotvsAntigo, totvs:true },
   });
 }
+
 /* Cada aviso vira um ponto do roteiro: o que é, quantos são e para onde ir.
    O id é estável, então marcar como conferido sobrevive a redesenhos da tela. */
 function montarPontos(){
@@ -1584,83 +1744,102 @@ function montarPontos(){
   return p;
 }
 
+/* ============================================================================
+   A TELA DE CONFERÊNCIA
+   ----------------------------------------------------------------------------
+   Uma lista só, densa, com o recorte escolhido no trilho. Tudo o que é ação
+   fica na própria linha; o que é diagnóstico fica no roteiro, que é uma faixa
+   e não empurra a lista para baixo.
+   ============================================================================ */
 function renderConferencia(){
-  /* Trocar de página redesenhava a tela inteira e jogava a rolagem para o
-     topo, obrigando a descer de novo a cada cem linhas. */
-  const rolagem = window.scrollY;
-  const wrap = el('conf-wrap');
-  if (!state.conc){ wrap.hidden = true; return; }
-  wrap.hidden = false;
-  const listas = listasDaAba();
+  const listas = state.listas || {};
+  const temAlgo = !!state.conc;
+  ['roteiro','barra','sel-barra','lista-wrap'].forEach(id => { el(id).hidden = !temAlgo; });
+  if (!temAlgo){ el('rodape-total').textContent = ''; return; }
 
-  // abas
-  const tabs = el('conf-tabs'); tabs.textContent = '';
-  Object.keys(listas).forEach(k => {
-    const L = listas[k];
-    const b = h('button', { class:'tab' + (state.aba===k ? ' active' : ''), type:'button' }, [
-      h('i', { class:'fa-solid ' + L.icone }),
-      L.rotulo,
-      h('span', { class:'cnt', text: String(L.linhas.length) }),
-    ]);
-    b.addEventListener('click', () => {
-      state.aba = k; state.pagina = 1; state.filtroTipo = ''; renderConferencia();
-    });
-    tabs.appendChild(b);
-  });
+  montarRoteiro();
 
-  // roteiro de conferência: uma linha só, que abre nos pontos que pedem atenção
-  const notes = el('conf-notes'); notes.textContent = '';
-  const pontos = montarPontos();
-  if (pontos.length){
-    const abertos = pontos.filter(p => !state.conferidos[p.id]).length;
-    const cab = h('button', { class:'roteiro-cab', type:'button' }, [
-      h('i', { class:'fa-solid ' + (abertos ? 'fa-clipboard-list' : 'fa-clipboard-check') }),
-      h('span', { text: abertos
-        ? (abertos + (abertos === 1 ? ' ponto para conferir' : ' pontos para conferir'))
-        : 'Tudo conferido' }),
-      h('span', { class:'roteiro-seta' }, [ h('i', { class:'fa-solid fa-chevron-down' }) ]),
-    ]);
-    const corpo = h('div', { class:'roteiro-corpo' + (state.roteiroAberto ? ' aberto' : '') });
-    pontos.forEach(pt => {
-      const feito = !!state.conferidos[pt.id];
-      const item = h('div', { class:'roteiro-item ' + pt.nivel + (feito ? ' feito' : '') });
-      const marca = h('button', { class:'roteiro-check', type:'button',
-        title: feito ? 'marcar como pendente' : 'marcar como conferido' },
-        [ h('i', { class:'fa-solid ' + (feito ? 'fa-square-check' : 'fa-square') }) ]);
-      marca.addEventListener('click', e => {
-        e.stopPropagation();
-        state.conferidos[pt.id] = !feito;
-        renderConferencia();
-      });
-      item.appendChild(marca);
-      item.appendChild(h('div', { class:'roteiro-texto' }, [
-        h('strong', { text: pt.titulo }), ' ', pt.detalhe,
-      ]));
-      if (pt.aba){
-        const ir = h('button', { class:'btn btn-ghost btn-sm', type:'button', text:'ver' });
-        ir.addEventListener('click', () => {
-          state.aba = pt.aba; state.pagina = 1; state.filtroTipo = ''; renderConferencia();
-        });
-        item.appendChild(ir);
-      }
-      corpo.appendChild(item);
-    });
-    cab.addEventListener('click', () => {
-      state.roteiroAberto = !state.roteiroAberto;
-      renderConferencia();
-    });
-    if (state.roteiroAberto) cab.classList.add('aberto');
-    notes.appendChild(h('div', { class:'roteiro' + (abertos ? '' : ' ok') }, [ cab, corpo ]));
+  const L = listas[state.aba] || listas[abaPadrao()];
+  montarBarra(L, listas);
+
+  const filtradas = filtrarLinhas(L.linhas, !!L.totvs, !!L.unificada);
+  const wrap = el('lista-wrap'); wrap.textContent = '';
+
+  if (!filtradas.length){
+    wrap.appendChild(h('div', { class:'empty',
+      text: L.linhas.length ? 'Nada com esse filtro.' : 'Nada neste recorte.' }));
+  } else if (L.unificada){
+    gradeUnificada(filtradas, L, wrap);
+  } else {
+    /* Recortes de diagnóstico continuam em tabela paginada: são consulta, não
+       linha de produção. */
+    const nav = controlePagina(filtradas, 'topo');
+    if (nav) wrap.appendChild(nav);
+    const box = h('div', { class:'tbl-wrap' });
+    box.appendChild(L.totvs ? tabelaTotvs(filtradas) : tabelaItens(filtradas));
+    wrap.appendChild(box);
   }
 
-  // barra de busca e filtro por tipo
-  const L = listas[state.aba];
-  const box = el('conf-table'); box.textContent = '';
+  renderSelBarra(filtradas, L);
+  renderTotal(filtradas, L);
+}
 
-  const barra = h('div', { class:'conf-barra' });
+/* ------------------------------------------------------- roteiro (faixa) */
+function montarRoteiro(){
+  const faixa = el('roteiro');
+  faixa.textContent = '';
+  const pontos = montarPontos();
+  if (!pontos.length){ faixa.hidden = true; return; }
+  faixa.hidden = false;
+
+  const abertos = pontos.filter(p => !state.conferidos[p.id]).length;
+  faixa.className = 'roteiro-faixa' + (abertos ? '' : ' ok');
+
+  const cab = h('button', { class:'roteiro-cab' + (state.roteiroAberto ? ' aberto' : ''), type:'button' }, [
+    h('i', { class:'fa-solid ' + (abertos ? 'fa-clipboard-list' : 'fa-clipboard-check') }),
+    h('span', { text: abertos
+      ? (abertos + (abertos === 1 ? ' ponto para conferir' : ' pontos para conferir'))
+      : 'Tudo conferido' }),
+    h('span', { class:'roteiro-seta' }, [ h('i', { class:'fa-solid fa-chevron-down' }) ]),
+  ]);
+  cab.addEventListener('click', () => { state.roteiroAberto = !state.roteiroAberto; montarRoteiro(); });
+
+  const corpo = h('div', { class:'roteiro-corpo' + (state.roteiroAberto ? ' aberto' : '') });
+  pontos.forEach(pt => {
+    const feito = !!state.conferidos[pt.id];
+    const item = h('div', { class:'roteiro-item ' + pt.nivel + (feito ? ' feito' : '') });
+    const marca = h('button', { class:'roteiro-check', type:'button',
+      title: feito ? 'marcar como pendente' : 'marcar como conferido' },
+      [ h('i', { class:'fa-solid ' + (feito ? 'fa-square-check' : 'fa-square') }) ]);
+    marca.addEventListener('click', e => {
+      e.stopPropagation(); state.conferidos[pt.id] = !feito; montarRoteiro();
+    });
+    item.appendChild(marca);
+    item.appendChild(h('div', { class:'roteiro-texto' }, [ h('strong', { text: pt.titulo }), ' ', pt.detalhe ]));
+    if (pt.aba && (state.listas||{})[pt.aba]){
+      const ir = h('button', { class:'btn btn-ghost btn-sm', type:'button', text:'ver' });
+      ir.addEventListener('click', () => {
+        state.aba = pt.aba; state.filtroTipo = ''; state.selecao = {};
+        state.roteiroAberto = false;
+        renderTrilho(); renderConferencia();
+      });
+      item.appendChild(ir);
+    }
+    corpo.appendChild(item);
+  });
+  faixa.appendChild(cab); faixa.appendChild(corpo);
+}
+
+/* ------------------------------------------------------- barra de trabalho */
+function montarBarra(L, listas){
+  const barra = el('barra');
+  barra.textContent = '';
+
   const busca = h('input', { type:'text', placeholder:'favorecido, número, histórico…', value: state.busca });
   busca.addEventListener('input', deb(e => {
     state.busca = e.target.value; state.pagina = 1; renderConferencia();
+    const campo = el('barra').querySelector('input');
+    if (campo){ campo.focus(); campo.setSelectionRange(campo.value.length, campo.value.length); }
   }, 220));
   barra.appendChild(h('div', { class:'busca' }, [ h('i', { class:'fa-solid fa-magnifying-glass' }), busca ]));
 
@@ -1678,49 +1857,431 @@ function renderConferencia(){
       const b = h('button', { class:'chip' + cor + (state.filtroTipo === v ? ' active' : ''),
         type:'button', title: TIPO_EXPLICA[v] || '' },
         [ rot, h('span', { class:'cnt', text:String(qtd) }) ]);
-      b.addEventListener('click', () => { state.filtroTipo = v; state.pagina = 1; renderConferencia(); });
+      b.addEventListener('click', () => {
+        state.filtroTipo = (state.filtroTipo === v ? '' : v); state.pagina = 1; renderConferencia();
+      });
       return b;
     };
     chips.appendChild(mk('', 'Todos', L.linhas.length));
     nomes.forEach(t => chips.appendChild(mk(t, t, tipos[t])));
     barra.appendChild(chips);
   }
-  box.appendChild(barra);
 
-  const filtradas = filtrarLinhas(L.linhas, !!L.totvs, !!L.unificada);
-  if (!filtradas.length){
-    box.appendChild(h('div', { class:'empty', text: L.linhas.length ? 'Nada com esse filtro.' : 'Nada nesta lista.' }));
-    return;
+  const dir = h('div', { class:'direita' });
+
+  // densidade da linha: quem confere mil títulos quer o compacto
+  const dens = h('div', { class:'seletor-dens' }, [ h('span', { text:'linhas:' }) ]);
+  [['compactas', false], ['confortáveis', true]].forEach(([rot, conf]) => {
+    const b = h('button', { type:'button', class: (state.confortavel === conf ? 'on' : ''), text: rot });
+    b.addEventListener('click', () => {
+      state.confortavel = conf;
+      document.body.classList.toggle('confortavel', conf);
+      try { localStorage.setItem('pgv2_dens', conf ? '1' : '0'); } catch(e){}
+      renderConferencia();
+    });
+    dens.appendChild(b);
+  });
+  dir.appendChild(dens);
+
+  // os recortes de diagnóstico, fora do caminho de quem só quer trabalhar
+  const EXTRAS = ['divergentes','devolvidos','todos','casados','semTitulo','direto','antigos'];
+  const disponiveis = EXTRAS.filter(k => listas[k] && listas[k].linhas.length);
+  if (disponiveis.length){
+    const cx = h('div', { class:'mais-recortes' });
+    const ativo = disponiveis.indexOf(state.aba) >= 0;
+    const bt = h('button', { type:'button' },
+      [ ativo ? (listas[state.aba].rotulo + ' ·') : 'mais recortes', ' ',
+        h('i', { class:'fa-solid fa-chevron-down' }) ]);
+    const menu = h('div', { class:'menu-recortes' });
+    disponiveis.forEach(k => {
+      const b = h('button', { type:'button', class: state.aba === k ? 'on' : '' }, [
+        h('i', { class:'fa-solid ' + (listas[k].icone || 'fa-list') }),
+        listas[k].rotulo,
+        h('span', { class:'cnt', text: String(listas[k].linhas.length) }),
+      ]);
+      b.addEventListener('click', () => {
+        state.aba = k; state.filtroTipo = ''; state.selecao = {};
+        menu.classList.remove('aberto');
+        renderTrilho(); renderConferencia();
+      });
+      menu.appendChild(b);
+    });
+    bt.addEventListener('click', e => { e.stopPropagation(); menu.classList.toggle('aberto'); });
+    document.addEventListener('click', () => menu.classList.remove('aberto'));
+    cx.appendChild(bt); cx.appendChild(menu);
+    dir.appendChild(cx);
   }
-  const topo = controlePagina(filtradas, 'topo');
-  if (topo) box.appendChild(topo);
-  box.appendChild(L.unificada ? tabelaUnificada(filtradas, state.aba === 'pagoEm')
-    : (L.totvs ? tabelaTotvs(filtradas) : tabelaItens(filtradas)));
-  const baixo = controlePagina(filtradas, 'baixo');
-  if (baixo) box.appendChild(baixo);
 
+  barra.appendChild(dir);
+  barra.hidden = false;
+}
+
+/* ============================================================================
+   A LISTA
+   ----------------------------------------------------------------------------
+   Mil títulos não cabem no navegador como mil linhas desenhadas. A lista tem a
+   altura total certa, mas só as linhas visíveis existem de fato — rolar troca
+   o conteúdo da janela. Por isso a altura da linha é fixa e vem do CSS.
+   ============================================================================ */
+const COLS_GRADE = ['', 'Tipo', 'Número', 'Favorecido', 'Aprovador', 'Natureza',
+                    'Vencto', 'Valor', 'Status', '', ''];
+
+function alturaLinha(){ return state.confortavel ? 46 : 34; }
+
+function gradeUnificada(linhas, L, wrap){
+  const ehPago = !!L.pago;
+
+  // cabeçalho
+  const cab = h('div', { class:'grade-cab' });
+  const marcarTodos = h('input', { type:'checkbox', title:'Selecionar tudo o que está na lista' });
+  marcarTodos.checked = linhas.length > 0 && linhas.every(x => state.selecao[x.chave]);
+  marcarTodos.addEventListener('change', () => {
+    linhas.forEach(x => {
+      if (marcarTodos.checked) state.selecao[x.chave] = x; else delete state.selecao[x.chave];
+    });
+    renderConferencia();
+  });
+  COLS_GRADE.forEach((c, i) => {
+    if (i === 0) cab.appendChild(h('div', {}, [ marcarTodos ]));
+    else if (i === 6) cab.appendChild(h('div', { text: ehPago ? 'Baixa' : 'Vencto' }));
+    else if (i === 7) cab.appendChild(h('div', { class:'num', text:'Valor' }));
+    else cab.appendChild(h('div', { text:c }));
+  });
+  wrap.appendChild(cab);
+
+  const vp = h('div', { class:'vp' });
+  const total = h('div', { class:'vp-total' });
+  const janela = h('div', { class:'vp-janela' });
+  total.appendChild(janela); vp.appendChild(total); wrap.appendChild(vp);
+
+  const alt = alturaLinha();
+  total.style.height = (linhas.length * alt) + 'px';
+
+  let ultimoIni = -1;
+  function desenhar(forcar){
+    const topo = vp.scrollTop;
+    const ini = Math.max(0, Math.floor(topo / alt) - 8);
+    if (!forcar && ini === ultimoIni) return;
+    ultimoIni = ini;
+    const cabem = Math.ceil((vp.clientHeight || 600) / alt) + 16;
+    janela.style.transform = 'translateY(' + (ini * alt) + 'px)';
+    janela.textContent = '';
+    linhas.slice(ini, ini + cabem).forEach(x => janela.appendChild(linhaGrade(x, ehPago)));
+  }
+  vp.addEventListener('scroll', () => desenhar(false));
+  requestAnimationFrame(() => desenhar(true));
+  state.redesenhar = () => desenhar(true);
+}
+
+const aprovadorDe = x => safeStr(x.item && x.item.fluig && x.item.fluig.aprovador);
+
+function linhaGrade(x, ehPago){
+  const lin = h('div', { class:'lin'
+    + (state.selecao[x.chave] ? ' sel' : '')
+    + (x.oculto ? ' oculta' : '')
+    + (x.editado ? ' editada' : '') });
+
+  // 1. seleção
+  const cb = h('input', { type:'checkbox' });
+  cb.checked = !!state.selecao[x.chave];
+  cb.addEventListener('change', () => {
+    if (cb.checked) state.selecao[x.chave] = x; else delete state.selecao[x.chave];
+    lin.classList.toggle('sel', cb.checked);
+    renderSelBarra();
+  });
+  lin.appendChild(h('div', {}, [ cb ]));
+
+  // 2. tipo — editável
+  const tipo = safeStr(x.tipo) || '—';
+  const celTipo = h('div', { class: x.titulo ? 'editavel' : '', title: TIPO_EXPLICA[tipo] || '' },
+    [ h('span', { class:'badge b-info tipo-sel', text: tipo }) ]);
+  if (x.titulo) celTipo.addEventListener('click', () => editarCelula(celTipo, x, 'tipo'));
+  lin.appendChild(celTipo);
+
+  // 3. número
+  lin.appendChild(h('div', { class:'mono' }, comRealce(x.numero)));
+
+  // 4. favorecido
+  lin.appendChild(h('div', { class:'forn', title: safeStr(x.fornecedor) },
+    x.fornecedor ? comRealce(x.fornecedor) : ['—']));
+
+  // 5. aprovador (quando não há, mostra de onde a linha veio)
+  const apr = aprovadorDe(x);
+  lin.appendChild(h('div', { class:'apr', title: apr || safeStr(x.origem) },
+    [ apr || safeStr(x.origem) || '—' ]));
+
+  // 6. natureza — editável
+  const nat = safeStr(x.natureza) || '—';
+  const nomeNat = state.naturezas && state.naturezas[nat] ? state.naturezas[nat].descricao : '';
+  const celNat = h('div', { class:'mono' + (x.titulo ? ' editavel' : ''), title: nomeNat || '' }, [ nat ]);
+  if (x.titulo) celNat.addEventListener('click', () => editarCelula(celNat, x, 'natureza'));
+  lin.appendChild(celNat);
+
+  // 7. vencimento (ou baixa) — editável
+  const campoData = ehPago ? 'dt_baixa' : 'vencimento';
+  const celData = h('div', { class:'mono' + (x.titulo ? ' editavel' : ''),
+    title: x.empurrado ? ('vence ' + fmtData(x.vencimentoOriginal) + ', empurrado para o dia útil') : '' },
+    [ fmtData(ehPago ? x.dt_baixa : x.vencimento) ]);
+  if (x.titulo) celData.addEventListener('click', () => editarCelula(celData, x, campoData));
+  lin.appendChild(celData);
+
+  // 8. valor — editável
+  const celValor = h('div', { class:'num val' + (x.titulo ? ' editavel' : '') }, [ fmtBR(x.valor) ]);
+  if (x.valorFluig != null && x.valorTotvs != null && Math.abs(x.valorFluig - x.valorTotvs) > 0.05 && !x.confirmacao){
+    celValor.appendChild(h('small', { text:'Fluig ' + fmtBR(x.valorFluig) }));
+  }
+  if (x.titulo) celValor.addEventListener('click', () => editarCelula(celValor, x, 'valor_rs'));
+  lin.appendChild(celValor);
+
+  // 9. status — um selo só
+  const sit = SITUACOES[x.situacao] || ['—','b-mute'];
+  const selo = x.devolvido ? badge('devolvido pelo banco','b-danger')
+             : x.oculto ? badge('oculto','b-mute')
+             : badge(sit[0], sit[1]);
+  lin.appendChild(h('div', { title: x.devolvido ? safeStr(x.motivoRetorno) : safeStr(x.status) }, [ selo ]));
+
+  // 10. sinal de atenção — abre a escolha de valor num toque
+  const cel = h('div', {});
+  if (x.confirmacao && !x.confirmacao.escolhido){
+    const s = h('span', { class:'sinal s-valor', title:'valor a confirmar entre Totvs e Fluig' }, ['!']);
+    s.addEventListener('click', e => { e.stopPropagation(); abrirEscolhaValor(x, s); });
+    cel.appendChild(s);
+  } else if (x.confirmacao && x.confirmacao.escolhido){
+    cel.appendChild(h('span', { class:'sinal s-ok', title:'valor já confirmado' }, ['✓']));
+  } else if (x.aviso === 'valor_diverge'){
+    cel.appendChild(h('span', { class:'sinal s-valor', title:'valor diverge entre Totvs e Fluig' }, ['!']));
+  } else if (x.modoPar === 'aprox'){
+    cel.appendChild(h('span', { class:'sinal s-aprox', title:'casado por semelhança, confira o favorecido' }, ['~']));
+  } else if (x.estimado){
+    cel.appendChild(h('span', { class:'sinal s-aprox', title:'lançamento próprio ainda sem data de pagamento' }, ['e']));
+  }
+  lin.appendChild(cel);
+
+  // 11. ações
+  const acoes = h('div', { class:'acao' });
+  const l = x.titulo ? linhaDoTitulo(x.titulo) : null;
+  if (l){
+    const bEd = h('button', { type:'button', title:'Abrir todos os campos', text:'editar' });
+    bEd.addEventListener('click', () => abrirEdicao(l));
+    acoes.appendChild(bEd);
+    const bOc = h('button', { type:'button', class:'fraco',
+      text: l.oculto ? 'voltar' : 'ocultar',
+      title: l.oculto ? 'Trazer de volta para os totais' : 'Tirar dos totais e do relatório' });
+    bOc.addEventListener('click', () => alternarOculto(l));
+    acoes.appendChild(bOc);
+    if (l.titulo && l.titulo.id_manual){
+      const bEx = h('button', { type:'button', class:'fraco', text:'excluir' });
+      bEx.addEventListener('click', () => excluirManual(l));
+      acoes.appendChild(bEx);
+    }
+  }
+  lin.appendChild(acoes);
+  return lin;
+}
+
+/* ------------------------------------------------- edição direto na célula
+   Clicar no valor, no vencimento, no tipo ou na natureza abre um campo ali
+   mesmo. Enter grava, Esc desiste. É o caminho de quem corrige vinte linhas
+   seguidas e não quer abrir vinte janelas. */
+const CAMPO_CEL = {
+  valor_rs:   { tipo:'number', rot:'valor' },
+  vencimento: { tipo:'date',   rot:'vencimento' },
+  dt_baixa:   { tipo:'date',   rot:'data do pagamento' },
+  tipo:       { tipo:'text',   rot:'tipo' },
+  natureza:   { tipo:'text',   rot:'natureza' },
+};
+
+function editarCelula(cel, x, campo){
+  if (!x.titulo || cel.querySelector('input')) return;
+  const regra = CAMPO_CEL[campo]; if (!regra) return;
+  const t = x.titulo;
+  const atual = regra.tipo === 'number' ? (Number(t[campo]) || 0)
+              : regra.tipo === 'date' ? safeStr(t[campo]).slice(0,10)
+              : safeStr(t[campo]);
+  const guardado = cel.cloneNode(true);
+  const input = h('input', { class:'cel-edit' + (regra.tipo === 'text' ? ' texto' : ''),
+    type: regra.tipo === 'date' ? 'date' : (regra.tipo === 'number' ? 'number' : 'text'),
+    value: regra.tipo === 'number' ? String(atual) : atual });
+  if (regra.tipo === 'number') input.step = '0.01';
+  cel.textContent = ''; cel.appendChild(input);
+  input.focus(); input.select();
+
+  let fechado = false;
+  const desistir = () => {
+    if (fechado) return; fechado = true;
+    cel.replaceWith(guardado);
+  };
+  const gravar = async () => {
+    if (fechado) return;
+    const novo = input.value;
+    const igual = regra.tipo === 'number'
+      ? (Math.abs((Number(novo)||0) - (Number(atual)||0)) < 0.005)
+      : (safeStr(novo) === safeStr(atual));
+    if (igual || !safeStr(novo)) return desistir();
+    fechado = true;
+    await gravarAjuste({ acao:'ajuste', ajustes: [{
+      alvo: x.chave, campo: campo, valor_novo: String(novo),
+      valor_antigo: String(atual), autor: state.autor, motivo:'ajuste na conferência',
+    }] }, regra.rot + ' alterado.');
+  };
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter'){ e.preventDefault(); gravar(); }
+    if (e.key === 'Escape'){ e.preventDefault(); desistir(); }
+  });
+  input.addEventListener('blur', gravar);
+}
+
+/* Escolha do valor quando Totvs e Fluig discordam, num balão junto do sinal. */
+function abrirEscolhaValor(x, ancora){
+  document.querySelectorAll('.balao-valor').forEach(b => b.remove());
+  const c = x.confirmacao; if (!c) return;
+  const balao = h('div', { class:'menu-recortes aberto balao-valor',
+    style:'position:fixed; z-index:2200; min-width:230px' });
+  const linha = (rot, valor) => {
+    if (valor == null) return;
+    const b = h('button', { type:'button' }, [ rot, h('span', { class:'cnt', text: fmtBR(valor) }) ]);
+    b.addEventListener('click', () => { balao.remove(); confirmarValor(x, valor); });
+    balao.appendChild(b);
+  };
+  linha('usar o do Totvs', c.totvs);
+  linha('usar o do Fluig', c.fluig);
+  const outro = h('button', { type:'button', text:'digitar outro valor' });
+  outro.addEventListener('click', () => {
+    balao.remove();
+    const l = x.titulo ? linhaDoTitulo(x.titulo) : null;
+    if (l) abrirEdicao(l, true);
+  });
+  balao.appendChild(outro);
+  if (c.imposto){
+    balao.appendChild(h('div', { style:'padding:6px 10px;font-size:11px;color:var(--ok)',
+      text:'a diferença de ' + fmtBR(c.retencao) + ' é ' + c.imposto + ' retido no título' }));
+  }
+  document.body.appendChild(balao);
+  const r = ancora.getBoundingClientRect();
+  balao.style.top = Math.min(window.innerHeight - 160, r.bottom + 6) + 'px';
+  balao.style.left = Math.max(10, r.right - 230) + 'px';
+  setTimeout(() => document.addEventListener('click', function fecha(){
+    balao.remove(); document.removeEventListener('click', fecha);
+  }, { once:true }), 0);
+}
+
+/* ------------------------------------------------- seleção e ações em lote */
+function renderSelBarra(filtradas, L){
+  const barra = el('sel-barra');
+  const marcados = Object.keys(state.selecao || {});
+  if (!marcados.length){ barra.hidden = true; barra.textContent = ''; return; }
+  barra.hidden = false; barra.textContent = '';
+  const linhas = marcados.map(k => state.selecao[k]).filter(x => x && x.titulo);
+  const soma = linhas.reduce((s,x) => s + (Number(x.valor)||0), 0);
+
+  barra.appendChild(h('b', { text: marcados.length + (marcados.length === 1 ? ' selecionado' : ' selecionados') }));
+  barra.appendChild(h('span', { text:'R$ ' + fmtBR(soma) }));
+
+  const acao = (rot, fn) => {
+    const b = h('button', { type:'button', text: rot });
+    b.addEventListener('click', fn);
+    barra.appendChild(b);
+  };
+  acao('ocultar', () => loteOcultar(linhas, true));
+  acao('trazer de volta', () => loteOcultar(linhas, false));
+  acao('mudar vencimento', () => loteCampo(linhas, 'vencimento'));
+  acao('mudar tipo', () => loteCampo(linhas, 'tipo'));
+  acao('mudar natureza', () => loteCampo(linhas, 'natureza'));
+
+  const limpar = h('button', { type:'button', class:'fim', text:'limpar seleção' });
+  limpar.addEventListener('click', () => { state.selecao = {}; renderConferencia(); });
+  barra.appendChild(limpar);
+}
+
+/* Uma janelinha em vez do prompt do navegador: aqui dá para usar campo de
+   data de verdade, e a tela não trava enquanto a pessoa pensa. */
+function pedirValor(op){
+  return new Promise(resolve => {
+    const cx = el('modalPergunta'), campo = el('mp-campo');
+    el('mp-titulo').textContent = op.titulo || 'Alterar';
+    el('mp-texto').textContent = op.texto || '';
+    el('mp-rot').textContent = op.rotulo || 'Novo valor';
+    campo.type = op.tipo || 'text';
+    campo.value = op.valor || '';
+    campo.placeholder = op.dica || '';
+    cx.classList.add('show');
+    setTimeout(() => { campo.focus(); campo.select(); }, 30);
+
+    const fechar = v => {
+      cx.classList.remove('show');
+      el('mp-ok').removeEventListener('click', ok);
+      el('mp-cancel').removeEventListener('click', nao);
+      campo.removeEventListener('keydown', tecla);
+      resolve(v);
+    };
+    const ok = () => fechar(campo.value);
+    const nao = () => fechar(null);
+    const tecla = e => {
+      if (e.key === 'Enter'){ e.preventDefault(); ok(); }
+      if (e.key === 'Escape'){ e.preventDefault(); nao(); }
+    };
+    el('mp-ok').addEventListener('click', ok);
+    el('mp-cancel').addEventListener('click', nao);
+    campo.addEventListener('keydown', tecla);
+  });
+}
+
+async function loteOcultar(linhas, ocultar){
+  const alvos = linhas.filter(x => !!x.oculto !== ocultar);
+  if (!alvos.length){ toast('Nada a mudar nesses títulos.'); return; }
+  if (!(await Auth.pedir())) return;
+  let motivo = '';
+  if (ocultar){
+    const r = await pedirValor({ titulo:'Ocultar ' + alvos.length + ' título(s)',
+      texto:'Eles somem dos totais e do relatório, mas continuam na lista com o selo de oculto.',
+      rotulo:'Motivo (opcional)', dica:'ex.: pagamento cancelado pelo financeiro' });
+    if (r === null) return;
+    motivo = safeStr(r);
+  }
+  const ajustes = alvos.map(x => ({
+    alvo: x.chave, campo:'oculto', valor_novo: ocultar ? '1' : '0',
+    valor_antigo: ocultar ? '0' : '1', autor: state.autor, motivo: motivo,
+  }));
+  state.selecao = {};
+  await gravarAjuste({ acao:'ajuste', ajustes: ajustes },
+    alvos.length + (ocultar ? ' título(s) ocultado(s).' : ' título(s) de volta.'));
+}
+
+async function loteCampo(linhas, campo){
+  const regra = CAMPO_CEL[campo];
+  const rot = regra ? regra.rot : campo;
+  const valor = await pedirValor({
+    titulo:'Mudar ' + rot + ' de ' + linhas.length + ' título(s)',
+    texto:'A alteração fica registrada com o seu nome, título a título.',
+    rotulo:'Novo ' + rot, tipo: regra && regra.tipo === 'date' ? 'date' : 'text',
+  });
+  if (valor === null) return;
+  const novo = safeStr(valor);
+  if (!novo) return;
+  if (!(await Auth.pedir())) return;
+  const ajustes = linhas.map(x => ({
+    alvo: x.chave, campo: campo, valor_novo: novo,
+    valor_antigo: safeStr(x.titulo[campo]), autor: state.autor, motivo:'alteração em lote na conferência',
+  }));
+  state.selecao = {};
+  await gravarAjuste({ acao:'ajuste', ajustes: ajustes },
+    linhas.length + ' título(s) com ' + rot + ' alterado.');
+}
+
+/* ------------------------------------------------------------- total */
+function renderTotal(filtradas, L){
   /* O que está oculto não soma: é dinheiro que não vai sair. Aparece na lista,
      com o selo, mas fora do total — inclusive o devolvido pelo banco. */
   const contam = filtradas.filter(x => !x.oculto);
   const soma = contam.reduce((s, x) =>
     s + (Number(L.unificada ? x.valor : (L.totvs ? x.valor_rs : x.valor)) || 0), 0);
   const fora = filtradas.length - contam.length;
-  /* A aba do dia fechando mistura o que já saiu com o que ainda não saiu.
-     Somar os dois num número só esconde justamente a informação que importa,
-     então o rodapé separa os dois lados. */
-  const pagos = contam.filter(x => L.unificada && x.fonte === 'baixa');
-  const somaPagos = pagos.reduce((s, x) => s + (Number(x.valor)||0), 0);
-  const detalhe = (L.unificada && pagos.length && pagos.length < contam.length)
-    ? h('span', { class:'conf-quebra',
-        text: 'R$ ' + fmtBR(somaPagos) + ' pagos · R$ ' + fmtBR(soma - somaPagos) + ' ainda previstos' })
-    : null;
-  box.appendChild(h('div', { class:'conf-total' }, [
-    h('span', { text: filtradas.length + ' de ' + L.linhas.length + ' linha(s)'
-      + (fora ? (' · ' + fora + ' fora do total') : '') }),
-    detalhe,
-    h('strong', { text: 'R$ ' + fmtBR(soma) }),
-  ]));
-  if (rolagem) window.scrollTo({ top: rolagem });
+  const box = el('rodape-total');
+  box.textContent = '';
+  box.appendChild(h('span', { class:'quebra',
+    text: filtradas.length + ' de ' + L.linhas.length + ' linha(s)'
+      + (fora ? (' · ' + fora + ' fora do total') : '') }));
+  box.appendChild(h('strong', { text:'R$ ' + fmtBR(soma) }));
 }
 
 /* Monta o objeto que a edição espera a partir de um título cru. */
@@ -1846,97 +2407,6 @@ const TIPO_EXPLICA = {
   PX:'Pagamento diverso', RB:'Reembolso', INS:'Guia de INSS',
   CIOT:'Adiantamento de frete (CIOT)', IRF:'IRRF retido', ISS:'ISS retido',
 };
-
-function tabelaUnificada(linhas, ehPago){
-  const thead = h('thead', {}, [ h('tr', {}, [
-    h('th', { text:'Origem' }), h('th', { text:'Tipo' }), h('th', { text:'Número' }),
-    h('th', { text:'Favorecido' }), h('th', { text: ehPago ? 'Baixa' : 'Vencimento' }),
-    h('th', { text:'Valor' }), h('th', { text:'Status' }), h('th', { text:'' }),
-  ])]);
-  const tbody = h('tbody');
-  paginar(linhas).forEach(x => {
-    const sit = SITUACOES[x.situacao] || ['—','b-mute'];
-    /* Devolvido pelo banco não é "pago": o selo de situação sairia dizendo o
-       contrário do que aconteceu, então nessa linha ele dá lugar à devolução. */
-    const tdSit = h('td', {}, x.devolvido ? [] : [ badge(sit[0], sit[1]) ]);
-    if (x.confirmacao && !x.confirmacao.escolhido) tdSit.appendChild(badge('valor a confirmar','b-danger'));
-    else if (x.confirmacao && x.confirmacao.escolhido) tdSit.appendChild(badge('valor confirmado','b-ok'));
-    else if (x.aviso === 'valor_diverge') tdSit.appendChild(badge('valor diverge','b-danger'));
-    if (x.aviso === 'valor_corrigido') tdSit.appendChild(badge('valor corrigido','b-info'));
-    if (x.aviso === 'valor_corrigido_sem_par') tdSit.appendChild(badge('valor a conferir','b-warn'));
-    if (x.modoPar === 'aprox') tdSit.appendChild(badge('casado por semelhança','b-info'));
-    if (x.editado) tdSit.appendChild(badge('editado','b-orange'));
-    if (x.estimado) tdSit.appendChild(badge('estimado','b-warn'));
-    if (x.devolvido) tdSit.appendChild(badge('devolvido pelo banco','b-danger'));
-    else if (x.oculto) tdSit.appendChild(badge('oculto','b-mute'));
-
-    const tdValor = h('td', { class:'num' }, [ fmtBR(x.valor) ]);
-    if (x.confirmacao) tdValor.appendChild(caixaConfirmacao(x));
-    else if (x.valorFluig != null && x.valorTotvs != null && Math.abs(x.valorFluig - x.valorTotvs) > 0.05){
-      tdValor.appendChild(h('span', { class:'antes', style:'text-decoration:none',
-        text:'Fluig: ' + fmtBR(x.valorFluig) }));
-    }
-    const tipo = safeStr(x.tipo) || '—';
-    tbody.appendChild(h('tr', { class:(x.oculto ? 'oculta ' : '') + (x.editado ? 'editada' : '') }, [
-      h('td', {}, [ badge(x.origem, 'b-mute') ]),
-      h('td', {}, [ h('span', { class:'badge b-info', title: TIPO_EXPLICA[tipo] || '', text: tipo }) ]),
-      h('td', { class:'mono' }, comRealce(x.numero)),
-      h('td', {}, [ h('div', { class:'forn' }, (x.fornecedor ? comRealce(x.fornecedor) : ['—']).concat([
-        h('small', { class: x.devolvido ? 'motivo-retorno' : '',
-          text: x.devolvido ? x.motivoRetorno
-                            : [x.status, x.detalhe].filter(Boolean).join(' · ').slice(0, 68) }),
-      ]))]),
-      h('td', { class:'mono', text: fmtData(ehPago ? x.dt_baixa : x.vencimento) }),
-      tdValor, tdSit,
-      h('td', {}, [ acoesLinha(x.titulo ? linhaDoTitulo(x.titulo) : null) ]),
-    ]));
-  });
-  return h('table', {}, [ thead, tbody ]);
-}
-
-
-/* ----------------------------------------------------------------------------
-   Caixinha de confirmação de valor.
-   Dois números lado a lado e um clique. Quando a diferença se explica pelo
-   imposto retido no título, o botão do Totvs vem marcado como sugestão — mas
-   quem decide continua sendo quem está olhando.
-   -------------------------------------------------------------------------- */
-function caixaConfirmacao(x){
-  const c = x.confirmacao;
-  const box = h('div', { class:'confirma' + (c.escolhido ? ' pronta' : '') });
-
-  const opcao = (qual, valor) => {
-    if (valor == null) return null;
-    const ativa = c.escolhido != null && Math.abs(c.escolhido - valor) <= 0.005;
-    const b = h('button', {
-      class:'op' + (ativa ? ' ativa' : '') + (!c.escolhido && c.sugerido === qual ? ' sugerida' : ''),
-      type:'button',
-      title: ativa ? 'valor em uso' : ('usar o valor do ' + (qual === 'fluig' ? 'Fluig' : 'Totvs')),
-    }, [ (qual === 'fluig' ? 'Fluig ' : 'Totvs ') + fmtBR(valor) ]);
-    b.addEventListener('click', () => confirmarValor(x, valor));
-    return b;
-  };
-
-  box.appendChild(h('div', { class:'confirma-ops' }, [
-    opcao('totvs', c.totvs), opcao('fluig', c.fluig),
-  ]));
-
-  const nota = (c.escolhido && c.quem) ? ['', 'confirmado por ' + c.quem]
-    : c.imposto ? ['ok', 'diferença de ' + fmtBR(c.retencao) + ' = ' + c.imposto + ' do título']
-    : (c.fluig != null) ? ['', 'diferença de ' + fmtBR(Math.abs(c.fluig - c.totvs)) + ' sem explicação no título']
-    : ['', ''];
-
-  const outro = h('button', { class:'outro', type:'button',
-    title:'digitar um valor que não é nem o do Fluig nem o do Totvs' }, ['outro valor']);
-  outro.addEventListener('click', () => {
-    const l = x.titulo ? linhaDoTitulo(x.titulo) : null;
-    if (l) abrirEdicao(l, true);
-  });
-  box.appendChild(h('div', { class:'confirma-pe' }, [
-    h('span', { class:'confirma-nota ' + nota[0], text: nota[1] }), outro,
-  ]));
-  return box;
-}
 
 /* Grava a escolha no mesmo log das outras edições: fica com nome e data, e
    deixa de valer sozinha quando o título é baixado — aí manda o que saiu. */
@@ -2069,6 +2539,16 @@ function dataPredominante(){
   return datas[0] || null;
 }
 
+/* Empilha relatórios de baixa sem duplicar: o arquivo novo manda nos dias que
+   ele cobre, e os dias que só existiam no anterior ficam de pé. */
+function juntarBaixas(antigas, novas){
+  if (!antigas || !antigas.length) return novas;
+  const dias = {};
+  novas.forEach(t => { const d = safeStr(t.dt_baixa).slice(0,10); if (d) dias[d] = true; });
+  const mantidas = antigas.filter(t => !dias[safeStr(t.dt_baixa).slice(0,10)]);
+  return mantidas.concat(novas);
+}
+
 async function processFiles(files){
   showOverlay(true, 'Lendo arquivos…');
   try {
@@ -2084,7 +2564,11 @@ async function processFiles(files){
           if (!entry.count){ entry.ok = false; entry.err = 'nenhum título encontrado'; }
           else if (diag.papel === 'baixas'){
             entry.tipo = tipo = 'baixas';
-            state.store.baixas = linhas;
+            /* Dois relatórios de baixa no mesmo dia é rotina: o de ontem, que
+               ficou para trás, e o de hoje, que fecha o dia. Um não pode apagar
+               o outro — o que o arquivo novo substitui são só os DIAS que ele
+               traz, do mesmo jeito que a base faz lá atrás. */
+            state.store.baixas = juntarBaixas(state.store.baixas, linhas);
             state.diagBaixas = diag;
           } else {
             state.store.totvs = linhas;
@@ -2116,8 +2600,11 @@ async function processFiles(files){
       } catch (e){
         entry.ok = false; entry.err = e.message || String(e);
       }
-      // um arquivo do mesmo tipo substitui o anterior
-      state.files = state.files.filter(x => x.tipo !== tipo || tipo === 'desconhecido');
+      /* Um arquivo do mesmo tipo substitui o anterior — menos os de baixa, que
+         se somam por dia (o pago de ontem e o pago de hoje convivem). */
+      state.files = state.files.filter(x => tipo === 'baixas'
+        ? !(x.tipo === 'baixas' && x.nome === entry.nome)
+        : (x.tipo !== tipo || tipo === 'desconhecido'));
       state.files.push(entry);
     }
     recalcular();
@@ -2165,12 +2652,18 @@ async function aplicarRetornos(){
 
 function render(){
   renderArquivos();
-  renderResumo();
+  montarListas();
+  renderTrilho();
   renderConferencia();
 
   const pronto = !!state.conc;
-  el('actions-wrap').hidden = !state.files.length;
+  el('rodape').hidden = !state.files.length && !pronto;
   el('btn-enviar').disabled = !pronto;
+  el('btn-relatorio').disabled = !pronto;
+  el('btn-base-fluxo').disabled = !pronto;
+
+  const dia = el('head-dia');
+  if (dia) dia.textContent = state.dataRef ? ('referência ' + fmtData(state.dataRef)) : '';
 
   const btn = el('btn-enviar');
   const pontos = state.conc ? montarPontos() : [];
@@ -2190,8 +2683,7 @@ function render(){
   if (!state.store.reembolso.length) faltando.push('Reembolsos');
   hint.textContent = faltando.length
     ? ('Sem: ' + faltando.join(', ') + ' — dá pra enviar assim mesmo, mas a conferência fica parcial.')
-    : ('Tudo lido · referência ' + fmtData(state.dataRef) +
-       (state.resumo && state.resumo.historico.qtd ? (' · ' + state.resumo.historico.qtd + ' para o histórico') : '') + '.');
+    : ('Tudo lido · referência ' + fmtData(state.dataRef) + '.');
 }
 
 /* ============================================================================
@@ -2546,7 +3038,14 @@ async function excluirManual(linha){
 async function alternarOculto(linha){
   if (!(await Auth.pedir())) return;
   const voltando = linha.oculto;
-  const motivo = voltando ? '' : (prompt('Por que está ocultando este título? (opcional)') || '');
+  let motivo = '';
+  if (!voltando){
+    const r = await pedirValor({ titulo:'Ocultar título',
+      texto:'Ele some dos totais e do relatório, mas continua na lista com o selo de oculto.',
+      rotulo:'Motivo (opcional)' });
+    if (r === null) return;
+    motivo = safeStr(r);
+  }
   await gravarAjuste({ acao:'ajuste', ajustes: [{
       alvo: linha.chave, campo:'oculto',
       valor_novo: voltando ? '0' : '1', valor_antigo: voltando ? '1' : '0',
@@ -2631,9 +3130,10 @@ async function limparBase(){
    controladoria usa. Mesma função do painel — mora no conciliacao.js. */
 function exportarRelatorioDaConferencia(){
   if (!state.conc){ toast('Suba os relatórios primeiro.'); return; }
-  const listas = listasDaAba();
+  const listas = state.listas || montarListas();
   const L = listas[state.aba];
-  const linhas = Conc.montarLinhas(state.conc, state.pagos || [])
+  const todas = Conc.montarLinhas(state.conc, state.pagos || []);
+  const linhas = todas
     .filter(x => !x.oculto)
     .filter(x => {
       if (state.aba === 'todos') return true;
@@ -2641,9 +3141,9 @@ function exportarRelatorioDaConferencia(){
       if (L.totvs) return L.linhas.indexOf(x.titulo) >= 0;
       return L.linhas.some(it => it.fluig && x.item && it.fluig === x.item.fluig);
     });
-  const alvo = linhas.length ? linhas : Conc.montarLinhas(state.conc, state.pagos || []).filter(x => !x.oculto);
+  const alvo = linhas.length ? linhas : todas.filter(x => !x.oculto);
   try {
-    const devolvidas = Conc.montarLinhas(state.conc, state.pagos || []).filter(Conc.ehDevolvido);
+    const devolvidas = todas.filter(Conc.ehDevolvido);
     const res = Conc.exportarRelatorio(alvo, state.dataRef, state.naturezas || {}, L.rotulo, devolvidas);
     /* O relatório é o que vai virar pagamento. Se algum valor divergente ainda
        não foi escolhido, ele saiu com o do Totvs — vale dizer isso em voz alta. */
@@ -2656,6 +3156,31 @@ function exportarRelatorioDaConferencia(){
   }
 }
 
+/* ============================================================================
+   BASE DO FLUXO DE CAIXA
+   ----------------------------------------------------------------------------
+   O mesmo desenho do relatório da controladoria — as doze colunas que a
+   ferramenta de Fluxo de Caixa lê, com Vencto Real e Conta Fluxo C —, mas com
+   um recorte só: o que foi efetivamente pago naquele dia. Sem aba de retorno:
+   o que o banco devolveu não saiu do caixa e não pode entrar no fluxo.
+   ============================================================================ */
+function exportarBaseFluxo(){
+  if (!state.conc){ toast('Suba os relatórios primeiro.'); return; }
+  const r = state.resumo;
+  const dia = r.temEfetivoHoje ? r.dataRef : (r.dataPago || r.dataRef);
+  const pagas = Conc.montarLinhas(state.conc, state.pagos || [])
+    .filter(x => !x.oculto && !x.devolvido && x.fonte === 'baixa'
+                 && safeStr(x.dt_baixa).slice(0,10) === dia);
+  if (!pagas.length){ toast('Não há pagamento efetivo em ' + fmtData(dia) + ' para levar ao fluxo.'); return; }
+  try {
+    const nome = 'Base realizado ' + fmtData(dia).replace(/\//g,'-') + '.xlsx';
+    const res = Conc.exportarRelatorio(pagas, dia, state.naturezas || {}, '', [],
+      { nome: nome, titulo: 'BASE REALIZADO ON TIME - ' + fmtData(dia) });
+    toast(res.linhas + ' pagamento(s) de ' + fmtData(dia) + ' no arquivo ' + nome + '.');
+  } catch(e){
+    toast(e.message || String(e));
+  }
+}
 
 async function fetchStatus(){
   const dot = el('status-dot'), txt = el('status-text');
@@ -2697,10 +3222,11 @@ async function fetchStatus(){
 
 function resetTudo(){
   state.files = [];
-  state.store = { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[] };
+  state.store = { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[], retornos:[] };
   state.naturezas = null; state.colunasAusentes = [];
-  state.diagBaixas = null; state.diagPrevisto = null; state.diagRelatorio = null;
+  state.diagBaixas = null; state.diagPrevisto = null; state.diagRelatorio = null; state.diagRetornos = null;
   state.conc = null; state.resumo = null; state.aba = 'aPagarHoje';
+  state.listas = {}; state.selecao = {};
   el('file-input').value = '';
   render();
   toast('Recomeçando');
@@ -2737,6 +3263,12 @@ document.addEventListener('DOMContentLoaded', () => {
   el('me-salvar').addEventListener('click', salvarEdicao);
   el('modalEdit').addEventListener('click', e => { if (e.target === el('modalEdit')) fecharEdicao(); });
   el('btn-relatorio').addEventListener('click', exportarRelatorioDaConferencia);
+  el('btn-base-fluxo').addEventListener('click', exportarBaseFluxo);
+  try {
+    if (localStorage.getItem('pgv2_dens') === '1'){
+      state.confortavel = true; document.body.classList.add('confortavel');
+    }
+  } catch(e){}
   el('btn-limpar').addEventListener('click', abrirLimpar);
   el('btn-reset').addEventListener('click', resetTudo);
   el('ml-cancel').addEventListener('click', fecharLimpar);
