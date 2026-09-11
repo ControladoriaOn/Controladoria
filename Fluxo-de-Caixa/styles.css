@@ -1,0 +1,844 @@
+/* ============================================================================
+   FLUXO DE CAIXA · estilos
+   Mesma linguagem visual do Hub Ontime e do painel de pagamentos:
+   creme + ameixa + laranja. O que é novo aqui é a grade: uma tabela larga,
+   com a coluna dos nomes fixa e uma coluna por dia.
+   ============================================================================ */
+:root{
+  --plum-deep:#2D1B2D; --plum:#4A2C4A; --plum-light:#5C1A5C; --plum-soft:#6B5E6B;
+  --bg:#FAF7F5; --surface:#FFF; --surface-soft:#F6F2F6;
+  --border:#E8E2E8; --border-soft:#F0EBF0;
+  --ink:#1A0F1A; --muted:#6B5E6B; --subtle:#A89CB0;
+  --orange:#FF6E00; --orange-deep:#D25500; --orange-soft:#FFF1E0;
+  --ok:#16794A; --ok-soft:#E8F6EE;
+  --warn:#B45309; --warn-soft:#FEF3C7;
+  --danger:#DC2626; --danger-soft:#FEE2E2;
+  --info:#1D4ED8; --info-soft:#EFF4FF;
+  --font-display:'Fraunces',serif; --font-body:'Manrope',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --radius:16px; --radius-md:12px; --radius-sm:9px;
+  --shadow-sm:0 1px 2px rgba(26,15,26,.04);
+  --shadow:0 1px 2px rgba(45,27,45,.04), 0 8px 24px -12px rgba(45,27,45,.12);
+  --shadow-lg:0 18px 44px -14px rgba(26,15,26,.35);
+  --col-nome:270px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* o atributo hidden precisa vencer display:flex/grid/block */
+[hidden]{display:none!important}
+html{height:100%}
+body{
+  font-family:var(--font-body); font-size:14px; color:var(--ink);
+  background:var(--bg); -webkit-font-smoothing:antialiased;
+  /* Cabeçalho e KPIs param no alto e a tabela fica com o resto da altura,
+     rolando por dentro. Antes a página e a tabela rolavam as duas, e era isso
+     que fazia a barra de cima passar por baixo do cabeçalho e cortar os
+     títulos dos KPIs. */
+  height:100%; display:flex; flex-direction:column; overflow:hidden;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#C9C2CC;border-radius:10px}
+
+/* ------------------------------------------------------------- o fundo */
+.fundo{position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none}
+.brilho{position:absolute; border-radius:50%; filter:blur(90px)}
+.b1{width:52vw;height:52vw;min-width:420px;min-height:420px;top:-16vw;right:-12vw;
+  background:radial-gradient(circle,rgba(255,110,0,.30),transparent 68%);
+  animation:deriva1 26s ease-in-out infinite}
+.b2{width:56vw;height:56vw;min-width:440px;min-height:440px;bottom:-22vw;left:-16vw;
+  background:radial-gradient(circle,rgba(92,26,92,.26),transparent 68%);
+  animation:deriva2 32s ease-in-out infinite}
+.b3{width:34vw;height:34vw;min-width:280px;min-height:280px;top:42%;left:46%;
+  background:radial-gradient(circle,rgba(255,138,46,.16),transparent 70%);
+  animation:deriva3 38s ease-in-out infinite}
+@keyframes deriva1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-6vw,5vh) scale(1.12)}}
+@keyframes deriva2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(7vw,-6vh) scale(1.1)}}
+@keyframes deriva3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-8vw,-7vh) scale(1.18)}}
+.grao{position:absolute;inset:-50%;opacity:.05;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
+body::before{content:'';position:fixed;inset:0 0 auto 0;height:340px;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,110,0,.07),transparent 78%)}
+
+/* -------------------------------------------------------------- header */
+header{
+  flex-shrink:0; z-index:60;
+  min-height:70px;padding:12px 26px;gap:14px;flex-wrap:wrap;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(251,247,245,.86);backdrop-filter:blur(14px) saturate(1.2);
+  border-bottom:1px solid rgba(232,226,232,.9);
+}
+.marca{display:flex;align-items:center;gap:12px;min-width:0}
+.marca-icone{width:38px;height:38px;border-radius:11px;flex-shrink:0;overflow:hidden;
+  display:grid;place-items:center;background:var(--plum-deep);color:var(--orange);
+  box-shadow:0 6px 16px -8px rgba(45,27,45,.5)}
+.marca-icone img{width:100%;height:100%;object-fit:cover;display:block}
+.marca-texto{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.marca-texto h1{font-family:var(--font-display);font-size:21px;font-weight:600;letter-spacing:-.02em}
+.marca-texto span{font-size:11.5px;font-weight:600;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-right{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.stamp{display:flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;
+  background:rgba(255,255,255,.7);border:1px solid var(--border);
+  font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+.stamp .dot{width:7px;height:7px;border-radius:50%;background:#22C55E;flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(34,197,94,.16)}
+.stamp .dot.off{background:#9CA3AF;box-shadow:none}
+.btn[hidden]{display:none}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:11px;
+  font-family:inherit;font-weight:600;font-size:13px;border:1px solid transparent;
+  cursor:pointer;transition:all .15s}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,#FF8A2E 0%,var(--orange) 55%,var(--orange-deep) 100%);
+  color:#fff;font-weight:800;
+  box-shadow:0 8px 20px -10px rgba(255,110,0,.65), inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-primary:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.05)}
+.btn-ghost{background:#fff;color:var(--plum);border-color:var(--border);box-shadow:var(--shadow-sm)}
+.btn-ghost:hover:not(:disabled){background:var(--surface-soft);border-color:var(--orange);color:var(--orange-deep)}
+.btn-danger{background:#fff;color:var(--danger);border-color:var(--danger-soft)}
+.btn-danger:hover:not(:disabled){background:var(--danger-soft);border-color:var(--danger)}
+.btn-sm{padding:7px 12px;font-size:12px;border-radius:9px}
+.btn-ghost.ligado{background:var(--orange-soft);border-color:#FFD9B8;color:var(--orange-deep)}
+/* Seta sem para onde ir: fica no lugar, apagada. Some do caminho sem fazer os
+   outros botões pularem quando se chega no primeiro ou no último mês. */
+.mes-nav .btn:disabled{opacity:.35;cursor:default;border-color:var(--border-soft)}
+
+/* ------------------------------------------------------------- conteúdo */
+.content{position:relative;z-index:1;padding:16px 26px 18px;margin:0 auto;width:100%;
+  display:flex;flex-direction:column;gap:14px;flex:1;min-height:0}
+/* a entrada é animada uma vez, quando a tela abre; a cada atualização seria
+   piscada, não recepção */
+body.entrando .section{animation:fadeUp .35s ease-out both}
+
+/* linha de grupo fechado: sai de vista sem sair da tabela */
+tr.oculta{display:none}
+
+/* barra do mês: navegação à esquerda, o resumo do mês à direita */
+.barra-mes{display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  justify-content:space-between;flex-shrink:0}
+/* a seção da tabela é a única que estica */
+.content .section:last-child{flex:1;min-height:0;display:flex;flex-direction:column}
+.mes-nav{display:flex;align-items:center;gap:8px}
+select.filtro{
+  padding:9px 34px 9px 14px;background:#fff;border:1px solid var(--border);
+  border-radius:10px;font-family:var(--font-display);font-size:16px;font-weight:600;
+  color:var(--ink);outline:none;cursor:pointer;appearance:none;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 256 256" fill="%23A89CB0"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>');
+  background-repeat:no-repeat;background-position:right 12px center;
+  box-shadow:var(--shadow-sm);
+}
+select.filtro:focus{border-color:var(--orange)}
+.mes-resumo{display:flex;gap:10px;flex-wrap:wrap}
+.mini-kpi{display:flex;flex-direction:column;gap:2px;padding:9px 16px;border-radius:12px;
+  background:rgba(255,255,255,.88);border:1px solid var(--border);box-shadow:var(--shadow-sm);
+  position:relative;overflow:hidden}
+.mini-kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--subtle)}
+.mini-kpi.ok::before{background:var(--ok)}
+.mini-kpi.orange::before{background:var(--orange)}
+.mini-kpi.info::before{background:var(--info)}
+.mini-kpi.plum::before{background:var(--plum-light)}
+.mk-label{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.mk-valor{font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums}
+
+/* ------------------------------------------------------------- a grade */
+.card{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow-sm);overflow:hidden;
+  flex:1;min-height:0;display:flex;flex-direction:column}
+.card-bar{flex-shrink:0}
+.card-bar{padding:12px 18px;border-bottom:1px solid var(--border);background:var(--surface-soft);
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.card-bar-title{font-family:var(--font-display);font-size:16px;font-weight:600;
+  display:flex;align-items:center;gap:8px}
+/* abrir e fechar tudo — fica na altura da coluna de descrição, que é a coluna
+   a que ele se refere */
+.btn-agrupar{
+  width:28px;height:28px;display:grid;place-items:center;flex-shrink:0;
+  background:#fff;border:1px solid var(--border);border-radius:8px;
+  color:var(--plum-soft);cursor:pointer;font-size:12px;transition:all .15s;
+  box-shadow:var(--shadow-sm);
+}
+.btn-agrupar:hover{border-color:var(--orange);color:var(--orange-deep);background:var(--orange-soft)}
+.card-bar-title i{color:var(--orange)}
+.legenda{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-left:auto;
+  font-size:11.5px;color:var(--muted);font-weight:600}
+.legenda span{display:inline-flex;align-items:center;gap:6px}
+.leg{width:11px;height:11px;border-radius:3px;display:inline-block}
+.leg-real{background:#fff;border:1px solid var(--border)}
+.leg-prev{background:var(--info-soft);border:1px solid #CBD9F6}
+.leg-edit{background:var(--orange-soft);border:1px solid #FFD9B8}
+.leg-dica{color:var(--subtle);font-weight:500}
+
+/* A área da tabela precisa de fundo próprio, e opaco. O cartão em volta é
+   branco com 94% de opacidade — bonito nas bordas, mas as células do corpo não
+   têm cor nenhuma, então os brilhos laranja do fundo da página atravessavam a
+   tabela e apareciam como faixas atrás dos números. Só sumiam onde o mouse
+   passava, porque aí o hover pintava a célula. */
+.grade-wrap{overflow:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;
+  background:var(--surface)}
+table.grade{border-collapse:separate;border-spacing:0;width:max-content;min-width:100%}
+table.grade th,table.grade td{
+  border-bottom:1px solid var(--border-soft);
+  padding:0 10px;height:29px;white-space:nowrap;font-size:12px;
+}
+/* coluna dos nomes: fica parada enquanto os dias correm ao lado */
+.col-nome{
+  position:sticky;left:0;z-index:3;width:var(--col-nome);min-width:var(--col-nome);
+  max-width:var(--col-nome);background:#fff;text-align:left;
+  box-shadow:1px 0 0 var(--border);
+}
+thead th{
+  position:sticky;top:0;z-index:4;background:var(--surface-soft);
+  border-bottom:1px solid var(--border);
+  font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);
+}
+thead th.col-nome{z-index:6}
+th.col-dia{width:96px;min-width:96px;text-align:right;padding:5px 10px;height:auto}
+body.exato th.col-dia{width:118px;min-width:118px}
+body.exato th.col-total{width:140px;min-width:140px}
+th.col-dia .d-num{display:block;font-family:var(--font-mono);font-size:12px;color:var(--ink);letter-spacing:0}
+th.col-dia .d-dow{display:block;font-size:9.5px;font-weight:600;color:var(--subtle);text-transform:lowercase}
+th.col-dia.nao-util{background:#F1ECF1}
+th.col-dia.nao-util .d-num{color:var(--subtle)}
+/* Dias emprestados do mês vizinho: presentes para mostrar a emenda, mas em
+   segundo plano — não são do mês que está sendo fechado.
+
+   Sem opacidade aqui: o cabeçalho fica parado enquanto a tabela corre por
+   baixo, e opacidade nele não clareia a cor, deixa a faixa translúcida — os
+   números das linhas apareciam através do dia. Cor mais clara, sólida. */
+/* Visão por mês: colunas mais largas, porque cabem doze e os números são
+   somas do mês inteiro. O mês que estava em foco fica marcado, para não se
+   perder a referência ao trocar de visão. */
+th.col-mes{width:132px;min-width:132px}
+th.col-mes{cursor:pointer}
+th.col-mes:hover{background:var(--orange-soft)}
+th.col-mes .d-num{font-family:var(--font-display);font-size:12.5px;text-transform:none}
+th.col-mes.col-foco{background:var(--orange-soft)}
+th.col-mes.col-foco .d-num{color:var(--orange-deep)}
+td.col-mes.col-foco{background:#FFFBF6}
+tr.l-saldo-ini td.col-mes.col-foco,tr.l-saldo-fim td.col-mes.col-foco{background:#4A2A33}
+tr.l-total td.col-mes.col-foco{background:#F6EDE6}
+
+th.col-dia.col-fora{background:#F4F0F4}
+th.col-dia.col-fora .d-num{color:var(--subtle);font-weight:600}
+th.col-dia.col-fora .d-dow{color:#B9AEC0}
+td.col-fora{color:var(--plum-soft);background:#FCFAFC}
+tr.l-saldo-ini td.col-fora,tr.l-saldo-fim td.col-fora{background:#3B2F3B;color:#E7DCE7}
+tr.l-total td.col-fora{background:#F7F3F7}
+/* a divisa entre o mês vizinho e o mês em foco */
+th.col-dia.col-fora + th.col-dia:not(.col-fora),
+td.col-fora + td:not(.col-fora){box-shadow:inset 3px 0 0 -1px var(--orange-soft)}
+
+th.col-dia.hoje{background:var(--orange-soft)}
+th.col-dia.hoje .d-num{color:var(--orange-deep)}
+th.col-total{width:120px;min-width:120px;text-align:right;background:#EFE9EF}
+
+td.num{text-align:right;font-family:var(--font-mono);font-size:11.5px;
+  font-variant-numeric:tabular-nums;color:var(--ink)}
+td.nao-util{background:rgba(241,236,241,.5)}
+td.hoje{background:rgba(255,110,0,.05)}
+td.previsto{color:var(--info);background:rgba(239,244,255,.6)}
+td.col-total{background:#F6F2F6;font-weight:700}
+tbody tr:hover td{background:rgba(255,110,0,.04)}
+tbody tr:hover td.col-nome{background:#FFF9F3}
+
+/* Numa linha que fica parada enquanto a tabela corre por baixo, fundo com
+   transparência deixa ver o que está passando atrás — era o que acontecia ao
+   passar o mouse: os 4% de laranja do hover apagavam o fundo sólido e a linha
+   de trás aparecia através dela. Dentro das fixas, toda cor é sólida. */
+tr.fixa td.nao-util{background:#F1ECF1}
+tr.fixa td.hoje{background:#FFF4E9}
+tr.fixa td.previsto{background:#EDF2FE}
+tbody tr.fixa:hover td,tbody tr.fixa:hover td.col-nome{background:#F1E8F1}
+tbody tr.fixa.l-total:hover td,tbody tr.fixa.l-total:hover td.col-nome{background:#EDE4ED}
+
+.nome-box{display:flex;align-items:center;gap:7px;min-width:0}
+.nome-box .cod{font-family:var(--font-mono);font-size:9.5px;color:var(--subtle);flex-shrink:0}
+.nome-box .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.toggle{background:none;border:none;padding:0;width:14px;color:var(--subtle);cursor:pointer;
+  font-size:10px;flex-shrink:0}
+.toggle:hover{color:var(--orange-deep)}
+
+/* níveis: a hierarquia se lê pelo recuo, não por moldura */
+tr.nivel-1 .nome-box{padding-left:14px}
+tr.nivel-2 .nome-box{padding-left:28px}
+tr.nivel-3 .nome-box{padding-left:42px}
+
+/* as linhas que acompanham a rolagem, empilhadas abaixo do cabeçalho.
+   Ficam sob o cabeçalho dos dias (z-index menor) e sobre o resto da tabela. */
+tr.fixa td{position:sticky;top:var(--topo,0);z-index:3}
+tr.fixa td.col-nome{z-index:5}
+tr.fixa td{box-shadow:0 1px 0 rgba(45,27,45,.10)}
+tr.fixa.l-total td{box-shadow:0 1px 0 rgba(45,27,45,.14)}
+/* a última do bloco fixo ganha sombra de verdade: é ela que separa o que está
+   parado do que está correndo por baixo */
+tr.fixa.ultima-fixa td{box-shadow:0 6px 10px -6px rgba(45,27,45,.45), 0 1px 0 rgba(45,27,45,.18)}
+
+tr.l-espaco td{height:10px;border-bottom:none;background:transparent!important}
+tr.l-grupo td{font-weight:700;background:rgba(246,242,246,.7)}
+tr.l-grupo td.col-nome{background:#F6F2F6}
+tr.l-linha td.col-nome{color:var(--plum-soft)}
+
+tr.l-total td{font-weight:800;font-size:12.5px;background:#F3EDF3}
+tr.l-total td.col-nome{background:#F3EDF3;font-family:var(--font-display);font-size:13.5px}
+tr.l-total.t-ent td.col-nome{box-shadow:inset 3px 0 0 var(--ok), 1px 0 0 var(--border)}
+tr.l-total.t-sai td.col-nome{box-shadow:inset 3px 0 0 var(--orange), 1px 0 0 var(--border)}
+
+tr.l-saldo-ini td,tr.l-saldo-fim td{background:var(--plum-deep);color:#fff;font-weight:700}
+tr.l-saldo-ini td.col-nome,tr.l-saldo-fim td.col-nome{
+  background:var(--plum-deep);color:#fff;font-family:var(--font-display);font-size:13.5px}
+tr.l-saldo-fim td{font-size:12.5px}
+/* O hover geral clareia a coluna dos nomes, e nas linhas escuras isso apagava
+   o texto branco. Aqui a linha inteira escurece junto, coluna do nome incluída. */
+tbody tr.l-saldo-ini:hover td,tbody tr.l-saldo-fim:hover td,
+tbody tr.l-saldo-ini:hover td.col-nome,tbody tr.l-saldo-fim:hover td.col-nome{
+  background:#3A243A;color:#fff}
+
+/* Nas duas linhas escuras o destaque do dia de hoje precisa ser escuro também.
+   Quando as cores das linhas fixas viraram sólidas, o creme do "hoje" passou a
+   cobrir o fundo escuro em vez de tingi-lo, e abria um buraco claro na faixa. */
+tr.fixa.l-saldo-ini td.hoje,tr.fixa.l-saldo-fim td.hoje{background:#4A2A33}
+/* E o mesmo vale para o fim de semana: a cor sólida clara das linhas fixas
+   apagava o texto branco das duas linhas escuras. Aqui o dia não útil é um
+   ameixa um pouco mais claro, que se distingue sem cegar. */
+tr.fixa.l-saldo-ini td.nao-util,tr.fixa.l-saldo-fim td.nao-util{background:#3B2A3B}
+tbody tr.l-saldo-ini:hover td.nao-util,tbody tr.l-saldo-fim:hover td.nao-util{background:#4A374A}
+tbody tr.l-saldo-ini:hover td.hoje,tbody tr.l-saldo-fim:hover td.hoje{background:#5A3340}
+
+tr.l-cabec-saldo td{background:var(--surface-soft);font-family:var(--font-display);
+  font-size:12.5px;font-weight:600;color:var(--plum)}
+tr.l-cabec-saldo td.col-nome{background:var(--surface-soft)}
+tr.l-saldo-grupo td{font-weight:700}
+tr.l-saldo-conta td.col-nome{color:var(--plum-soft);padding-left:24px}
+tr.l-saldo-total td,tr.l-bancos td{font-weight:800;background:#F3EDF3}
+tr.l-saldo-total td.col-nome,tr.l-bancos td.col-nome{background:#F3EDF3}
+
+tr.l-dif td{font-weight:700}
+tr.l-dif td.col-nome{font-weight:700;color:var(--plum)}
+td.v-ok{color:var(--ok)}
+/* Poeira de arredondamento: existe, mas não é problema. Fica visível e calada,
+   sem o vermelho que faz procurar erro onde não há. */
+td.v-poeira{color:var(--subtle)}
+td.v-alerta{color:var(--danger);background:rgba(254,226,226,.55)!important}
+
+/* O traço laranja marca a célula em que dá para digitar. Ele ficava aceso o
+   tempo todo, em todas as células de todas as linhas, e o resultado eram
+   listras laranja atravessando a tabela inteira — parte do "estranho" que
+   sumia quando o mouse passava por cima. Agora ele acende na linha sob o
+   ponteiro: a dica continua, a poluição some. */
+td.editavel{cursor:pointer}
+tbody tr:hover td.editavel{box-shadow:inset 0 -2px 0 rgba(255,110,0,.28)}
+td.editavel:hover{background:var(--orange-soft)!important;color:var(--orange-deep)}
+td.editavel:empty::after{content:'+';color:transparent}
+td.editavel:hover:empty::after{color:var(--orange)}
+/* célula com ajuste à mão: um canto marcado, para o número não passar por
+   automático quando não é */
+td.ajustada{position:relative}
+td.ajustada::before{
+  content:'';position:absolute;top:2px;right:2px;width:0;height:0;
+  border-top:5px solid var(--orange);border-left:5px solid transparent;
+}
+.ajustes-box{margin-top:16px;padding-top:14px;border-top:1px solid var(--border-soft)}
+.ajustes-titulo{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px}
+.ajustes-dica{margin-top:9px;font-size:11.5px;line-height:1.5;color:var(--subtle)}
+.note.warn{background:var(--warn-soft);color:#7C2D12}
+/* célula em edição: o campo ocupa a célula inteira, sem empurrar a coluna */
+td.editando{padding:0;background:#fff!important;box-shadow:inset 0 0 0 2px var(--orange)}
+input.cel-input{
+  width:100%;height:28px;padding:0 9px;border:none;outline:none;background:transparent;
+  font-family:var(--font-mono);font-size:11.5px;text-align:right;color:var(--ink);
+}
+td.detalhe{cursor:pointer}
+td.detalhe:hover{text-decoration:underline dotted;text-underline-offset:3px}
+
+/* ------------------------------------------------------ modal / detalhe */
+.modal{position:fixed;inset:0;z-index:3000;display:none;align-items:center;
+  justify-content:center;padding:18px;background:rgba(26,15,26,.55);backdrop-filter:blur(4px)}
+.modal.show{display:flex}
+.modal-box{background:var(--surface);border-radius:18px;width:100%;max-width:680px;
+  max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);
+  animation:fadeUp .2s ease-out}
+.modal-box.sm{max-width:430px}
+.modal-head{position:relative;padding:20px 48px 14px 24px;border-bottom:1px solid var(--border-soft)}
+/* O X é o jeito de sair, junto com o Cancelar e o Esc. Clicar fora não fecha:
+   arrastar para selecionar um número e soltar fora da caixa fechava a janela
+   e levava junto o que estava digitado. */
+.modal-x{position:absolute;top:14px;right:14px;width:32px;height:32px;
+  display:grid;place-items:center;border:none;background:none;cursor:pointer;
+  color:var(--subtle);border-radius:9px;font-size:15px;
+  transition:color .15s, background .15s}
+.modal-x:hover{color:var(--plum-deep);background:var(--surface-soft)}
+.modal-head h3{font-family:var(--font-display);font-weight:600;font-size:19px;
+  display:flex;align-items:center;gap:10px}
+.modal-head h3 i{color:var(--orange);font-size:17px}
+.modal-head p{margin-top:5px;font-size:12.5px;color:var(--plum-soft);line-height:1.5}
+.modal-body{padding:18px 24px;overflow-y:auto}
+.modal-foot{padding:14px 20px;background:var(--surface-soft);
+  border-top:1px solid var(--border-soft);display:flex;justify-content:flex-end;gap:10px;
+  flex-wrap:wrap;align-items:center}
+.campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px}
+.campo{display:flex;flex-direction:column;gap:5px}
+.campo.wide{grid-column:1/-1}
+.campo label{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.campo input{padding:11px 13px;background:var(--bg);border:1px solid var(--border);border-radius:9px;
+  font-family:var(--font-mono);font-size:15px;color:var(--ink);outline:none;transition:all .15s;width:100%}
+.campo input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,110,0,.1);background:#fff}
+
+table.tabela-simples{width:100%;border-collapse:separate;border-spacing:0}
+table.tabela-simples th{padding:9px 12px;font-size:10.5px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--muted);background:var(--surface-soft);
+  border-bottom:1px solid var(--border);text-align:left}
+table.tabela-simples th.num,table.tabela-simples td.num{text-align:right;font-family:var(--font-mono)}
+table.tabela-simples td{padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--border-soft);
+  vertical-align:top}
+table.tabela-simples td.mono{font-family:var(--font-mono);white-space:nowrap}
+.forn{font-weight:600;color:var(--plum-deep)}
+.forn small{display:block;font-weight:400;color:var(--plum-soft);font-size:11px;margin-top:2px}
+.empty{padding:32px 20px;text-align:center;color:var(--plum-soft);font-size:13px;line-height:1.6}
+.empty i{display:block;font-size:24px;color:var(--border);margin-bottom:10px}
+
+.lanc-item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;width:100%;
+  padding:11px 14px;margin-bottom:8px;background:var(--bg);border:1px solid var(--border);
+  border-radius:10px;font-family:inherit;font-size:12.5px;cursor:pointer;text-align:left}
+.lanc-item:hover{border-color:var(--orange);background:var(--orange-soft)}
+.li-val{font-family:var(--font-mono);font-weight:700}
+.li-desc{color:var(--plum-soft);overflow:hidden;text-overflow:ellipsis}
+.li-quem{font-size:10.5px;color:var(--subtle)}
+
+.sal-emp{font-family:var(--font-display);font-size:13px;font-weight:600;color:var(--plum);
+  margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border-soft)}
+.sal-emp:first-child{margin-top:0}
+.sal-linha{display:grid;grid-template-columns:1fr 170px;gap:12px;align-items:center;margin-bottom:7px}
+.sal-linha label{font-size:12.5px;color:var(--plum-soft)}
+.sal-linha input{padding:8px 11px;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  font-family:var(--font-mono);font-size:13px;text-align:right;outline:none;width:100%}
+.sal-linha input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,110,0,.1);background:#fff}
+.sal-total{margin-right:auto;font-size:11.5px;font-weight:600;color:var(--muted)}
+.sal-total.ok{color:var(--ok)}
+.sal-total.alerta{color:var(--danger)}
+
+.note{display:flex;gap:10px;align-items:flex-start;padding:11px 14px;
+  border-radius:var(--radius-sm);font-size:12.5px;line-height:1.55}
+.note.info{background:var(--info-soft);color:#1E3A8A}
+.note.danger{background:var(--danger-soft);color:#7F1D1D}
+
+/* ---------------------------------------------------------- carregamento
+   A tela creme por cima de tudo saiu. No lugar, a página já aparece com a
+   forma que vai ter: a barra do mês e o bloco da tabela desenhados vazios,
+   com o cabeçalho de verdade acima. O andamento fica por conta do fio
+   laranja no alto, cuja largura vem das etapas reais do carregamento. */
+#loader{display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;
+  transition:opacity .3s ease, visibility .3s}
+#loader.out{opacity:0;visibility:hidden;pointer-events:none}
+#painel{display:none;flex-direction:column;gap:14px;flex:1;min-height:0}
+
+/* O pulso é lento e de pouca amplitude de propósito: diz "ainda estou
+   carregando" sem fingir que mede progresso. Quem mede é o fio. */
+@keyframes skPulso{0%,100%{opacity:1}50%{opacity:.55}}
+.sk-bloco{background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:var(--radius);box-shadow:var(--shadow-sm);
+  animation:skPulso 1.9s ease-in-out infinite}
+.sk-barra{display:flex;align-items:center;gap:10px}
+.sk-espaco{flex:1}
+.sk-botao{width:38px;height:38px;border-radius:var(--radius-sm)}
+.sk-mes{width:186px;height:38px;border-radius:var(--radius-sm)}
+.sk-resumo{width:min(320px,38%);height:38px;border-radius:var(--radius-sm)}
+.sk-tabela{flex:1;min-height:260px}
+/* Cada bloco entra um instante depois do anterior: a página se monta de cima
+   para baixo, em vez de piscar inteira de uma vez. */
+.sk-mes{animation-delay:.08s}
+.sk-resumo{animation-delay:.16s}
+.sk-tabela{animation-delay:.22s}
+
+/* Falha na carga: a mensagem toma o lugar do esqueleto, no miolo da página. */
+.erro-carga{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:12px;flex:1;padding:40px 20px;text-align:center}
+.erro-carga h3{font-family:var(--font-display);font-size:15px;color:var(--danger)}
+.erro-carga p{max-width:420px;font-size:13px;color:var(--muted);line-height:1.55}
+
+@media (max-width:640px){
+  .sk-resumo{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .sk-bloco{animation:none}
+}
+
+.fio{position:fixed;top:0;left:0;right:0;height:2.5px;z-index:9500;background:transparent;
+  opacity:0;transition:opacity .25s}
+.fio.ativo{opacity:1}
+.fio span{display:block;height:100%;width:0%;
+  background:linear-gradient(90deg,#FF8A2E,var(--orange));
+  box-shadow:0 0 8px rgba(255,110,0,.6);transition:width .3s ease}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);z-index:4000;
+  background:var(--plum-deep);color:#fff;padding:13px 22px;border-radius:11px;max-width:92vw;
+  text-align:center;font-size:13px;font-weight:600;box-shadow:0 12px 32px -8px rgba(45,27,45,.4);
+  opacity:0;pointer-events:none;transition:all .25s}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--danger)}
+
+@media (max-width:1024px){
+  :root{--col-nome:190px}
+  header{padding:10px 14px}
+  .content{padding:16px 12px 60px}
+  .mes-resumo{width:100%}
+  .mini-kpi{flex:1;min-width:120px}
+}
+@media (max-width:640px){
+  .marca-texto h1{font-size:18px}
+  .stamp{display:none}
+  .legenda{display:none}
+  .sal-linha{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .brilho{animation:none!important}
+}
+
+
+/* ============================================================
+   IMPORTAÇÃO
+   ------------------------------------------------------------
+   A tela tem uma regra: mostrar antes de gravar. Por isso o
+   espaço maior para o resumo do que foi lido, e o botão de
+   confirmar só ganha cor quando existe algo conferido.
+   ============================================================ */
+.modal-box.lg{max-width:860px}
+
+.imp-foot{display:flex;align-items:center;gap:10px}
+.imp-espaco{flex:1}
+.imp-link{background:none;border:none;padding:0;cursor:pointer;
+  font-family:var(--font-body);font-size:12.5px;color:var(--plum-soft);
+  text-decoration:underline;text-underline-offset:3px}
+.imp-link:hover{color:var(--orange)}
+/* Desabilitado tem que parecer desabilitado: sem isto o link continuava com
+   cara de clicável enquanto uma importação estava em curso. */
+.imp-link:disabled{opacity:.4;cursor:not-allowed;text-decoration:none}
+.imp-link:disabled:hover{color:var(--plum-soft)}
+/* O link de limpar nasce cinza como o vizinho e só fica vermelho quando o
+   ponteiro chega nele: vermelho o tempo todo vira um botão de pânico piscando
+   num rodapé que se usa todo dia. */
+.imp-link-perigo:hover{color:var(--danger)}
+/* Texto explicativo dentro dos cartões do modal — a conferência do ano e a
+   confirmação da limpeza usam o mesmo. Sem regra ele saía no tamanho padrão
+   do parágrafo, destoando de tudo à volta. */
+.cf-text{margin:10px 0 0;font-size:12.5px;color:var(--plum-soft);line-height:1.55}
+.imp-campo{width:100%;margin-top:10px;padding:10px 12px;border-radius:10px;
+  border:1px solid var(--border);background:var(--surface);font:inherit;
+  font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--plum-deep)}
+.imp-campo:focus{outline:none;border-color:var(--danger);
+  box-shadow:0 0 0 3px var(--danger-soft)}
+
+.imp-solta{border:2px dashed var(--border);border-radius:16px;
+  padding:34px 22px;text-align:center;cursor:pointer;
+  background:var(--surface-soft);transition:all .15s}
+.imp-solta:hover,.imp-solta.sobre{border-color:var(--orange);background:var(--orange-soft)}
+.imp-solta i{font-size:26px;color:var(--orange);display:block;margin-bottom:10px}
+.imp-solta b{display:block;font-size:14px;color:var(--plum-deep);margin-bottom:4px}
+.imp-solta span{font-size:12.5px;color:var(--plum-soft)}
+
+.imp-linha{display:flex;justify-content:space-between;gap:14px;
+  padding:9px 0;border-bottom:1px solid var(--border-soft);font-size:13px}
+.imp-linha:last-child{border-bottom:none}
+.imp-linha b{font-variant-numeric:tabular-nums;color:var(--plum-deep)}
+.imp-rot{color:var(--plum-soft)}
+
+.imp-cartao{border:1px solid var(--border);border-radius:14px;
+  padding:14px 16px;margin-bottom:14px;background:var(--surface)}
+.imp-cartao h4{margin:0 0 8px;font-family:var(--font-display);font-weight:600;
+  font-size:15px;color:var(--plum-deep);display:flex;align-items:center;gap:8px}
+.imp-cartao h4 i{color:var(--orange);font-size:13px}
+
+.imp-tabela{width:100%;border-collapse:collapse;font-size:12.5px}
+.imp-tabela th{text-align:left;font-weight:700;color:var(--plum-soft);
+  padding:6px 8px;border-bottom:1px solid var(--border);font-size:11.5px;
+  text-transform:uppercase;letter-spacing:.04em}
+.imp-tabela td{padding:6px 8px;border-bottom:1px solid var(--border-soft);
+  font-variant-numeric:tabular-nums}
+.imp-tabela td.num{text-align:right}
+.imp-rolagem{max-height:260px;overflow-y:auto}
+
+.imp-aviso{border-left:3px solid var(--warn,#B45309);background:#FFF8EC;
+  padding:10px 14px;border-radius:0 10px 10px 0;font-size:12.5px;
+  color:#7A4A05;margin-bottom:12px;line-height:1.55}
+.imp-perigo{border-left-color:var(--err,#B91C1C);background:#FDF2F2;color:#8A1C1C}
+
+.imp-check{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;
+  background:var(--surface-soft);border:1px solid var(--border);
+  border-radius:12px;cursor:pointer;margin-top:12px}
+.imp-check input{margin-top:2px;accent-color:var(--orange)}
+.imp-check div{font-size:12.5px;color:var(--plum-deep);line-height:1.5}
+
+.imp-barra{height:8px;border-radius:99px;background:var(--border-soft);
+  overflow:hidden;margin:12px 0 8px}
+.imp-barra span{display:block;height:100%;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,#FF8A2E,var(--orange));transition:width .3s ease}
+.imp-passo{font-size:12.5px;color:var(--plum-soft);text-align:center}
+
+
+/* ============================================================
+   VÉU, SENHA À VISTA E AS ANIMAÇÕES
+   ------------------------------------------------------------
+   Movimento aqui serve para explicar o que aconteceu — de onde
+   veio um número novo, que a tabela trocou de mês, que a tela
+   está esperando algo. Nada dura mais que dois décimos, porque
+   quem usa isso todo dia não quer assistir a uma animação pela
+   milésima vez.
+   ============================================================ */
+
+/* espera que cobre a tabela sem apagá-la */
+.veu{position:fixed;inset:0;z-index:8000;display:flex;align-items:center;
+  justify-content:center;background:rgba(250,247,245,.72);backdrop-filter:blur(2px);
+  animation:veuEntra .16s ease-out}
+.veu-caixa{display:flex;align-items:center;gap:12px;padding:14px 20px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow-lg);font-size:13px;font-weight:600;color:var(--plum-deep)}
+.veu-giro{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);
+  border-top-color:var(--orange);animation:spin .8s linear infinite}
+@keyframes veuEntra{from{opacity:0}to{opacity:1}}
+
+/* senha: o olho e o aviso de Caps Lock */
+/* O campo da senha é o mesmo componente do campo de confirmação da limpeza,
+   e herdava duas coisas que não servem aqui: a margem de cima, que empurrava o
+   olho para fora do campo pela metade, e o foco vermelho, que num campo de
+   senha lê como erro antes de a pessoa ter errado nada. */
+.campo-senha{position:relative}
+.campo-senha .imp-campo{margin-top:0;padding-right:46px;
+  text-transform:none;letter-spacing:normal}
+.campo-senha .imp-campo:focus{border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(255,110,0,.14)}
+.olho{position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  width:34px;height:34px;border:none;background:none;cursor:pointer;
+  display:grid;place-items:center;font-size:14px;line-height:1;
+  color:var(--subtle);border-radius:9px;transition:color .15s, background .15s}
+.olho:hover{color:var(--orange-deep);background:var(--orange-soft)}
+.olho:focus-visible{outline:2px solid var(--orange);outline-offset:1px}
+.note.info i,.note.danger i{margin-top:1px}
+
+/* a tabela entrando ao trocar de mês ou de visão */
+@keyframes trocaEntra{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.section.trocou{animation:trocaEntra .18s ease-out both}
+
+/* linhas de um grupo que acabou de abrir */
+@keyframes linhaEntra{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+tbody tr.abrindo td{animation:linhaEntra .16s ease-out both}
+
+/* a célula que acabou de receber um lançamento */
+@keyframes brilhoCelula{
+  0%{background:var(--orange);color:#fff}
+  60%{background:var(--orange-soft);color:var(--orange-deep)}
+  100%{background:transparent}
+}
+td.recem-mudada{animation:brilhoCelula 1.1s ease-out}
+
+/* modais chegando com um leve avanço, em vez de aparecerem prontos */
+.modal .modal-box{transition:transform .18s ease-out, opacity .18s ease-out}
+.modal:not(.show) .modal-box{transform:translateY(8px) scale(.985);opacity:0}
+.modal.show .modal-box{transform:none;opacity:1}
+
+/* resposta ao clique nos botões do cabeçalho */
+.btn:active:not(:disabled){transform:translateY(1px) scale(.985)}
+
+@media (prefers-reduced-motion:reduce){
+  .section.trocou,tbody tr.abrindo td,td.recem-mudada,.veu{animation:none}
+  .modal .modal-box{transition:none}
+}
+
+/* ============================================================================
+   EXPORTAR — as opções do recorte
+   ----------------------------------------------------------------------------
+   Cada escolha é um cartão inteiro clicável, não um rótulo ao lado de um
+   ponto de seis pixels. O que está marcado se vê de longe: fio laranja,
+   fundo claro e o ícone acendendo junto.
+
+   O dia a dia usa quadrado e os níveis usam círculo. É a convenção de sempre
+   — quadrado soma, círculo escolhe — e aqui ela carrega a regra do relatório:
+   o dia a dia é independente do nível, então marcá-lo não desmarca nada.
+   ============================================================================ */
+.exp-box{max-width:520px}
+
+.exp-head{position:relative;display:flex;gap:14px;align-items:flex-start;
+  padding:22px 52px 18px 22px}
+.exp-icone{width:44px;height:44px;border-radius:13px;flex-shrink:0;
+  display:grid;place-items:center;font-size:18px;
+  background:var(--orange-soft);color:var(--orange)}
+.exp-titulo h3{font-family:var(--font-display);font-weight:600;font-size:19px;
+  color:var(--plum-deep);line-height:1.25}
+.exp-titulo p{margin-top:4px;font-size:12.5px;color:var(--plum-soft);line-height:1.45}
+
+.exp-corpo{padding:0 22px 20px;overflow-y:auto}
+.exp-secao{font-size:10.5px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--subtle);margin:16px 0 9px}
+.exp-secao:first-child{margin-top:0}
+
+/* ---- período ---- */
+.exp-periodo{display:flex;gap:10px;align-items:stretch}
+.exp-select{flex:1;min-width:0;appearance:none;
+  padding:13px 38px 13px 15px;border:1px solid var(--border);border-radius:14px;
+  background:var(--surface) url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B5E6B' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 13px center/16px;
+  font-family:inherit;font-size:14px;font-weight:600;color:var(--plum-deep);cursor:pointer;
+  transition:border-color .15s, box-shadow .15s}
+.exp-select:hover{border-color:var(--plum-soft)}
+.exp-select:focus{outline:none;border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(255,110,0,.14)}
+.exp-chip{display:flex;align-items:center;gap:8px;padding:0 15px;flex-shrink:0;
+  border:1px solid var(--border-soft);border-radius:14px;background:var(--surface-soft);
+  font-size:12.5px;font-weight:600;color:var(--plum-soft);white-space:nowrap}
+.exp-chip i{font-size:12px;color:var(--subtle)}
+
+/* ---- os cartões de estrutura ---- */
+.exp-cartao{display:flex;align-items:center;gap:13px;position:relative;
+  padding:13px 15px;margin-bottom:9px;cursor:pointer;
+  border:1.5px solid var(--border);border-radius:15px;background:var(--surface);
+  transition:border-color .15s, background .15s, box-shadow .15s}
+.exp-cartao:hover{border-color:var(--plum-soft)}
+.exp-cartao.sel{border-color:var(--orange);background:var(--orange-soft)}
+.exp-cartao:last-of-type{margin-bottom:0}
+
+.exp-ico{width:38px;height:38px;border-radius:11px;flex-shrink:0;
+  display:grid;place-items:center;font-size:15px;
+  background:var(--surface-soft);color:var(--plum-soft);transition:background .15s, color .15s}
+.exp-cartao.sel .exp-ico{background:#FFE2C7;color:var(--orange-deep)}
+
+.exp-txt{flex:1;min-width:0;line-height:1.35}
+.exp-txt b{display:block;font-size:14px;font-weight:650;color:var(--plum-deep)}
+.exp-txt em{display:block;font-style:normal;font-size:12px;color:var(--plum-soft);
+  margin-top:2px}
+
+/* O controle nativo continua lá, invisível: é ele que o teclado e o leitor de
+   tela enxergam. O que se pinta é a marca ao lado. */
+.exp-input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.exp-marca{width:21px;height:21px;flex-shrink:0;border-radius:50%;
+  border:2px solid var(--border);background:var(--surface);
+  display:grid;place-items:center;transition:border-color .15s}
+.exp-marca-quad{border-radius:7px}
+.exp-cartao.sel .exp-marca{border-color:var(--orange)}
+.exp-cartao.sel .exp-marca::after{content:'';width:10px;height:10px;border-radius:50%;
+  background:var(--orange)}
+.exp-cartao.sel .exp-marca-quad::after{width:11px;height:6px;border-radius:0;
+  background:none;border:2.5px solid var(--orange);border-top:none;border-right:none;
+  transform:rotate(-45deg) translate(1px,-2px)}
+.exp-input:focus-visible + .exp-marca{box-shadow:0 0 0 3px rgba(255,110,0,.2)}
+
+/* ---- formato de saída ---- */
+.exp-formato{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;
+  background:var(--surface-soft);border-radius:14px}
+.exp-fmt{display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 10px;border:1px solid transparent;border-radius:11px;background:none;
+  font-family:inherit;font-size:13.5px;font-weight:600;color:var(--plum-soft);
+  cursor:pointer;transition:background .15s, color .15s, box-shadow .15s}
+.exp-fmt:hover:not(:disabled):not(.ativo){color:var(--plum-deep)}
+.exp-fmt.ativo{background:var(--surface);border-color:var(--border-soft);
+  color:var(--plum-deep);box-shadow:var(--shadow-sm)}
+.exp-fmt.ativo[data-fmt="xlsx"] i{color:var(--ok)}
+.exp-fmt.ativo[data-fmt="pdf"] i{color:#C0392B}
+.exp-fmt:disabled{opacity:.4;cursor:not-allowed}
+
+#exp-aviso{margin-top:12px}
+
+/* ---- rodapé ---- */
+.exp-pe{display:flex;align-items:center;gap:10px;padding:14px 22px;
+  background:var(--surface-soft);border-top:1px solid var(--border-soft)}
+.exp-sumario{flex:1;min-width:0;font-size:12px;color:var(--plum-soft);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-sumario b{color:var(--plum-deep);font-weight:650}
+
+/* Botão desligado por regra, não por falta de permissão: continua à vista,
+   apagado, com o motivo escrito logo acima. */
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:disabled:hover{background:none;border-color:var(--border)}
+
+/* ============================================================================
+   TÍTULOS DE UMA CÉLULA — resumo, filtro e a lista
+   ----------------------------------------------------------------------------
+   A lista sozinha respondia "quais títulos", mas não "isso é muito?". Os
+   quatro números do topo respondem, e a barra ao lado do valor mostra a
+   concentração sem obrigar ninguém a somar de cabeça.
+   ============================================================================ */
+.det-chips{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.det-chip{flex:1;min-width:112px;border:1px solid var(--border-soft);border-radius:12px;
+  padding:9px 12px;background:var(--surface-soft)}
+.det-chip .k{font-size:9.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--subtle);line-height:1.3}
+.det-chip .v{font-size:15px;font-weight:700;color:var(--plum-deep);margin-top:3px;
+  font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.det-chip.forte{background:var(--orange-soft);border-color:#FFD9B5}
+.det-chip.forte .v{color:var(--orange-deep)}
+
+.det-barra{display:flex;gap:8px;margin-bottom:10px}
+.det-busca{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--border);
+  border-radius:11px;font-family:inherit;font-size:12.5px;color:var(--ink);background:var(--surface)}
+.det-busca::placeholder{color:var(--subtle)}
+.det-busca:focus{outline:none;border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(255,110,0,.14)}
+.det-ord{display:flex;gap:2px;background:var(--surface-soft);border-radius:11px;padding:3px;
+  flex-shrink:0}
+.det-ord button{border:none;background:none;font-family:inherit;font-size:11.5px;font-weight:600;
+  color:var(--plum-soft);padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  transition:background .12s, color .12s}
+.det-ord button:hover{color:var(--plum-deep)}
+.det-ord button.on{background:var(--surface);color:var(--plum-deep);box-shadow:var(--shadow-sm)}
+
+.det-lista{border-top:1px solid var(--border-soft);margin:0 -24px;padding:0 24px}
+table.det-tabela td{vertical-align:middle}
+.det-banco{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.3px;
+  padding:2px 6px;border-radius:5px;background:var(--surface-soft);color:var(--plum-soft);
+  white-space:nowrap}
+.det-fora{color:var(--warn);font-weight:700}
+td.det-val{position:relative;white-space:nowrap}
+td.det-val .n{font-family:var(--font-mono);font-weight:600;font-variant-numeric:tabular-nums}
+td.det-val .p{font-size:10px;color:var(--subtle);margin-top:1px;font-family:var(--font-body)}
+.det-barra-val{position:absolute;left:0;bottom:0;height:2px;background:var(--orange);opacity:.45}
+
+.det-pe{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.det-tot{flex:1;font-size:12px;color:var(--plum-soft);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.det-tot b{color:var(--plum-deep);font-family:var(--font-mono)}
+
+/* ---- esqueleto da espera ---- */
+.det-sk .sk{background:linear-gradient(90deg,var(--surface-soft) 25%,var(--border) 37%,var(--surface-soft) 63%);
+  background-size:400% 100%;animation:skPassa 1.3s ease-in-out infinite;border-radius:6px;height:11px}
+.det-sk .sk-k{width:52px;height:8px}
+.det-sk .sk-v{width:88px;height:13px;margin-top:6px}
+.det-sk .sk-min{height:9px;margin-top:5px}
+.det-sk-linha{display:flex;align-items:center;gap:14px;padding:11px 0;
+  border-bottom:1px solid var(--border-soft)}
+@keyframes skPassa{0%{background-position:100% 50%}100%{background-position:0 50%}}
+@media (prefers-reduced-motion: reduce){ .det-sk .sk{animation:none} }
+
+/* ============================================================================
+   A CÉLULA QUE ESTÁ SENDO GRAVADA
+   ----------------------------------------------------------------------------
+   O aviso de que o envio ainda está em curso ficava num fio de dois pixels no
+   alto da tela, longe de onde a pessoa está olhando. Agora ele fica na própria
+   célula que ela acabou de digitar: apagada enquanto vai, acesa quando volta
+   (a animação de sempre), vermelha se não foi.
+   ============================================================================ */
+td.cel-indo{opacity:.45;position:relative}
+td.cel-indo::after{content:'';position:absolute;top:4px;right:4px;
+  width:5px;height:5px;border-radius:50%;background:var(--orange);
+  animation:celPulsa 1s ease-in-out infinite}
+@keyframes celPulsa{0%,100%{opacity:.35}50%{opacity:1}}
+
+td.cel-falhou{position:relative;background:#FDECEA!important;color:var(--danger)!important}
+td.cel-falhou::after{content:'';position:absolute;top:4px;right:4px;
+  width:5px;height:5px;border-radius:50%;background:var(--danger)}
+
+@media (prefers-reduced-motion: reduce){ td.cel-indo::after{animation:none;opacity:1} }
+
+/* ============================================================================
+   O DETALHE ROLA NA LISTA, NÃO NO CORPO INTEIRO
+   ----------------------------------------------------------------------------
+   Quem rolava era o corpo do modal, e o cabeçalho da tabela grudava no topo
+   dele — deixando descoberta a faixa do respiro interno, com as linhas
+   passando por trás. Agora quem rola é a lista: o vão some, e os quatro
+   números e o filtro deixam de sumir junto com a rolagem.
+   ============================================================================ */
+#modal-detalhe .modal-body{overflow:hidden;display:flex;flex-direction:column;min-height:0}
+#modal-detalhe .det-lista{flex:1;min-height:0;overflow-y:auto;
+  border-top:1px solid var(--border-soft)}
+#modal-detalhe .det-lista table.det-tabela thead th{top:0}
