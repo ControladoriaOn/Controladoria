@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comprovantes de Pedágio</title>
+  <script>try{var _t=localStorage.getItem('tema_pedagios')||((window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');if(_t==='dark')document.documentElement.classList.add('dark');}catch(e){}</script>
+  <link rel="icon" type="image/png" href="https://controladoriaon.github.io/Controladoria/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+  <style>
+    :root{
+      --orange:#FF6E00; --orange-dark:#C75200; --orange-deep:#C75200;
+      --orange-soft:#FFF0E4; --orange-line:#F4D6B9;
+      --ink:#3C003C; --plum:#3C003C; --plum-deep:#280026; --plum-2:#5A0F55;
+      --muted:#7C667B; --line:#ECE2EC; --border:#ECE2EC; --field:#FBF7FA;
+      --bg:#F4EFEE; --card:#FFFFFF; --surface:#FFFFFF;
+      --green:#15803D; --ok:#15803D; --green-bg:#E4F6E9;
+      --red:#B42318; --red-bg:#FBE9E7; --gray-bg:#F1EAF1;
+      --warn:#8A5300; --warn-bg:#FEF3DC; --warn-line:#F4DCA6;
+      --r-card:18px; --r-ctl:12px; --r-field:11px;
+      --sh-sm:0 1px 2px rgba(52,0,46,.05), 0 1px 3px rgba(52,0,46,.04);
+      --sh-md:0 2px 6px rgba(52,0,46,.05), 0 16px 36px -16px rgba(52,0,46,.18);
+      --sh-lg:0 30px 70px -20px rgba(40,0,36,.45);
+      --sh-orange:0 8px 22px -8px rgba(255,110,0,.5);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+    .wrap{max-width:920px;margin:0 auto;padding:28px 20px 76px}
+
+    /* ===== header ===== */
+    header{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:linear-gradient(135deg,var(--plum-deep),var(--plum) 50%,var(--plum-2));color:#fff;border-radius:22px;padding:22px 24px 26px;box-shadow:var(--sh-md);border:1px solid rgba(255,255,255,.06)}
+    header::after{content:"";position:absolute;top:-45%;right:-4%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,110,0,.34),transparent 62%);pointer-events:none}
+    /* picote de comprovante: linha pontilhada na base do cabeçalho */
+    header::before{content:"";position:absolute;left:22px;right:22px;bottom:10px;height:2px;pointer-events:none;
+      background-image:radial-gradient(circle,rgba(255,255,255,.55) 1px,transparent 1.5px);
+      background-size:8px 2px;background-repeat:repeat-x;opacity:.45}
+    .head-brand{display:flex;align-items:center;gap:15px;min-width:0;position:relative;z-index:1}
+    .mascwrap{flex:0 0 auto;display:inline-flex;padding:3px;border-radius:14px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22)}
+    .mascote{width:46px;height:46px;border-radius:11px;object-fit:cover;display:block}
+    .head-title{min-width:0}
+    .head-eyebrow{margin:0 0 4px;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--orange)}
+    header h1{margin:0;font-size:26px;font-weight:700;font-family:'Fraunces',serif;color:#fff;line-height:1.05;letter-spacing:-.01em}
+    .head-sub{margin:7px 0 0;color:#E7D3E7;font-size:13.5px;max-width:48ch;line-height:1.45}
+    .head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
+    a.btn{text-decoration:none}
+
+    /* ===== main tabs ===== */
+    .maintabs{display:flex;gap:10px;margin:18px 0 4px;flex-wrap:wrap}
+    .maintab{flex:1;min-width:180px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-family:'Manrope',sans-serif;font-weight:700;font-size:14.5px;padding:14px 18px;border-radius:14px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:9px;box-shadow:var(--sh-sm);transition:transform .14s,border-color .14s,color .14s}
+    .maintab .mt-ico{font-size:16px}
+    .maintab:hover{border-color:var(--orange);color:var(--orange-deep)}
+    .maintab.active{background:linear-gradient(135deg,var(--plum-deep),var(--plum-2));color:#fff;border-color:transparent;box-shadow:var(--sh-md)}
+
+    /* ===== aviso de bloqueio do navegador ===== */
+    .alertbar{display:flex;align-items:flex-start;gap:12px;margin-top:14px;padding:14px 16px;border-radius:14px;background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn);font-size:13.5px;line-height:1.5;box-shadow:var(--sh-sm)}
+    .alertbar .alertico{flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:var(--warn);color:var(--warn-bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;font-family:'Fraunces',serif}
+    .alertbar .alerttxt{min-width:0;flex:1}
+    .alertbar b{display:block;font-size:14px;margin-bottom:3px;color:var(--warn)}
+    .alertbar .btn{flex:0 0 auto}
+    html.dark .alertbar{background:#3A2E15;border-color:#5A4A20;color:#E8C77A}
+    html.dark .alertbar b{color:#E8C77A}
+    html.dark .alertbar .alertico{background:#E8C77A;color:#3A2E15}
+
+    /* ===== cards & steps ===== */
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:20px;margin-top:14px;box-shadow:var(--sh-sm)}
+    .step-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .step-no{flex:0 0 auto;width:32px;height:32px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--plum);color:#fff;font-family:'Fraunces',serif;font-weight:700;font-size:17px;box-shadow:0 5px 14px -5px rgba(60,0,60,.55)}
+    .step-no-soft{background:var(--orange-soft);color:var(--orange-deep);box-shadow:none}
+    .step{margin:0;flex:1;min-width:0;font-family:'Manrope',sans-serif;font-weight:700;font-size:15.5px;letter-spacing:0;text-transform:none;color:var(--ink)}
+    .clearbtn{flex:0 0 auto;background:var(--gray-bg);border:none;color:var(--muted);font:600 12px 'Manrope',sans-serif;cursor:pointer;padding:7px 13px;border-radius:9px;transition:color .14s,background .14s}
+    .clearbtn:hover{color:var(--red);background:var(--red-bg)}
+
+    .row{display:flex;flex-wrap:wrap;gap:12px}
+    .fld{flex:1;min-width:130px}
+    label.lbl{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:600}
+    select,input[type=text]{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-field);background:var(--field);font:600 14px 'Manrope',sans-serif;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+    select:focus,input:focus,textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,110,0,.16)}
+
+    .hint{font-size:12.5px;color:var(--muted);margin:13px 0 0;line-height:1.55}
+    .hint b{color:var(--ink);font-weight:700}
+    .info{margin-top:12px;font-size:13px;padding:10px 13px;border-radius:10px;font-weight:600}
+    .info.ok{background:var(--green-bg);color:var(--green)}
+    .info.erro{background:var(--red-bg);color:var(--red)}
+    .info.aviso{background:var(--warn-bg);color:var(--warn)}
+    html.dark .info.aviso{background:#3A2E15;color:#E8C77A}
+    #resumo{margin-top:14px;font-size:13.5px;background:var(--gray-bg);padding:12px 14px;border-radius:11px;line-height:1.7}
+    #resumo b{color:var(--ink)}
+
+    /* ===== dropzones ===== */
+    .pastezone{display:flex;flex-direction:column;align-items:center;gap:5px;border:1.5px dashed var(--orange-line);border-radius:14px;background:var(--orange-soft);padding:22px 18px;text-align:center;color:var(--orange-deep);font-weight:700;font-size:14px;cursor:pointer;outline:none;transition:border-color .15s,background .15s,transform .1s}
+    .pastezone:hover{border-color:var(--orange)}
+    .pastezone:focus,.pastezone.drag{border-color:var(--orange);background:#FFE6D2;transform:scale(1.004)}
+    .pastezone .pz-ico{font-size:26px;line-height:1}
+    .pastezone .pz-main{font-weight:700}
+    .pastezone .sub{display:block;margin-top:2px;font-weight:500;color:var(--muted);font-size:12.5px}
+
+    /* ===== table ===== */
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left}
+    th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;position:sticky;top:0;background:var(--surface)}
+    tbody tr:last-child td{border-bottom:none}
+    .tablewrap{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-top:8px}
+    .toggle{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;cursor:pointer;user-select:none;margin:0 0 12px}
+    .toggle input{accent-color:var(--orange);width:16px;height:16px}
+
+    /* ===== badges & chips ===== */
+    .badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700}
+    .badge.none{background:var(--gray-bg);color:var(--muted)}
+    .badge.ok{background:var(--orange-soft);color:var(--orange-deep)}
+    .badge.up{background:#FEF1D6;color:#A8650C}
+    .badge.done{background:var(--green-bg);color:var(--green)}
+    .badge.err{background:var(--red-bg);color:var(--red);cursor:help}
+    .chip{display:inline-flex;align-items:center;gap:5px;background:var(--gray-bg);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--muted)}
+    .chip b{color:var(--ink)}
+    .chip.on{background:var(--green-bg);color:var(--green)}
+    .chip.on b{color:var(--green)}
+
+    /* ===== buttons ===== */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:var(--r-ctl);border:none;cursor:pointer;font:700 14px 'Manrope',sans-serif;transition:transform .12s ease,filter .15s ease,background .15s,border-color .15s,color .15s;text-decoration:none}
+    .btn.primary{background:linear-gradient(180deg,#FF7F1F,#FF6E00);color:#fff;box-shadow:var(--sh-orange)}
+    .btn.primary:hover{filter:brightness(1.05);transform:translateY(-1px)}
+    .btn.primary:active{transform:translateY(0)}
+    .btn.ghost{background:var(--surface);border:1px solid var(--line);color:var(--ink)}
+    .btn.ghost:hover{border-color:var(--orange);color:var(--orange-deep)}
+    .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none;transform:none;filter:none}
+    .btn.sm{padding:9px 14px;border-radius:10px;font-size:13px}
+    .btn.big{font-size:16px;padding:15px 22px}
+    .btn.onband{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.28);color:#fff;backdrop-filter:blur(4px)}
+    .btn.onband:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.55);color:#fff}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+    /* ===== progress ===== */
+    #progressWrap{margin-top:16px}
+    .bar-bg{height:10px;background:var(--gray-bg);border-radius:999px;overflow:hidden}
+    #bar{height:100%;width:0;background:linear-gradient(90deg,#FF8A2B,#FF6E00);border-radius:999px;transition:width .25s}
+    #progTxt{font-size:12.5px;color:var(--muted);margin-top:8px;font-weight:600}
+    #doneMsg{margin-top:14px;font-size:13.5px;background:var(--green-bg);color:var(--green);padding:12px 14px;border-radius:11px;font-weight:600}
+    #doneMsg.ruim{background:var(--warn-bg);color:var(--warn)}
+    html.dark #doneMsg.ruim{background:#3A2E15;color:#E8C77A}
+
+    /* ===== orfaos ===== */
+    .orphans{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+    .ocard{width:156px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:9px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--sh-sm)}
+    .ocard .thumb{width:100%;height:106px;object-fit:cover;border-radius:9px;cursor:zoom-in;background:var(--gray-bg);border:none}
+    .pdfth{display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);cursor:default!important}
+    .ocard .oname{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ocard .obtns{display:flex;gap:6px}
+    .btn.mini{padding:7px 10px;font-size:12px;border-radius:9px;flex:1}
+    .btn.mini.x{flex:0 0 auto;color:var(--red);padding:7px 11px}
+
+    /* ===== overlays ===== */
+    .overlay{position:fixed;inset:0;background:rgba(40,0,38,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+    .modal{background:var(--surface);border-radius:20px;max-width:780px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--sh-lg);border:1px solid var(--line)}
+    .modal .mhead{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+    .modal .mhead h2{margin:0;font-size:18px;font-weight:700;font-family:'Fraunces',serif;color:var(--ink)}
+    .modal .mbody{padding:18px 20px;overflow:auto;display:flex;gap:18px;flex-wrap:wrap}
+    .modal .mimg{flex:1 1 230px;min-width:210px}
+    .modal .mimg img{width:100%;max-height:46vh;object-fit:contain;border:1px solid var(--line);border-radius:12px;cursor:zoom-in;background:var(--gray-bg)}
+    .modal .mlist{flex:1.5 1 320px;min-width:270px}
+    .modal .mfoot{display:flex;gap:10px;justify-content:flex-end;align-items:center;padding:14px 20px;border-top:1px solid var(--line)}
+    .modal .mcount{margin-right:auto;font-size:13px;color:var(--muted);font-weight:700}
+    .rowsel{cursor:pointer}
+    .rowsel.on{background:var(--orange-soft)}
+    .xbtn{border:none;background:none;font-size:24px;cursor:pointer;color:var(--muted);line-height:1;padding:2px 8px;border-radius:8px}
+    .xbtn:hover{color:var(--ink);background:var(--gray-bg)}
+    .lightbox{position:fixed;inset:0;background:rgba(30,0,28,.93);display:flex;align-items:center;justify-content:center;z-index:60;cursor:zoom-out;padding:20px}
+    .lightbox img{max-width:100%;max-height:100%;border-radius:10px}
+
+    /* ===== tela de envio ===== */
+    .loadbox{position:relative;background:var(--surface);border-radius:22px;padding:30px 32px;width:min(440px,92vw);text-align:center;box-shadow:var(--sh-lg);border:1px solid var(--line)}
+    .loadbox::before{content:"";position:absolute;left:20px;right:20px;top:12px;height:2px;pointer-events:none;
+      background-image:radial-gradient(circle,var(--line) 1px,transparent 1.5px);background-size:8px 2px;background-repeat:repeat-x}
+    .spinner{width:46px;height:46px;border-radius:50%;border:4px solid var(--orange-soft);border-top-color:var(--orange);margin:0 auto 16px;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loadtitle{margin:0 0 14px;font-weight:700;font-size:18px;color:var(--ink);font-family:'Fraunces',serif}
+    #sendBar{height:100%;width:0;background:linear-gradient(90deg,#FF8A2B,#FF6E00);border-radius:999px;transition:width .25s}
+    .loadtxt{margin:12px 0 0;font-size:13.5px;font-weight:700;color:var(--ink)}
+    .loadhint{margin:6px 0 0;font-size:12px;color:var(--muted)}
+    .okcheck{width:56px;height:56px;border-radius:50%;background:var(--green-bg);color:var(--green);font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+    .okcheck.ruim{background:var(--warn-bg);color:var(--warn);font-family:'Fraunces',serif;font-size:32px}
+    html.dark .okcheck.ruim{background:#3A2E15;color:#E8C77A}
+    .donewarn{margin:0 0 16px;font-size:13.5px;color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:12px;padding:12px 14px;line-height:1.5;text-align:left}
+    .doneok{margin:0 0 16px;font-size:13.5px;color:var(--green);background:var(--green-bg);border-radius:12px;padding:12px 14px;line-height:1.5}
+    #doneState .btn{width:100%}
+    #doneState .btn + .btn{margin-top:10px}
+
+    /* ===== consulta (global) ===== */
+    .empty{text-align:center;color:var(--muted);padding:34px 12px;font-size:14px;font-weight:500}
+    .vmodal{position:fixed;inset:0;background:rgba(40,0,38,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:18px;z-index:60}
+    .vmodal-card{background:var(--surface);border-radius:18px;max-width:780px;width:100%;max-height:92vh;overflow:auto;box-shadow:var(--sh-lg);border:1px solid var(--line)}
+    .vmodal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1}
+    .vmodal-title{font-weight:700;font-size:13.5px;color:var(--ink);font-family:'JetBrains Mono',monospace;word-break:break-all}
+    .vmodal-acts{display:flex;gap:8px;flex-shrink:0}
+    .vmodal-body{padding:16px;min-height:140px;display:flex;align-items:center;justify-content:center}
+
+    /* ===== consulta (escopada) ===== */
+    #sec-consultar{margin-top:4px}
+    #sec-consultar .lbl{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:10px}
+    #sec-consultar .searchrow{display:flex;gap:10px;flex-wrap:wrap}
+    #sec-consultar .searchrow input{flex:1;min-width:200px;padding:13px 15px;font-size:15px;border:1px solid var(--border);border-radius:12px;font-family:inherit;background:var(--field);color:var(--ink)}
+    #sec-consultar select{padding:10px 12px;font-size:14px;border:1px solid var(--border);border-radius:11px;font-family:inherit;background:var(--field);min-width:220px;width:auto;color:var(--ink)}
+    #sec-consultar .status{font-size:14px;color:var(--muted);margin:4px 2px 16px;font-weight:600}
+    #sec-consultar .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    #sec-consultar .item{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--sh-sm);display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s}
+    #sec-consultar .item:hover{transform:translateY(-2px);box-shadow:var(--sh-md)}
+    #sec-consultar .vthumb{aspect-ratio:4/3;background:var(--gray-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;position:relative}
+    #sec-consultar .vthumb img{width:100%;height:100%;object-fit:cover}
+    #sec-consultar .vthumb .ico{font-size:36px}
+    #sec-consultar .meta{padding:12px 14px}
+    #sec-consultar .meta .id{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;color:var(--ink);word-break:break-all}
+    #sec-consultar .meta .qz{font-size:11.5px;color:var(--muted);margin-top:4px}
+    #sec-consultar .meta a.open,#sec-consultar .meta .linkver{display:inline-block;margin-top:10px;font-size:12.5px;font-weight:700;color:var(--orange-deep);text-decoration:none}
+    #sec-consultar .meta a.open:hover{text-decoration:underline}
+    #sec-consultar .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+    #sec-consultar .tab{border:1px solid var(--border);background:var(--surface);color:var(--muted);font-family:inherit;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:11px;cursor:pointer;box-shadow:var(--sh-sm);transition:transform .14s,border-color .14s,color .14s}
+    #sec-consultar .tab:hover{border-color:var(--orange);color:var(--orange-deep)}
+    #sec-consultar .tab.active{background:linear-gradient(135deg,var(--plum-deep),var(--plum-2));color:#fff;border-color:transparent;box-shadow:var(--sh-md)}
+    #sec-consultar textarea{width:100%;padding:14px 15px;font-size:14px;border:1px solid var(--border);border-radius:12px;font-family:'JetBrains Mono',monospace;resize:vertical;line-height:1.7;background:var(--field);color:var(--ink)}
+    #sec-consultar .confrow{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+    #sec-consultar .summary{border-radius:12px;padding:13px 16px;font-weight:700;font-size:14.5px;margin-bottom:16px}
+    #sec-consultar .summary.ok{background:var(--green-bg);color:var(--ok)}
+    #sec-consultar .summary.warn{background:var(--warn-bg);color:var(--warn)}
+    #sec-consultar .block-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+    #sec-consultar .block-head .t{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--ink)}
+    #sec-consultar .chips{display:flex;flex-wrap:wrap;gap:7px;max-height:180px;overflow-y:auto}
+    #sec-consultar .mchip{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;background:var(--red-bg);color:var(--red);border-radius:9px;padding:6px 11px}
+    #sec-consultar .frows{display:flex;flex-direction:column;max-height:360px;overflow-y:auto;padding-right:4px}
+    #sec-consultar .frow{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+    #sec-consultar .frow:last-child{border-bottom:none}
+    #sec-consultar .frow .fid{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13.5px;min-width:110px;color:var(--ink)}
+    #sec-consultar .frow .fqz{font-size:12.5px;color:var(--muted);flex:1}
+    #sec-consultar .linkver{background:none;border:none;padding:0;font:700 12.5px 'Manrope',sans-serif;color:var(--orange-deep);cursor:pointer}
+    #sec-consultar .linkver:hover{text-decoration:underline}
+
+    /* ===== modo noturno ===== */
+    html.dark{
+      --ink:#F0E7F0; --bg:#141018; --surface:#221A29; --card:#221A29;
+      --line:#352B3F; --border:#352B3F; --muted:#A593AE; --gray-bg:#2C2335; --field:#1C1622;
+      --orange-soft:#3A2718; --orange-dark:#FF9A52; --orange-deep:#FF9A52; --orange-line:#5A3D22;
+      --green:#5FD18C; --ok:#5FD18C; --green-bg:#16321F;
+      --red:#F0A0A0; --red-bg:#3A1C1C; --plum:#3C003C; --plum-deep:#2A0028; --plum-2:#5A1457;
+      --warn:#E8C77A; --warn-bg:#3A2E15; --warn-line:#5A4A20;
+    }
+    html.dark .badge.up{background:#3A2E15;color:#E8C77A}
+    html.dark .mchip,html.dark #sec-consultar .mchip{background:#3A1C1C;color:#F0A0A0}
+    html.dark .pastezone{border-color:#5A3D22}
+    html.dark .pastezone:focus,html.dark .pastezone.drag{background:#43301C;border-color:var(--orange)}
+    html.dark .step-no{background:linear-gradient(180deg,#5A1457,#3C003C);border:1px solid #5A1457;box-shadow:none}
+    html.dark .maintab.active,html.dark #sec-consultar .tab.active{background:linear-gradient(135deg,#3C003C,#5A1457)}
+
+    /* ===== fundo animado ===== */
+    .orbs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+    .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.5;will-change:transform}
+    .orb.a{width:46vmax;height:46vmax;top:-16vmax;left:-12vmax;background:radial-gradient(circle,rgba(255,110,0,.30),transparent 64%);animation:drift1 26s ease-in-out infinite}
+    .orb.b{width:42vmax;height:42vmax;bottom:-18vmax;right:-14vmax;background:radial-gradient(circle,rgba(60,0,60,.30),transparent 64%);animation:drift2 32s ease-in-out infinite}
+    .orb.c{width:30vmax;height:30vmax;top:38vh;right:16vw;background:radial-gradient(circle,rgba(255,150,70,.22),transparent 66%);animation:drift3 38s ease-in-out infinite}
+    .orb.d{width:26vmax;height:26vmax;bottom:6vh;left:6vw;background:radial-gradient(circle,rgba(90,15,85,.20),transparent 66%);animation:drift4 46s ease-in-out infinite}
+    @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(13vw,15vh) scale(1.06)}}
+    @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-14vw,-12vh) scale(1.05)}}
+    @keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-11vw,9vh) scale(1.07)}66%{transform:translate(6vw,-10vh) scale(.96)}}
+    @keyframes drift4{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(10vw,-9vh) scale(1.1)}}
+    html.dark .orb{opacity:.46}
+    html.dark .orb.a{background:radial-gradient(circle,rgba(255,120,40,.20),transparent 64%)}
+    html.dark .orb.b{background:radial-gradient(circle,rgba(120,40,120,.34),transparent 64%)}
+    html.dark .orb.c{background:radial-gradient(circle,rgba(150,60,150,.20),transparent 66%)}
+    html.dark .orb.d{background:radial-gradient(circle,rgba(90,30,110,.22),transparent 66%)}
+    @media (prefers-reduced-motion: reduce){ .orb{animation:none} }
+
+    /* grão fino de papel por cima de tudo (textura, não anima) */
+    .grain{position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.045;mix-blend-mode:multiply;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size:180px 180px}
+    html.dark .grain{opacity:.06;mix-blend-mode:screen}
+
+    /* SEMPRE POR ULTIMO */
+    /* ====== ANIMAÇÕES (importadas) ====== */
+    :root{--ease-spring:cubic-bezier(.34,1.56,.64,1);--ease-smooth:cubic-bezier(.4,0,.2,1);--ease-out-expo:cubic-bezier(.16,1,.3,1)}
+    @keyframes fadeSlideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeSlideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes scaleIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+    @keyframes scaleInSoft{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes pulseGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,110,0,0)}50%{box-shadow:0 0 16px 3px rgba(255,110,0,.18)}}
+    @keyframes borderPulse{0%,100%{border-color:var(--orange-line,#E8C9A8)}50%{border-color:var(--orange)}}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+    @keyframes popIn{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
+    @keyframes floatBadge{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+    @keyframes respira{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+
+    /* entradas (backwards: não sobrescreve os hovers depois de terminar) */
+    header{animation:fadeSlideDown .55s var(--ease-out-expo) backwards}
+    header h1{animation:fadeSlideUp .5s var(--ease-out-expo) .15s backwards}
+    .head-sub{animation:fadeSlideUp .5s var(--ease-out-expo) .25s backwards}
+    .mascote{animation:respira 6.5s var(--ease-smooth) 1.2s infinite}
+    .maintabs{animation:fadeSlideUp .45s var(--ease-out-expo) .08s backwards}
+    .alertbar{animation:fadeSlideUp .4s var(--ease-out-expo) backwards}
+    .card{animation:fadeSlideUp .42s var(--ease-out-expo) backwards}
+    #sec-enviar > .card:nth-child(1){animation-delay:.05s}
+    #sec-enviar > .card:nth-child(2){animation-delay:.10s}
+    #sec-enviar > .card:nth-child(3){animation-delay:.15s}
+    #sec-enviar > .card:nth-child(4){animation-delay:.20s}
+    #sec-enviar > .card:nth-child(5){animation-delay:.25s}
+    #sec-enviar > .card:nth-child(6){animation-delay:.30s}
+    .maintab.active{animation:scaleInSoft .35s var(--ease-spring) backwards}
+    #sec-consultar .tab.active{animation:scaleInSoft .25s var(--ease-spring) backwards}
+    .tablewrap,#resumo,#progressWrap{animation:fadeSlideUp .4s var(--ease-out-expo) backwards}
+    #doneMsg{animation:fadeSlideUp .4s var(--ease-out-expo) backwards,pulseGlow 2.2s ease-in-out 2}
+    tbody tr{animation:fadeSlideUp .35s var(--ease-out-expo) backwards}
+    #sec-consultar .item{animation:fadeSlideUp .45s var(--ease-out-expo) backwards}
+    #sec-consultar .summary{animation:fadeSlideUp .4s var(--ease-out-expo) backwards}
+    #sec-consultar .frow{animation:fadeSlideUp .3s var(--ease-out-expo) backwards}
+    .empty,.rowsel.on{animation:fadeSlideUp .3s var(--ease-out-expo) backwards}
+
+    /* overlays / modais */
+    .overlay,.vmodal,.lightbox{animation:fadeIn .3s var(--ease-smooth)}
+    .modal,.vmodal-card,.loadbox{animation:scaleIn .4s var(--ease-spring)}
+    .lightbox img{animation:scaleInSoft .35s var(--ease-spring)}
+
+    /* cartões / chips */
+    .ocard{animation:popIn .45s var(--ease-spring) backwards}
+    .chip.on,#sec-consultar .mchip{animation:popIn .35s var(--ease-spring) backwards}
+    .okcheck{animation:popIn .5s var(--ease-spring),pulseGlow 2s ease-in-out 1s 2}
+
+    /* micro-interações */
+    .pastezone{animation:borderPulse 2.4s var(--ease-smooth) .5s 1 backwards}
+    .pastezone:hover,.pastezone:focus,.pastezone.drag{animation:none}
+    .info.erro{animation:shake .5s var(--ease-smooth),fadeSlideUp .4s var(--ease-out-expo) backwards}
+    .badge.up{animation:floatBadge 2s ease-in-out infinite}
+    .badge{transition:transform .2s var(--ease-spring),box-shadow .2s var(--ease-smooth)}
+    .badge:hover{transform:scale(1.08)}
+    .xbtn{transition:transform .2s var(--ease-spring),color .2s,background .2s}
+    .xbtn:hover{transform:rotate(90deg) scale(1.1)}
+
+    /* troca de tema suave (só onde não há transição própria) */
+    *{transition:background-color .35s var(--ease-smooth),color .25s var(--ease-smooth),border-color .35s var(--ease-smooth)}
+
+    @media (prefers-reduced-motion: reduce){
+      *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;animation-delay:0!important}
+    }
+
+    /* ripple nos botões (feedback tátil) */
+    .btn{position:relative;overflow:hidden}
+    .btn .ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);transform:scale(0);animation:ripple .6s var(--ease-smooth);pointer-events:none}
+    .btn.ghost .ripple,.btn.onband .ripple{background:rgba(255,110,0,.22)}
+    @keyframes ripple{to{transform:scale(2.6);opacity:0}}
+    /* crossfade ao trocar de aba */
+    @keyframes tabSwap{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    /* check de conclusão que se desenha */
+    .okcheck-svg{width:32px;height:32px;display:block}
+    .okcheck-path{fill:none;stroke:currentColor;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:drawCheck .5s var(--ease-out-expo) .3s forwards}
+    @keyframes drawCheck{to{stroke-dashoffset:0}}
+    [hidden]{display:none!important}
+  </style>
+</head>
+<body>
+
+  <div class="orbs" aria-hidden="true"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div><div class="orb d"></div></div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="wrap">
+    <header>
+      <div class="head-brand">
+        <span class="mascwrap"><img class="mascote" src="https://controladoriaon.github.io/Controladoria/logo-mascote.jpg" alt="Mascote On Time"></span>
+        <div class="head-title">
+          <p class="head-eyebrow">Financeiro OnTime</p>
+          <h1>Comprovantes de Pedágio</h1>
+          <p class="head-sub">Envie os comprovantes do período e consulte os que já estão no Drive.</p>
+        </div>
+      </div>
+      <div class="head-actions">
+        <a class="btn onband sm" id="btnVoltarHub" href="../index.html" style="display:none">← Voltar ao hub</a>
+        <button class="btn onband sm" id="btnTema" type="button" title="Alternar tema claro/escuro">🌙</button>
+        <button class="btn onband sm" id="btnLimpar" type="button" title="Limpar tudo (planilha + comprovantes)">🧹 Limpar tudo</button>
+      </div>
+    </header>
+
+    <div class="maintabs">
+      <button class="maintab active" type="button" data-sec="enviar"><span class="mt-ico">📤</span> Enviar comprovantes</button>
+      <button class="maintab" type="button" data-sec="consultar"><span class="mt-ico">🔎</span> Consultar no Drive</button>
+    </div>
+
+    <div class="alertbar" id="netAlert" hidden="">
+      <span class="alertico">!</span>
+      <div class="alerttxt">
+        <b>O navegador está bloqueando a resposta do Drive</b>
+        <span id="netAlertMsg">Os arquivos até sobem, mas o link não volta pra planilha. Desative o bloqueador de anúncios nesta página (ou libere cookies de terceiros) e teste de novo.</span>
+      </div>
+      <button class="btn ghost sm" id="btnTestarConexao" type="button">Testar de novo</button>
+    </div>
+
+    <section id="sec-enviar">
+
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">1</span>
+          <p class="step">Período · quinzena</p>
+        </div>
+        <div class="row">
+          <div class="fld">
+            <label class="lbl" for="ano">Ano</label>
+            <select id="ano"></select>
+          </div>
+          <div class="fld">
+            <label class="lbl" for="mes">Mês</label>
+            <select id="mes">
+            <option value="01">Janeiro</option><option value="02">Fevereiro</option>
+            <option value="03">Março</option><option value="04">Abril</option>
+            <option value="05">Maio</option><option value="06">Junho</option>
+            <option value="07">Julho</option><option value="08">Agosto</option>
+            <option value="09">Setembro</option><option value="10">Outubro</option>
+            <option value="11">Novembro</option><option value="12">Dezembro</option>
+          </select>
+          </div>
+          <div class="fld">
+            <label class="lbl" for="quinzena">Quinzena</label>
+            <select id="quinzena">
+              <option value="1">1ª quinzena</option>
+              <option value="2">2ª quinzena</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint">Os comprovantes vão pra uma subpasta com esse nome (ex.: <b id="folderEx">2026-03 - 1ª quinzena</b>).</p>
+      </section>
+
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">2</span>
+          <p class="step">Planilha preenchida</p>
+          <button class="clearbtn" id="limpaPlan" type="button" title="Limpar só a planilha (mantém os comprovantes)">Limpar</button>
+        </div>
+        <div class="pastezone" id="planZone" tabindex="0">
+          <span class="pz-ico">📄</span>
+          <span class="pz-main">Arraste a planilha aqui ou clique pra escolher (.xlsx)</span>
+          <span class="sub">No celular, toque pra escolher do arquivo.</span>
+          <input type="file" id="inPlan" accept=".xlsx,.xls" hidden="">
+        </div>
+        <div id="planInfo" class="info" hidden=""></div>
+        <p class="hint">Pode subir o <b>modelo pronto</b> (com as colunas ID ROTA e LINK) ou a <b>planilha de custos</b> que tenha a aba "Validação" — nesse caso o modelo é gerado sozinho, só com as rotas que têm pedágio.</p>
+      </section>
+
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">3</span>
+          <p class="step">Comprovantes com ID no nome do arquivo</p>
+          <button class="clearbtn" id="limpaImgs" type="button" title="Limpar só as imagens deste passo">Limpar</button>
+        </div>
+        <div class="pastezone" id="imgsZone" tabindex="0">
+          <span class="pz-ico">🖼️</span>
+          <span class="pz-main">Arraste as imagens aqui ou clique pra escolher (em lote)</span>
+          <span class="sub">Aceita várias de uma vez — imagens ou PDF.</span>
+          <input type="file" id="inImgs" accept="image/*,application/pdf" multiple="" hidden="">
+        </div>
+        <p class="hint">Cada arquivo nomeado com o <b>ID da rota</b> (ex.: <b>347222331.jpg</b>). Pode juntar vários pedágios numa imagem só.</p>
+        <div id="resumo" hidden=""></div>
+      </section>
+
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">4</span>
+          <p class="step">Comprovante sem ID? Associe aqui</p>
+          <button class="clearbtn" id="limpaOrf" type="button" title="Limpar as imagens coladas/arrastadas aqui">Limpar</button>
+        </div>
+        <div class="pastezone" id="pasteZone" tabindex="0">
+          <span class="pz-ico">📋</span>
+          <span class="pz-main">Clique aqui e cole (Ctrl+V) a imagem copiada do WhatsApp</span>
+          <span class="sub">…ou arraste arquivos pra cá. No celular, toque pra escolher da galeria.</span>
+          <input type="file" id="inOrphan" accept="image/*,application/pdf" multiple="" hidden="">
+        </div>
+        <p class="hint">Cada imagem vira um cartão abaixo. Clique em <b>Associar</b>, filtre pelo motorista e marque a(s) rota(s) dela — o mesmo comprovante pode valer pra mais de uma rota. Imagens do passo 3 que não casarem com nenhum ID também caem aqui.</p>
+        <div class="orphans" id="orphans"></div>
+      </section>
+
+      <section class="card" id="previewCard" hidden="">
+        <div class="step-head">
+          <span class="step-no step-no-soft">✓</span>
+          <p class="step">Conferência</p>
+        </div>
+        <label class="toggle"><input type="checkbox" id="soPend"> Mostrar só as rotas sem comprovante</label>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Data</th><th>ID rota</th><th>Motorista</th><th>Valor</th><th>Status</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="step-head">
+          <span class="step-no">5</span>
+          <p class="step">Enviar e baixar</p>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="btnEnviar" disabled="">Enviar comprovantes</button>
+          <button class="btn ghost" id="btnBaixar" disabled="">Baixar planilha preenchida</button>
+          <button class="btn ghost" id="btnRecuperar" type="button">Recuperar links do Drive</button>
+        </div>
+        <p class="hint">Se o envio falhar no meio, os arquivos que já subiram continuam no Drive. <b>Recuperar links do Drive</b> procura os IDs desta planilha lá e preenche a coluna LINK sem reenviar nada.</p>
+        <div id="recInfo" class="info" hidden=""></div>
+        <div id="progressWrap" hidden="">
+          <div class="bar-bg"><div id="bar"></div></div>
+          <div id="progTxt"></div>
+        </div>
+        <div id="doneMsg" hidden=""></div>
+      </section>
+    </section>
+
+    <section id="sec-consultar" hidden="">
+      <div class="tabs">
+        <button class="tab active" id="tabBuscar" type="button">Buscar por ID</button>
+        <button class="tab" id="tabConferir" type="button">Conferir vários IDs</button>
+        <button class="tab" id="tabPlanilha" type="button">Baixar planilha da quinzena</button>
+      </div>
+
+      <section class="card" id="cardBuscar">
+        <span class="lbl">Buscar pelo ID da rota</span>
+        <div class="searchrow">
+          <input id="q" type="text" placeholder="Digite o ID (ex.: 347222331)" autocomplete="off" inputmode="search">
+          <button class="btn primary" id="btnBuscar" type="button">Buscar</button>
+        </div>
+      </section>
+
+      <section class="card" id="cardConferir" hidden="">
+        <span class="lbl">Cole os IDs (um por linha, vírgula ou espaço)</span>
+        <textarea id="idsInput" rows="6" placeholder="347222331
+347222418
+347223005"></textarea>
+        <div class="confrow">
+          <button class="btn primary" id="btnConferir" type="button">Conferir</button>
+          <button class="btn ghost" id="btnLimparConf" type="button">Limpar</button>
+        </div>
+      </section>
+
+      <section class="card" id="cardPlanilha" hidden="">
+        <span class="lbl">Quinzena</span>
+        <div class="searchrow">
+          <select id="selPeriodo"><option value="">Carregando…</option></select>
+          <button class="btn primary" id="btnGerarPlan" type="button">Gerar planilha</button>
+          <button class="btn ghost" id="btnRecarregarPer" type="button">Recarregar lista</button>
+        </div>
+        <p class="hint">Gera um .xlsx com o ID da rota e o link de cada comprovante que está no Drive naquela quinzena. Serve pra auditoria e pra recuperar links de um envio antigo.</p>
+      </section>
+
+      <div id="status" class="status" hidden=""></div>
+      <div id="results"></div>
+    </section>
+  </div>
+
+  <!-- ===== overlays do envio ===== -->
+  <!-- Modal: associar comprovante às rotas -->
+  <div class="overlay" id="assocOverlay" hidden="">
+    <div class="modal">
+      <div class="mhead">
+        <h2>Associar comprovante às rotas</h2>
+        <button class="xbtn" id="assocClose" title="Fechar">×</button>
+      </div>
+      <div class="mbody">
+        <div class="mimg">
+          <img id="assocImg" alt="comprovante">
+          <div id="assocPdf" class="thumb pdfth" style="height:180px;border:1px solid var(--line);border-radius:10px" hidden="">📄 PDF</div>
+          <p class="hint">Clique na imagem pra ampliar. Compare a <b>data</b> e o <b>valor</b> do comprovante com as rotas ao lado.</p>
+        </div>
+        <div class="mlist">
+          <div class="row">
+            <div class="fld">
+              <label class="lbl" for="fMot">Motorista</label>
+              <input type="text" id="fMot" list="motList" placeholder="Digite pra filtrar…" autocomplete="off">
+              <datalist id="motList"></datalist>
+            </div>
+            <div class="fld">
+              <label class="lbl" for="fSvc">Base</label>
+              <select id="fSvc"></select>
+            </div>
+          </div>
+          <div class="tablewrap" style="max-height:300px">
+            <table>
+              <thead><tr><th></th><th>Data</th><th>ID rota</th><th>Valor</th></tr></thead>
+              <tbody id="assocBody"></tbody>
+            </table>
+          </div>
+          <p class="hint">Pode marcar mais de uma rota — o mesmo comprovante vale pra todas as marcadas.</p>
+        </div>
+      </div>
+      <div class="mfoot">
+        <span class="mcount" id="assocCount"></span>
+        <button class="btn ghost" id="assocCancel">Cancelar</button>
+        <button class="btn primary" id="assocOk">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" hidden=""><img id="lightboxImg" alt=""></div>
+
+  <!-- Tela de carregamento / conclusão do envio -->
+  <div class="overlay" id="sendOverlay" hidden="">
+    <div class="loadbox">
+      <!-- estado: enviando -->
+      <div id="sendingState">
+        <div class="spinner"></div>
+        <p class="loadtitle">Enviando comprovantes…</p>
+        <div class="bar-bg"><div id="sendBar"></div></div>
+        <p class="loadtxt" id="sendTxt">Preparando…</p>
+        <p class="loadhint">Não feche esta aba até terminar.</p>
+      </div>
+      <!-- estado: enviado (precisa baixar) -->
+      <div id="doneState" hidden="">
+        <div class="okcheck" id="doneIcon"><svg class="okcheck-svg" viewBox="0 0 52 52" aria-hidden="true"><path class="okcheck-path" d="M14 27l8 8 16-18"/></svg></div>
+        <p class="loadtitle" id="doneTitle">Comprovantes enviados!</p>
+        <p class="donewarn" id="doneWarn">Agora baixe a planilha — é nela que ficam todos os links. Os comprovantes vão pra uma pasta que você não acessa, então sem a planilha você perde os links.</p>
+        <button class="btn primary big" id="btnBaixarOverlay" type="button">Baixar planilha</button>
+        <button class="btn primary big" id="btnRecuperarOverlay" type="button" hidden="">Recuperar links do Drive</button>
+        <button class="btn ghost" id="btnFecharOverlay" type="button" hidden="">Fechar</button>
+        <p class="loadhint" id="doneHint">Esta tela fica aqui até você baixar a planilha.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== visualizador da consulta ===== -->
+  <div class="vmodal" id="modal" hidden="">
+    <div class="vmodal-card">
+      <div class="vmodal-head">
+        <span class="vmodal-title" id="modalTitle">Comprovante</span>
+        <div class="vmodal-acts">
+          <a class="btn ghost sm" id="modalBaixar" style="display:none">Baixar</a>
+          <button class="btn ghost sm" id="modalFechar" type="button">Fechar</button>
+        </div>
+      </div>
+      <div class="vmodal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+  // ---- troca entre as abas principais ----
+  (function(){
+    var tabs = document.querySelectorAll('.maintab');
+    function show(sec){
+      var enviar = document.getElementById('sec-enviar');
+      var consultar = document.getElementById('sec-consultar');
+      enviar.hidden    = (sec !== 'enviar');
+      consultar.hidden = (sec !== 'consultar');
+      var alvo = (sec === 'consultar') ? consultar : enviar;   // crossfade da seção que entra
+      alvo.style.animation = 'none'; void alvo.offsetWidth;
+      alvo.style.animation = 'tabSwap .34s var(--ease-out-expo)';
+      for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle('active', tabs[i].dataset.sec === sec);
+    }
+    for(var i=0;i<tabs.length;i++){
+      tabs[i].addEventListener('click', (function(t){ return function(){ show(t.dataset.sec); }; })(tabs[i]));
+    }
+    // a cascata de entrada dos cards roda só uma vez (não repete ao trocar de aba)
+    window.addEventListener('load', function(){
+      setTimeout(function(){
+        var cs = document.querySelectorAll('.card');
+        for(var i=0;i<cs.length;i++) cs[i].style.animation = 'none';
+      }, 1300);
+    });
+    // ripple ao clicar em qualquer botão
+    document.addEventListener('click', function(e){
+      var t = e.target, b = (t && t.closest) ? t.closest('.btn') : null;
+      if(!b) return;
+      var rect = b.getBoundingClientRect(), d = Math.max(rect.width, rect.height);
+      var s = document.createElement('span'); s.className = 'ripple';
+      s.style.width = s.style.height = d + 'px';
+      s.style.left = (e.clientX - rect.left - d/2) + 'px';
+      s.style.top  = (e.clientY - rect.top  - d/2) + 'px';
+      b.appendChild(s);
+      setTimeout(function(){ if(s.parentNode) s.parentNode.removeChild(s); }, 650);
+    }, true);
+  })();
+  </script>
+
+  <!-- ===== ponte com a API do Drive (Apps Script) via fetch ===== -->
+  <script>
+  var API_URL = 'https://script.google.com/macros/s/AKfycbz0oEfvSev744cn4mJgxQxpYkFTXmGwLiv99lBdKStiK8ANudQAwgqq7tyZoFU1FnDCJQ/exec';
+  var API_TIMEOUT_MS = 60000;   // se o Drive não responder nesse tempo, desiste e tenta de novo
+
+  // Traduz a falha técnica pra uma frase que diz o que fazer.
+  function erroAmigavel(err){
+    var m = String((err && err.message) || err || '');
+    if(/TEMPO_ESGOTADO/.test(m)) return 'O Drive não respondeu a tempo.';
+    if(/BLOQUEADO/.test(m)) return 'O navegador bloqueou a resposta do Drive. Quase sempre é bloqueador de anúncios ou bloqueio de cookies de terceiros nesta página.';
+    return m || 'Erro desconhecido.';
+  }
+
+  function apiUmaVez(corpo){
+    var ctrl  = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, API_TIMEOUT_MS) : null;
+    var opts  = { method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' }, body: corpo };
+    if(ctrl) opts.signal = ctrl.signal;
+    return fetch(API_URL, opts).then(function(r){
+      if(timer) clearTimeout(timer);
+      return r.text().then(function(txt){
+        if(!r.ok) throw new Error('BLOQUEADO: o servidor respondeu ' + r.status + '.');
+        var res;
+        try { res = JSON.parse(txt); }
+        catch(e){ throw new Error('BLOQUEADO: a resposta não veio em JSON.'); }
+        if(res && res.__erro) throw new Error(res.__erro);
+        return res;
+      });
+    }, function(err){
+      if(timer) clearTimeout(timer);
+      if(err && err.name === 'AbortError') throw new Error('TEMPO_ESGOTADO');
+      throw new Error('BLOQUEADO: ' + String((err && err.message) || err));
+    });
+  }
+
+  // Reenvia até "max" vezes com espera crescente. O upload é idempotente lá no
+  // Apps Script (ele apaga o arquivo antigo do mesmo ID antes de gravar), então
+  // repetir não duplica comprovante.
+  function api(acao, dados, max){
+    var corpo = JSON.stringify(Object.assign({ acao: acao }, dados || {}));
+    max = max || 3;
+    function tenta(n){
+      return apiUmaVez(corpo).catch(function(err){
+        if(n >= max) throw new Error(erroAmigavel(err));
+        return new Promise(function(res){ setTimeout(res, 700 * n); }).then(function(){ return tenta(n + 1); });
+      });
+    }
+    return tenta(1);
+  }
+
+  // Ping rápido: descobre se o navegador deixa a resposta chegar, antes de subir 40 arquivos.
+  function checarConexao(){
+    return api('', {}, 1)
+      .then(function(res){ return { ok: !!(res && res.ok) }; })
+      .catch(function(e){ return { ok:false, msg:String((e && e.message) || e) }; });
+  }
+  window.PedagiosApi = { chamar: api, checar: checarConexao };
+
+  // Emula google.script.run apontando pra api() — o código existente continua igual.
+  (function(){
+    var ACOES = { uploadComprovante:'upload', listarPeriodos:'listarPeriodos', buscarPorId:'buscar',
+                  listarPorPeriodo:'listarPorPeriodo', conferirIds:'conferir', getThumb:'thumb', getArquivo:'arquivo' };
+    var TENTATIVAS = { uploadComprovante:3, conferirIds:3, listarPeriodos:2, listarPorPeriodo:2, buscarPorId:2, getArquivo:2, getThumb:1 };
+    var ARGS = {
+      uploadComprovante: function(a){ return a[0]; },
+      listarPeriodos:    function(){ return {}; },
+      buscarPorId:       function(a){ return { texto: a[0] }; },
+      listarPorPeriodo:  function(a){ return { folderId: a[0] }; },
+      conferirIds:       function(a){ return { ids: a[0] }; },
+      getThumb:          function(a){ return { fileId: a[0] }; },
+      getArquivo:        function(a){ return { fileId: a[0] }; }
+    };
+    function makeRunner(){
+      var onOk = function(){}, onErr = function(){};
+      var runner = {
+        withSuccessHandler: function(fn){ if (fn) onOk = fn; return runner; },
+        withFailureHandler: function(fn){ if (fn) onErr = fn; return runner; }
+      };
+      Object.keys(ACOES).forEach(function(fname){
+        runner[fname] = function(){ api(ACOES[fname], ARGS[fname](arguments), TENTATIVAS[fname]).then(onOk).catch(onErr); };
+      });
+      return runner;
+    }
+    window.google = window.google || {};
+    window.google.script = window.google.script || {};
+    Object.defineProperty(window.google.script, 'run', { get: makeRunner, configurable: true });
+  })();
+  </script>
+
+  <!-- ===== gerador de planilhas (usado pelo envio e pela consulta) ===== -->
+  <script>
+  var XlsxOut = (function(){
+    function borda(){ var l = { style:'thin', color:{ rgb:'D9D9D9' } }; return { top:l, bottom:l, left:l, right:l }; }
+    var CAB = { fill:{ patternType:'solid', fgColor:{ rgb:'1F4E79' } },
+                font:{ color:{ rgb:'FFFFFF' }, bold:true, sz:11 },
+                alignment:{ horizontal:'center', vertical:'center', wrapText:true }, border:borda() };
+
+    function larguras(aoa, opts){
+      var cols = aoa[0] || [];
+      return cols.map(function(_, c){
+        var max = String(cols[c]).length;
+        for(var i = 1; i < aoa.length; i++){
+          var v = aoa[i][c];
+          if(opts.formatos && opts.formatos[c] && typeof v === 'number'){
+            v = (opts.formatos[c].indexOf('R$') >= 0) ? 'R$ 000.000,00' : '00/00/0000';
+          }
+          var len = String(v == null ? '' : v).length;
+          if(len > max) max = len;
+        }
+        var w = max + 2;
+        if(opts.links && opts.links.indexOf(c) >= 0) w = Math.min(w, 46);
+        return { wch: Math.min(Math.max(w, 8), 46) };
+      });
+    }
+
+    function folha(aoa, opts){
+      opts = opts || {};
+      var alinha = opts.alinha || [], cols = aoa[0] || [];
+      var ws = XLSX.utils.aoa_to_sheet(aoa);
+      for(var c = 0; c < cols.length; c++){
+        var a = XLSX.utils.encode_cell({ r:0, c:c }); if(ws[a]) ws[a].s = CAB;
+      }
+      for(var i = 1; i < aoa.length; i++){
+        for(var k = 0; k < cols.length; k++){
+          var ref = XLSX.utils.encode_cell({ r:i, c:k }), cel = ws[ref];
+          if(!cel) continue;
+          cel.s = { alignment:{ horizontal: alinha[k] || 'left', vertical:'center' }, border:borda() };
+          if(opts.formatos && opts.formatos[k] && cel.t === 'n') cel.z = opts.formatos[k];
+          if(opts.links && opts.links.indexOf(k) >= 0 && typeof cel.v === 'string' && /^https?:\/\//i.test(cel.v)){
+            cel.l = { Target: cel.v };
+            cel.s.font = { color:{ rgb:'0563C1' }, underline:true };
+          }
+        }
+      }
+      ws['!cols'] = larguras(aoa, opts);
+      ws['!rows'] = aoa.map(function(_, i){ return { hpt: i === 0 ? 24 : 18 }; });
+      return ws;
+    }
+
+    function baixar(aoa, opts, nomeArquivo, nomeAba){
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, folha(aoa, opts), nomeAba || 'Pedágios');
+      var out  = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+      var blob = new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = String(nomeArquivo || 'planilha').replace(/[\\\/:*?"<>|]/g, '-') + '.xlsx';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+    }
+
+    // O Apps Script devolve o fileId; o link do Drive é montado a partir dele.
+    function linkDoArquivo(fileId){ return 'https://drive.google.com/file/d/' + fileId + '/view?usp=drivesdk'; }
+
+    return { folha: folha, baixar: baixar, linkDoArquivo: linkDoArquivo };
+  })();
+  </script>
+
+  <!-- ===== app: enviar ===== -->
+  <script>
+  (function(){
+
+    const $ = (id) => document.getElementById(id);
+    let wb = null, ws = null, sheetName = '';
+    let colId = -1, colLink = -1, colMot = -1, colValor = -1, colData = -1, colSvc = -1;
+    let rows = [];          // { r, id, mot, svc, dataRaw, valor, temLink, enviado }
+    let imagesById = {};    // id -> File (casamento automático pelo nome do arquivo)
+    let orphans = [];       // imagens sem ID: { key, name, file, url, origem, ids:Set }
+    let manualById = {};    // id da rota -> órfã associada à mão
+    let orphSeq = 1, assocAlvo = null, selTemp = new Set();
+    let originalName = 'pedagios.xlsx';
+    let pendenteBaixar = false;   // virou true ao terminar o envio; trava saída até baixar
+    let baixou = false;           // virou true quando a planilha é baixada
+    let validadorPredominante = ''; // validador que mais aparece (modelo gerado da validação)
+    let nomeGerado = false;         // true quando o modelo foi gerado a partir da aba "Validação"
+
+    // ---- links já confirmados, guardados no navegador (rede de segurança) ----
+    const LS_LINKS = 'pedagios_links_v1';
+    function salvarLink(periodo, id, url){
+      try{
+        const m = JSON.parse(localStorage.getItem(LS_LINKS) || '{}');
+        (m[periodo] = m[periodo] || {})[id] = url;
+        localStorage.setItem(LS_LINKS, JSON.stringify(m));
+      }catch(e){}
+    }
+    function linksSalvos(periodo){
+      try{ return JSON.parse(localStorage.getItem(LS_LINKS) || '{}')[periodo] || {}; }catch(e){ return {}; }
+    }
+
+    // ---- período ----
+    function anosOptions(){
+      const y = new Date().getFullYear();
+      [y-1, y, y+1].forEach(a => { const o = document.createElement('option'); o.value = String(a); o.textContent = a; if(a===y) o.selected = true; $('ano').appendChild(o); });
+    }
+    function periodoFolder(){
+      const ano = $('ano').value, mes = $('mes').value, q = $('quinzena').value;
+      if(!ano || !mes || !q) return '';
+      return ano + '-' + mes + ' - ' + q + 'ª quinzena';
+    }
+    function atualizaExemplo(){ $('folderEx').textContent = periodoFolder() || '—'; }
+    ['ano','mes','quinzena'].forEach(id => $(id).addEventListener('change', atualizaExemplo));
+
+    // ---- util ----
+    function extDe(name){ const m = String(name).match(/\.([^.]+)$/); return m ? m[1].toLowerCase() : ''; }
+    function baseDe(name){ return String(name).replace(/\.[^.]+$/, '').trim(); }
+    function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+    function formatValor(v){ const n = Number(v); return isNaN(n) || v==='' ? escapeHtml(v) : 'R$ ' + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function lerBase64(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(file); }); }
+
+    // Data da planilha pode vir como número serial do Excel — converte pra dd/mm/aaaa.
+    function fmtData(v){
+      if(v === '' || v == null) return '';
+      const n = Number(v);
+      if(!isNaN(n) && n > 20000){ try{ return XLSX.SSF.format('dd/mm/yyyy', n); }catch(e){} }
+      return String(v);
+    }
+
+    // Comprime uma vez só, mesmo que a órfã esteja associada a várias rotas.
+    // Se falhar, limpa o cache pra próxima tentativa poder recomeçar.
+    function comprimirFonte(fonte){
+      if(fonte && fonte.file){            // órfã (associada à mão)
+        if(!fonte._comp){
+          fonte._comp = comprimir(fonte.file);
+          fonte._comp.catch(function(){ fonte._comp = null; });
+        }
+        return fonte._comp;
+      }
+      return comprimir(fonte);            // File casado pelo nome
+    }
+
+    // Prepara o arquivo pra subir. Resolve OU rejeita sempre — nunca fica pendurada.
+    function comprimir(file){
+      const NOME = (file && file.name) || 'sem nome';
+      return new Promise((resolve, reject) => {
+        let pronto = false;
+        const guarda = setTimeout(() => falha(new Error('O arquivo "' + NOME + '" demorou demais pra ser preparado.')), 20000);
+        function ok(v){ if(pronto) return; pronto = true; clearTimeout(guarda); resolve(v); }
+        function falha(e){ if(pronto) return; pronto = true; clearTimeout(guarda); reject(e); }
+        function cru(){
+          lerBase64(file)
+            .then(b => ok({ base64:b, mime:file.type||'application/octet-stream', ext:extDe(file.name)||'bin' }))
+            .catch(() => falha(new Error('Não consegui ler o arquivo "' + NOME + '".')));
+        }
+        if(!/^image\//.test(file.type || '')){ cru(); return; }
+        const img = new Image(); const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          try{
+            const max = 1600; let w = img.width, h = img.height;
+            if(!w || !h){ cru(); return; }
+            if(w > max || h > max){ const r = Math.min(max/w, max/h); w = Math.round(w*r); h = Math.round(h*r); }
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            const durl = c.toDataURL('image/jpeg', 0.72);
+            ok({ base64: durl.split(',')[1], mime: 'image/jpeg', ext: 'jpg' });
+          }catch(e){ cru(); }
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); cru(); };
+        img.src = url;
+      });
+    }
+
+    function ensureRef(sheet, r, c){
+      const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+      if(r > range.e.r) range.e.r = r;
+      if(c > range.e.c) range.e.c = c;
+      sheet['!ref'] = XLSX.utils.encode_range(range);
+    }
+
+    // ============================================================
+    // Gerar o modelo de pedágios a partir da aba "Validação"
+    // (rotas com Pedágios (+) > 0; veículo vem da aba "Base de Custo")
+    // ============================================================
+    function norm(s){ return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase(); }
+    function acharCabecalho(aoa, obrig){
+      for(let i = 0; i < Math.min(aoa.length, 8); i++){
+        const h = (aoa[i] || []).map(norm);
+        if(obrig.every(nomes => nomes.some(n => h.indexOf(norm(n)) >= 0))) return i;
+      }
+      return -1;
+    }
+    function idxCol(hN, nomes){ for(const nome of nomes){ const k = hN.indexOf(norm(nome)); if(k >= 0) return k; } return -1; }
+
+    function quinzenaCurta(){
+      const ano = $('ano').value, mes = $('mes').value, q = $('quinzena').value;
+      return q + 'Q' + mes + ' ' + ano;            // ex.: 1Q05 2026
+    }
+    function nomeModeloGerado(){
+      return 'Pedágios - ' + (validadorPredominante ? validadorPredominante + ' - ' : '') + quinzenaCurta();
+    }
+
+    function gerarModeloDaValidacao(workbook){
+      const nomeVal = workbook.SheetNames.find(n => norm(n) === 'validacao');
+      if(!nomeVal) return { erro: 'Não achei a aba "Validação" no arquivo.' };
+      const aoaV = XLSX.utils.sheet_to_json(workbook.Sheets[nomeVal], { header:1, defval:'' });
+      const hrV = acharCabecalho(aoaV, [['ID Rota'], ['Pedágios (+)','Pedagios (+)']]);
+      if(hrV < 0) return { erro: 'Não achei o cabeçalho (ID Rota / Pedágios (+)) na aba "Validação".' };
+      const hV = (aoaV[hrV] || []).map(norm);
+      const cId  = idxCol(hV, ['ID Rota']);
+      const cPed = idxCol(hV, ['Pedágios (+)','Pedagios (+)']);
+      const cVal = idxCol(hV, ['Validador']);
+      const cSvc = idxCol(hV, ['Service Center']);
+      const cPla = idxCol(hV, ['Placa']);
+      const cMot = idxCol(hV, ['Motorista']);
+      const cDat = idxCol(hV, ['Data']);
+
+      // mapa ID Rota -> tipo de veículo (coluna "Perfil" da aba "Base de Custo")
+      const veic = {};
+      const nomeBC = workbook.SheetNames.find(n => norm(n) === 'base de custo');
+      if(nomeBC){
+        const aoaB = XLSX.utils.sheet_to_json(workbook.Sheets[nomeBC], { header:1, defval:'' });
+        const hrB = acharCabecalho(aoaB, [['ID Rota'], ['Perfil']]);
+        if(hrB >= 0){
+          const hB = (aoaB[hrB] || []).map(norm);
+          const bId = idxCol(hB, ['ID Rota']), bPer = idxCol(hB, ['Perfil']);
+          for(let i = hrB + 1; i < aoaB.length; i++){
+            const id = String(aoaB[i][bId] == null ? '' : aoaB[i][bId]).trim();
+            if(id && veic[id] === undefined) veic[id] = String(aoaB[i][bPer] == null ? '' : aoaB[i][bPer]).trim();
+          }
+        }
+      }
+
+      const head = ['DATA','ID ROTA','SVC','PLACA','VEICULO','MOTORISTA','LINK','VALOR'];
+      const linhas = [head];
+      const cont = {};
+      for(let i = hrV + 1; i < aoaV.length; i++){
+        const row = aoaV[i]; if(!row) continue;
+        const id = String(row[cId] == null ? '' : row[cId]).trim(); if(!id) continue;
+        let ped = row[cPed]; ped = (ped === '' || ped == null) ? 0 : Number(ped);
+        if(!(ped > 0)) continue;                       // só rotas com pedágio
+        const validador = cVal >= 0 ? String(row[cVal] == null ? '' : row[cVal]).trim() : '';
+        if(validador) cont[validador] = (cont[validador] || 0) + 1;
+        linhas.push([
+          cDat >= 0 ? row[cDat] : '',                  // serial de data (numérico)
+          id,
+          cSvc >= 0 ? String(row[cSvc] == null ? '' : row[cSvc]).trim() : '',
+          cPla >= 0 ? String(row[cPla] == null ? '' : row[cPla]).trim() : '',
+          veic[id] || '',                              // tipo de veículo
+          cMot >= 0 ? String(row[cMot] == null ? '' : row[cMot]).trim() : '',
+          '',                                          // LINK vazio (preenchido ao enviar)
+          ped                                          // VALOR = valor do pedágio
+        ]);
+      }
+      if(linhas.length <= 1) return { erro: 'Nenhuma rota com pedágio (Pedágios (+) > 0) na aba "Validação".' };
+
+      let validador = '', max = -1;                    // validador predominante
+      Object.keys(cont).forEach(k => { if(cont[k] > max){ max = cont[k]; validador = k; } });
+
+      const wsGen = XLSX.utils.aoa_to_sheet(linhas);
+      const nwb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(nwb, wsGen, 'Pedágios');
+      return { wb: nwb, validador: validador, count: linhas.length - 1 };
+    }
+
+    // ---- 2. ler planilha (clique ou arrastar) ----
+    function lerPlanilha(file){
+      if(!file) return;
+      if(!/\.(xlsx|xls)$/i.test(file.name || '')){ setPlanInfo('erro', 'O arquivo precisa ser .xlsx ou .xls.'); return; }
+      originalName = file.name;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try{
+          wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
+
+          // Detecta a planilha de validação e gera o modelo de pedágios automaticamente;
+          // se não tiver a aba "Validação", trata o arquivo como modelo pronto (igual antes).
+          nomeGerado = false; validadorPredominante = '';
+          if(wb.SheetNames.some(n => norm(n) === 'validacao')){
+            const g = gerarModeloDaValidacao(wb);
+            if(g.erro){ setPlanInfo('erro', g.erro); rows = []; return; }
+            wb = g.wb;
+            nomeGerado = true;
+            validadorPredominante = g.validador || '';
+            originalName = nomeModeloGerado();
+          }
+
+          sheetName = escolherAba();
+          ws = wb.Sheets[sheetName];
+          const aoa = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+          const header = (aoa[0] || []).map(c => String(c).trim().toUpperCase());
+          colId = header.indexOf('ID ROTA'); colLink = header.indexOf('LINK');
+          colMot = header.indexOf('MOTORISTA'); colValor = header.indexOf('VALOR');
+          colData = header.indexOf('DATA'); colSvc = header.indexOf('SVC');
+          const colPlaca = header.indexOf('PLACA'), colVeiculo = header.indexOf('VEICULO');
+          if(colId < 0 || colLink < 0){ setPlanInfo('erro', 'Não encontrei as colunas "ID ROTA" e "LINK" na planilha.'); rows = []; return; }
+          rows = [];
+          for(let i = 1; i < aoa.length; i++){
+            const id = String(aoa[i][colId] == null ? '' : aoa[i][colId]).trim();
+            if(!id) continue;
+            rows.push({
+              r:i, id:id,
+              mot:   colMot   >= 0 ? String(aoa[i][colMot]).trim()  : '',
+              svc:   colSvc   >= 0 ? String(aoa[i][colSvc]).trim()  : '',
+              dataRaw: colData >= 0 ? aoa[i][colData] : '',
+              placa:   colPlaca   >= 0 ? String(aoa[i][colPlaca]).trim()   : '',
+              veiculo: colVeiculo >= 0 ? String(aoa[i][colVeiculo]).trim() : '',
+              valor: colValor >= 0 ? aoa[i][colValor] : '',
+              link:    String(colLink >= 0 && aoa[i][colLink] != null ? aoa[i][colLink] : '').trim(),
+              temLink: String(colLink >= 0 ? aoa[i][colLink] : '').trim() !== '',
+              enviado: false
+            });
+          }
+
+          // Reaproveita links que este navegador já confirmou nesta quinzena.
+          const salvos = linksSalvos(periodoFolder());
+          let reaproveitados = 0;
+          rows.forEach(r => { if(!r.link && salvos[r.id]){ r.link = salvos[r.id]; r.temLink = true; reaproveitados++; } });
+          if(reaproveitados) $('btnBaixar').disabled = false;
+
+          const extra = reaproveitados ? ' · ' + reaproveitados + ' link(s) recuperado(s) deste navegador' : '';
+          if(nomeGerado){
+            setPlanInfo('ok', 'Modelo gerado da validação: ' + rows.length + ' rota(s) com pedágio' +
+              (validadorPredominante ? ' · validador: ' + validadorPredominante : '') + extra + '.');
+          } else {
+            setPlanInfo('ok', rows.length + ' linha(s) lida(s) da aba "' + sheetName + '"' + extra + '.');
+          }
+          populaFiltros();
+          limpaAssociacoesInvalidas();
+          triarImagensSemId();
+          renderOrphans();
+          casar();
+        }catch(err){ setPlanInfo('erro', 'Erro ao ler a planilha: ' + err.message); }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // entrada da planilha: clicar pra escolher, ou arrastar o arquivo pra cima da área
+    const planZone = $('planZone');
+    planZone.addEventListener('click', () => $('inPlan').click());
+    planZone.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('inPlan').click(); } });
+    ['dragover','dragenter'].forEach(ev => planZone.addEventListener(ev, (e) => { e.preventDefault(); planZone.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev => planZone.addEventListener(ev, (e) => { e.preventDefault(); planZone.classList.remove('drag'); }));
+    planZone.addEventListener('drop', (e) => { lerPlanilha([...(e.dataTransfer.files || [])][0]); });
+    $('inPlan').addEventListener('click', (e) => e.stopPropagation());
+    $('inPlan').addEventListener('change', (e) => { lerPlanilha(e.target.files[0]); e.target.value = ''; });
+
+    function escolherAba(){
+      for(const nome of wb.SheetNames){
+        const aoa = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header:1, defval:'' });
+        const h = (aoa[0] || []).map(c => String(c).trim().toUpperCase());
+        if(h.indexOf('ID ROTA') >= 0 && h.indexOf('LINK') >= 0) return nome;
+      }
+      return wb.SheetNames[0];
+    }
+
+    // ---- 3. imagens com ID (clique ou arrastar) ----
+    function ehImagemOuPdf(f){
+      return /^image\//.test(f.type) || f.type === 'application/pdf' || /\.(png|jpe?g|gif|webp|bmp|heic|heif|pdf)$/i.test(f.name || '');
+    }
+    function processarImagens(files){
+      const lista = [...(files || [])];
+      if(!lista.length) return;
+      imagesById = {};
+      descartaOrfasDoLote();
+      lista.forEach(f => { imagesById[baseDe(f.name)] = f; });
+      triarImagensSemId();
+      renderOrphans();
+      casar();
+    }
+
+    // entrada das imagens: clicar pra escolher, ou arrastar os arquivos pra cima da área
+    const imgsZone = $('imgsZone');
+    imgsZone.addEventListener('click', () => $('inImgs').click());
+    imgsZone.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('inImgs').click(); } });
+    ['dragover','dragenter'].forEach(ev => imgsZone.addEventListener(ev, (e) => { e.preventDefault(); imgsZone.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev => imgsZone.addEventListener(ev, (e) => { e.preventDefault(); imgsZone.classList.remove('drag'); }));
+    imgsZone.addEventListener('drop', (e) => { processarImagens([...(e.dataTransfer.files || [])].filter(ehImagemOuPdf)); });
+    $('inImgs').addEventListener('click', (e) => e.stopPropagation());
+    $('inImgs').addEventListener('change', (e) => { processarImagens(e.target.files); e.target.value = ''; });
+
+    // Imagens do lote cujo nome não bate com nenhum ID viram cartões no passo 4.
+    function triarImagensSemId(){
+      if(!rows.length) return;
+      const idsLinhas = new Set(rows.map(r => r.id));
+      Object.keys(imagesById).forEach(k => {
+        if(!idsLinhas.has(k)){ addOrphan(imagesById[k], 'lote'); delete imagesById[k]; }
+      });
+    }
+    function descartaOrfasDoLote(){
+      orphans.filter(o => o.origem === 'lote').forEach(o => {
+        o.ids.forEach(id => { if(manualById[id] === o) delete manualById[id]; });
+        URL.revokeObjectURL(o.url);
+      });
+      orphans = orphans.filter(o => o.origem !== 'lote');
+    }
+    function limpaAssociacoesInvalidas(){
+      const idsLinhas = new Set(rows.map(r => r.id));
+      Object.keys(manualById).forEach(id => {
+        if(!idsLinhas.has(id)){ const o = manualById[id]; if(o) o.ids.delete(id); delete manualById[id]; }
+      });
+    }
+
+    // ---- casar ----
+    function casar(){
+      if(!rows.length) return;
+      let comImg = 0, manuais = 0, jaLink = 0;
+      rows.forEach(r => {
+        if(imagesById[r.id]) comImg++;
+        else if(manualById[r.id]) manuais++;
+        else if(r.temLink) jaLink++;
+      });
+      const pend = rows.length - comImg - manuais - jaLink;
+      const orfSem = orphans.filter(o => !o.ids.size).length;
+      $('resumo').hidden = false;
+      $('resumo').innerHTML =
+        '<b>' + (comImg + manuais) + '</b> com comprovante' + (manuais ? ' (' + manuais + ' associado(s) à mão)' : '') +
+        ' &nbsp;·&nbsp; <b>' + pend + '</b> pendente(s)' +
+        (jaLink ? ' &nbsp;·&nbsp; <b>' + jaLink + '</b> já tinha(m) link' : '') +
+        (orfSem ? ' &nbsp;·&nbsp; <b>' + orfSem + '</b> imagem(ns) no passo 4 aguardando associação' : '');
+      renderTabela();
+      $('btnEnviar').disabled = (comImg + manuais) === 0;
+    }
+
+    function renderTabela(){
+      $('previewCard').hidden = false;
+      const soP = $('soPend').checked;
+      const tb = $('tbody'); tb.innerHTML = '';
+      rows.forEach((r, idx) => {
+        const temImg = !!imagesById[r.id];
+        const temMan = !temImg && !!manualById[r.id];
+        const pend = !temImg && !temMan && !r.temLink && !r.enviado;
+        if(soP && !pend) return;
+        const tr = document.createElement('tr'); tr.id = 'row-' + r.id;
+        tr.style.animationDelay = (Math.min(idx,14) * 0.03) + 's';
+        let st;
+        if(r.recuperado)   st = '<span class="badge done">link recuperado ✓</span>';
+        else if(r.enviado) st = '<span class="badge done">enviado ✓</span>';
+        else if(temImg)    st = '<span class="badge ok">imagem pronta</span>';
+        else if(temMan)    st = '<span class="badge ok">associada à mão</span>';
+        else if(r.temLink) st = '<span class="badge done">já tem link</span>';
+        else               st = '<span class="badge none">sem comprovante</span>';
+        tr.innerHTML =
+          '<td>' + escapeHtml(fmtData(r.dataRaw)) + '</td>' +
+          '<td>' + escapeHtml(r.id) + '</td>' +
+          '<td>' + escapeHtml(r.mot || '') + '</td>' +
+          '<td style="text-align:right">' + formatValor(r.valor) + '</td>' +
+          '<td class="st">' + st + '</td>';
+        tb.appendChild(tr);
+      });
+    }
+    $('soPend').addEventListener('change', renderTabela);
+    function setStatus(id, html){ const tr = $('row-' + id); if(tr){ const c = tr.querySelector('.st'); if(c) c.innerHTML = html; } }
+    function badgeErro(msg){ return '<span class="badge err" title="' + escapeHtml(msg) + '">erro</span>'; }
+
+    // ---- limpar tudo (sem precisar atualizar a página) ----
+    function limpar(){
+      const temAlgo = rows.length || Object.keys(imagesById).length || orphans.length;
+      if(temAlgo && !confirm('Limpar a planilha e os comprovantes carregados?\n\nO período (ano/mês/quinzena) continua como está.')) return;
+      orphans.forEach(o => { try{ URL.revokeObjectURL(o.url); }catch(e){} });
+      wb = ws = null; sheetName = '';
+      colId = colLink = colMot = colValor = colData = colSvc = -1;
+      rows = []; imagesById = {}; orphans = []; manualById = {};
+      orphSeq = 1; assocAlvo = null; selTemp = new Set();
+      originalName = 'pedagios.xlsx';
+      ['inPlan','inImgs','inOrphan'].forEach(id => { if($(id)) $(id).value = ''; });
+      $('planInfo').hidden = true; $('planInfo').textContent = ''; $('planInfo').className = 'info';
+      $('recInfo').hidden = true; $('recInfo').textContent = ''; $('recInfo').className = 'info';
+      $('resumo').hidden = true; $('resumo').innerHTML = '';
+      $('previewCard').hidden = true; $('tbody').innerHTML = '';
+      $('orphans').innerHTML = '';
+      $('progressWrap').hidden = true; $('bar').style.width = '0';
+      $('doneMsg').hidden = true; $('doneMsg').textContent = ''; $('doneMsg').className = '';
+      $('btnEnviar').disabled = true; $('btnBaixar').disabled = true;
+      pendenteBaixar = false; baixou = false;
+    }
+    $('btnLimpar').addEventListener('click', limpar);
+
+    // limpar só a planilha (mantém os comprovantes já carregados)
+    function limparPlanilha(){
+      if(rows.length && !confirm('Limpar só a planilha? Os comprovantes carregados continuam.')) return;
+      wb = ws = null; sheetName = '';
+      colId = colLink = colMot = colValor = colData = colSvc = -1;
+      rows = []; manualById = {};
+      // devolve as imagens do passo 3 (lote) pro pool, pra re-casarem com a próxima planilha
+      orphans.filter(o => o.origem === 'lote').forEach(o => { imagesById[baseDe(o.name)] = o.file; URL.revokeObjectURL(o.url); });
+      orphans = orphans.filter(o => o.origem !== 'lote');
+      // as coladas/arrastadas (passo 4) ficam, mas perdem a associação (as rotas mudaram)
+      orphans.forEach(o => { o.ids = new Set(); });
+      $('inPlan').value = '';
+      $('planInfo').hidden = true; $('planInfo').textContent = ''; $('planInfo').className = 'info';
+      $('recInfo').hidden = true; $('recInfo').textContent = ''; $('recInfo').className = 'info';
+      $('previewCard').hidden = true; $('tbody').innerHTML = '';
+      $('btnEnviar').disabled = true; $('btnBaixar').disabled = true;
+      renderOrphans();
+    }
+    // limpar só as imagens do passo 3 (auto pelo nome + as que sobraram do lote)
+    function limparImagens(){
+      const temLote = Object.keys(imagesById).length || orphans.some(o => o.origem === 'lote');
+      if(temLote && !confirm('Limpar só as imagens do passo 3?')) return;
+      imagesById = {};
+      descartaOrfasDoLote();
+      $('inImgs').value = '';
+      $('resumo').hidden = true; $('resumo').innerHTML = '';
+      renderOrphans();
+      casar();
+    }
+    // limpar só as imagens coladas/arrastadas no passo 4
+    function limparOrfas(){
+      const alvos = orphans.filter(o => o.origem !== 'lote');
+      if(alvos.length && !confirm('Limpar as imagens coladas/arrastadas no passo 4?')) return;
+      alvos.forEach(o => {
+        o.ids.forEach(id => { if(manualById[id] === o) delete manualById[id]; });
+        URL.revokeObjectURL(o.url);
+      });
+      orphans = orphans.filter(o => o.origem === 'lote');
+      $('inOrphan').value = '';
+      renderOrphans();
+      casar();
+    }
+    $('limpaPlan').addEventListener('click', limparPlanilha);
+    $('limpaImgs').addEventListener('click', limparImagens);
+    $('limpaOrf').addEventListener('click', limparOrfas);
+
+    // ---- aviso de conexão bloqueada ----
+    function mostraAviso(msg){
+      $('netAlert').hidden = false;
+      $('netAlertMsg').textContent = msg + ' Os arquivos até sobem, mas o link não volta pra planilha. Desative o bloqueador de anúncios nesta página (ou libere cookies de terceiros) e teste de novo.';
+    }
+    function testarConexao(silencioso){
+      const b = $('btnTestarConexao');
+      b.disabled = true; b.textContent = 'Testando…';
+      return PedagiosApi.checar().then(r => {
+        b.disabled = false; b.textContent = 'Testar de novo';
+        if(r.ok){ $('netAlert').hidden = true; if(!silencioso) alert('Conexão com o Drive funcionando normalmente.'); }
+        else mostraAviso(r.msg);
+        return r;
+      });
+    }
+    $('btnTestarConexao').addEventListener('click', () => testarConexao(false));
+
+    // ---- enviar ----
+    $('btnEnviar').addEventListener('click', enviar);
+    async function enviar(){
+      const periodo = periodoFolder();
+      if(!periodo){ alert('Escolha o período (Ano, Mês e Quinzena) antes de enviar.'); return; }
+
+      const alvo = rows.filter(r => imagesById[r.id] || manualById[r.id]);
+      if(!alvo.length){ alert('Nenhum comprovante pronto pra enviar.'); return; }
+
+      if(!confirm('⚠️ CONFIRME A QUINZENA\n\nVocê vai enviar ' + alvo.length + ' comprovante(s) para:\n\n📁  ' + periodo + '\n\nSe a quinzena estiver errada, clique em Cancelar e ajuste o Período (passo 1).')){ return; }
+
+      // Testa a conexão ANTES de subir tudo — é o que evita o envio inteiro voltar como erro.
+      $('btnEnviar').disabled = true;
+      const teste = await PedagiosApi.checar();
+      if(!teste.ok){
+        mostraAviso(teste.msg);
+        $('btnEnviar').disabled = false;
+        if(!confirm('O navegador está bloqueando a resposta do Drive.\n\n' + teste.msg + '\n\nSe enviar assim, os arquivos podem subir mas os links não voltam pra planilha.\n\nQuer tentar mesmo assim?')) return;
+        $('btnEnviar').disabled = true;
+      } else {
+        $('netAlert').hidden = true;
+      }
+
+      $('progressWrap').hidden = false;
+      $('doneMsg').hidden = true; $('doneMsg').className = '';
+      $('sendBar').style.width = '0';
+      $('bar').style.width = '0';
+      $('sendTxt').textContent = 'Preparando… (0 / ' + alvo.length + ')';
+      $('doneIcon').className = 'okcheck';
+      $('doneIcon').innerHTML = '<svg class="okcheck-svg" viewBox="0 0 52 52" aria-hidden="true"><path class="okcheck-path" d="M14 27l8 8 16-18"/></svg>';
+      $('sendingState').hidden = false;
+      $('doneState').hidden = true;
+      $('sendOverlay').hidden = false;
+
+      let ok = 0, erros = 0, ultimoErro = '';
+      for(let i = 0; i < alvo.length; i++){
+        const r = alvo[i];
+        setStatus(r.id, '<span class="badge up">enviando…</span>');
+        try{
+          const fonte = imagesById[r.id] || manualById[r.id];
+          const c = await comprimirFonte(fonte);
+          const filename = r.id + '.' + (c.ext || 'jpg');
+          const resp = await runUpload({ id:r.id, periodo, filename, mimeType:c.mime, dataBase64:c.base64 });
+          if(resp && resp.ok){
+            ensureRef(ws, r.r, colLink);
+            ws[XLSX.utils.encode_cell({ r:r.r, c:colLink })] = { t:'s', v:resp.url, l:{ Target:resp.url } };
+            r.temLink = true; r.enviado = true; r.recuperado = false; r.link = resp.url;
+            salvarLink(periodo, r.id, resp.url);
+            ok++;
+            $('btnBaixar').disabled = false;   // libera o download já no primeiro link que chega
+            setStatus(r.id, '<span class="badge done">enviado ✓</span>');
+          }else{
+            erros++;
+            ultimoErro = (resp && resp.msg) || 'O Drive recusou o arquivo.';
+            setStatus(r.id, badgeErro(ultimoErro));
+          }
+        }catch(err){
+          erros++;
+          ultimoErro = String((err && err.message) || err);
+          setStatus(r.id, badgeErro(ultimoErro));
+        }
+        const pct = Math.round(((i+1)/alvo.length)*100);
+        $('bar').style.width = pct + '%';
+        $('progTxt').textContent = (i+1) + ' / ' + alvo.length + ' processado(s)';
+        $('sendBar').style.width = pct + '%';
+        $('sendTxt').textContent = 'Enviando ' + Math.min(i+2, alvo.length) + ' de ' + alvo.length + '…';
+      }
+
+      $('btnEnviar').disabled = false;
+      $('doneMsg').hidden = false;
+      $('doneMsg').className = erros ? 'ruim' : '';
+      $('doneMsg').textContent = ok + ' enviado(s)' +
+        (erros ? ' · ' + erros + ' com erro. Motivo: ' + ultimoErro : '') +
+        (ok ? ' Baixe a planilha preenchida ao lado.' : '');
+
+      // A tela de "enviando" vira o resultado e fica na frente até você resolver.
+      $('sendingState').hidden = true;
+      $('doneState').hidden = false;
+
+      if(ok > 0){
+        baixou = false; pendenteBaixar = true;
+        $('doneTitle').textContent = ok + ' comprovante(s) enviado(s)!' + (erros ? ' · ' + erros + ' com erro' : '');
+        $('doneWarn').textContent = erros
+          ? 'Baixe a planilha com os ' + ok + ' links que deram certo. Depois use "Recuperar links do Drive" no passo 5 pra completar os que falharam.'
+          : 'Agora baixe a planilha — é nela que ficam todos os links. Os comprovantes vão pra uma pasta que você não acessa, então sem a planilha você perde os links.';
+        $('doneWarn').className = 'donewarn';
+        $('btnBaixarOverlay').textContent = 'Baixar planilha';
+        $('btnBaixarOverlay').className = 'btn primary big';
+        $('btnBaixarOverlay').hidden = false;
+        $('btnRecuperarOverlay').hidden = !erros;
+        $('btnRecuperarOverlay').className = 'btn ghost';
+        $('btnFecharOverlay').hidden = true;
+        $('doneHint').hidden = false;
+        $('doneHint').textContent = 'Esta tela fica aqui até você baixar a planilha.';
+      } else {
+        pendenteBaixar = false;
+        $('doneIcon').className = 'okcheck ruim';
+        $('doneIcon').textContent = '!';
+        $('doneTitle').textContent = 'Nenhum link foi gravado';
+        $('doneWarn').textContent = 'Motivo: ' + ultimoErro + ' Os arquivos podem ter chegado no Drive mesmo assim — clique abaixo pra procurar os links lá e preencher a planilha sem reenviar nada.';
+        $('doneWarn').className = 'donewarn';
+        $('btnBaixarOverlay').hidden = true;
+        $('btnRecuperarOverlay').hidden = false;
+        $('btnRecuperarOverlay').className = 'btn primary big';
+        $('btnFecharOverlay').hidden = false;
+        $('btnFecharOverlay').className = 'btn ghost';
+        $('doneHint').hidden = true;
+      }
+    }
+
+    function runUpload(payload){
+      return new Promise((resolve, reject) => {
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).uploadComprovante(payload);
+      });
+    }
+
+    // ---- recuperar links direto do Drive (sem reenviar) ----
+    function setRecInfo(kind, msg){ const el = $('recInfo'); el.hidden = false; el.className = 'info ' + kind; el.textContent = msg; }
+
+    function recuperarLinks(){
+      if(!rows.length){ setRecInfo('erro', 'Carregue a planilha primeiro (passo 2) pra eu saber quais IDs procurar.'); return; }
+      const ids = rows.map(r => r.id);
+      setRecInfo('aviso', 'Procurando ' + ids.length + ' ID(s) no Drive…');
+      $('btnRecuperar').disabled = true;
+      google.script.run
+        .withSuccessHandler(res => {
+          $('btnRecuperar').disabled = false;
+          const alvoQz = periodoFolder();
+          const mapa = {};
+          (res.encontrados || []).forEach(item => {
+            let hit = (item.hits || []).find(h => h.quinzena === alvoQz) || (item.hits || [])[0];
+            if(hit) mapa[item.id] = hit;
+          });
+          let achou = 0, semNada = 0;
+          rows.forEach(r => {
+            const hit = mapa[r.id];
+            if(hit){
+              r.link = XlsxOut.linkDoArquivo(hit.fileId);
+              r.temLink = true; r.recuperado = true;
+              salvarLink(alvoQz, r.id, r.link);
+              achou++;
+            } else if(!r.link) semNada++;
+          });
+          if(achou){ $('btnBaixar').disabled = false; pendenteBaixar = true; baixou = false; }
+          setRecInfo(achou ? 'ok' : 'erro',
+            achou
+              ? achou + ' link(s) recuperado(s) do Drive' + (semNada ? ' · ' + semNada + ' rota(s) ainda sem comprovante lá' : '') + '. Agora é só baixar a planilha.'
+              : 'Nenhum comprovante desses IDs foi encontrado no Drive.');
+          casar();
+        })
+        .withFailureHandler(e => {
+          $('btnRecuperar').disabled = false;
+          setRecInfo('erro', 'Não consegui consultar o Drive: ' + String((e && e.message) || e));
+        })
+        .conferirIds(ids);
+    }
+    $('btnRecuperar').addEventListener('click', recuperarLinks);
+    $('btnRecuperarOverlay').addEventListener('click', () => {
+      $('sendOverlay').hidden = true;
+      recuperarLinks();
+      const alvo = $('btnRecuperar');
+      if(alvo && alvo.scrollIntoView) alvo.scrollIntoView({ behavior:'smooth', block:'center' });
+    });
+
+    // ---- baixar: monta a planilha final SEMPRE com a mesma ordem de colunas e o cabeçalho azul ----
+    const COLS_SAIDA = ['ID ROTA','DATA','SVC','PLACA','VEICULO','MOTORISTA','LINK','VALOR'];
+    function baixarPlanilha(){
+      if(!rows.length) return;
+      const aoa = [COLS_SAIDA.slice()];
+      rows.forEach(r => {
+        aoa.push([ r.id, r.dataRaw, r.svc || '', r.placa || '', r.veiculo || '', r.mot || '',
+                   r.link || '', (r.valor === '' || r.valor == null) ? '' : r.valor ]);
+      });
+      XlsxOut.baixar(aoa, {
+        alinha:   ['left','center','center','center','center','left','left','right'],
+        formatos: { 1:'dd/mm/yyyy', 7:'"R$" #,##0.00' },
+        links:    [6]
+      }, nomeGerado ? nomeModeloGerado() : (originalName.replace(/\.(xlsx|xls)$/i, '') + ' - com links'), 'Pedágios');
+      marcarBaixado();
+    }
+    // marca como baixada: libera a saída e, se a tela de conclusão estiver aberta, mostra o "ok"
+    function marcarBaixado(){
+      pendenteBaixar = false; baixou = true;
+      if(!$('sendOverlay').hidden && !$('doneState').hidden){
+        $('doneTitle').textContent = 'Planilha baixada!';
+        $('doneWarn').textContent = 'Tudo certo. Você já pode fechar a aba com segurança.';
+        $('doneWarn').className = 'doneok';
+        $('btnBaixarOverlay').textContent = 'Baixar de novo';
+        $('btnBaixarOverlay').className = 'btn ghost';
+        $('btnFecharOverlay').className = 'btn primary big';
+        $('btnFecharOverlay').hidden = false;
+        $('doneHint').hidden = true;
+      }
+    }
+    $('btnBaixar').addEventListener('click', baixarPlanilha);
+    $('btnBaixarOverlay').addEventListener('click', baixarPlanilha);
+    $('btnFecharOverlay').addEventListener('click', () => { $('sendOverlay').hidden = true; });
+
+    // rede de segurança: avisa se tentar atualizar/sair com trabalho em andamento
+    function temTrabalho(){
+      return (rows && rows.length > 0)
+          || (imagesById && Object.keys(imagesById).length > 0)
+          || (orphans && orphans.length > 0)
+          || (manualById && Object.keys(manualById).length > 0)
+          || (pendenteBaixar && !baixou);
+    }
+    window.addEventListener('beforeunload', (e) => {
+      if(temTrabalho()){
+        e.preventDefault();
+        e.returnValue = 'Você tem comprovantes não enviados ou não baixados. Quer mesmo sair desta página?';
+        return e.returnValue;
+      }
+    });
+
+    function setPlanInfo(kind, msg){ const el = $('planInfo'); el.hidden = false; el.className = 'info ' + kind; el.textContent = msg; }
+
+    // ============================================================
+    // 4 · Comprovante sem ID — cartões, associação manual e zoom
+    // ============================================================
+    function addOrphan(file, origem){
+      const o = {
+        key: 'o' + (orphSeq++),
+        name: file.name || ('colada ' + new Date().toLocaleTimeString('pt-BR')),
+        file: file,
+        url: URL.createObjectURL(file),
+        origem: origem || 'manual',
+        ids: new Set()
+      };
+      orphans.push(o);
+      return o;
+    }
+    function removeOrphan(o){
+      o.ids.forEach(id => { if(manualById[id] === o) delete manualById[id]; });
+      URL.revokeObjectURL(o.url);
+      orphans = orphans.filter(x => x !== o);
+      renderOrphans();
+      casar();
+    }
+    function ehPdf(o){ return ((o.file && o.file.type) || '').indexOf('pdf') >= 0; }
+
+    function renderOrphans(){
+      const box = $('orphans'); box.innerHTML = '';
+      orphans.forEach((o, idx) => {
+        const card = document.createElement('div'); card.className = 'ocard';
+        card.style.animationDelay = (Math.min(idx,10) * 0.05) + 's';
+        let visual;
+        if(ehPdf(o)){
+          visual = document.createElement('div'); visual.className = 'thumb pdfth'; visual.textContent = '📄 PDF';
+        }else{
+          visual = document.createElement('img'); visual.className = 'thumb'; visual.src = o.url; visual.alt = o.name;
+          visual.addEventListener('click', () => abrirLightbox(o.url));
+        }
+        const nm = document.createElement('div'); nm.className = 'oname'; nm.textContent = o.name; nm.title = o.name;
+        const chip = document.createElement('div');
+        chip.innerHTML = o.ids.size
+          ? '<span class="chip on">✓ <b>' + o.ids.size + '</b> rota(s)</span>'
+          : '<span class="chip">sem rota</span>';
+        const btns = document.createElement('div'); btns.className = 'obtns';
+        const bA = document.createElement('button'); bA.className = 'btn mini primary';
+        bA.textContent = o.ids.size ? 'Editar' : 'Associar';
+        bA.addEventListener('click', () => abrirAssoc(o));
+        const bX = document.createElement('button'); bX.className = 'btn mini ghost x'; bX.textContent = '✕'; bX.title = 'Remover imagem';
+        bX.addEventListener('click', () => removeOrphan(o));
+        btns.appendChild(bA); btns.appendChild(bX);
+        card.appendChild(visual); card.appendChild(nm); card.appendChild(chip); card.appendChild(btns);
+        box.appendChild(card);
+      });
+    }
+
+    // --- entrada: colar, arrastar ou escolher da galeria ---
+    document.addEventListener('paste', (e) => {
+      const files = [...((e.clipboardData && e.clipboardData.files) || [])]
+        .filter(f => /^image\//.test(f.type) || f.type === 'application/pdf');
+      if(!files.length) return;
+      e.preventDefault();
+      files.forEach(f => addOrphan(f, 'colada'));
+      renderOrphans(); casar();
+      const ultimo = document.querySelector('.ocard:last-child');
+      if(ultimo && ultimo.scrollIntoView) ultimo.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    });
+    const pz = $('pasteZone');
+    pz.addEventListener('click', () => $('inOrphan').click());
+    pz.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('inOrphan').click(); } });
+    ['dragover','dragenter'].forEach(ev => pz.addEventListener(ev, (e) => { e.preventDefault(); pz.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev => pz.addEventListener(ev, (e) => { e.preventDefault(); pz.classList.remove('drag'); }));
+    pz.addEventListener('drop', (e) => { [...e.dataTransfer.files].forEach(f => addOrphan(f, 'arrastada')); renderOrphans(); casar(); });
+    $('inOrphan').addEventListener('click', (e) => e.stopPropagation());
+    $('inOrphan').addEventListener('change', (e) => {
+      [...e.target.files].forEach(f => addOrphan(f, 'galeria'));
+      e.target.value = '';
+      renderOrphans(); casar();
+    });
+
+    // --- filtros do modal (montados quando a planilha é lida) ---
+    function populaFiltros(){
+      const mots = [...new Set(rows.map(r => r.mot).filter(Boolean))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+      const svcs = [...new Set(rows.map(r => r.svc).filter(Boolean))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+      $('motList').innerHTML = mots.map(v => '<option value="' + escapeHtml(v) + '">').join('');
+      $('fSvc').innerHTML = '<option value="">Todas as bases</option>' + svcs.map(v => '<option>' + escapeHtml(v) + '</option>').join('');
+    }
+
+    // --- modal de associação ---
+    function rotaPendente(r){
+      return !r.temLink && !imagesById[r.id] && (!manualById[r.id] || manualById[r.id] === assocAlvo);
+    }
+    function abrirAssoc(o){
+      if(!rows.length){ alert('Carregue a planilha primeiro (passo 2) pra eu listar as rotas.'); return; }
+      assocAlvo = o;
+      selTemp = new Set(o.ids);
+      const pdf = ehPdf(o);
+      $('assocImg').hidden = pdf; $('assocPdf').hidden = !pdf;
+      if(!pdf) $('assocImg').src = o.url;
+      $('fMot').value = ''; $('fSvc').value = '';
+      renderAssocLista();
+      $('assocOverlay').hidden = false;
+    }
+    function fecharAssoc(){ $('assocOverlay').hidden = true; assocAlvo = null; }
+    function atualizaCount(){ $('assocCount').textContent = selTemp.size + ' rota(s) marcada(s)'; }
+    function renderAssocLista(){
+      const fm = $('fMot').value.trim().toLowerCase(), fs = $('fSvc').value;
+      const tb = $('assocBody'); tb.innerHTML = '';
+      const lista = rows.filter(r => rotaPendente(r) && (!fm || (r.mot || '').toLowerCase().includes(fm)) && (!fs || r.svc === fs));
+      if(!lista.length){
+        tb.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Nenhuma rota pendente com esses filtros.</td></tr>';
+      }
+      lista.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className = 'rowsel' + (selTemp.has(r.id) ? ' on' : '');
+        tr.innerHTML =
+          '<td><input type="checkbox"' + (selTemp.has(r.id) ? ' checked' : '') + '></td>' +
+          '<td>' + escapeHtml(fmtData(r.dataRaw)) + '</td>' +
+          '<td>' + escapeHtml(r.id) + '</td>' +
+          '<td style="text-align:right">' + formatValor(r.valor) + '</td>';
+        tr.addEventListener('click', () => {
+          if(selTemp.has(r.id)) selTemp.delete(r.id); else selTemp.add(r.id);
+          tr.querySelector('input').checked = selTemp.has(r.id);
+          tr.classList.toggle('on', selTemp.has(r.id));
+          atualizaCount();
+        });
+        tb.appendChild(tr);
+      });
+      atualizaCount();
+    }
+    function confirmaAssoc(){
+      if(!assocAlvo) return;
+      assocAlvo.ids.forEach(id => { if(manualById[id] === assocAlvo) delete manualById[id]; });
+      assocAlvo.ids = new Set(selTemp);
+      assocAlvo.ids.forEach(id => { manualById[id] = assocAlvo; });
+      fecharAssoc();
+      renderOrphans();
+      casar();
+    }
+    $('assocOk').addEventListener('click', confirmaAssoc);
+    $('assocCancel').addEventListener('click', fecharAssoc);
+    $('assocClose').addEventListener('click', fecharAssoc);
+    $('assocOverlay').addEventListener('click', (e) => { if(e.target === $('assocOverlay')) fecharAssoc(); });
+    $('fMot').addEventListener('input', renderAssocLista);
+    $('fSvc').addEventListener('change', renderAssocLista);
+    $('assocImg').addEventListener('click', () => abrirLightbox($('assocImg').src));
+
+    // --- lightbox (zoom da imagem) ---
+    function abrirLightbox(url){ $('lightboxImg').src = url; $('lightbox').hidden = false; }
+    $('lightbox').addEventListener('click', () => { $('lightbox').hidden = true; });
+    document.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape'){
+        if(!$('lightbox').hidden) $('lightbox').hidden = true;
+        else if(!$('assocOverlay').hidden) fecharAssoc();
+      }
+    });
+
+    anosOptions();
+    atualizaExemplo();
+    setTimeout(() => testarConexao(true), 900);   // checagem discreta ao abrir a página
+  })();
+  </script>
+
+  <!-- ===== app: consultar ===== -->
+  <script>
+  (function(){
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function setStatus(txt){ const s = $('status'); if(txt){ s.textContent = txt; s.hidden = false; } else { s.hidden = true; } }
+  function loading(){ $('results').innerHTML = '<div class="spinner"></div>'; }
+  function countUp(el, to, dur){
+    to = Number(to) || 0; dur = dur || 650;
+    if(to <= 0){ el.textContent = '0'; return; }
+    var t0 = performance.now();
+    (function tick(now){
+      var p = Math.min((now - t0) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(e * to);
+      if(p < 1) requestAnimationFrame(tick); else el.textContent = to;
+    })(t0);
+  }
+
+  function render(lista){
+    if(!lista || !lista.length){ $('results').innerHTML = '<div class="empty">Nenhum comprovante encontrado.</div>'; return; }
+    const html = lista.map((c, idx) => {
+      const id = esc(c.id), base = esc(c.base), qz = esc(c.quinzena);
+      const icone = /pdf/i.test(c.mime) ? '📄' : '🖼️';
+      return '<div class="item" style="animation-delay:' + (Math.min(idx,14) * 0.04) + 's">' +
+        '<div class="vthumb" data-fileid="' + id + '" data-nome="' + base + '" onclick="verArquivo(this.dataset.fileid, this.dataset.nome)">' +
+          '<img class="tmb" alt="" style="display:none">' +
+          '<span class="ico" style="display:flex;width:100%;height:100%;align-items:center;justify-content:center">' + icone + '</span>' +
+        '</div>' +
+        '<div class="meta"><div class="id">' + base + '</div><div class="qz">' + qz + '</div>' +
+        '<button class="linkver" type="button" data-fileid="' + id + '" data-nome="' + base + '" onclick="verArquivo(this.dataset.fileid, this.dataset.nome)">Ver ›</button></div>' +
+        '</div>';
+    }).join('');
+    $('results').innerHTML = '<div class="grid">' + html + '</div>';
+    carregarThumbs([].slice.call($('results').querySelectorAll('.vthumb')).map(t => ({
+      fileId: t.dataset.fileid, imgEl: t.querySelector('.tmb'), iconEl: t.querySelector('.ico')
+    })));
+  }
+
+  // miniaturas servidas pela própria ferramenta (com concorrência limitada)
+  function carregarThumbs(items){
+    let i = 0; const CONC = 4;
+    function um(){
+      if(i >= items.length) return;
+      const it = items[i++];
+      if(!it || !it.fileId){ um(); return; }
+      google.script.run
+        .withSuccessHandler(uri => {
+          if(uri && it.imgEl){ it.imgEl.src = uri; it.imgEl.style.display = 'block'; if(it.iconEl) it.iconEl.style.display = 'none'; }
+          um();
+        })
+        .withFailureHandler(() => um())
+        .getThumb(it.fileId);
+    }
+    for(let k = 0; k < Math.min(CONC, items.length); k++) um();
+  }
+
+  // ver o comprovante DENTRO da ferramenta (sem ir pro Drive)
+  function verArquivo(fileId, nome){
+    $('modal').hidden = false;
+    $('modalTitle').textContent = nome || 'Comprovante';
+    $('modalBody').innerHTML = '<div class="spinner"></div>';
+    $('modalBaixar').style.display = 'none';
+    google.script.run
+      .withSuccessHandler(res => {
+        if(!res || !res.dataBase64){ $('modalBody').innerHTML = '<div class="empty">Não foi possível carregar este comprovante.</div>'; return; }
+        const uri = 'data:' + res.mime + ';base64,' + res.dataBase64;
+        if(/pdf/i.test(res.mime)){
+          $('modalBody').innerHTML = '<embed src="' + uri + '" type="application/pdf" style="width:100%;height:72vh">';
+        } else {
+          $('modalBody').innerHTML = '<img src="' + uri + '" alt="" style="max-width:100%;max-height:72vh;display:block;margin:0 auto;border-radius:8px">';
+        }
+        const b = $('modalBaixar');
+        b.href = uri; b.setAttribute('download', res.nome || nome || 'comprovante'); b.style.display = '';
+      })
+      .withFailureHandler(e => { $('modalBody').innerHTML = '<div class="empty">Erro ao carregar: ' + esc(String((e && e.message) || e)) + '</div>'; })
+      .getArquivo(fileId);
+  }
+  function fecharModal(){ $('modal').hidden = true; $('modalBody').innerHTML = ''; }
+  $('modalFechar').addEventListener('click', fecharModal);
+  $('modal').addEventListener('click', e => { if(e.target === $('modal')) fecharModal(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && !$('modal').hidden) fecharModal(); });
+
+  function buscar(){
+    const q = $('q').value.trim();
+    if(!q){ $('q').focus(); return; }
+    setStatus('Procurando "' + q + '" em todas as quinzenas…');
+    loading();
+    google.script.run
+      .withSuccessHandler(r => { setStatus(r.length + ' resultado(s) para "' + q + '".'); render(r); })
+      .withFailureHandler(e => { setStatus('Erro na busca.'); $('results').innerHTML = '<div class="empty">' + esc(String((e && e.message) || e)) + '</div>'; })
+      .buscarPorId(q);
+  }
+
+  $('btnBuscar').addEventListener('click', buscar);
+  $('q').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); buscar(); } });
+
+  // ----- abas -----
+  function setMode(mode){
+    $('tabBuscar').classList.toggle('active', mode === 'buscar');
+    $('tabConferir').classList.toggle('active', mode === 'conferir');
+    $('tabPlanilha').classList.toggle('active', mode === 'planilha');
+    $('cardBuscar').hidden   = (mode !== 'buscar');
+    $('cardConferir').hidden = (mode !== 'conferir');
+    $('cardPlanilha').hidden = (mode !== 'planilha');
+    $('results').innerHTML = ''; setStatus('');
+    if(mode === 'planilha' && !periodosCarregados) carregarPeriodos();
+  }
+  $('tabBuscar').addEventListener('click', () => setMode('buscar'));
+  $('tabConferir').addEventListener('click', () => setMode('conferir'));
+  $('tabPlanilha').addEventListener('click', () => setMode('planilha'));
+
+  // ----- conferir vários IDs -----
+  function parseIds(txt){
+    const seen = {}, out = [];
+    String(txt || '').split(/[\s,;]+/).forEach(x => {
+      const s = x.trim(); if(!s) return;
+      const k = s.toLowerCase(); if(seen[k]) return; seen[k] = true; out.push(s);
+    });
+    return out;
+  }
+  function conferir(){
+    const ids = parseIds($('idsInput').value);
+    if(!ids.length){ $('idsInput').focus(); return; }
+    setStatus('Conferindo ' + ids.length + ' ID(s) em todas as quinzenas…');
+    loading();
+    google.script.run
+      .withSuccessHandler(renderConferir)
+      .withFailureHandler(e => { setStatus('Erro na conferência.'); $('results').innerHTML = '<div class="empty">' + esc(String((e && e.message) || e)) + '</div>'; })
+      .conferirIds(ids);
+  }
+  function renderConferir(res){
+    const enc = res.encontrados || [], falt = res.faltando || [], tot = res.total || 0;
+    setStatus('');
+    let html = '<div class="summary ' + (falt.length ? 'warn' : 'ok') + '">' +
+      '<span class="cu" data-to="' + enc.length + '">0</span> de <span class="cu" data-to="' + tot + '">0</span> encontrados · <span class="cu" data-to="' + falt.length + '">0</span> faltando</div>';
+
+    if(falt.length){
+      html += '<div class="card"><div class="block-head"><span class="t">Faltando no Drive (' + falt.length + ')</span>' +
+        '<button class="btn ghost sm" id="btnCopiarFalt" type="button">Copiar faltantes</button></div>' +
+        '<div class="chips">' + falt.map((id, idx) => '<span class="mchip" style="animation-delay:' + (Math.min(idx,20) * 0.02) + 's">' + esc(id) + '</span>').join('') + '</div></div>';
+    }
+    if(enc.length){
+      const rows = enc.map((item, idx) => {
+        const h = item.hits[0];
+        const extra = item.hits.length > 1 ? ' (em ' + item.hits.length + ' quinzenas)' : '';
+        return '<div class="frow" style="animation-delay:' + (Math.min(idx,14) * 0.03) + 's"><span class="fid">' + esc(item.id) + '</span>' +
+          '<span class="fqz">' + esc(h.quinzena) + extra + '</span>' +
+          '<button class="linkver" type="button" data-fileid="' + esc(h.fileId) + '" data-nome="' + esc(item.id) + '" onclick="verArquivo(this.dataset.fileid, this.dataset.nome)">Ver ›</button></div>';
+      }).join('');
+      html += '<div class="card"><div class="block-head"><span class="t">Encontrados (' + enc.length + ')</span>' +
+        '<button class="btn ghost sm" id="btnBaixarConf" type="button">Baixar links em .xlsx</button></div>' +
+        '<div class="frows">' + rows + '</div></div>';
+    }
+    $('results').innerHTML = html;
+    $('results').querySelectorAll('.cu').forEach(function(el){ countUp(el, el.dataset.to); });
+
+    const cb = $('btnCopiarFalt');
+    if(cb) cb.addEventListener('click', () => copiar(falt.join('\n'), cb));
+
+    const bx = $('btnBaixarConf');
+    if(bx) bx.addEventListener('click', function(){
+      const aoa = [['ID ROTA','LINK','QUINZENA']];
+      enc.forEach(item => {
+        const h = item.hits[0];
+        aoa.push([ item.id, XlsxOut.linkDoArquivo(h.fileId), h.quinzena ]);
+      });
+      XlsxOut.baixar(aoa, { alinha:['left','left','center'], links:[1] }, 'Links dos comprovantes conferidos', 'Links');
+    });
+  }
+  function copiar(txt, btn){
+    const ok = () => { const o = btn.textContent; btn.textContent = 'Copiado!'; setTimeout(() => btn.textContent = o, 1500); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(ok).catch(() => fbCopy(txt, ok));
+    } else fbCopy(txt, ok);
+  }
+  function fbCopy(txt, ok){
+    const ta = document.createElement('textarea'); ta.value = txt;
+    ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); ok(); } catch(e){}
+    ta.remove();
+  }
+  $('btnConferir').addEventListener('click', conferir);
+  $('btnLimparConf').addEventListener('click', () => { $('idsInput').value = ''; $('results').innerHTML = ''; setStatus(''); $('idsInput').focus(); });
+
+  // ----- planilha de uma quinzena inteira -----
+  let periodosCarregados = false;
+  function carregarPeriodos(){
+    const sel = $('selPeriodo');
+    sel.innerHTML = '<option value="">Carregando…</option>';
+    google.script.run
+      .withSuccessHandler(lista => {
+        if(!lista || !lista.length){ sel.innerHTML = '<option value="">Nenhuma quinzena no Drive ainda</option>'; return; }
+        sel.innerHTML = lista.map(p => '<option value="' + esc(p.id) + '">' + esc(p.nome) + '</option>').join('');
+        periodosCarregados = true;
+      })
+      .withFailureHandler(e => { sel.innerHTML = '<option value="">Não consegui listar as quinzenas</option>'; setStatus(String((e && e.message) || e)); })
+      .listarPeriodos();
+  }
+  $('btnRecarregarPer').addEventListener('click', () => { periodosCarregados = false; carregarPeriodos(); });
+
+  function gerarPlanilhaQuinzena(){
+    const sel = $('selPeriodo'), folderId = sel.value;
+    if(!folderId){ setStatus('Escolha uma quinzena primeiro.'); return; }
+    const nomeQz = sel.options[sel.selectedIndex].textContent;
+    setStatus('Montando a planilha de ' + nomeQz + '…');
+    loading();
+    $('btnGerarPlan').disabled = true;
+    google.script.run
+      .withSuccessHandler(lista => {
+        $('btnGerarPlan').disabled = false;
+        if(!lista || !lista.length){ setStatus('Nenhum comprovante nessa quinzena.'); $('results').innerHTML = '<div class="empty">Nenhum comprovante nessa quinzena.</div>'; return; }
+        const aoa = [['ID ROTA','LINK','ARQUIVO','QUINZENA']];
+        lista.forEach(c => { aoa.push([ c.base, XlsxOut.linkDoArquivo(c.id), c.nome, c.quinzena ]); });
+        XlsxOut.baixar(aoa, { alinha:['left','left','left','center'], links:[1] }, 'Links dos comprovantes - ' + nomeQz, 'Links');
+        setStatus(lista.length + ' comprovante(s) na planilha de ' + nomeQz + '.');
+        render(lista);
+      })
+      .withFailureHandler(e => { $('btnGerarPlan').disabled = false; setStatus('Erro: ' + String((e && e.message) || e)); $('results').innerHTML = ''; })
+      .listarPorPeriodo(folderId);
+  }
+  $('btnGerarPlan').addEventListener('click', gerarPlanilhaQuinzena);
+
+  window.verArquivo = verArquivo;
+  })();
+  </script>
+  <script>
+  (function(){
+    var KEY='tema_pedagios', root=document.documentElement, b=document.getElementById('btnTema');
+    function icone(){ if(b) b.textContent = root.classList.contains('dark') ? '☀️' : '🌙'; }
+    icone();
+    if(b) b.addEventListener('click', function(){
+      var dark = !root.classList.contains('dark');
+      root.classList.toggle('dark', dark);
+      try{ localStorage.setItem(KEY, dark ? 'dark' : 'light'); }catch(e){}
+      icone();
+    });
+  })();
+  </script>
+  <!-- ===== Voltar ao hub: aparece se a ferramenta foi aberta pelo portal ===== -->
+  <script>
+  (function () {
+    var HubLink = {
+      HUB_PATH_PREFIX: '/Controladoria',
+      STORAGE_KEY: 'came_from_hub_pedagios',
+      init: function () {
+        var btn = document.getElementById('btnVoltarHub');
+        if (!btn) return;
+        if (this.veioDoHub()) {
+          btn.style.display = 'inline-flex';
+          try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
+        }
+      },
+      veioDoHub: function () {
+        try {
+          if (document.referrer) {
+            var ref = new URL(document.referrer);
+            var refPath = decodeURIComponent(ref.pathname);
+            var selfPath = decodeURIComponent(location.pathname);
+            var selfDir = selfPath.slice(0, selfPath.lastIndexOf('/') + 1);
+            var mesmaOrigem = ref.origin === location.origin;
+            var dentroDoPortal = refPath.indexOf(this.HUB_PATH_PREFIX) === 0;
+            var mesmaFerramenta = refPath.indexOf(selfDir) === 0;
+            if (mesmaOrigem && dentroDoPortal && !mesmaFerramenta) return true;
+          }
+        } catch (e) {}
+        try { if (new URLSearchParams(location.search).has('from')) return true; } catch (e) {}
+        try { if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true; } catch (e) {}
+        return false;
+      }
+    };
+    HubLink.init();
+  })();
+  </script>
+
+</body></html>
