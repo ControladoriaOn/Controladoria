@@ -2013,6 +2013,17 @@ async function abrirDetalheTitulos(l, dia){
    tinham acabado de ser importados: eles estavam lá, só não eram procurados. */
 /* A lista vem do script, na chave contas_manuais da aba FluxoConfig. Se por
    algum motivo não vier, a tela não inventa: trata como se não houvesse. */
+/* O dia está dentro do que a planilha do fluxo do ano cobre? O script guarda o
+   primeiro e o último dia daquela carga na configuração. Serve para a tela não
+   falar em "migração da planilha antiga" num dia que veio da carga do ano —
+   são coisas diferentes, e a saída de cada uma também é. */
+function diaDaCargaDoAno(data){
+  const cfg = (state.dados && state.dados.config) || {};
+  const de  = String(cfg.carga_ano_de || '');
+  const ate = String(cfg.carga_ano_ate || '');
+  return !!(de && ate && data >= de && data <= ate);
+}
+
 function contaManual(l){
   const cod = String((l.linha && l.linha.codigo) || '');
   if (!cod) return false;
@@ -2060,12 +2071,17 @@ function pintarTitulos(l, dia, linhas, total){
       (auto ? (' · ' + fmtExato(auto)) : ' · sem valor do relatório');
     corpo.appendChild(h('div', { class:'note info' }, [
       icone('fa-circle-info'),
-      h('span', { text: auto
-        ? ('Este valor veio da migração da planilha antiga, que guardava só o total ' +
+      h('span', { text: !auto
+        ? 'Nenhum título neste dia nesta conta.'
+        : diaDaCargaDoAno(dia.data)
+        ? ('Este dia veio da planilha do fluxo do ano, que guarda só o total de cada ' +
+           'conta — é a fonte que fecha com os bancos. Para ver o título a título, ' +
+           'suba a base realizada na carga inicial do ano, ou o relatório de contas a ' +
+           'pagar deste dia.')
+        : ('Este valor veio da migração da planilha antiga, que guardava só o total ' +
            'do dia por conta de fluxo — o detalhe título a título está na base do Excel. ' +
            'A partir do momento em que o relatório de baixas passa a alimentar o fluxo, ' +
-           'a lista aparece aqui.')
-        : 'Nenhum título neste dia nesta conta.' }),
+           'a lista aparece aqui.') }),
     ]));
     if (ajuste) corpo.appendChild(h('div', { class:'note warn', style:'margin-top:10px' }, [
       icone('fa-pen'),
@@ -2096,6 +2112,25 @@ function pintarTitulos(l, dia, linhas, total){
     chip('Maior título', fmtExato(maior)),
   ].filter(Boolean));
   corpo.appendChild(chips);
+
+  /* A lista pode não somar o valor da célula, e isso é esperado: nos dias que
+     vieram da planilha do fluxo do ano o número inclui o que o banco desconta
+     na própria liquidação, que nunca virou título a pagar. Dizer quanto falta
+     é melhor que deixar a pessoa somar a coluna na mão e achar que errou. */
+  const falta = Math.round((auto - total) * 100) / 100;
+  if (Math.abs(falta) >= 0.01){
+    corpo.appendChild(h('div', { class:'note info', style:'margin:10px 0' }, [
+      icone('fa-circle-info'),
+      h('span', { text: falta > 0
+        ? ('A lista explica R$ ' + fmtExato(total) + ' dos R$ ' + fmtExato(auto) +
+           ' desta célula. Os R$ ' + fmtExato(falta) + ' que faltam não passaram pelo ' +
+           'contas a pagar — juros de antecipação, tarifas e o que o banco desconta na ' +
+           'liquidação. O valor da célula vem da planilha do fluxo do ano, que inclui isso.')
+        : ('A lista soma R$ ' + fmtExato(total) + ', R$ ' + fmtExato(-falta) +
+           ' a mais que os R$ ' + fmtExato(auto) + ' desta célula. Vale conferir a carga ' +
+           'deste dia: os dois números deveriam sair da mesma fonte.') }),
+    ]));
+  }
 
   /* Filtro e ordenação só aparecem quando há lista o bastante para se perder
      nela. Numa conta com três títulos eles seriam enfeite. */
@@ -3636,7 +3671,7 @@ const Importar = {
       ? 'Apaga tudo que a ferramenta guarda hoje. Depois disto a tela volta vazia.'
       : dia
       ? 'Solte o relatório de contas a pagar. Nada é gravado antes de você conferir.'
-      : 'Solte a planilha do fluxo do ano. A base realizada é opcional e serve só para conferir.';
+      : 'Solte a planilha do fluxo do ano, a base realizada, ou as duas. Cada uma faz uma coisa.';
     el('imp-alternar').textContent = limpando ? 'voltar para a importação'
                                   : dia ? 'carga inicial do ano' : 'voltar para atualizar um dia';
 
@@ -3662,7 +3697,7 @@ const Importar = {
       if (this.ano) corpo.appendChild(this.resumoAno());
       if (this.rel) corpo.appendChild(this.resumoRelatorio());
       if (this.ano && this.rel) corpo.appendChild(this.conferencia());
-      if (this.ano) corpo.appendChild(this.confirmacaoAno());
+      if (this.ano || this.rel) corpo.appendChild(this.confirmacaoAno());
     }
 
     this.atualizarBotao();
@@ -3673,9 +3708,9 @@ const Importar = {
     const z = h('div', { class:'imp-solta', tabindex:'0' }, [
       h('i', { class:'fa-solid fa-cloud-arrow-up' }),
       h('b', { text: dia ? 'Solte aqui o relatório de contas a pagar'
-                         : 'Solte aqui a planilha do fluxo do ano' }),
+                         : 'Solte aqui a planilha do fluxo do ano e a base realizada' }),
       h('span', { text: dia ? 'um dia, uma semana ou o período que o arquivo trouxer'
-                            : 'a base realizada é opcional, só para conferir os números' }),
+                            : 'o fluxo do ano traz os números, a base realizada traz o detalhe' }),
     ]);
     const input = h('input', { type:'file', accept:'.xlsx,.xls', multiple:'multiple' });
     input.style.display = 'none';
@@ -3727,7 +3762,8 @@ const Importar = {
   resumoRelatorio(){
     const r = this.rel;
     const c = h('div', { class:'imp-cartao' }, [
-      h('h4', null, [ icone('fa-file-invoice-dollar'), 'Pagamentos · ' + (r.arquivo || r.aba) ]),
+      h('h4', null, [ icone('fa-file-invoice-dollar'),
+        (this.modo === 'ano' ? 'Detalhe título a título · ' : 'Pagamentos · ') + (r.arquivo || r.aba) ]),
     ]);
     c.appendChild(this.par('Títulos lidos', r.titulos.length.toLocaleString('pt-BR')));
     c.appendChild(this.par('Contas de fluxo diferentes', String(Object.keys(r.contas).length)));
@@ -3819,8 +3855,9 @@ const Importar = {
       h('p', { class:'cf-text', text:
         'As saídas do fluxo do ano contra a soma dos pagamentos, mês a mês. ' +
         'Diferença aqui quer dizer saída que não passou pelo contas a pagar — ' +
-        'juros de antecipação, por exemplo, que o banco desconta direto. Só ' +
-        'conferência: quem vai ser gravado é o fluxo do ano.' }),
+        'juros de antecipação, por exemplo, que o banco desconta direto. Quem ' +
+        'manda no valor continua sendo o fluxo do ano; a base entra ao lado, ' +
+        'como detalhe, e é essa diferença que ela não vai conseguir explicar.' }),
     ]);
 
     const porMes = {};
@@ -3864,16 +3901,29 @@ const Importar = {
     return c;
   },
 
+  /* Três textos porque são três gravações diferentes, e a pessoa precisa saber
+     qual delas está confirmando. O único jeito de errar aqui seria escrever um
+     texto genérico que servisse para as três — e não avisasse de nenhuma. */
   confirmacaoAno(){
     const box = h('label', { class:'imp-check' });
     const chk = h('input', { type:'checkbox', id:'imp-ciente' });
     chk.onchange = () => this.atualizarBotao();
     box.appendChild(chk);
-    box.appendChild(h('div', { text:
+
+    const numeros =
       'Entendi que isto substitui o plano de contas, as contas bancárias, os ' +
       'saldos, as entradas e as saídas do período pelos números da planilha do ' +
-      'ano. Esses dias passam a mostrar o total de cada conta, sem detalhe ' +
-      'título a título. O que foi digitado na tela não é apagado.' }));
+      'ano. O que foi digitado na tela não é apagado.';
+    const detalhe =
+      'A base realizada entra só como detalhe: os títulos aparecem na janela de ' +
+      'cada célula e não mudam valor nenhum na tela. Nos dias em que o relatório ' +
+      'de contas a pagar já foi enviado, a base não encosta — lá o detalhe já existe.';
+
+    box.appendChild(h('div', { text:
+      (this.ano && this.rel) ? (numeros + ' ' + detalhe)
+      : this.ano ? (numeros + ' Esses dias passam a mostrar o total de cada conta, ' +
+                    'sem detalhe título a título.')
+      : ('Entendi que isto grava só o detalhe. ' + detalhe) }));
     return box;
   },
 
@@ -3981,9 +4031,11 @@ const Importar = {
       return;
     }
 
-    const pronto = this.ano && el('imp-ciente') && el('imp-ciente').checked;
+    const pronto = (this.ano || this.rel) && el('imp-ciente') && el('imp-ciente').checked;
     b.disabled = !pronto;
-    b.textContent = 'Carregar o ano';
+    b.textContent = (this.ano && this.rel) ? 'Carregar o ano e o detalhe'
+                  : this.ano ? 'Carregar o ano'
+                  : 'Carregar só o detalhe';
   },
 
   /* --------------------------------------------------------------- gravação */
@@ -4086,8 +4138,10 @@ const Importar = {
       try { await carregar(false, true); }
       finally { fecharVeu(); }
       toast(limpou ? 'Base do fluxo apagada.'
+                   : !quantos ? 'Importação concluída.'
                    : ('Importação concluída · ' + quantos.toLocaleString('pt-BR') +
-                      ' título(s) em ' + dias + ' dia(s).'));
+                      (this.modo === 'ano' ? ' título(s) de detalhe em ' : ' título(s) em ') +
+                      dias + ' dia(s).'));
     } catch(err){
       toast('Falhou no meio: ' + (err.message || err), true);
       this.ocupado = false;
@@ -4121,23 +4175,32 @@ const Importar = {
     }
   },
 
-  /* A carga do ano grava só a planilha do ano: estrutura, saldos, entradas e
-     saídas. O relatório de contas a pagar, se tiver sido solto junto, fica de
-     fora de propósito — ele entrou só para a conferência aparecer na tela. É
-     essa escolha que faz a linha Diferença fechar: os dois lados da conta
-     passam a sair da mesma fonte. */
+  /* A carga do ano tem dois lados, e os dois são opcionais.
+
+     A planilha do fluxo grava os NÚMEROS: estrutura, saldos, entradas e saídas,
+     total por conta em cada dia. É ela que fecha com os bancos, porque inclui o
+     que não passa pelo contas a pagar — juros de antecipação, tarifas.
+
+     A base realizada grava o DETALHE: o título a título que a janela de cada
+     célula mostra. Ela vai por uma ação própria do script, que escreve os
+     títulos sem refazer o somatório do dia. É o que permite as duas conviverem:
+     a lista explica o número sem tomar o lugar dele. */
   async gravarAno(){
     const a = this.ano;
-    const blocosSaldo = this.blocosPorDia(a.saldos, 800);
-    const blocosEnt   = this.blocosPorDia(a.entradas, 800);
-    const blocosSai   = this.blocosPorDia(a.saidas, 800);
+    const blocosSaldo = a ? this.blocosPorDia(a.saldos, 800) : [];
+    const blocosEnt   = a ? this.blocosPorDia(a.entradas, 800) : [];
+    const blocosSai   = a ? this.blocosPorDia(a.saidas, 800) : [];
+    const blocosDet   = this.rel ? this.blocosPorMes(this.rel.titulos) : [];
 
     let feito = 0;
-    const total = 1 + blocosSaldo.length + blocosEnt.length + blocosSai.length;
+    const total = (a ? 1 : 0) + blocosSaldo.length + blocosEnt.length +
+                  blocosSai.length + blocosDet.length;
     const anda = txt => { this.passo(txt, (feito / total) * 100); feito++; };
 
-    anda('Plano de contas e contas bancárias…');
-    await this.enviar({ acao:'fluxo_estrutura', plano:a.plano, contas:a.contas, config:a.config });
+    if (a){
+      anda('Plano de contas e contas bancárias…');
+      await this.enviar({ acao:'fluxo_estrutura', plano:a.plano, contas:a.contas, config:a.config });
+    }
 
     /* Os saldos são a maior lista depois dos títulos: uns três mil registros,
        catorze contas por dia. Cada bloco leva dias completos e diz quais são,
@@ -4158,6 +4221,17 @@ const Importar = {
       const b = blocosSai[i];
       anda('Saídas  (' + (i + 1) + ' de ' + blocosSai.length + ')');
       await this.enviar({ acao:'fluxo_saidas_lote', saidas:b.itens, datas:b.datas });
+    }
+
+    /* Por mês, como o relatório: são quase trinta mil títulos, e num envio só
+       o script estoura o tempo. Cada bloco diz quais dias cobre, para o mês
+       poder ser reenviado sem duplicar nada. */
+    for (let i = 0; i < blocosDet.length; i++){
+      const b = blocosDet[i];
+      anda('Detalhe de ' + MESES_PT[Number(b.mes.slice(5,7)) - 1] + '/' + b.mes.slice(0,4) +
+           '  (' + (i + 1) + ' de ' + blocosDet.length + ')');
+      await this.enviar({ acao:'fluxo_detalhe_lote', titulos:b.titulos,
+                          datas:this.rel.dias.filter(d => d.slice(0,7) === b.mes) });
     }
   },
 };
