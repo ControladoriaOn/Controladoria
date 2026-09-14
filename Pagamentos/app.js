@@ -93,8 +93,12 @@ const state = {
    Mesma regra das outras ferramentas: os botões de edição só aparecem para
    quem entrou pelo hub, não para quem abriu o link direto. */
 const HubLink = {
-  HUB: '/Controladoria',
-  SELF: '/Controladoria/Pagamentos2',
+  HUB: '/',   // o hub mora na raiz do domínio
+
+  /* A pasta desta ferramenta, seja qual for o endereço em que ela esteja.
+     Descobrir em vez de fixar é o que faz isto continuar certo quando o
+     endereço muda. */
+  pasta(){ return location.pathname.replace(/[^/]*$/, ''); },
   KEY: 'came_from_hub_pagamentos2',
   veioDoHub(){
     try {
@@ -102,7 +106,7 @@ const HubLink = {
         const ref = new URL(document.referrer);
         if (ref.origin === location.origin &&
             ref.pathname.indexOf(this.HUB) === 0 &&
-            ref.pathname.indexOf(this.SELF) !== 0) return true;
+            ref.pathname.indexOf(this.pasta()) !== 0) return true;
       }
     } catch(e){}
     try { if (new URLSearchParams(location.search).has('from')) return true; } catch(e){}

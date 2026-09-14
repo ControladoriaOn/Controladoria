@@ -369,7 +369,6 @@
         </div>
       </div>
       <div class="head-actions">
-        <a class="btn onband sm" id="btnVoltarHub" href="../index.html" style="display:none">← Voltar ao hub</a>
         <button class="btn onband sm" id="btnTema" type="button" title="Alternar tema claro/escuro">🌙</button>
         <button class="btn onband sm" id="btnLimpar" type="button" title="Limpar tudo (planilha + comprovantes)">🧹 Limpar tudo</button>
       </div>
@@ -1913,41 +1912,6 @@
       try{ localStorage.setItem(KEY, dark ? 'dark' : 'light'); }catch(e){}
       icone();
     });
-  })();
-  </script>
-  <!-- ===== Voltar ao hub: aparece se a ferramenta foi aberta pelo portal ===== -->
-  <script>
-  (function () {
-    var HubLink = {
-      HUB_PATH_PREFIX: '/Controladoria',
-      STORAGE_KEY: 'came_from_hub_pedagios',
-      init: function () {
-        var btn = document.getElementById('btnVoltarHub');
-        if (!btn) return;
-        if (this.veioDoHub()) {
-          btn.style.display = 'inline-flex';
-          try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
-        }
-      },
-      veioDoHub: function () {
-        try {
-          if (document.referrer) {
-            var ref = new URL(document.referrer);
-            var refPath = decodeURIComponent(ref.pathname);
-            var selfPath = decodeURIComponent(location.pathname);
-            var selfDir = selfPath.slice(0, selfPath.lastIndexOf('/') + 1);
-            var mesmaOrigem = ref.origin === location.origin;
-            var dentroDoPortal = refPath.indexOf(this.HUB_PATH_PREFIX) === 0;
-            var mesmaFerramenta = refPath.indexOf(selfDir) === 0;
-            if (mesmaOrigem && dentroDoPortal && !mesmaFerramenta) return true;
-          }
-        } catch (e) {}
-        try { if (new URLSearchParams(location.search).has('from')) return true; } catch (e) {}
-        try { if (sessionStorage.getItem(this.STORAGE_KEY) === '1') return true; } catch (e) {}
-        return false;
-      }
-    };
-    HubLink.init();
   })();
   </script>
 

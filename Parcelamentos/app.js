@@ -2,8 +2,12 @@
    HUB LINK — Validação Inteligente de Origem
    ================================================================= */
 const HubLink = {
-    HUB_PATH_PREFIX: '/Controladoria',          
-    SELF_PATH_PREFIX: '/Controladoria/Parcelamentos', 
+    HUB_PATH_PREFIX: '/',   // o hub mora na raiz do domínio
+
+    /* A pasta desta ferramenta, seja qual for o endereço em que ela esteja.
+       Descobrir em vez de fixar é o que faz isto continuar certo quando o
+       endereço muda. */
+    pasta() { return location.pathname.replace(/[^/]*$/, ''); },
     STORAGE_KEY: 'came_from_hub_parcelamentos',
 
     init() {
@@ -23,7 +27,7 @@ const HubLink = {
                 const ref = new URL(document.referrer);
                 const sameOrigin = ref.origin === location.origin;
                 const isHubPath = ref.pathname.startsWith(this.HUB_PATH_PREFIX);
-                const isSelfPath = ref.pathname.startsWith(this.SELF_PATH_PREFIX);
+                const isSelfPath = ref.pathname.startsWith(this.pasta());
                 if (sameOrigin && isHubPath && !isSelfPath) return true;
             }
         } catch (e) {}
