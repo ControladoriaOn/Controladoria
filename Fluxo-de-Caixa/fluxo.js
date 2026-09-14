@@ -218,15 +218,70 @@ async function identidadeAccess(){
 /* Pergunta uma vez, no carregamento. Quem grava espera esta promessa. */
 let IDENTIDADE = null;
 
-function pedirAutor(){
+/* O nome de quem digita fica no navegador, não na aba. Antes ficava em
+   sessionStorage: cada aba nova perguntava de novo, e a pergunta vinha na
+   caixinha do navegador — fechá-la sem querer cancelava o lançamento inteiro
+   em silêncio, que foi exatamente o que aconteceu. */
+function lembrarAutor(nome){
+  const limpo = String(nome || '').trim();
+  if (!limpo) return '';
+  state.autor = limpo;
+  try { localStorage.setItem('fluxo_autor', limpo); } catch(e){}
+  try { sessionStorage.setItem('fluxo_autor', limpo); } catch(e){}
+  return limpo;
+}
+
+function autorGuardado(){
+  try { return (localStorage.getItem('fluxo_autor') ||
+                sessionStorage.getItem('fluxo_autor') || '').trim(); } catch(e){ return ''; }
+}
+
+/* A janela do nome, dentro da ferramenta. Devolve o nome, ou vazio se a
+   pessoa desistir — e aí quem chamou avisa, em vez de sumir. */
+const Nome = {
+  pedir(){
+    return new Promise(resolve => {
+      const campo = el('nome-campo'), ok = el('nome-ok'), nota = el('nome-nota');
+      campo.value = autorGuardado();
+      nota.hidden = true;
+      mostrarModal('modal-nome');
+      setTimeout(() => { try { campo.focus(); campo.select(); } catch(e){} }, 60);
+
+      const fechar = valor => {
+        ok.onclick = null; campo.onkeydown = null;
+        document.removeEventListener('fluxo:modal-fechado', aoFechar);
+        fecharModal('modal-nome');
+        resolve(valor);
+      };
+      const aoFechar = e => { if (e.detail === 'modal-nome') fechar(''); };
+      document.addEventListener('fluxo:modal-fechado', aoFechar);
+
+      const tentar = () => {
+        const v = (campo.value || '').trim();
+        if (v.length < 2){
+          nota.hidden = false;
+          nota.textContent = 'Escreva seu nome para o lançamento ficar identificado.';
+          campo.focus();
+          return;
+        }
+        fechar(v);
+      };
+      ok.onclick = tentar;
+      campo.onkeydown = e => { if (e.key === 'Enter') tentar(); };
+    });
+  },
+};
+
+/* Quem está lançando. Nesta ordem: quem já foi identificado nesta tela, o
+   login do hub (que pode responder com atraso), o nome guardado no navegador
+   e, em último caso, a pergunta. */
+async function garantirAutor(){
   if (state.autor) return state.autor;
-  try { state.autor = sessionStorage.getItem('fluxo_autor') || ''; } catch(e){}
+  try { await IDENTIDADE; } catch(e){}
   if (state.autor) return state.autor;
-  const nome = (prompt('Seu nome, para ficar registrado no lançamento:') || '').trim();
-  if (!nome) return '';
-  state.autor = nome;
-  try { sessionStorage.setItem('fluxo_autor', nome); } catch(e){}
-  return nome;
+  const guardado = autorGuardado();
+  if (guardado) return lembrarAutor(guardado);
+  return lembrarAutor(await Nome.pedir());
 }
 
 /* ---------------------------------------------------------------------------
@@ -484,16 +539,53 @@ function expandirPayload(d){
   return d;
 }
 
+/* ----------------------------------------------------------------------------
+   A CÓPIA QUE FICA NO NAVEGADOR
+   ----------------------------------------------------------------------------
+   Montar o ano do outro lado leva de quatro a trinta e cinco segundos,
+   dependendo de a resposta já estar pronta ou não. Enquanto isso a tela ficava
+   em branco, com blocos cinzas, e a pessoa só esperava.
+
+   Agora a última resposta boa fica guardada aqui. Ao abrir, a tabela aparece
+   na hora com ela — com o fio laranja avisando que o número novo está a
+   caminho — e é trocada assim que a resposta de verdade chega. Nunca se
+   digita em cima da cópia: o modo edição busca dados frescos antes de
+   liberar qualquer lançamento.
+   -------------------------------------------------------------------------- */
+const COPIA_K = 'fluxo_ano_';
+
+function guardarAno(ano, texto){
+  try { localStorage.setItem(COPIA_K + ano, texto); } catch(e){ /* sem espaço: segue sem cópia */ }
+}
+
+function lerAnoGuardado(ano){
+  try {
+    const texto = localStorage.getItem(COPIA_K + ano);
+    if (!texto) return null;
+    const d = expandirPayload(JSON.parse(texto));
+    if (!d || !Array.isArray(d.plano) || !Array.isArray(d.dias)) return null;
+    return d;
+  } catch(e){ return null; }
+}
+
 async function buscarAno(ano, fresco, semPrevisto){
   const anterior = state.cache[ano];
   const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') +
               'fluxo_ano=' + ano + '&fmt=2' + (fresco ? '&fresco=1' : '') +
               (semPrevisto ? '&sem_previsto=1' : '') + '&v=' + Date.now();
-  const d = expandirPayload(await buscarJson(url));
+  const bruto = await buscarJson(url);
+  /* Guardar antes de desembrulhar: expandirPayload gasta o embrulho, e é o
+     embrulho que cabe no navegador — 167 kB contra quase um mega. */
+  let texto = '';
+  try { texto = JSON.stringify(bruto); } catch(e){}
+  const d = expandirPayload(bruto);
   /* Sem plano não é payload: é erro que passou pela guarda de ok. Barrar aqui
      evita que ele entre no cache e contamine as trocas de mês seguintes. */
   if (!d || d.ok === false || !Array.isArray(d.plano) || !Array.isArray(d.dias))
     throw new Error((d && d.erro) || 'resposta incompleta do script');
+  /* A cópia sem projeção não serve para abrir a tela — entraria faltando o
+     previsto do mês corrente e assustaria quem olha. */
+  if (texto && !semPrevisto) guardarAno(ano, texto);
   if (fresco) Titulos.esquecer();
   /* Quando se pede a resposta sem a projeção, ela volta com a lista vazia. A
      projeção não muda com o que se está prestes a lançar, então a que já
@@ -1574,11 +1666,12 @@ function abrirCelula(l, dia, v, td){
    O valor entra na tela na hora e a gravação segue por baixo — quem digita uma
    coluna inteira de recebimentos não pode esperar o servidor a cada tecla.
    ============================================================================ */
-function editarNaCelula(td, l, dia){
+async function editarNaCelula(td, l, dia){
   if (!state.podeEditar || !td || td.querySelector('input')) return;
   const lista = state.calc.lancPorCel[l.linha.id + '|' + dia.data] || [];
   if (lista.length > 1) return abrirLancamentos(l, dia);   // vários: pela janela
-  if (!pedirAutor()){ toast('Preciso do seu nome para registrar o lançamento.', true); return; }
+  if (!(await garantirAutor())){ toast('Preciso do seu nome para registrar o lançamento.', true); return; }
+  if (td.querySelector('input')) return;   // a janela do nome demorou: não abre duas vezes
 
   const lanc = lista[0] || null;
   const antes = td.textContent;
@@ -1653,6 +1746,7 @@ function aplicarNaCelula(l, dia, lanc, texto){
     redesenhar();
     enviarEmSilencio({ acao:'fluxo_excluir', id: lanc.id }, 'Lançamento excluído.',
                      { linha_id: l.linha.id, data: dia.data });
+    Conferencia.marcar({ linha_id: l.linha.id, data: dia.data, excluir_id: lanc.id });
     return;
   }
 
@@ -1666,6 +1760,7 @@ function aplicarNaCelula(l, dia, lanc, texto){
     id: id, data: dia.data, linha_id: l.linha.id, valor: v,
     descricao: lanc ? (lanc.descricao || '') : '', autor: state.autor,
   } }, null, { linha_id: l.linha.id, data: dia.data });
+  Conferencia.marcar({ linha_id: l.linha.id, data: dia.data, valor: v });
 }
 
 
@@ -1727,6 +1822,61 @@ async function enviarEmSilencio(payload, textoOk, celula){
     setTimeout(() => carregar(), 1200);
   }
 }
+
+/* ============================================================================
+   CONFERÊNCIA DO QUE FOI DIGITADO NA CÉLULA
+   ----------------------------------------------------------------------------
+   Digitar direto na célula não recarrega a tela a cada tecla — seria
+   insuportável para quem preenche uma coluna inteira. Mas o envio é cego, e
+   sem conferência a tela mostraria para sempre um número que nunca chegou à
+   planilha. Foi assim que um lançamento sumiu sem deixar rastro.
+
+   Então a conferência espera a digitação parar, busca o ano uma única vez e
+   compara. O que chegou fica; o que não chegou volta ao valor da planilha e a
+   célula fica marcada em vermelho, com um aviso dizendo quantos falharam.
+   ============================================================================ */
+const Conferencia = {
+  fila: [],
+  t: null,
+  ESPERA_MS: 6000,
+
+  marcar(item){
+    this.fila.push(item);
+    clearTimeout(this.t);
+    this.t = setTimeout(() => this.rodar(), this.ESPERA_MS);
+  },
+
+  async rodar(){
+    const itens = this.fila.splice(0);
+    if (!itens.length) return;
+    let d;
+    try {
+      esquecerOAno();
+      d = await buscarAno(state.mes.slice(0, 4), true);
+    } catch(e){ return; }          // sem resposta do script, não se acusa ninguém
+    if (!d || !Array.isArray(d.lancamentos)) return;
+    const vivos = d.lancamentos.filter(x => !x.desfeito);
+
+    const falhas = itens.filter(it => {
+      if (it.excluir_id) return vivos.some(x => x.id === it.excluir_id);
+      return !vivos.some(x =>
+        String(x.data).slice(0, 10) === it.data &&
+        String(x.linha_id) === String(it.linha_id) &&
+        Math.abs(num(x.valor) - num(it.valor)) < 0.005);
+    });
+
+    state.dados = d;
+    calcular();
+    render();
+    falhas.forEach(it => marcarCelula(it.linha_id, it.data, 'falhou'));
+    if (falhas.length){
+      toast(falhas.length === 1
+        ? 'Um lançamento não chegou à planilha — a célula ficou marcada em vermelho.'
+        : (falhas.length + ' lançamentos não chegaram à planilha — as células ficaram marcadas.'),
+        true);
+    }
+  },
+};
 
 /* --- o que forma o número: os títulos daquele dia e daquela conta --- */
 /* O bloco dos ajustes: aparece em qualquer célula, acima ou abaixo dos
@@ -2099,9 +2249,9 @@ function abrirLancamentos(l, dia){
   editarLancamento(l, dia, lista[0] || null);
 }
 
-function editarLancamento(l, dia, lanc){
+async function editarLancamento(l, dia, lanc){
   if (!state.podeEditar) return;
-  if (!pedirAutor()){ toast('Preciso do seu nome para registrar o lançamento.', true); return; }
+  if (!(await garantirAutor())){ toast('Preciso do seu nome para registrar o lançamento.', true); return; }
   state.edicao = { linha: l.linha, data: dia.data, lanc: lanc };
   el('lanc-titulo').textContent = l.label;
   const auto = l.linha.modo === 'auto';
@@ -2139,14 +2289,25 @@ async function salvarLancamento(){
      célula: sem isso, o valor novo aparece no meio de trinta colunas iguais e
      quem digitou fica procurando o próprio lançamento. */
   state.destacar = { linha_id: payload.lancamento.linha_id, data: payload.lancamento.data };
-  if (await gravar(payload, 'Lançamento salvo.')) recarregarDepois();
+  const alvo = { data: e.data, linha_id: e.linha.id, valor: v,
+                 descricao: el('lanc-desc').value };
+  if (await gravar(payload, 'Lançamento enviado.')){
+    aplicarLancamentoLocal(alvo, e.lanc ? e.lanc.id : '');
+    recarregarDepois(d => achouLancamento(d, alvo),
+      'O lançamento não chegou à planilha — o valor voltou ao que era. Tente de novo.');
+  }
 }
 
 async function excluirLancamento(){
   const e = state.edicao;
   if (!e || !e.lanc) return;
   fecharModal('modal-lanc');
-  if (await gravar({ acao:'fluxo_excluir', id: e.lanc.id }, 'Lançamento excluído.')) recarregarDepois();
+  const id = e.lanc.id;
+  if (await gravar({ acao:'fluxo_excluir', id: id }, 'Exclusão enviada.')){
+    recarregarDepois(
+      d => !(d.lancamentos || []).some(x => x.id === id && !x.desfeito),
+      'A exclusão não chegou à planilha — o lançamento continua lá. Tente de novo.');
+  }
 }
 
 /* O Apps Script responde sem corpo (no-cors), então esperamos um instante
@@ -2162,16 +2323,56 @@ function esquecerOAno(){
   Titulos.esquecer();
 }
 
-function recarregarDepois(){
+/* O envio é cego: o navegador não deixa ler a resposta do script, então
+   "enviei" nunca quis dizer "gravou". Quem chama passa um teste; depois que a
+   tela volta da planilha, o teste diz se o que se mandou está mesmo lá. Só
+   assim a ferramenta pode afirmar que salvou — e, quando não salvou, dizer
+   isso em vez de deixar o número mentir. */
+function recarregarDepois(conferir, aviso){
   esquecerOAno();
   fioComeca();
-  setTimeout(() => carregar(), 1500);
+  setTimeout(async () => {
+    await carregar();
+    if (typeof conferir !== 'function') return;
+    const d = state.dados;
+    if (!d || !Array.isArray(d.lancamentos)) return;   // sem resposta, não se acusa
+    if (!conferir(d)){
+      toast(aviso || 'A gravação não chegou à planilha. Tente de novo.', true);
+    }
+  }, 1500);
+}
+
+/* Achar na planilha o que se acabou de mandar. Sem id — o envio cego não
+   devolve nenhum — então o casamento é pelo conjunto: mesmo dia, mesma linha,
+   mesmo valor. */
+function achouLancamento(d, alvo){
+  return (d.lancamentos || []).some(x =>
+    !x.desfeito &&
+    String(x.data).slice(0, 10) === alvo.data &&
+    String(x.linha_id) === String(alvo.linha_id) &&
+    Math.abs(num(x.valor) - num(alvo.valor)) < 0.005);
+}
+
+/* Põe o lançamento na tela antes de a planilha confirmar. O número muda na
+   hora, como em qualquer planilha, e a conferência que vem logo atrás corrige
+   se algo tiver dado errado. */
+function aplicarLancamentoLocal(alvo, id){
+  const d = state.dados;
+  if (!d || !Array.isArray(d.lancamentos)) return;
+  const novo = { id: id || ('tmp' + Date.now().toString(36)), data: alvo.data,
+                 linha_id: alvo.linha_id, valor: alvo.valor,
+                 descricao: alvo.descricao || '', autor: state.autor,
+                 quando: '', desfeito: false };
+  const i = id ? d.lancamentos.findIndex(x => x.id === id) : -1;
+  if (i >= 0) d.lancamentos[i] = novo; else d.lancamentos.push(novo);
+  calcular();
+  render();
 }
 
 /* --- posição de saldos do dia: todas as contas de uma vez --- */
-function abrirSaldos(data){
+async function abrirSaldos(data){
   if (!state.podeEditar) return;
-  if (!pedirAutor()){ toast('Preciso do seu nome para registrar os saldos.', true); return; }
+  if (!(await garantirAutor())){ toast('Preciso do seu nome para registrar os saldos.', true); return; }
   const c = state.calc, d = state.dados;
   el('sal-titulo').textContent = 'Posição de saldos';
   el('sal-sub').textContent = fmtData(data) + ' · informe o saldo de cada conta';
@@ -2215,7 +2416,11 @@ async function salvarSaldos(){
   });
   fecharModal('modal-saldos');
   if (await gravar({ acao:'fluxo_saldo', data: data, saldos: saldos, autor: state.autor },
-                   'Saldos do dia salvos.')) recarregarDepois();
+                   'Saldos enviados.')){
+    recarregarDepois(
+      d => (d.saldos || []).filter(x => String(x.data).slice(0, 10) === data).length === saldos.length,
+      'A posição de saldos não chegou à planilha. Tente de novo.');
+  }
 }
 
 /* ---------------------------------------------------------------- modais */
@@ -4041,12 +4246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Quem está logado, e se o script exige senha. As duas coisas em paralelo,
      sem segurar o desenho da tela. */
   Chave.carregar();
-  IDENTIDADE = identidadeAccess().then(quem => {
-    if (quem){
-      state.autor = quem;
-      try { sessionStorage.setItem('fluxo_autor', quem); } catch(e){}
-    }
-  });
+  IDENTIDADE = identidadeAccess().then(quem => { if (quem) lembrarAutor(quem); });
   Chave.status();
 
   const dt = new Date();
@@ -4129,5 +4329,27 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch(e){}
 
   state.rolarParaMes = true;
-  carregar(true).then(() => Registro.abertura());
+
+  /* Abre com a cópia guardada, se houver, e busca o número de agora por baixo.
+     Qualquer tropeço aqui cai no caminho de sempre: a cópia é conforto, não
+     pode ser motivo de a tela não abrir. */
+  const anoBoot = state.mes.slice(0, 4);
+  const copia = lerAnoGuardado(anoBoot);
+  let abriuComCopia = false;
+  if (copia){
+    try {
+      state.dados = copia;
+      calcular();
+      render();
+      esconderLoader();
+      fioComeca();
+      abriuComCopia = true;
+    } catch(e){ abriuComCopia = false; }
+  }
+
+  if (abriuComCopia){
+    carregar(false).then(() => Registro.abertura());
+  } else {
+    carregar(true).then(() => Registro.abertura());
+  }
 });

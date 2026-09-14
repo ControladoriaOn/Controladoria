@@ -204,6 +204,30 @@
   </div>
 </div>
 
+<!-- Quem está lançando. A tela tenta descobrir sozinha pelo login do hub;
+     quando esse caminho não responde, pergunta aqui — dentro da própria
+     ferramenta, e não naquela caixinha cinza do navegador, que some sem dizer
+     nada e leva o lançamento junto. O nome fica guardado neste navegador,
+     então a pergunta acontece uma vez, não a cada aba aberta. -->
+<div class="modal" id="modal-nome">
+  <div class="modal-box">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-nome" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3><i class="fa-solid fa-user-pen"></i> Quem está lançando?</h3>
+      <p>O nome fica registrado no lançamento, para depois se saber quem digitou o quê.</p>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="nome-campo" class="imp-campo" autocomplete="name"
+             placeholder="seu nome">
+      <div class="note danger" id="nome-nota" hidden></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" data-fechar="modal-nome">Cancelar</button>
+      <button class="btn btn-primary" id="nome-ok" type="button">Continuar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Exportar. Antes o botão baixava na hora o mês que estivesse aberto, e
      conferir um fechamento de janeiro a julho virava sete downloads e um
      copia-e-cola. Agora ele pergunta o recorte primeiro: o período sempre
