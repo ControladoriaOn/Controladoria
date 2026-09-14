@@ -794,6 +794,40 @@ td.det-val .n{font-family:var(--font-mono);font-weight:600;font-variant-numeric:
 td.det-val .p{font-size:10px;color:var(--subtle);margin-top:1px;font-family:var(--font-body)}
 .det-barra-val{position:absolute;left:0;bottom:0;height:2px;background:var(--orange);opacity:.45}
 
+/* O ajuste é uma linha como as outras. A única marca é a etiqueta na coluna do
+   número e um fundo levíssimo — o bastante para não confundir com um título do
+   relatório, longe do cartão destacado que ele era antes. */
+.det-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.3px;
+  padding:2px 6px;border-radius:5px;background:var(--orange-soft);color:#8a3d00;
+  white-space:nowrap;text-transform:uppercase}
+table.det-tabela tr.tr-ajuste td{background:rgba(255,110,0,.035)}
+table.det-tabela tr.tr-ajuste:hover td{background:var(--orange-soft)}
+
+/* A coluna da ação é estreita e discreta: ela existe para quem procurar, não
+   para disputar a leitura com o valor ao lado. */
+th.det-acao-col,td.det-acao-col{width:30px;padding-left:0;padding-right:4px;text-align:right}
+.det-acao{border:none;background:transparent;color:var(--subtle);cursor:pointer;
+  padding:4px 5px;border-radius:6px;line-height:1;font-size:12px;opacity:.55;
+  transition:opacity .12s,color .12s,background .12s}
+table.det-tabela tr:hover .det-acao{opacity:1}
+.det-acao:hover{background:var(--danger-soft);color:var(--danger)}
+tr.tr-ajuste .det-acao:hover{background:var(--orange-soft);color:var(--orange)}
+
+/* Título que saiu da lista: mesma pauta dos ajustes, com o botão de volta. */
+.exc-item{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;
+  width:100%;padding:9px 14px;margin-bottom:8px;background:var(--bg);
+  border:1px dashed var(--border);border-radius:10px;font-size:12.5px}
+.exc-item .li-desc{text-decoration:line-through;text-decoration-thickness:1px}
+.exc-item .li-val{opacity:.7}
+
+/* O alvo da confirmação: o que exatamente vai ser mexido, antes do texto. */
+.cf-alvo{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding:11px 14px;margin-bottom:12px;background:var(--bg);border:1px solid var(--border);
+  border-radius:10px}
+.cf-alvo b{font-size:13px;color:var(--plum-deep);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.cf-alvo span{font-family:var(--font-mono);font-weight:700;color:var(--plum);white-space:nowrap}
+
 .det-pe{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
 .det-tot{flex:1;font-size:12px;color:var(--plum-soft);white-space:nowrap;
   overflow:hidden;text-overflow:ellipsis}

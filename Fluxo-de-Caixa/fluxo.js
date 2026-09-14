@@ -1880,10 +1880,17 @@ const Conferencia = {
 
 /* --- o que forma o número: os títulos daquele dia e daquela conta --- */
 /* O bloco dos ajustes: aparece em qualquer célula, acima ou abaixo dos
-   títulos. É por aqui que entra o que a automação não enxerga. */
-function blocoAjustes(l, dia){
+   títulos. É por aqui que entra o que a automação não enxerga.
+
+   Onde existe a tabela de títulos, os ajustes já estão nela como linhas — e aí
+   este bloco vem só com o botão. Ele era um cartão com fundo e borda próprios,
+   destacado do resto, e chamava mais atenção do que um título de quarenta mil
+   reais logo acima. Um ajuste é mais uma parcela do número da célula, não um
+   aviso; agora se parece com as outras parcelas. */
+function blocoAjustes(l, dia, semLista){
   const c = state.calc;
-  const lista = c.lancPorCel[l.linha.id + '|' + dia.data] || [];
+  const todos = c.lancPorCel[l.linha.id + '|' + dia.data] || [];
+  const lista = semLista ? [] : todos;
   const box = h('div', { class:'ajustes-box' });
 
   if (lista.length){
@@ -1902,8 +1909,10 @@ function blocoAjustes(l, dia){
   }
 
   if (state.podeEditar){
+    /* "outro" conta os que existem, não os que este bloco desenhou: quando a
+       tabela já mostra o ajuste, este bloco vem vazio e o botão mentiria. */
     const novo = h('button', { class:'btn btn-ghost btn-sm', type:'button' },
-      [ icone('fa-plus'), lista.length ? 'Lançar outro ajuste' : 'Lançar ajuste neste dia' ]);
+      [ icone('fa-plus'), todos.length ? 'Lançar outro ajuste' : 'Lançar ajuste neste dia' ]);
     novo.onclick = () => { fecharModal('modal-detalhe'); editarLancamento(l, dia, null); };
     box.appendChild(novo);
     box.appendChild(h('div', { class:'ajustes-dica', text:
@@ -1923,6 +1932,7 @@ function blocoAjustes(l, dia){
    ========================================================================== */
 const Titulos = {
   porDia: {},           // data -> lista de títulos do dia, todas as contas
+  foraDoDia: {},        // data -> os que alguém tirou da lista à mão
 
   async doDia(data){
     if (this.porDia[data]) return this.porDia[data];
@@ -1930,11 +1940,25 @@ const Titulos = {
     const r = await buscarJson(url);
     if (!r || !r.ok) throw new Error((r && r.erro) || 'sem resposta');
     this.porDia[data] = r.linhas || [];
+    this.foraDoDia[data] = r.excluidos || [];
     return this.porDia[data];
   },
 
+  excluidosDaLinha(data, l){
+    const fora = this.foraDoDia[data] || [];
+    const codigo = String((l.linha && l.linha.codigo) || '');
+    if (codigo) return fora.filter(x => String(x.conta_fluxo) === codigo);
+    if (l.linha && l.linha.id === 'l-s-sem-classificacao'){
+      const noPlano = {};
+      ((state.dados && state.dados.plano) || []).forEach(x => {
+        if (x.codigo) noPlano[String(x.codigo)] = true; });
+      return fora.filter(x => !noPlano[String(x.conta_fluxo)]);
+    }
+    return [];
+  },
+
   /* Gravar muda o passado: o que estava guardado deixa de valer. */
-  esquecer(){ this.porDia = {}; },
+  esquecer(){ this.porDia = {}; this.foraDoDia = {}; },
 };
 
 /* O esqueleto é a forma da lista chegando. A caixa branca vazia que havia
@@ -2088,6 +2112,8 @@ function pintarTitulos(l, dia, linhas, total){
       h('span', { text:'Há ajuste lançado à mão neste dia: R$ ' + fmtExato(ajuste) +
                         '. O valor na tela é R$ ' + fmtExato(auto + ajuste) + '.' }),
     ]));
+    const foraVazio = blocoExcluidos(l, dia);
+    if (foraVazio) corpo.appendChild(foraVazio);
     corpo.appendChild(blocoAjustes(l, dia));
     return;
   }
@@ -2099,17 +2125,25 @@ function pintarTitulos(l, dia, linhas, total){
   el('det-sub').textContent = fmtData(dia.data) +
     (destoam.length
       ? (' · ' + destoam.length + ' baixado(s) em outro dia')
-      : ' · todos baixados no mesmo dia') +
-    (ajuste ? ('  ·  ajuste de ' + fmtExato(ajuste)) : '');
+      : ' · todos baixados no mesmo dia');
 
+  /* Os ajustes entram na tabela junto com os títulos, então tudo que está
+     escrito aqui em cima passa a contar os dois. O "Total da conta" vira o
+     número que está na célula — antes era só a soma dos títulos, e quem
+     houvesse lançado um ajuste tinha de somar de cabeça para reconhecê-lo. */
+  const ajustes = c.lancPorCel[l.linha.id + '|' + dia.data] || [];
+  const naCelula = Math.round((total + ajuste) * 100) / 100;
   const saidasDoDia = Math.abs(num(c.totSai[dia.data]) || 0);
   const maior = linhas.reduce((a, x) => Math.max(a, Number(x.valor) || 0), 0);
   const chips = h('div', { class:'det-chips' }, [
     chip('Títulos', String(linhas.length)),
-    chip('Total da conta', fmtExato(total), true),
+    chip('Total da conta', fmtExato(naCelula), true),
     saidasDoDia ? chip('Do total de saídas do dia',
-      (100 * Math.abs(total) / saidasDoDia).toFixed(1).replace('.', ',') + '%') : null,
-    chip('Maior título', fmtExato(maior)),
+      (100 * Math.abs(naCelula) / saidasDoDia).toFixed(1).replace('.', ',') + '%') : null,
+    ajustes.length
+      ? chip(ajustes.length === 1 ? 'Ajuste à mão' : ajustes.length + ' ajustes à mão',
+             fmtExato(ajuste))
+      : chip('Maior título', fmtExato(maior)),
   ].filter(Boolean));
   corpo.appendChild(chips);
 
@@ -2117,7 +2151,7 @@ function pintarTitulos(l, dia, linhas, total){
      vieram da planilha do fluxo do ano o número inclui o que o banco desconta
      na própria liquidação, que nunca virou título a pagar. Dizer quanto falta
      é melhor que deixar a pessoa somar a coluna na mão e achar que errou. */
-  const falta = Math.round((auto - total) * 100) / 100;
+  const falta = Math.round((auto - total) * 100) / 100;   // ajuste não entra: ele não vem de título
   if (Math.abs(falta) >= 0.01){
     corpo.appendChild(h('div', { class:'note info', style:'margin:10px 0' }, [
       icone('fa-circle-info'),
@@ -2173,72 +2207,259 @@ function pintarTitulos(l, dia, linhas, total){
         ? String(a.fornecedor || '').localeCompare(String(b.fornecedor || ''), 'pt-BR')
         : String(a.numero || '').localeCompare(String(b.numero || ''), 'pt-BR'));
 
+    /* Os ajustes ficam sempre no fim, e fora da ordenação: eles não são
+       títulos e não competem por "maior valor". A busca alcança os dois. */
+    let ajusVis = ajustes;
+    if (estado.busca){
+      const t = estado.busca;
+      ajusVis = ajusVis.filter(a =>
+        String(a.descricao || '').toLowerCase().indexOf(t) >= 0 ||
+        String(a.autor || '').toLowerCase().indexOf(t) >= 0 ||
+        'ajuste'.indexOf(t) >= 0);
+    }
+
     tabela.innerHTML = '';
     const tbl = h('table', { class:'tabela-simples det-tabela' });
     const cab = [ h('th', { text:'Número' }), h('th', { text:'Favorecido' }) ];
     if (destoam.length) cab.push(h('th', { text:'Baixa' }));
     cab.push(h('th', { text:'Banco' }));
     cab.push(h('th', { class:'num', text:'Valor' }));
+    if (state.podeEditar) cab.push(h('th', { class:'det-acao-col' }));
     tbl.appendChild(h('thead', {}, [ h('tr', {}, cab) ]));
 
     const tb = h('tbody');
-    const soma = vis.reduce((a, x) => a + Math.abs(Number(x.valor) || 0), 0) || 1;
-    vis.forEach(x => {
+    const soma = vis.concat(ajusVis).reduce((a, x) => a + Math.abs(Number(x.valor) || 0), 0) || 1;
+
+    /* Uma linha só serve para os dois: o que muda é o que vai em cada coluna,
+       não a forma da linha. Era exatamente isso que faltava — o ajuste morava
+       num cartão à parte e parecia outra categoria de coisa. */
+    const linhaDa = (x, eAjuste) => {
       const v = Number(x.valor) || 0;
       const parte = 100 * Math.abs(v) / soma;
       const cels = [
-        h('td', { class:'mono', text: x.numero || '—' }),
+        eAjuste
+          ? h('td', {}, [ h('span', { class:'det-tag', text:'ajuste' }) ])
+          : h('td', { class:'mono', text: x.numero || '—' }),
         h('td', {}, [ h('div', { class:'forn' }, [
-          x.fornecedor || '—',
-          h('small', { text: String(x.historico || '').slice(0, 70) }),
+          eAjuste ? (x.descricao || 'sem observação') : (x.fornecedor || '—'),
+          h('small', { text: eAjuste
+            ? ((x.autor || 'sem nome') + (x.quando
+                ? (' · ' + x.quando.slice(0, 10).split('-').reverse().join('/')) : ''))
+            : String(x.historico || '').slice(0, 70) }),
         ])]),
       ];
       if (destoam.length){
-        const fora = String(x.dt_baixa).slice(0, 10) !== dia.data;
+        const fora = !eAjuste && String(x.dt_baixa).slice(0, 10) !== dia.data;
         cels.push(h('td', { class:'mono' + (fora ? ' det-fora' : ''),
-                            text: fmtData(x.dt_baixa) }));
+                            text: eAjuste ? '' : fmtData(x.dt_baixa) }));
       }
-      cels.push(h('td', {}, [ x.banco ? h('span', { class:'det-banco', text: x.banco }) : '' ]));
+      cels.push(h('td', {}, [ (!eAjuste && x.banco)
+        ? h('span', { class:'det-banco', text: x.banco }) : '' ]));
       cels.push(h('td', { class:'num det-val' }, [
         h('div', { class:'n', text: fmtExato(v) }),
         h('div', { class:'p', text: parte.toFixed(1).replace('.', ',') + '%' }),
         h('div', { class:'det-barra-val', style:'width:' + Math.min(100, parte) + '%' }),
       ]));
-      tb.appendChild(h('tr', {}, cels));
-    });
+
+      if (state.podeEditar){
+        const b = h('button', { class:'det-acao', type:'button',
+          title: eAjuste ? 'Editar este ajuste' : 'Tirar este título da lista' },
+          [ icone(eAjuste ? 'fa-pen' : 'fa-xmark') ]);
+        b.onclick = ev => {
+          ev.stopPropagation();
+          if (eAjuste){ fecharModal('modal-detalhe'); editarLancamento(l, dia, x); }
+          else pedirExclusaoTitulo(l, dia, x, naCelula);
+        };
+        cels.push(h('td', { class:'det-acao-col' }, [b]));
+      }
+
+      const tr = h('tr', { class: eAjuste ? 'tr-ajuste' : '' }, cels);
+      if (eAjuste && state.podeEditar){
+        tr.style.cursor = 'pointer';
+        tr.onclick = () => { fecharModal('modal-detalhe'); editarLancamento(l, dia, x); };
+      }
+      return tr;
+    };
+
+    vis.forEach(x => tb.appendChild(linhaDa(x, false)));
+    ajusVis.forEach(a => tb.appendChild(linhaDa(a, true)));
     tbl.appendChild(tb);
     tabela.appendChild(tbl);
 
-    if (!vis.length) tabela.appendChild(h('div', { class:'empty' }, [
+    if (!vis.length && !ajusVis.length) tabela.appendChild(h('div', { class:'empty' }, [
       icone('fa-magnifying-glass'), 'Nenhum título com esse texto.' ]));
 
-    const somaVis = vis.reduce((a, x) => a + (Number(x.valor) || 0), 0);
+    const somaVis = vis.concat(ajusVis).reduce((a, x) => a + (Number(x.valor) || 0), 0);
     rodape.innerHTML = '';
     rodape.appendChild(h('span', { class:'det-tot' }, [
-      vis.length + (vis.length === 1 ? ' título · ' : ' títulos · '),
+      vis.length + (vis.length === 1 ? ' título' : ' títulos') +
+      (ajusVis.length ? (ajusVis.length === 1 ? ' e 1 ajuste · ' : ' e ' + ajusVis.length + ' ajustes · ') : ' · '),
       h('b', { text: fmtExato(somaVis) }),
     ]));
     const copiar = h('button', { class:'btn btn-ghost btn-sm', type:'button' },
       [ icone('fa-copy'), 'Copiar lista' ]);
-    copiar.onclick = () => copiarTitulos(l, dia, vis);
+    copiar.onclick = () => copiarTitulos(l, dia, vis, ajusVis);
     rodape.appendChild(copiar);
   }
 
   desenhar();
-  corpo.appendChild(blocoAjustes(l, dia));
+  const fora = blocoExcluidos(l, dia);
+  if (fora) corpo.appendChild(fora);
+  corpo.appendChild(blocoAjustes(l, dia, true));
 }
+
+/* ============================================================================
+   TIRAR UM TÍTULO DA LISTA
+   ----------------------------------------------------------------------------
+   Existe porque o relatório às vezes traz o que não deveria — uma baixa em
+   duplicidade, um título que na verdade não foi pago. Até aqui o único jeito
+   era um ajuste negativo do mesmo valor: fechava a conta e deixava as duas
+   linhas na lista, uma explicando a outra.
+
+   O aviso antes de apagar diz o que vai acontecer com o número da célula, e a
+   resposta depende de onde aquele dia nasceu. Veio do relatório de contas a
+   pagar: o valor é a soma destes títulos, então ele cai. Veio da planilha do
+   fluxo do ano: o valor nunca foi a soma deles, então não se mexe — ali sair
+   da lista é só sair da lista.
+   ========================================================================== */
+function pedirExclusaoTitulo(l, dia, t, naCelula){
+  const doAno = String(t.origem || '') === 'base_ano';
+  const v = Number(t.valor) || 0;
+  const depois = Math.round((naCelula - v) * 100) / 100;
+
+  Confirma.pedir({
+    titulo: 'Tirar este título da lista?',
+    corpo: [
+      h('div', { class:'cf-alvo' }, [
+        h('b', { text: t.fornecedor || t.numero || 'título sem nome' }),
+        h('span', { text: fmtExato(v) }),
+      ]),
+      h('p', { class:'cf-text', text: doAno
+        ? ('O valor da célula não muda: ele vem da planilha do fluxo do ano, que ' +
+           'guarda o total do dia e não a soma destes títulos. Só a lista muda. ' +
+           'Para mexer no valor, o caminho é um ajuste.')
+        : ('O valor da célula cai de ' + fmtExato(naCelula) + ' para ' +
+           fmtExato(depois) + '.') }),
+      h('p', { class:'cf-text', text:
+        'A próxima importação não traz o título de volta — e enquanto ele estiver ' +
+        'fora, esta janela mostra o caminho de volta.' }),
+    ],
+    botao: 'Tirar da lista',
+    perigo: true,
+    aoConfirmar: async () => {
+      /* titulo_chave e não chave: "chave" já é o nome da senha de gravação, que
+         assinar() escreve por cima de qualquer coisa com esse nome. */
+      if (!(await gravar({ acao:'fluxo_excluir_titulo', titulo_chave: t.chave, data: dia.data },
+                         'Título tirado da lista.'))) return;
+      await depoisDeMexerNoTitulo(l, dia);
+    },
+  });
+}
+
+function pedirVoltaTitulo(l, dia, x){
+  Confirma.pedir({
+    titulo: 'Trazer o título de volta?',
+    corpo: [
+      h('div', { class:'cf-alvo' }, [
+        h('b', { text: x.fornecedor || x.numero || 'título sem nome' }),
+        h('span', { text: fmtExato(x.valor) }),
+      ]),
+      h('p', { class:'cf-text', text:
+        'Ele volta para a lista deste dia, exatamente como estava. Se o dia vier ' +
+        'do relatório de contas a pagar, o valor da célula sobe de novo.' }),
+    ],
+    botao: 'Trazer de volta',
+    aoConfirmar: async () => {
+      if (!(await gravar({ acao:'fluxo_restaurar_titulo', titulo_chave: x.chave },
+                         'Título de volta na lista.'))) return;
+      await depoisDeMexerNoTitulo(l, dia);
+    },
+  });
+}
+
+/* O script leva um instante para gravar, e o detalhe daquele dia está guardado
+   aqui dentro. Esquecer os dois e reler é mais barato que adivinhar o que
+   mudou — e é o que garante que a tela não fique mostrando o que já não existe. */
+async function depoisDeMexerNoTitulo(l, dia){
+  fecharModal('modal-detalhe');
+  abrirVeu('Relendo os números…');
+  Titulos.esquecer();
+  esquecerOAno();
+  await new Promise(r => setTimeout(r, 1200));
+  try { await carregar(false, true); } catch(e){}
+  fecharVeu();
+  try { await abrirDetalheTitulos(l, dia); } catch(e){}
+}
+
+/* Os títulos que saíram da lista neste dia e nesta conta. Some quando não há
+   nenhum — não é um painel, é uma pendência, e pendência que não existe não
+   ocupa espaço. */
+function blocoExcluidos(l, dia){
+  const fora = Titulos.excluidosDaLinha(dia.data, l);
+  if (!fora.length) return null;
+
+  const box = h('div', { class:'ajustes-box' });
+  box.appendChild(h('div', { class:'ajustes-titulo', text:
+    fora.length === 1 ? 'Um título foi tirado desta lista'
+                      : (fora.length + ' títulos foram tirados desta lista') }));
+  fora.forEach(x => {
+    const linha = h('div', { class:'exc-item' }, [
+      h('span', { class:'li-val', text: fmtExato(x.valor) }),
+      h('span', { class:'li-desc', text: x.fornecedor || x.numero || 'sem nome' }),
+      h('span', { class:'li-quem', text: (x.quem || '') +
+        (x.quando ? (' · ' + x.quando.slice(0, 10).split('-').reverse().join('/')) : '') }),
+    ]);
+    if (state.podeEditar){
+      const b = h('button', { class:'btn btn-ghost btn-sm', type:'button' },
+        [ icone('fa-rotate-left'), 'trazer de volta' ]);
+      b.onclick = () => pedirVoltaTitulo(l, dia, x);
+      linha.appendChild(b);
+    }
+    box.appendChild(linha);
+  });
+  return box;
+}
+
+/* A janela de confirmar, uma só para tudo que pede confirmação. Sem ela cada
+   caso viraria um confirm() do navegador, que não cabe texto e não deixa
+   explicar o que vai acontecer. */
+const Confirma = {
+  pedir(op){
+    el('cf-titulo').textContent = op.titulo || 'Confirmar';
+    const corpo = el('cf-corpo');
+    corpo.innerHTML = '';
+    (op.corpo || []).forEach(x => corpo.appendChild(x));
+    const b = el('cf-ok');
+    b.textContent = op.botao || 'Confirmar';
+    b.classList.toggle('btn-danger', !!op.perigo);
+    b.classList.toggle('btn-primary', !op.perigo);
+    b.onclick = async () => {
+      fecharModal('modal-confirma');
+      try { await op.aoConfirmar(); } catch(e){ toast('Não deu certo: ' + (e.message || e), true); }
+    };
+    mostrarModal('modal-confirma');
+  },
+};
 
 /* Copia em texto separado por tabulação: cola direto numa planilha, em
    colunas, sem ninguém precisar tratar nada. */
-function copiarTitulos(l, dia, linhas){
+function copiarTitulos(l, dia, linhas, ajustes){
   const cab = ['Número', 'Favorecido', 'Histórico', 'Vencimento', 'Baixa', 'Banco', 'Valor'];
   const corpo = linhas.map(x => [
     x.numero || '', x.fornecedor || '', String(x.historico || '').replace(/\s+/g, ' '),
     fmtData(x.vencimento), fmtData(x.dt_baixa), x.banco || '',
     fmtExato(x.valor),
   ].join('\t'));
+  /* O que está na tela é o que vai para a área de transferência, ajuste
+     incluído: colar uma lista que não bate com o total seria pior que nada. */
+  (ajustes || []).forEach(a => corpo.push([
+    'ajuste', a.descricao || 'sem observação',
+    (a.autor || '') + (a.quando ? (' · ' + a.quando.slice(0, 10)) : ''),
+    fmtData(dia.data), '', '', fmtExato(a.valor),
+  ].join('\t')));
   const txt = [l.label + ' · ' + fmtData(dia.data), cab.join('\t')].concat(corpo).join('\n');
-  const pronto = () => toast(linhas.length + ' título(s) copiados. Cole numa planilha.');
+  const quantos = linhas.length + (ajustes || []).length;
+  const pronto = () => toast(quantos + ' linha(s) copiadas. Cole numa planilha.');
   try {
     navigator.clipboard.writeText(txt).then(pronto, () => copiarNaMarra(txt, pronto));
   } catch(e){ copiarNaMarra(txt, pronto); }
@@ -3420,6 +3641,69 @@ function conferirTotais_(lista, totalPorDia, nome, avisos){
 
 
 /* ============================================================================
+   O TEXTO QUE VEM TORTO DO TOTVS
+   ----------------------------------------------------------------------------
+   No relatório e na base realizada, "SERVIÇOS" chega escrito "SERVIA‡OS" e
+   "VEÍCULOS" vira "VEA" mais um caractere de controle e "CULOS". Não é defeito
+   da leitura: está assim dentro do arquivo. O caminho que o texto fez é
+   conhecido — foi gravado em UTF-8, lido como Windows-1252, e o acento do
+   primeiro byte foi raspado, virando um "A".
+
+   Dá para desfazer exatamente, porque o par que sobrou é sempre o mesmo: um
+   "A" seguido de um caractere que nenhum texto de verdade usa. Só esse par é
+   tocado. Um "A" seguido de letra, número, espaço ou pontuação normal fica
+   onde está — "CASA DA AGUA" continua "CASA DA AGUA".
+   ========================================================================== */
+/* Os 32 caracteres que o Windows-1252 usa para os bytes 0x80 a 0x9F. Onde o
+   1252 não define nada, fica o próprio caractere de controle, que é o que os
+   leitores de planilha costumam devolver. */
+const CP1252_ALTO =
+  '€‚ƒ„…†‡ˆ‰Š‹ŒŽ' +
+  '‘’“”•–—˜™š›œžŸ';
+
+/* caractere -> byte que ele representava. Acima de 0x9F o 1252 é igual ao
+   Latin-1, então o próprio código do caractere já é o byte. */
+const BYTE_DE = (() => {
+  const m = {};
+  for (let i = 0; i < 32; i++) m[CP1252_ALTO[i]] = 0x80 + i;
+  for (let b = 0xA0; b <= 0xBF; b++) m[String.fromCharCode(b)] = b;
+  return m;
+})();
+
+function arrumarTexto(v){
+  const s = (v === null || v === undefined) ? '' : String(v);
+  if (s.indexOf('A') < 0 && s.indexOf('Ã') < 0 && s.indexOf('Â') < 0) return s.trim();
+
+  const out = [];
+  for (let i = 0; i < s.length; i++){
+    const c = s[i];
+    const b1 = BYTE_DE[s[i + 1]];
+
+    /* Três caracteres: travessão, aspas curvas, reticências — tudo que nasceu
+       em U+20xx e ocupava três bytes. */
+    if (c === 'A' && s[i + 1] === '€' && BYTE_DE[s[i + 2]] !== undefined){
+      out.push(String.fromCharCode(0x2000 + (BYTE_DE[s[i + 2]] - 0x80)));
+      i += 2; continue;
+    }
+    /* Dois caracteres: as maiúsculas acentuadas, que é o caso de quase tudo. */
+    if (c === 'A' && b1 !== undefined && b1 <= 0x9F){
+      out.push(String.fromCharCode(0xC0 + (b1 - 0x80)));
+      i += 1; continue;
+    }
+    /* Texto que já vinha torto de antes e quebrou duas vezes: o "A" cola no
+       caractere que acabou de ser remontado. */
+    const ult = out.length ? out[out.length - 1] : '';
+    if (c === 'A' && (ult === 'Ã' || ult === 'Â') && b1 !== undefined && b1 >= 0xA0){
+      const lead = ult === 'Ã' ? 0xC3 : 0xC2;
+      out[out.length - 1] = String.fromCharCode(((lead & 0x1F) << 6) | (b1 & 0x3F));
+      i += 1; continue;
+    }
+    out.push(c);
+  }
+  return out.join('').trim();
+}
+
+/* ============================================================================
    IMPORTAÇÃO — LEITURA DO RELATÓRIO DE CONTAS A PAGAR
    ----------------------------------------------------------------------------
    O mesmo leitor serve para dois arquivos que só parecem diferentes: a base do
@@ -3511,7 +3795,7 @@ function lerRelatorio(wb){
 
     const valor = numero(cols.saldo !== undefined ? l[cols.saldo] : l[cols.valor_titulo]);
     const numeroTit = l[cols.numero] == null ? '' : String(l[cols.numero]).trim();
-    const forn = l[cols.fornecedor] == null ? '' : String(l[cols.fornecedor]).trim();
+    const forn = arrumarTexto(l[cols.fornecedor]);
 
     /* No mesmo dia aparecem títulos idênticos de verdade — treze boletos de
        IPVA com o mesmo número, fornecedor e valor. O contador no fim da chave
@@ -3525,14 +3809,14 @@ function lerRelatorio(wb){
       chave: base + '|' + vistos[base],
       dt_baixa: data, vencimento: data,
       numero: numeroTit,
-      tipo: l[cols.tipo] == null ? '' : String(l[cols.tipo]).trim(),
+      tipo: arrumarTexto(l[cols.tipo]),
       natureza: l[cols.natureza] == null ? '' : String(l[cols.natureza]).trim(),
       conta_fluxo: conta,
-      fluxo_caixa: l[cols.fluxo_caixa] == null ? '' : String(l[cols.fluxo_caixa]).trim(),
+      fluxo_caixa: arrumarTexto(l[cols.fluxo_caixa]),
       fornecedor: forn,
       valor_pago: valor,
       valor_titulo: numero(l[cols.valor_titulo]),
-      historico: l[cols.historico] == null ? '' : String(l[cols.historico]).trim(),
+      historico: arrumarTexto(l[cols.historico]),
       banco: banco,
       bordero: cols.bordero === undefined || l[cols.bordero] == null ? '' : String(l[cols.bordero]).trim(),
       origem: 'relatorio',
