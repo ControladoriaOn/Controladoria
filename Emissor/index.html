@@ -705,9 +705,17 @@
                 HUB_PATH_PREFIX: '/',   // o hub mora na raiz do domínio
                 STORAGE_KEY: 'came_from_hub_gerador_nd',
 
+                /* A mesma ferramenta atende em dois endereços: dentro do hub,
+                   para quem tem acesso a ele, e neste, aberto à empresa toda.
+                   Neste o hub é uma porta fechada — mostrar o botão seria
+                   convidar a pessoa a bater nela. A regra é o endereço, não
+                   quem clicou: dentro do hub o botão continua igual. */
+                SO_A_FERRAMENTA: 'nd.ontimelogistica.com.br',
+
                 init: function () {
                     var btn = document.getElementById('btnVoltarHub');
                     if (!btn) return;
+                    if (location.hostname === this.SO_A_FERRAMENTA) return;
                     if (this.veioDoHub()) {
                         btn.style.display = 'inline-flex';
                         try { sessionStorage.setItem(this.STORAGE_KEY, '1'); } catch (e) {}
