@@ -295,6 +295,22 @@ const Chave = {
   K: 'fluxo_chave',
   exigida: false,
 
+  /* A pergunta "o script exige senha?" tem TRÊS respostas, não duas: exige,
+     não exige, e ainda não voltou. A terceira existia de fato — a consulta sai
+     no carregamento e não é esperada, para não segurar o desenho da tela — mas
+     valia como "não exige" enquanto estivesse no ar. E ela não volta rápido: o
+     Apps Script atende um pedido por vez por usuário, então ela entra na fila
+     atrás da carga do ano, que leva de quatro a trinta e cinco segundos.
+
+     Quem clicasse em "Editar" nesses segundos entrava sem senha nenhuma. A
+     tela ficava toda clicável, cada gravação saía com o campo em branco, o
+     script recusava — e a recusa não tinha como voltar, porque o envio é cego.
+     A pessoa trabalhava minutos a fio contra uma porta fechada, vendo
+     "Importação concluída" no fim. */
+  sabido: false,        // a resposta já chegou?
+  emCurso: null,        // a consulta que está a caminho
+  conferida: false,     // a senha desta sessão já foi conferida com o script
+
   carregar(){
     try { state.chave = sessionStorage.getItem(this.K) || ''; } catch(e){}
   },
@@ -322,20 +338,29 @@ const Chave = {
     return d;
   },
 
-  async status(){
-    try {
+  /* Guarda a própria consulta, não só o resultado: é ela que o garantir()
+     espera quando alguém chega antes da resposta. */
+  status(){
+    this.emCurso = (async () => {
       const d = await this.perguntar(state.chave || undefined);
-      if (!d || d.ok === false) return;
+      if (!d || d.ok === false) return false;
       this.exigida = !!d.exige_chave;
-      if (this.exigida && state.chave && d.chave_ok === false){
-        this.esquecer();
-        toast('A senha de gravação mudou. Vou pedir a nova na próxima gravação.', true);
+      this.sabido = true;
+      if (this.exigida && state.chave){
+        if (d.chave_ok === true) this.conferida = true;
+        else {
+          this.esquecer();
+          toast('A senha de gravação mudou. Vou pedir a nova na próxima gravação.', true);
+        }
       }
-    } catch(e){ /* sem status, a gravação ainda tenta e o script decide */ }
+      return true;
+    })().catch(() => false);
+    return this.emCurso;
   },
 
   esquecer(){
     state.chave = '';
+    this.conferida = false;
     try { sessionStorage.removeItem(this.K); } catch(e){}
   },
 
@@ -352,10 +377,35 @@ const Chave = {
     return d.chave_ok === true ? 'ok' : 'errada';
   },
 
-  /* Devolve true quando pode gravar. Pede a senha só quando o script exige e
-     ela ainda não está guardada nesta sessão. */
+  /* Devolve true quando pode gravar — e só responde depois de saber do que
+     está falando. A versão anterior começava por "se não exige senha, pode
+     entrar", e nos primeiros segundos "não exige" não era uma resposta: era a
+     ausência dela. */
   async garantir(){
-    if (!this.exigida || state.chave) return true;
+    if (!this.sabido && this.emCurso){ try { await this.emCurso; } catch(e){} }
+    /* Segunda chance: a primeira consulta pode ter caído na fila junto com a
+       carga do ano e morrido no caminho. Esta sai sozinha e volta rápido. */
+    if (!this.sabido){ try { await this.status(); } catch(e){} }
+    if (!this.sabido){
+      toast('Não consegui confirmar com o script se a gravação pede senha. ' +
+            'Tente de novo em alguns segundos.', true);
+      return false;
+    }
+
+    if (!this.exigida) return true;
+    if (state.chave && this.conferida) return true;
+
+    /* Senha guardada nesta sessão passa pela conferência em vez de valer só
+       por existir: guardada e certa são coisas diferentes. */
+    if (state.chave){
+      const r = await this.conferir(state.chave);
+      if (r === 'ok'){ this.conferida = true; return true; }
+      if (r === 'falhou'){
+        toast('Não consegui conferir a senha agora. Tente de novo em alguns segundos.', true);
+        return false;
+      }
+      this.esquecer();
+    }
     return await this.pedir();
   },
 
@@ -430,6 +480,7 @@ const Chave = {
           return;
         }
         state.chave = digitada;
+        this.conferida = true;          // acabou de vir do script
         try { sessionStorage.setItem(this.K, digitada); } catch(e){}
         fechar(true);
       };
@@ -3829,7 +3880,11 @@ function lerRelatorio(wb){
 
   if (semData) avisos.push(semData + ' linha(s) sem data em "Vencto Real" ficaram de fora.');
   if (semConta) avisos.push(semConta + ' linha(s) sem "Conta Fluxo C" ficaram de fora — sem conta, não há onde somar.');
-  if (!titulos.length) throw new Error('O arquivo foi lido, mas nenhuma linha tinha data e conta de fluxo.');
+  /* Antes isto era um erro lançado, e quem o pegava lá em cima não sabia
+     distinguir "não é o relatório" de "é o relatório e está vazio" — virava
+     "este arquivo não parece o relatório de contas a pagar", que manda a pessoa
+     procurar outro arquivo quando o arquivo está certo e o recorte é que veio
+     em branco. Agora volta vazio e a tela explica o que houve. */
 
   const dias = Object.keys(porDia).sort();
   return {
@@ -4090,6 +4145,12 @@ const Importar = {
     t.appendChild(corpo);
     c.appendChild(h('div', { class:'imp-rolagem' }, [t]));
 
+    if (!r.titulos.length){
+      c.appendChild(h('div', { class:'imp-aviso imp-perigo', text:
+        'Nenhuma linha deste arquivo tem data em "Vencto Real" e conta de fluxo ao ' +
+        'mesmo tempo — não há o que gravar. Confira se o arquivo é o certo e se o ' +
+        'período veio preenchido.' }));
+    }
     r.avisos.forEach(a => c.appendChild(h('div', { class:'imp-aviso', text:a })));
     return c;
   },
@@ -4306,6 +4367,12 @@ const Importar = {
 
     if (this.modo === 'dia'){
       if (!this.rel){ b.disabled = true; b.textContent = 'Confirmar'; return; }
+      /* Arquivo lido e nenhuma linha aproveitável: antes o botão liberava, o
+         envio saía vazio — quer dizer, não saía — e a tela comemorava assim
+         mesmo. Confirmar nada não é uma operação. */
+      if (!this.rel.titulos.length){
+        b.disabled = true; b.textContent = 'Nada para gravar'; return;
+      }
       const cobertos = this.diasCobertos().length;
       const ciente = !cobertos || (el('imp-ciente-dia') && el('imp-ciente-dia').checked);
       b.disabled = !ciente;
@@ -4315,11 +4382,13 @@ const Importar = {
       return;
     }
 
-    const pronto = (this.ano || this.rel) && el('imp-ciente') && el('imp-ciente').checked;
+    const temDetalhe = !!(this.rel && this.rel.titulos.length);
+    const pronto = (this.ano || temDetalhe) && el('imp-ciente') && el('imp-ciente').checked;
     b.disabled = !pronto;
-    b.textContent = (this.ano && this.rel) ? 'Carregar o ano e o detalhe'
+    b.textContent = (this.ano && temDetalhe) ? 'Carregar o ano e o detalhe'
                   : this.ano ? 'Carregar o ano'
-                  : 'Carregar só o detalhe';
+                  : temDetalhe ? 'Carregar só o detalhe'
+                  : 'Nada para gravar';
   },
 
   /* --------------------------------------------------------------- gravação */
@@ -4391,6 +4460,9 @@ const Importar = {
 
   async confirmar(){
     if (this.ocupado) return;
+    /* Uma importação leva minutos e são dezenas de envios. Conferir a senha de
+       novo aqui custa uma consulta e evita descobrir no fim que nada valeu. */
+    Chave.conferida = false;
     if (!(await Chave.garantir())){ toast('Gravação cancelada.', true); return; }
 
     this.ocupado = true;
@@ -4405,6 +4477,9 @@ const Importar = {
       const limpou = this.modo === 'limpar';
       const quantos = (this.rel && this.rel.titulos) ? this.rel.titulos.length : 0;
       const dias = (this.rel && this.rel.dias) ? this.rel.dias.length : 0;
+      /* Guardado antes da releitura, porque é com isto que ela vai ser
+         comparada: os dias que acabaram de subir. */
+      const enviados = (this.modo === 'dia' && this.rel) ? this.rel.dias.slice() : [];
       this.passo(limpou ? 'Base apagada. Relendo…' : 'Gravado. Relendo…', 100);
 
       /* Gravar leva segundos; reler leva mais. Antes, dessa hora em diante o
@@ -4421,6 +4496,20 @@ const Importar = {
       await new Promise(r => setTimeout(r, 900));   // o script ainda está gravando
       try { await carregar(false, true); }
       finally { fecharVeu(); }
+
+      /* O envio é cego: o script pode ter recusado — senha errada, por exemplo —
+         e a tela não teria como saber. Saber, ela sabe: acabou de reler a base.
+         Um dia que subiu e voltou sem título nenhum não chegou lá. */
+      const faltaram = enviados.filter(d => !diaTemTitulo(d));
+      if (faltaram.length){
+        toast('A gravação não chegou à planilha: ' +
+              (faltaram.length === 1
+                ? ('o dia ' + dataBR(faltaram[0]) + ' continua sem título.')
+                : (faltaram.length + ' dias continuam sem título.')) +
+              ' Confira a senha de gravação e tente de novo.', true);
+        return;
+      }
+
       toast(limpou ? 'Base do fluxo apagada.'
                    : !quantos ? 'Importação concluída.'
                    : ('Importação concluída · ' + quantos.toLocaleString('pt-BR') +
@@ -4520,6 +4609,15 @@ const Importar = {
   },
 };
 
+/* Aquele dia tem título vindo do relatório? A contagem vem junto do realizado:
+   quem nasce da planilha do ano vem com zero, quem nasce do relatório vem com
+   o número de títulos somados. Sem base para julgar, não acusa ninguém. */
+function diaTemTitulo(data){
+  const d = state.dados;
+  if (!d || !Array.isArray(d.realizado)) return true;
+  return d.realizado.some(r => String(r.data).slice(0, 10) === data && (Number(r.qtd) || 0) > 0);
+}
+
 /* A tela continua à vista, coberta por um véu, enquanto algo demora. Trocar a
    tabela por um esqueleto nessas horas seria pior que a espera: some o número
    que a pessoa estava olhando. */
@@ -4549,7 +4647,13 @@ const Edicao = {
   async alternar(){
     if (state.podeEditar){ this.sair(); return; }
 
-    if (!(await Chave.garantir())) return;
+    if (!(await Chave.garantir())){
+      /* Quando foi a conferência que falhou, o garantir() já disse o motivo.
+         O que sobra aqui é ter fechado a janela da senha — e não fazer nada,
+         em silêncio, é indistinguível de a tela estar lenta. */
+      if (Chave.exigida && !state.chave) toast('Modo edição não ligado: falta a senha.', true);
+      return;
+    }
 
     state.podeEditar = true;
     this.pintar();
