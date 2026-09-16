@@ -643,12 +643,36 @@ $('inpPinCancel').onkeydown=e=>{ if(e.key==='Enter') confirmarCancelar(); };
 });
 document.onkeydown=e=>{ if(e.key==='Escape'){ fecharModal(); fecharCancelar(); } };
 
+/* A barra encolhe de verdade — 27px no desktop, 19px no celular — e ela faz
+   parte do fluxo da página, então quando encolhe todo o conteúdo sobe junto. O
+   navegador corrige isso sozinho, puxando a rolagem de volta para a tela não
+   saltar, e essa correção era maior que a folga entre os dois gatilhos (crescia
+   abaixo de 8, encolhia acima de 24: 16px de folga contra 27px de correção).
+   Uma correção só já atravessava as duas linhas, a barra virava de novo, o
+   navegador corrigia outra vez — e ficava pulando sem parar numa faixa larga,
+   dos 25px aos 60 e poucos.
+
+   Duas travas. A folga entre as linhas passa a ser maior que o que a barra
+   mexe, com sobra. E enquanto a animação de 0,2s está acontecendo ninguém olha
+   a rolagem, porque é justamente durante ela que a correção chega picada; no
+   fim da animação a conta é refeita uma vez, para não ficar com a barra grande
+   depois de uma rolagem rápida. */
 const elFixo=$('fixo');
-addEventListener('scroll',()=>{
+const ENCOLHE_ACIMA=120, CRESCE_ABAIXO=24, ANIMACAO=260;
+let barraOcupada=false;
+
+function ajustarBarra(){
+  if(barraOcupada) return;
   const y=window.scrollY;
-  if(y>24) elFixo.classList.add('rolou');
-  else if(y<8) elFixo.classList.remove('rolou');
-}, {passive:true});
+  const tinha=elFixo.classList.contains('rolou');
+  const quer = tinha ? !(y<CRESCE_ABAIXO) : (y>ENCOLHE_ACIMA);
+  if(quer===tinha) return;
+
+  elFixo.classList.toggle('rolou', quer);
+  barraOcupada=true;
+  setTimeout(()=>{ barraOcupada=false; ajustarBarra(); }, ANIMACAO);
+}
+addEventListener('scroll', ajustarBarra, {passive:true});
 
 function tick(){
   const n=new Date();
