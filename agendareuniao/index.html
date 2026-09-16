@@ -325,7 +325,34 @@ for (let h = CONFIG.HORA_INICIO; h < CONFIG.HORA_FIM; h++) {
 const DIAS_SEM = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-const state = { sala:CONFIG.SALAS[0], dia:null, sel:new Set(), depSel:null,
+/* Cada porta tem um QR próprio, e ele carrega a sala no endereço:
+   .../agendareuniao/?sala=conexao. Quem chega pelo hub ou por um favorito vem
+   sem parâmetro e continua caindo na primeira da lista, como sempre foi.
+
+   A comparação ignora acento, maiúscula e pontuação, e aceita tanto "conexao"
+   quanto "Sala Conexão": o QR pode ser refeito por outra pessoa daqui a um ano,
+   e não convém que só uma grafia funcione. */
+let salaNaoEncontrada = '';
+function salaDoEndereco(){
+  let pedida = '';
+  try { pedida = new URLSearchParams(location.search).get('sala') || ''; } catch(e){}
+  if (!pedida.trim()) return CONFIG.SALAS[0];
+
+  const simples = t => String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                         .toLowerCase().replace(/[^a-z0-9]/g, '');
+  const alvo = simples(pedida);
+  const achada = CONFIG.SALAS.find(nome => {
+    const s = simples(nome);
+    return s === alvo || s === 'sala' + alvo;
+  });
+
+  /* Sala que não existe mais — renomeada, ou QR com erro de digitação. Abrir na
+     primeira calado faria a pessoa reservar a sala errada sem desconfiar. */
+  if (!achada) salaNaoEncontrada = pedida.trim();
+  return achada || CONFIG.SALAS[0];
+}
+
+const state = { sala:salaDoEndereco(), dia:null, sel:new Set(), depSel:null,
                 reservas:[], cancelId:null, tentativas:0 };
 
 function gerarDias(){
@@ -646,6 +673,10 @@ $('btnRecarregar').onclick=()=>{ $('offline').hidden=true; atualizar(); };
   state.dia=iso(DIAS[0]);
   render();
   atualizar();
+
+  if(salaNaoEncontrada){
+    setTimeout(()=>avisar('Não achei a sala "'+salaNaoEncontrada+'". Confira a sala antes de reservar.'), 900);
+  }
 
   // Sala compartilhada: recarrega sozinho para não sobrepor reserva de colega
   setInterval(()=>{
