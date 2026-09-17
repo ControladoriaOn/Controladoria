@@ -58,9 +58,8 @@ const HubLink = {
 
    O que isto NÃO é: o e-mail viaja no corpo da mensagem, escrito por
    esta página. Quem contornar o hub e postar direto no endereço do
-   script pode escrever o e-mail que quiser. Quem impede essa pessoa é
-   a senha de edição. Isto serve para identificar entre os
-   autorizados, não para provar.
+   script pode escrever o e-mail que quiser. Isto serve para
+   identificar no Log quem gravou, não para provar.
    ================================================================= */
 async function identidadeAccess() {
     try {
@@ -108,7 +107,10 @@ const Config = Object.freeze({
 
         orangeHex:   '#FF6E00',
         orangeLight: '#ff9544',
+        orangeDeep:  '#D25500',
         purpleHex:   '#3C003C',
+        prevYearHex: '#E4DFE4',   // ano anterior: cinza-ameixa, recua para o laranja se destacar
+        prevYearLine:'#CFC7CF',
     }),
 });
 
@@ -141,24 +143,8 @@ const Comprov = (() => {
         r.readAsDataURL(file);
     });
 
-    /* Senha de edição (segredo nas gravações). Fica só na sessão, nunca no
-       código. Vai junto em cada gravação; o servidor recusa sem ela. */
-    const TOKEN_KEY = 'parcel_edit_token';
-    const getToken = () => { try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; } };
-    const clearToken = () => { try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} };
-    const ensureToken = () => {
-        let t = getToken();
-        if (!t) {
-            t = window.prompt('Senha de edição (para anexar ou excluir comprovantes):');
-            if (t == null || t.trim() === '') return ''; // cancelou
-            t = t.trim();
-            try { sessionStorage.setItem(TOKEN_KEY, t); } catch (e) {}
-        }
-        return t;
-    };
-
     // Após recarregar, confere se a parcela tem (ou não) o comprovante — pra dar
-    // retorno honesto caso a senha esteja errada (a gravação no-cors não responde).
+    // retorno honesto, já que a gravação no-cors não devolve resposta.
     const checkHas = (numero, comp) => {
         try {
             const rows = (getData && getData()) || [];
@@ -263,11 +249,10 @@ const Comprov = (() => {
         showOverlay(true, 'Enviando comprovante…');
         try {
             const dataBase64 = await fileToBase64(file);
-            await post({ acao: 'comprovante', numero, competencia: comp, filename: file.name, mimeType: file.type || 'application/octet-stream', dataBase64, token: getToken() });
+            await post({ acao: 'comprovante', numero, competencia: comp, filename: file.name, mimeType: file.type || 'application/octet-stream', dataBase64 });
             await reloadNow();
             if (getData && !checkHas(numero, comp)) {
-                clearToken(); // provável senha errada → pede de novo na próxima
-                toast('Não foi gravado. Confira a senha de edição e tente de novo.');
+                toast('Não foi possível confirmar a gravação. Atualize a página e tente de novo.');
             } else {
                 toast('Comprovante anexado.');
             }
@@ -280,11 +265,10 @@ const Comprov = (() => {
     const doDelete = async (numero, comp) => {
         showOverlay(true, 'Excluindo comprovante…');
         try {
-            await post({ acao: 'excluir_comprovante', numero, competencia: comp, token: getToken() });
+            await post({ acao: 'excluir_comprovante', numero, competencia: comp });
             await reloadNow();
             if (getData && checkHas(numero, comp)) {
-                clearToken(); // ainda está lá → provável senha errada
-                toast('Não foi excluído. Confira a senha de edição e tente de novo.');
+                toast('Não foi possível confirmar a exclusão. Atualize a página e tente de novo.');
             } else {
                 toast('Comprovante excluído.');
             }
@@ -295,11 +279,9 @@ const Comprov = (() => {
     };
 
     const requestAttach = (numero, comp) => {
-        if (!ensureToken()) { toast('Ação cancelada (sem senha de edição).'); return; }
         ensureUI(); pending = { numero, comp }; ui.fileInput.click();
     };
     const requestRemove = (numero, comp) => {
-        if (!ensureToken()) { toast('Ação cancelada (sem senha de edição).'); return; }
         ensureUI(); pendingDelete = { numero, comp }; ui.modal.classList.add('show');
     };
 
@@ -397,9 +379,24 @@ const Utils = (() => {
         return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
     };
 
-    const createGradient = (canvasId, c1, c2) => {
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        const g = ctx.createLinearGradient(0, 0, 0, 300);
+    /* Rótulo curto para cima das barras: 85,3k · 422k · 1,2M. Curto de
+       propósito — duas barras por mês não comportam "R$ 421.634,00". */
+    const fmtCompact = (v) => {
+        const n = Number(v) || 0, a = Math.abs(n);
+        const dec = (x, d) => x.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: d });
+        if (a >= 1e6) return dec(n / 1e6, 1) + 'M';
+        if (a >= 1e3) return dec(n / 1e3, a >= 1e5 ? 0 : 1) + 'k';
+        return dec(n, 0);
+    };
+
+    const fmtPct = (v) =>
+        new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1, signDisplay: 'exceptZero' }).format(v || 0);
+
+    /* Degradê que acompanha a área do gráfico (serve na tela e no PDF). */
+    const barGradient = (c1, c2) => (ctx) => {
+        const { ctx: c, chartArea } = ctx.chart;
+        if (!chartArea) return c1;
+        const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
         g.addColorStop(0, c1);
         g.addColorStop(1, c2);
         return g;
@@ -434,9 +431,11 @@ const Utils = (() => {
         fmtD: fmtCurrencyShort,
         parseDateBR,
         formatDateBR,
+        fmtK: fmtCompact,
+        pct: fmtPct,
         num: parseNum,
         debounce,
-        grad: createGradient,
+        grad: barGradient,
         readField,
         isInativo,
         mesAno,
@@ -641,7 +640,7 @@ const DataService = (() => {
    ChartManager — criação e atualização de gráficos (Ajustado p/ Tema Claro V8)
    ================================================================= */
 const ChartManager = (() => {
-    const instances = { abertura: null, quitacao: null, caixa: null };
+    const instances = { abertura: null, quitacao: null, caixa: null, anual: null };
     let pluginRegistered = false;
 
     const registerPlugins = () => {
@@ -899,6 +898,8 @@ const App = (() => {
     };
 
     let dashData = {};
+    let anualData = null;
+    let anualModo = 'vencimento';   // 'vencimento' | 'quitadas'
 
     const getRowsPerPage = (key) => key === 'sintetico' ? Config.ROWS_PER_PAGE_SINT : Config.ROWS_PER_PAGE_DET;
     const getSlice = (key) => {
@@ -1149,12 +1150,12 @@ const App = (() => {
 
     const setOrgaoFilter = (orgao) => {
         selectedOrgao = selectedOrgao === orgao ? null : orgao;
-        updateFilterBadge(); updateKPIs(); updateQuitacaoChart(); filterSintetico();
+        updateFilterBadge(); updateKPIs(); updateQuitacaoChart(); updateAnualChart(); filterSintetico();
     };
 
     const clearOrgaoFilter = () => {
         selectedOrgao = null;
-        updateFilterBadge(); updateKPIs(); updateQuitacaoChart(); filterSintetico();
+        updateFilterBadge(); updateKPIs(); updateQuitacaoChart(); updateAnualChart(); filterSintetico();
     };
 
     const updateFilterBadge = () => {
@@ -1197,7 +1198,22 @@ const App = (() => {
         }
     };
 
-    const updateQuitacaoChart = () => {
+    /* ------------------------------------------------------------------
+       RECEITAS DOS GRÁFICOS
+       ------------------------------------------------------------------
+       Cada gráfico é uma função que devolve {type, data, options}. A tela
+       usa a receita como está; o PDF usa a mesma receita para redesenhar
+       o gráfico fora da tela, no tamanho exato da caixa da página — em
+       vez de copiar o canvas da tela e esticá-lo, que deixava a imagem
+       borrada e deformada.
+       ------------------------------------------------------------------ */
+    const AXIS_TICK = { color: '#9B8FA0', font: { family: "'Manrope'", size: 10.5, weight: 500 }, padding: 8, maxTicksLimit: 5 };
+    const GRID = { color: 'rgba(107, 94, 107, 0.10)', drawTicks: false };
+    const CAT_TICK = (weight) => ({ color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight } });
+
+    const aberturaColors = (orgE) => orgE.map(e => e[0] === selectedOrgao ? Config.theme.orangeLight : Config.theme.orangeHex);
+
+    const computeQuitacao = () => {
         const consolidated = DataService.getConsolidated(), rawData = DataService.getRawData(),
               inativoMap = DataService.getInativoMap(), mesAnoBase = Utils.mesAno(currYear, currMonth),
               validIds = new Set(consolidated.map(c => c.numero)), anoF = {};
@@ -1219,26 +1235,265 @@ const App = (() => {
             }
         });
 
-        const sy = Object.keys(anoF).map(Number).sort(), qL = [], qD = [];
+        const labels = [], data = [];
         let restante = totalF;
-        sy.forEach(y => { if (anoF[y] > 0) { qL.push(String(y)); qD.push(restante); restante -= anoF[y]; } });
+        Object.keys(anoF).map(Number).sort().forEach(y => {
+            if (anoF[y] > 0) { labels.push(String(y)); data.push(restante); restante -= anoF[y]; }
+        });
+        return { labels, data };
+    };
 
-        ChartManager.destroyChart('quitacao');
-        ChartManager.upsertChart('quitacao', 'chartQuitacao', 'bar',
-            () => ({ labels: qL, datasets: [{ data: qD, backgroundColor: Utils.grad('chartQuitacao', Config.theme.orangeHex, Config.theme.orangeLight), borderRadius: 6, maxBarThickness: 60 }] }),
-            () => ({
+    /* Pagamentos por mês, em dois critérios:
+       • 'vencimento' (padrão): soma das parcelas com vencimento no mês, com a
+         mesma regra do "A Vencer no Mês" / Efeito Caixa — ignora parcelas
+         encerradas e contratos já inativos naquele mês. Assim a barra do mês
+         da data-base bate com o KPI. Os meses depois da data-base aparecem
+         como "previsto".
+       • 'quitadas': só parcelas com status Quitada — o que de fato foi pago.
+         Aqui não existe previsto.
+       O ano anterior aparece inteiro nos dois casos. */
+    const computeAnual = () => {
+        const ano = currYear, anoAnt = currYear - 1, soQuitadas = anualModo === 'quitadas';
+        const atualAno = new Array(12).fill(0), anterior = new Array(12).fill(0);
+        const inativoMap = DataService.getInativoMap();
+
+        DataService.getRawData().forEach(row => {
+            const d = Utils.parseDateBR(row['Data']); if (!d) return;
+            const y = d.getUTCFullYear(); if (y !== ano && y !== anoAnt) return;
+            if (selectedOrgao && (row['Orgão'] || '-') !== selectedOrgao) return;
+            const id = row['Número'] || row['Negociação'] || 'S/N';
+            const m = d.getUTCMonth();
+            if (Utils.mesAno(y, m) >= (inativoMap[id] || Infinity)) return;
+            const status = String(row['Status'] || '').trim().toLowerCase();
+            if (status.includes('encerrado')) return;
+            if (soQuitadas && !status.includes('quitad')) return;
+            (y === ano ? atualAno : anterior)[m] += Utils.num(row['Saldo Devedor']);
+        });
+
+        const somaAte = (arr, ate) => arr.reduce((s, v, i) => (i <= ate ? s + v : s), 0);
+        const totalAtual = somaAte(atualAno, currMonth);
+        const totalPrevisto = soQuitadas ? 0 : somaAte(atualAno, 11) - totalAtual;
+        return {
+            ano, anoAnt, modo: anualModo,
+            atual: atualAno.map((v, i) => (i <= currMonth ? v : null)),
+            previsto: atualAno.map((v, i) => (!soQuitadas && i > currMonth ? v : null)),
+            anterior,
+            totalAtual,
+            totalPrevisto,
+            totalAntPeriodo: somaAte(anterior, currMonth),
+            totalAnt: somaAte(anterior, 11),
+        };
+    };
+
+    /* Os cartões de totais do comparativo — a tela e o PDF leem daqui. */
+    const anualStats = (a) => {
+        const periodo = currMonth === 11 ? 'ano' : `Jan–${Config.MONTH_NAMES[currMonth]}`;
+        const r = a.totalAntPeriodo > 0 ? a.totalAtual / a.totalAntPeriodo - 1 : null;
+        const stats = [
+            { label: `${a.ano} · ${periodo}`, value: Utils.fmtD(a.totalAtual), swatch: 'atual' },
+            { label: `${a.anoAnt} · ${periodo}`, value: Utils.fmtD(a.totalAntPeriodo), swatch: 'anterior' },
+            { label: 'Variação', value: r == null ? '—' : Utils.pct(r), delta: r },
+        ];
+        if (a.totalPrevisto > 0) {
+            const proj = a.totalAtual + a.totalPrevisto;
+            stats.push({
+                label: `${a.ano} · projetado`, value: Utils.fmtD(proj), swatch: 'previsto',
+                note: a.totalAnt > 0 ? `${a.anoAnt}: ${Utils.fmtD(a.totalAnt)} (${Utils.pct(proj / a.totalAnt - 1)})` : '',
+            });
+        } else if (currMonth < 11) {
+            stats.push({ label: `${a.anoAnt} · ano completo`, value: Utils.fmtD(a.totalAnt) });
+        }
+        return stats;
+    };
+
+    /* Listras para o "previsto": a diferença não fica só na cor (ajuda em
+       impressão em preto e branco e para quem não distingue bem tons). */
+    const stripeCache = new WeakMap();
+    const listrado = (cor, fundo) => (c) => {
+        const ctx = c.chart.ctx;
+        if (stripeCache.has(ctx)) return stripeCache.get(ctx);
+        const s = 8, cv = document.createElement('canvas');
+        cv.width = cv.height = s;
+        const g = cv.getContext('2d');
+        g.fillStyle = fundo; g.fillRect(0, 0, s, s);
+        g.strokeStyle = cor; g.lineWidth = 1.6; g.beginPath();
+        g.moveTo(-1, s + 1); g.lineTo(s + 1, -1);
+        g.moveTo(-1, 1); g.lineTo(1, -1);
+        g.moveTo(s - 1, s + 1); g.lineTo(s + 1, s - 1);
+        g.stroke();
+        const p = ctx.createPattern(cv, 'repeat');
+        stripeCache.set(ctx, p);
+        return p;
+    };
+
+    const recipes = {
+        abertura: (print) => {
+            const orgE = dashData.orgEntries;
+            return {
+                type: 'bar',
+                data: { labels: orgE.map(e => e[0]), datasets: [{ data: orgE.map(e => e[1]), backgroundColor: aberturaColors(orgE), borderRadius: 6, maxBarThickness: 28 }] },
+                options: {
+                    ...ChartManager.baseOptions(), indexAxis: 'y', layout: { padding: { right: 90, top: 20, bottom: 10 } },
+                    scales: {
+                        x: { display: true, grace: '15%', beginAtZero: true, grid: GRID, border: { display: false }, ticks: { ...AXIS_TICK, callback: v => Utils.fmtD(v) } },
+                        y: { display: true, grid: { display: false }, border: { display: false }, ticks: { ...CAT_TICK(600), padding: 8 } },
+                    },
+                    ...(print ? {} : {
+                        onClick: (_evt, elements) => {
+                            if (!elements.length) return;
+                            setOrgaoFilter(orgE[elements[0].index][0]);
+                            const chart = ChartManager.getChart('abertura');
+                            if (chart) { chart.data.datasets[0].backgroundColor = aberturaColors(orgE); chart.update('none'); }
+                        },
+                        onHover: (evt, elements) => { evt.native.target.style.cursor = elements.length ? 'pointer' : 'default'; },
+                    }),
+                },
+            };
+        },
+
+        caixa: () => ({
+            type: 'bar',
+            data: { labels: ['Jan/2023', `${Config.MONTH_NAMES[currMonth]}/${currYear}`], datasets: [{ data: [Config.CAIXA_JAN_2023, dashData.caixaM], backgroundColor: [Config.theme.purpleHex, Config.theme.orangeHex], borderRadius: 6, maxBarThickness: 90, barPercentage: 0.8, categoryPercentage: 0.8 }] },
+            options: {
                 ...ChartManager.baseOptions(),
                 scales: {
-                    x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 } } },
-                    y: {
-                        display: true, beginAtZero: true,
-                        grid: { color: 'rgba(107, 94, 107, 0.10)', drawTicks: false, drawBorder: false },
-                        border: { display: false },
-                        ticks: { color: '#9B8FA0', font: { family: "'Manrope'", size: 10.5, weight: 500 }, padding: 8, maxTicksLimit: 5, callback: v => Utils.fmtD(v) }
-                    }
-                }
-            })
-        );
+                    x: { display: true, grid: { display: false }, border: { display: false }, ticks: { ...CAT_TICK(700), padding: 10 } },
+                    y: { display: true, beginAtZero: true, grid: GRID, border: { display: false }, ticks: { ...AXIS_TICK, callback: v => Utils.fmtD(v) } },
+                },
+            },
+        }),
+
+        quitacao: () => {
+            const q = computeQuitacao();
+            return {
+                type: 'bar',
+                data: { labels: q.labels, datasets: [{ data: q.data, backgroundColor: Utils.grad(Config.theme.orangeHex, Config.theme.orangeLight), borderRadius: 6, maxBarThickness: 60 }] },
+                options: {
+                    ...ChartManager.baseOptions(),
+                    scales: {
+                        x: { display: true, grid: { display: false }, border: { display: false }, ticks: CAT_TICK(600) },
+                        y: { display: true, beginAtZero: true, grid: GRID, border: { display: false }, ticks: { ...AXIS_TICK, callback: v => Utils.fmtD(v) } },
+                    },
+                },
+            };
+        },
+
+        anual: (print) => {
+            const a = anualData, t = Config.theme;
+            const barra = { borderWidth: 1, borderRadius: 5, borderSkipped: 'bottom', maxBarThickness: 46, categoryPercentage: 0.74, barPercentage: 0.92 };
+            const base = ChartManager.baseOptions();
+            // "atual" e "previsto" dividem a mesma pilha: nunca têm valor no
+            // mesmo mês, então ocupam a mesma posição da barra do ano corrente
+            const datasets = [
+                { ...barra, stack: 'anterior', label: String(a.anoAnt), data: a.anterior, backgroundColor: t.prevYearHex, hoverBackgroundColor: '#D8D0D8', borderColor: t.prevYearLine },
+                { ...barra, stack: 'atual', label: String(a.ano), data: a.atual, backgroundColor: t.orangeHex, hoverBackgroundColor: t.orangeDeep, borderColor: t.orangeDeep },
+            ];
+            if (a.totalPrevisto > 0) {
+                datasets.push({ ...barra, stack: 'atual', label: `${a.ano} previsto`, data: a.previsto, backgroundColor: listrado('rgba(255,110,0,0.55)', '#FFF1E4'), hoverBackgroundColor: '#FFE0C4', borderColor: t.orangeHex });
+            }
+            return {
+                type: 'bar',
+                data: {
+                    labels: Config.MONTH_NAMES.map(m => m.toUpperCase()),
+                    datasets,
+                },
+                options: {
+                    ...base,
+                    layout: { padding: { top: 4, bottom: 0 } },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            display: true, position: 'top', align: 'center',
+                            labels: { boxWidth: 28, boxHeight: 12, useBorderRadius: true, borderRadius: 3, padding: 18, color: '#1A0F1A', font: { family: "'Manrope'", size: 12, weight: 700 } },
+                        },
+                        tooltip: {
+                            ...base.plugins.tooltip,
+                            filter: item => item.raw != null,
+                            callbacks: {
+                                title: items => (items.length ? Config.MONTH_NAMES_FULL[items[0].dataIndex] : ''),
+                                label: ctx => ` ${ctx.dataset.label}: ${Utils.fmt(ctx.raw)}`,
+                                footer: items => {
+                                    if (!items.length) return '';
+                                    const i = items[0].dataIndex, ant = a.anterior[i], at = a.atual[i] ?? a.previsto[i];
+                                    return at == null || !ant ? '' : `Variação: ${Utils.pct(at / ant - 1)}`;
+                                },
+                            },
+                        },
+                        datalabels: {
+                            color: '#4A3F4A',
+                            font: { family: "'JetBrains Mono'", size: print ? 9.5 : 11, weight: 600 },
+                            anchor: 'end', align: 'end', offset: 3, clamp: true,
+                            formatter: v => (v > 0 ? Utils.fmtK(v) : ''),
+                            // 24 rótulos não cabem em tela estreita: lá fica só o tooltip
+                            display: ctx => print || ctx.chart.width >= 640,
+                        },
+                    },
+                    scales: {
+                        x: { display: true, stacked: true, grid: { display: false }, border: { display: false }, ticks: { color: '#1A0F1A', font: { family: "'Manrope'", size: 12, weight: 700 }, padding: 6 } },
+                        y: { display: true, stacked: true, beginAtZero: true, grace: '14%', grid: GRID, border: { display: false }, ticks: { ...AXIS_TICK, callback: v => Utils.fmtK(v) } },
+                    },
+                },
+            };
+        },
+    };
+
+    const drawChart = (key, canvasId) => {
+        const r = recipes[key](false);
+        ChartManager.destroyChart(key);
+        ChartManager.upsertChart(key, canvasId, r.type, () => r.data, () => r.options);
+    };
+
+    const updateQuitacaoChart = () => drawChart('quitacao', 'chartQuitacao');
+
+    const anualSubtitulo = (a) => {
+        const mes = Config.MONTH_NAMES[currMonth];
+        const base = a.modo === 'quitadas'
+            ? `Só parcelas quitadas · ${a.ano} até ${mes}`
+            : `Parcelas com vencimento em cada mês · ${a.ano} até ${mes}` +
+              (a.totalPrevisto > 0 ? `, depois previsto` : '');
+        return base + (selectedOrgao ? ` · Órgão: ${selectedOrgao}` : '');
+    };
+
+    const renderAnualHeader = (a) => {
+        $('anualTitle').textContent = `Comparativo Anual (${a.anoAnt} vs ${a.ano})`;
+        $('anualSubtitle').textContent = anualSubtitulo(a);
+
+        const box = $('anualStats');
+        box.textContent = '';
+        anualStats(a).forEach(s => {
+            const card = Utils.el('div', null, 'anual-stat' + (s.delta !== undefined ? ' delta' : ''));
+            const l = Utils.el('div', null, 'anual-stat-label');
+            if (s.swatch) l.appendChild(Utils.el('span', null, `sw sw-${s.swatch}`));
+            l.appendChild(document.createTextNode(s.label));
+            const v = Utils.el('div', null, 'anual-stat-value');
+            if (s.delta != null) {
+                const ic = document.createElement('i');
+                ic.className = s.delta >= 0 ? 'ph-bold ph-arrow-up-right' : 'ph-bold ph-arrow-down-right';
+                v.appendChild(ic);
+            }
+            v.appendChild(document.createTextNode(s.value));
+            card.appendChild(l); card.appendChild(v);
+            if (s.note) card.appendChild(Utils.el('div', s.note, 'anual-stat-note'));
+            box.appendChild(card);
+        });
+    };
+
+    const setAnualModo = (modo) => {
+        if (modo !== 'vencimento' && modo !== 'quitadas') return;
+        anualModo = modo;
+        try { localStorage.setItem('parcel_anual_modo', modo); } catch (e) {}
+        document.querySelectorAll('#anualModo .seg-btn').forEach(b => {
+            const on = b.dataset.modo === modo;
+            b.classList.toggle('active', on);
+            b.setAttribute('aria-checked', on ? 'true' : 'false');
+        });
+        if (DataService.getRawData().length) updateAnualChart();
+    };
+
+    const updateAnualChart = () => {
+        anualData = computeAnual();
+        renderAnualHeader(anualData);
+        drawChart('anual', 'chartAnual');
     };
 
     const updateDashboard = () => {
@@ -1250,51 +1505,11 @@ const App = (() => {
         if (ssAtivas) ssAtivas.textContent = String(dashData.contSetSize);
 
         $('caixaSubtitle').textContent = `Comparativo Jan/2023 vs ${Config.MONTH_NAMES[currMonth]}/${currYear}`;
-        const orgE = dashData.orgEntries;
 
-        ChartManager.destroyChart('abertura');
-        ChartManager.upsertChart('abertura', 'chartAbertura', 'bar',
-            () => ({ labels: orgE.map(e => e[0]), datasets: [{ data: orgE.map(e => e[1]), backgroundColor: orgE.map(e => e[0] === selectedOrgao ? Config.theme.orangeLight : Config.theme.orangeHex), borderRadius: 6, maxBarThickness: 28 }] }),
-            () => ({
-                ...ChartManager.baseOptions(), indexAxis: 'y', layout: { padding: { right: 90, top: 20, bottom: 10 } },
-                scales: {
-                    x: {
-                        display: true, grace: '15%', beginAtZero: true,
-                        grid: { color: 'rgba(107, 94, 107, 0.10)', drawTicks: false, drawBorder: false },
-                        border: { display: false },
-                        ticks: { color: '#9B8FA0', font: { family: "'Manrope'", size: 10.5, weight: 500 }, padding: 8, maxTicksLimit: 5, callback: v => Utils.fmtD(v) }
-                    },
-                    y: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 600 }, padding: 8 } }
-                },
-                onClick: (_evt, elements) => {
-                    if (elements.length > 0) {
-                        setOrgaoFilter(orgE[elements[0].index][0]);
-                        const chart = ChartManager.getChart('abertura');
-                        if (chart) { chart.data.datasets[0].backgroundColor = orgE.map(e => e[0] === selectedOrgao ? Config.theme.orangeLight : Config.theme.orangeHex); chart.update('none'); }
-                    }
-                },
-                onHover: (evt, elements) => evt.native.target.style.cursor = elements.length ? 'pointer' : 'default'
-            })
-        );
-
-        ChartManager.destroyChart('caixa');
-        ChartManager.upsertChart('caixa', 'chartCaixa', 'bar',
-            () => ({ labels: ['Jan/2023', `${Config.MONTH_NAMES[currMonth]}/${currYear}`], datasets: [{ data: [Config.CAIXA_JAN_2023, dashData.caixaM], backgroundColor: [Config.theme.purpleHex, Config.theme.orangeHex], borderRadius: 6, maxBarThickness: 90, barPercentage: 0.8, categoryPercentage: 0.8 }] }),
-            () => ({
-                ...ChartManager.baseOptions(),
-                plugins: { ...ChartManager.baseOptions().plugins, legend: { display: false } },
-                scales: {
-                    x: { display: true, grid: { display: false }, border: { display: false }, ticks: { color: '#6B5E6B', font: { family: "'Manrope'", size: 12.5, weight: 700 }, padding: 10 } },
-                    y: {
-                        display: true, beginAtZero: true,
-                        grid: { color: 'rgba(107, 94, 107, 0.10)', drawTicks: false, drawBorder: false },
-                        border: { display: false },
-                        ticks: { color: '#9B8FA0', font: { family: "'Manrope'", size: 10.5, weight: 500 }, padding: 8, maxTicksLimit: 5, callback: v => Utils.fmtD(v) }
-                    }
-                }
-            })
-        );
+        drawChart('abertura', 'chartAbertura');
+        drawChart('caixa', 'chartCaixa');
         updateQuitacaoChart();
+        updateAnualChart();
     };
 
     const exportExcel = (type) => {
@@ -1314,81 +1529,286 @@ const App = (() => {
         } catch (err) { console.error(err); alert('Erro ao gerar planilha.'); }
     };
 
+    /* ------------------------------------------------------------------
+       RELATÓRIO PDF
+       ------------------------------------------------------------------
+       A4 deitado, fundo branco (imprime bem), com a identidade da tela:
+       faixa ameixa no topo, cartões com borda suave e acento colorido,
+       gráficos redesenhados na medida da caixa e tabela com cabeçalho
+       ameixa. Rodapé com "Página X de Y" em todas as páginas.
+       ------------------------------------------------------------------ */
+    const PDF_PX_POR_MM = 4;   // escala lógica dos gráficos redesenhados
+
+    const chartImage = (key, wMm, hMm) => {
+        const r = recipes[key](true);
+        const wPx = Math.round(wMm * PDF_PX_POR_MM), hPx = Math.round(hMm * PDF_PX_POR_MM);
+        const holder = document.createElement('div');
+        holder.style.cssText = `position:fixed;left:-20000px;top:0;width:${wPx}px;height:${hPx}px;pointer-events:none;`;
+        const cv = document.createElement('canvas');
+        cv.width = wPx; cv.height = hPx;
+        cv.style.width = wPx + 'px'; cv.style.height = hPx + 'px';
+        holder.appendChild(cv);
+        document.body.appendChild(holder);
+        let chart = null;
+        try {
+            chart = new Chart(cv, {
+                type: r.type, data: r.data,
+                options: { ...r.options, responsive: false, maintainAspectRatio: false, animation: false, devicePixelRatio: 3 },
+            });
+            return chart.toBase64Image('image/png', 1);
+        } finally {
+            if (chart) chart.destroy();
+            holder.remove();
+        }
+    };
+
+    /* Mascote com cantos arredondados, recortado num canvas. Se a imagem
+       não carregar (arquivo aberto fora do hub, por exemplo), o relatório
+       sai só com o nome. */
+    const logoArredondado = () => new Promise((resolve) => {
+        let timer = null;
+        const done = (v) => { clearTimeout(timer); resolve(v); };
+        timer = setTimeout(() => resolve(null), 2500);
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const s = 160, cv = document.createElement('canvas');
+                cv.width = cv.height = s;
+                const ctx = cv.getContext('2d');
+                ctx.beginPath();
+                if (ctx.roundRect) ctx.roundRect(0, 0, s, s, 34); else ctx.rect(0, 0, s, s);
+                ctx.clip();
+                const lado = Math.min(img.naturalWidth, img.naturalHeight);
+                ctx.drawImage(img, (img.naturalWidth - lado) / 2, (img.naturalHeight - lado) / 2, lado, lado, 0, 0, s, s);
+                done(cv.toDataURL('image/png'));
+            } catch (e) { done(null); }
+        };
+        img.onerror = () => done(null);
+        img.src = '../logo-mascote.jpg';
+    });
+
     const exportPDF = async () => {
         if (typeof jspdf === 'undefined') { alert('Biblioteca PDF carregando...'); return; }
-        const btn = $('btnExportPDF'), origHTML = btn.innerHTML;
-        btn.classList.add('loading'); btn.innerHTML = '<i class="ph-bold ph-spinner"></i> <span>Gerando...</span>';
-        await new Promise(r => setTimeout(r, 100));
+        const trigger = $('dctlExportBtn'), origHTML = trigger.innerHTML;
+        trigger.disabled = true;
+        trigger.innerHTML = '<i class="ph-bold ph-spinner-gap" style="animation:cmpspin 1s linear infinite"></i> Gerando PDF…';
+        await new Promise(r => setTimeout(r, 30));
 
-        const t = Config.theme;
         try {
             const { jsPDF } = jspdf;
-            const pdf = new jsPDF('l', 'mm', 'a4');
-            const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight(), margin = 14;
+            const pdf = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4', compress: true });
+            const W = pdf.internal.pageSize.getWidth(), H = pdf.internal.pageSize.getHeight();
+            const M = 14, GAP = 6, BASE = H - 14;   // BASE: limite inferior do conteúdo (rodapé abaixo)
 
-            // Página 1: Dashboard (Ajustado para Fundo Claro V8)
-            pdf.setFillColor(...t.bgDark);
-            pdf.rect(0, 0, pageW, pageH, 'F');
-            pdf.setTextColor(...t.purple);
-            pdf.setFontSize(18); pdf.setFont('helvetica', 'bold');
-            pdf.text(`Visão Estratégica - Data Base: ${Config.MONTH_NAMES[currMonth]}/${currYear}`, margin, margin + 5);
-            pdf.setTextColor(...t.textMuted); pdf.setFontSize(10); pdf.setFont('helvetica', 'normal');
-            pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, margin, margin + 12);
+            const C = {
+                plum: [60, 0, 60], ink: [26, 15, 26], muted: [107, 94, 107], subtle: [155, 143, 160],
+                border: [232, 224, 232], soft: [246, 242, 246], zebra: [251, 249, 251], white: [255, 255, 255],
+                orange: [255, 110, 0], orangeSoft: [255, 241, 228], orangeDeep: [210, 85, 0],
+                ok: [31, 122, 61], err: [185, 28, 28], prev: [207, 199, 207],
+            };
+            const fill = c => pdf.setFillColor(...c);
+            const stroke = c => pdf.setDrawColor(...c);
+            const ink = c => pdf.setTextColor(...c);
+            const font = (style, size) => { pdf.setFont('helvetica', style); pdf.setFontSize(size); };
 
-            const kpiY = margin + 20, kpiW = (pageW - (margin * 2) - 10) / 3, kpiH = 28;
-            const drawKPI = (x, title, value, color) => {
-                pdf.setFillColor(...t.surface1);
-                pdf.rect(x, kpiY, kpiW, kpiH, 'F');
-                // Título KPI
-                pdf.setTextColor(...t.textMuted); pdf.setFontSize(10); pdf.setFont('helvetica', 'bold');
-                pdf.text(title, x + 5, kpiY + 8);
-                // Valor KPI (Em Tinta escura, pois estamos no modo claro V8)
-                pdf.setTextColor(...t.textWhite); pdf.setFontSize(22); pdf.setFont('helvetica', 'bold');
-                pdf.text(value, x + 5, kpiY + 22);
+            const agora = new Date();
+            const emitido = `${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+            const dataBase = `${Config.MONTH_NAMES_FULL[currMonth]}/${currYear}`;
+            const logo = await logoArredondado();
+
+            /* ---- blocos de desenho ---- */
+            const cabecalho = () => {
+                fill(C.plum); pdf.rect(0, 0, W, 20, 'F');
+                fill(C.orange); pdf.rect(0, 20, W, 1, 'F');
+                let x = M;
+                if (logo) { pdf.addImage(logo, 'PNG', M, 4, 12, 12, 'logo', 'FAST'); x = M + 16; }
+                font('bold', 14); ink(C.white); pdf.text('ONTIME', x, 10.2);
+                font('bold', 6.5); pdf.setTextColor(255, 170, 110); pdf.text('GESTÃO DE PARCELAMENTOS', x, 14.8, { charSpace: 0.45 });
+                font('bold', 10); ink(C.white); pdf.text('Relatório de Parcelamentos', W - M, 9.6, { align: 'right' });
+                font('normal', 7.5); pdf.setTextColor(222, 204, 222);
+                pdf.text(`Data-base ${dataBase}  ·  Emitido em ${emitido}`, W - M, 14.6, { align: 'right' });
             };
 
-            drawKPI(margin, 'SALDO DEVEDOR TOTAL', $('kpi-saldo').textContent, t.purple);
-            drawKPI(margin + kpiW + 5, 'CONTRATOS ATIVOS', $('kpi-ativas').textContent, t.orange);
-            drawKPI(margin + (kpiW * 2) + 10, `A VENCER ${Config.MONTH_NAMES[currMonth]}/${currYear}`.toUpperCase(), $('kpi-mes').textContent, t.green);
+            const novaPagina = (primeira) => { if (!primeira) pdf.addPage(); cabecalho(); };
 
-            const chartY = kpiY + kpiH + 8, chartW = (pageW - (margin * 2) - 8) / 2, chartH = 68;
-            const drawChart = (x, y, w, h, title, chartObj) => {
-                pdf.setFillColor(...t.surface1);
-                pdf.rect(x, y, w, h, 'F');
-                pdf.setTextColor(...t.textWhite); pdf.setFontSize(12); pdf.setFont('helvetica', 'bold');
-                pdf.text(title, x + 5, y + 8);
-                if (chartObj) pdf.addImage(chartObj.toBase64Image('image/png', 1.0), 'PNG', x + 2, y + 10, w - 4, h - 12);
+            const titulo = (texto, sub, y = 33) => {
+                fill(C.orange); pdf.roundedRect(M, y - 5.2, 1.4, 7, 0.7, 0.7, 'F');
+                font('bold', 16); ink(C.ink); pdf.text(texto, M + 4.5, y);
+                if (sub) { font('normal', 8.5); ink(C.muted); pdf.text(sub, M + 4.5, y + 5.5); }
+                if (selectedOrgao) {
+                    const label = `Filtro: ${selectedOrgao}`;
+                    font('bold', 7.5);
+                    const w = pdf.getTextWidth(label) + 8;
+                    fill(C.orangeSoft); stroke([255, 200, 160]); pdf.setLineWidth(0.25);
+                    pdf.roundedRect(W - M - w, y - 5, w, 7, 3.5, 3.5, 'FD');
+                    ink(C.orangeDeep); pdf.text(label, W - M - w / 2, y - 0.5, { align: 'center' });
+                }
             };
 
-            drawChart(margin, chartY, chartW, chartH, 'Débitos por Órgão', ChartManager.getChart('abertura'));
-            drawChart(margin + chartW + 8, chartY, chartW, chartH, 'Efeito Caixa', ChartManager.getChart('caixa'));
-            drawChart(margin, chartY + chartH + 8, pageW - (margin * 2), 65, 'Quitação Prevista', ChartManager.getChart('quitacao'));
+            const cartao = (x, y, w, h) => {
+                fill(C.white); stroke(C.border); pdf.setLineWidth(0.3);
+                pdf.roundedRect(x, y, w, h, 2.5, 2.5, 'FD');
+            };
 
-            // Página 2: Sintético
-            pdf.addPage();
-            pdf.setFillColor(...t.bgDark); pdf.rect(0, 0, pageW, pageH, 'F');
-            pdf.setTextColor(...t.purple); pdf.setFontSize(18); pdf.setFont('helvetica', 'bold');
-            pdf.text('Resumo Sintético de Parcelamentos', margin, margin + 5);
-            pdf.setTextColor(...t.textMuted); pdf.setFontSize(10); pdf.setFont('helvetica', 'normal');
-            pdf.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, margin, margin + 12);
+            const kpi = (x, y, w, h, rotulo, valor, cor) => {
+                cartao(x, y, w, h);
+                fill(cor); pdf.roundedRect(x + 0.15, y + 3.5, 1.3, h - 7, 0.6, 0.6, 'F');
+                font('bold', 7); ink(C.muted); pdf.text(rotulo.toUpperCase(), x + 6, y + 8, { charSpace: 0.25 });
+                font('bold', 17); ink(C.ink); pdf.text(valor, x + 6, y + h - 6.5);
+            };
 
-            const rows = currentFilteredSintetico.map(c => [c.natureza, c.tributo, c.numero, c.orgao, c.qtdParcela, c.atraso, Utils.fmt(c.totalDivida), Utils.fmt(c.parcelaUnit)]);
-            let sumDivida = 0, sumParcela = 0; currentFilteredSintetico.forEach(c => { sumDivida += c.totalDivida; sumParcela += c.parcelaUnit; });
-            rows.push(['', '', '', '', '', 'TOTAIS', Utils.fmt(sumDivida), Utils.fmt(sumParcela)]);
+            const graficoCard = (x, y, w, h, key, tituloTxt, sub) => {
+                cartao(x, y, w, h);
+                font('bold', 10.5); ink(C.ink); pdf.text(tituloTxt, x + 5, y + 8);
+                if (sub) { font('normal', 7.5); ink(C.muted); pdf.text(sub, x + 5, y + 12.3); }
+                const top = y + (sub ? 15 : 11);
+                const iw = w - 8, ih = y + h - 3 - top;
+                pdf.addImage(chartImage(key, iw, ih), 'PNG', x + 4, top, iw, ih, undefined, 'FAST');
+            };
+
+            /* ---- Página 1: visão estratégica ---- */
+            novaPagina(true);
+            titulo('Visão Estratégica', `Posição consolidada na data-base ${dataBase}`);
+
+            const kY = 44, kH = 24, kW = (W - 2 * M - 2 * GAP) / 3;
+            kpi(M, kY, kW, kH, 'Saldo devedor total', $('kpi-saldo').textContent, C.plum);
+            kpi(M + kW + GAP, kY, kW, kH, 'Contratos ativos', $('kpi-ativas').textContent, C.orange);
+            kpi(M + 2 * (kW + GAP), kY, kW, kH, `A vencer em ${Config.MONTH_NAMES[currMonth]}/${currYear}`, $('kpi-mes').textContent, C.ok);
+
+            const rY = kY + kH + GAP, rH = 64, hW = (W - 2 * M - GAP) / 2;
+            graficoCard(M, rY, hW, rH, 'abertura', 'Débitos por Órgão', 'Saldo devedor por órgão credor');
+            graficoCard(M + hW + GAP, rY, hW, rH, 'caixa', 'Efeito Caixa', $('caixaSubtitle').textContent);
+            const qY = rY + rH + GAP;
+            graficoCard(M, qY, W - 2 * M, BASE - qY, 'quitacao', 'Quitação Prevista', 'Saldo restante após os pagamentos de cada ano');
+
+            /* ---- Página 2: comparativo anual ---- */
+            novaPagina();
+            const a = anualData || computeAnual();
+            // a Helvetica do jsPDF não garante travessões: troca por texto simples
+            const semTraco = s => String(s).replace(/–/g, ' a ').replace(/—/g, 'n/d');
+            const varPeriodo = a.totalAntPeriodo > 0 ? Utils.pct(a.totalAtual / a.totalAntPeriodo - 1) : 'n/d';
+            titulo(`Comparativo Anual · ${a.anoAnt} x ${a.ano}`, semTraco(anualSubtitulo(a)));
+
+            const stats = anualStats(a);
+            const temNota = stats.some(s => s.note);
+            const sY = 44, sH = temNota ? 23 : 19, sW = (W - 2 * M - (stats.length - 1) * GAP) / stats.length;
+            stats.forEach((s, i) => {
+                const x = M + i * (sW + GAP);
+                cartao(x, sY, sW, sH);
+                let tx = x + 5;
+                if (s.swatch) {
+                    if (s.swatch === 'previsto') {
+                        fill(C.orangeSoft); stroke(C.orange); pdf.setLineWidth(0.3);
+                        pdf.roundedRect(x + 5, sY + 5.1, 3, 3, 0.8, 0.8, 'FD');
+                    } else {
+                        fill(s.swatch === 'atual' ? C.orange : C.prev);
+                        pdf.roundedRect(x + 5, sY + 5.1, 3, 3, 0.8, 0.8, 'F');
+                    }
+                    tx = x + 10;
+                }
+                font('bold', 6.8); ink(C.muted); pdf.text(semTraco(s.label).toUpperCase(), tx, sY + 7.6, { charSpace: 0.2 });
+                font('bold', 13); ink(C.ink); pdf.text(semTraco(s.value), x + 5, sY + 15.2);
+                if (s.note) { font('normal', 7); ink(C.muted); pdf.text(semTraco(s.note), x + 5, sY + 20); }
+            });
+
+            const tabH = 26;
+            const cY = sY + sH + GAP, cH = BASE - tabH - GAP - cY;
+            const legendaPrevisto = a.totalPrevisto > 0 ? ' · Barras listradas e valores em itálico: previsto' : '';
+            graficoCard(M, cY, W - 2 * M, cH, 'anual', 'Pagamentos por mês', 'Rótulos em milhares (k) e milhões (M) de reais' + legendaPrevisto);
+
+            const n0 = v => (v == null ? '-' : Math.round(v).toLocaleString('pt-BR'));
+            const valorAno = i => a.atual[i] ?? a.previsto[i];
+            const varMes = a.anterior.map((ant, i) => (valorAno(i) == null || !ant ? '-' : Utils.pct(valorAno(i) / ant - 1)));
+            pdf.autoTable({
+                startY: cY + cH + GAP,
+                margin: { left: M, right: M, bottom: 12 },
+                head: [['R$', ...Config.MONTH_NAMES.map(m => m.toUpperCase()), 'Acumulado']],
+                body: [
+                    [String(a.anoAnt), ...a.anterior.map(n0), n0(a.totalAntPeriodo)],
+                    [String(a.ano), ...a.anterior.map((_, i) => n0(valorAno(i))), n0(a.totalAtual)],
+                    ['Variação', ...varMes, varPeriodo],
+                ],
+                theme: 'plain',
+                styles: { font: 'helvetica', fontSize: 6.8, textColor: C.ink, halign: 'right', cellPadding: { top: 1.7, bottom: 1.7, left: 1.2, right: 1.6 } },
+                headStyles: { fillColor: C.soft, textColor: C.muted, fontStyle: 'bold', fontSize: 6.5 },
+                columnStyles: { 0: { halign: 'left', fontStyle: 'bold', cellWidth: 18 }, 13: { fontStyle: 'bold', cellWidth: 22 } },
+                didParseCell: (d) => {
+                    const col = d.column.index;
+                    if (col === 0) d.cell.styles.halign = 'left';
+                    if (d.section !== 'body') return;
+                    if (d.row.index === 1) d.cell.styles.fillColor = [255, 248, 241];
+                    if (d.row.index === 2) d.cell.styles.textColor = C.muted;
+                    if (d.row.index >= 1 && col >= 1 && col <= 12 && a.previsto[col - 1] != null) {
+                        d.cell.styles.fontStyle = 'italic';
+                        d.cell.styles.textColor = C.subtle;
+                    }
+                },
+            });
+
+            /* ---- Página 3+: resumo sintético ---- */
+            novaPagina();
+            const paginaInicioTabela = pdf.internal.getNumberOfPages();
+            const lista = currentFilteredSintetico;
+            titulo('Resumo Sintético', `${lista.length} contrato(s) · posição por contrato na data-base ${dataBase}`);
+
+            let sumDivida = 0, sumParcela = 0, sumAtraso = 0;
+            lista.forEach(c => { sumDivida += c.totalDivida; sumParcela += c.parcelaUnit; sumAtraso += c.atraso; });
 
             pdf.autoTable({
-                head: [['Natureza', 'Tributo', 'Número', 'Órgão', 'Parc.', 'Atraso', 'Total Dívida (R$)', 'Vlr Parcela (R$)']],
-                body: rows, startY: margin + 18, theme: 'grid',
-                styles: { fillColor: t.surface1, textColor: t.textWhite, lineColor: t.gridLine, lineWidth: 0.1, font: 'helvetica', fontSize: 9 },
-                headStyles: { fillColor: t.surface2, textColor: t.textMuted, fontStyle: 'bold', fontSize: 8 },
-                alternateRowStyles: { fillColor: t.surfaceAlt },
-                willDrawCell: (data) => { if (data.row.index === rows.length - 1) { pdf.setFillColor(...t.surface2); pdf.setTextColor(...t.orange); pdf.setFont('helvetica', 'bold'); } },
-                margin: { left: 14, right: 14 },
-                didDrawPage: (d) => { if (d.pageNumber > 1) { pdf.setFillColor(...t.bgDark); pdf.rect(0, 0, pageW, pageH, 'F'); } },
+                startY: 43,
+                margin: { top: 30, left: M, right: M, bottom: 16 },
+                head: [['Natureza', 'Tributo', 'Número', 'Órgão', 'Parcelas', 'Atraso', 'Total da dívida', 'Valor da parcela']],
+                body: lista.map(c => [c.natureza, c.tributo, c.numero, c.orgao, c.qtdParcela, c.atraso, Utils.fmt(c.totalDivida), Utils.fmt(c.parcelaUnit)]),
+                foot: [[{ content: 'Totais', colSpan: 4 }, '', sumAtraso, Utils.fmt(sumDivida), Utils.fmt(sumParcela)]],
+                showHead: 'everyPage',
+                showFoot: 'lastPage',
+                theme: 'plain',
+                styles: { font: 'helvetica', fontSize: 8, textColor: C.ink, valign: 'middle', overflow: 'linebreak', cellPadding: { top: 2.6, bottom: 2.6, left: 3, right: 3 } },
+                headStyles: { fillColor: C.plum, textColor: C.white, fontStyle: 'bold', fontSize: 7.5 },
+                footStyles: { fillColor: C.orangeSoft, textColor: C.ink, fontStyle: 'bold', fontSize: 8.5 },
+                alternateRowStyles: { fillColor: C.zebra },
+                columnStyles: {
+                    2: { fontStyle: 'bold' },
+                    4: { halign: 'center', cellWidth: 20 },
+                    5: { halign: 'center', cellWidth: 18 },
+                    6: { halign: 'right', cellWidth: 38 },
+                    7: { halign: 'right', cellWidth: 36 },
+                },
+                didParseCell: (d) => {
+                    const col = d.column.index;
+                    if (d.section !== 'body') {
+                        if (col === 4 || col === 5) d.cell.styles.halign = 'center';
+                        if (col >= 6) d.cell.styles.halign = 'right';
+                        return;
+                    }
+                    if (col === 5) {
+                        d.cell.styles.textColor = (Number(d.cell.raw) || 0) > 0 ? C.err : C.ok;
+                        d.cell.styles.fontStyle = 'bold';
+                    }
+                },
+                didDrawPage: () => {
+                    if (pdf.internal.getCurrentPageInfo().pageNumber > paginaInicioTabela) cabecalho();
+                },
             });
-            pdf.save(`ONTIME_Relatorio_${new Date().toISOString().split('T')[0]}.pdf`);
-        } catch (err) { console.error(err); alert('Erro ao gerar PDF.'); }
-        finally { btn.classList.remove('loading'); btn.innerHTML = origHTML; }
+
+            /* ---- Rodapé em todas as páginas ---- */
+            const total = pdf.internal.getNumberOfPages();
+            for (let p = 1; p <= total; p++) {
+                pdf.setPage(p);
+                stroke(C.border); pdf.setLineWidth(0.3); pdf.line(M, H - 10, W - M, H - 10);
+                font('normal', 7); ink(C.subtle);
+                pdf.text('ONTIME · Controladoria · Gestão de Parcelamentos', M, H - 5.5);
+                pdf.text(`Página ${p} de ${total}`, W - M, H - 5.5, { align: 'right' });
+            }
+
+            pdf.save(`ONTIME_Parcelamentos_${currYear}-${String(currMonth + 1).padStart(2, '0')}.pdf`);
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao gerar PDF.');
+        } finally {
+            trigger.disabled = false;
+            trigger.innerHTML = origHTML;
+        }
     };
 
     /* ------------------------------------------------------------------
@@ -1474,6 +1894,10 @@ const App = (() => {
         $('filterDetalhadoMes').addEventListener('change', filterDetalhado);
         $('filterDetalhadoAno').addEventListener('change', filterDetalhado);
         document.querySelectorAll('th[data-sort-table]').forEach(th => th.addEventListener('click', () => doSort(th.dataset.sortTable, th.dataset.sortCol)));
+        document.querySelectorAll('#anualModo .seg-btn').forEach(b => b.addEventListener('click', () => setAnualModo(b.dataset.modo)));
+        let modoSalvo = null;
+        try { modoSalvo = localStorage.getItem('parcel_anual_modo'); } catch (e) {}
+        if (modoSalvo) setAnualModo(modoSalvo);
     };
 
     document.addEventListener('DOMContentLoaded', () => {

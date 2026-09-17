@@ -13,455 +13,552 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+  <!-- Mesmo visual do dashboard: tokens, barra lateral, topo e tabelas vêm do
+       styles.css desta pasta. Aqui fica só o que é desta tela. -->
+  <link rel="stylesheet" href="styles.css">
+
   <style>
-    :root {
-      --plum-deep:#2D1B2D; --plum:#4A2C4A; --plum-soft:#6B5E6B;
-      --bg:#FBF9FA; --surface:#FFFFFF; --surface-soft:#F6F2F6;
-      --border:#E8E2E8; --border-soft:#F0EBF0;
-      --orange:#FF6E00; --orange-deep:#E55B00; --orange-soft:#FFF1E0;
-      --danger:#DC2626; --danger-soft:#FEE2E2;
-      --success:#16A34A;
-      --radius:14px; --radius-sm:10px;
-      --font-display:'Fraunces',serif; --font-body:'Manrope',sans-serif;
-      --font-mono:'JetBrains Mono',monospace;
-      --shadow-card:0 1px 2px rgba(45,27,45,0.04), 0 8px 24px -12px rgba(45,27,45,0.12);
-    }
-    *,*::before,*::after { box-sizing:border-box; }
-    html,body { margin:0; padding:0; }
-    body {
-      font-family:var(--font-body); background:var(--bg); color:var(--plum-deep);
-      min-height:100vh; -webkit-font-smoothing:antialiased; font-size:14px;
-    }
+    /* Um elemento com [hidden] some mesmo quando a classe dele define display.
+       Era isso que deixava a barra de ações visível antes de escolher arquivo. */
+    [hidden] { display: none !important; }
+    .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
 
-    /* ------------ Header --------------- */
-    .page-header {
-      background:linear-gradient(135deg,#1A0F1A 0%,var(--plum-deep) 100%);
-      color:#fff; padding:28px 32px;
-      display:flex; align-items:center; gap:20px; flex-wrap:wrap;
-    }
-    .page-header .head-text { flex:1; min-width:240px; }
-    .page-header h1 {
-      font-family:var(--font-display); font-weight:500;
-      font-size:26px; margin:0 0 4px;
-    }
-    .page-header p { margin:0; opacity:0.7; font-size:13.5px; }
-    .head-right { display:flex; align-items:center; gap:14px; }
-    .status-pill {
-      display:flex; align-items:center; gap:8px;
-      padding:8px 14px;
-      background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1);
-      border-radius:999px; font-size:12.5px;
-    }
-    .status-pill .dot { width:7px; height:7px; border-radius:50%; background:#22C55E; }
-    .status-pill .dot.warn { background:#F59E0B; }
-    .status-pill .dot.off  { background:#9CA3AF; }
-    .btn-back {
-      display:inline-flex; align-items:center; gap:8px;
-      padding:10px 16px; background:var(--orange); color:#fff;
-      border-radius:10px; text-decoration:none; font-weight:600; font-size:13px;
-      border:1px solid var(--orange);
-      box-shadow:0 6px 18px -8px rgba(255,110,0,0.55);
-      transition:all .15s;
-    }
-    .btn-back:hover { background:var(--orange-deep); transform:translateY(-1px); }
+    .content-area.up-area { max-width: 1180px; gap: 22px; padding-top: 28px; }
 
-    /* ------------ Main --------------- */
-    main { max-width:1100px; margin:0 auto; padding:28px 24px 80px; }
-    section { margin-bottom:24px; }
+    /* ------------ Barra lateral: estado da base ------------ */
+    .sidebar-summary .ss-dot.warn { background:#F59E0B; box-shadow:0 0 0 3px rgba(245,158,11,.2); }
+    .sidebar-summary .ss-dot.off  { background:#9CA3AF; box-shadow:0 0 0 3px rgba(156,163,175,.2); }
 
-    /* ------------ Dropzone --------------- */
-    .dropzone {
-      background:var(--surface); border:2px dashed var(--border);
-      border-radius:var(--radius); padding:48px 24px;
-      text-align:center; transition:all .2s; cursor:pointer;
-      box-shadow:var(--shadow-card);
-    }
-    .dropzone:hover, .dropzone.drag {
-      border-color:var(--orange); background:var(--orange-soft);
-    }
-    .dropzone i.icon-up {
-      font-size:46px; color:var(--orange);
-      margin-bottom:14px; display:block;
-    }
-    .dropzone .dz-title {
-      font-family:var(--font-display); font-weight:500;
-      font-size:20px; margin:0 0 6px;
-    }
-    .dropzone .dz-sub { margin:0 0 18px; font-size:13.5px; color:var(--plum-soft); }
-    .dropzone .dz-extensions {
-      display:inline-flex; gap:6px; margin-top:8px; font-size:11.5px;
-      color:var(--plum-soft); letter-spacing:.05em; text-transform:uppercase;
-    }
-    .btn-pick {
-      padding:10px 22px; background:var(--surface); color:var(--plum);
-      border:1px solid var(--border); border-radius:10px;
-      font-family:inherit; font-weight:600; font-size:13px;
+    /* ------------ Botões ------------ */
+    .up-btn {
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      height:40px; padding:0 16px; border-radius:10px; border:1px solid transparent;
+      font:700 13px var(--font-body); text-decoration:none; white-space:nowrap;
       cursor:pointer; transition:all .15s;
     }
-    .btn-pick:hover { background:var(--orange-soft); border-color:var(--orange); color:var(--orange-deep); }
+    .up-btn i { font-size:16px; }
+    .up-btn:disabled { opacity:.45; cursor:not-allowed; }
+    .up-btn-primary {
+      background:linear-gradient(135deg,#FF8A2E 0%,var(--orange) 55%,var(--orange-deep) 100%); color:#fff;
+      box-shadow:0 8px 20px -10px rgba(255,110,0,.65), inset 0 1px 0 rgba(255,255,255,.25);
+    }
+    .up-btn-primary:hover:not(:disabled) { transform:translateY(-1px); filter:brightness(1.05); }
+    .up-btn-ghost { background:var(--surface); color:var(--ink); border-color:var(--border); box-shadow:var(--shadow-sm); }
+    .up-btn-ghost:hover:not(:disabled) { border-color:var(--orange); color:var(--orange-deep); background:var(--orange-soft); }
+    .up-btn-plain { background:none; color:var(--muted); padding:0 10px; }
+    .up-btn-plain:hover { color:var(--ink); background:var(--surface-soft); }
+    .up-btn-danger { background:var(--surface); color:var(--err); border-color:rgba(185,28,28,.3); }
+    .up-btn-danger:hover:not(:disabled) { background:var(--err-soft); border-color:var(--err); }
+    .up-btn-dangerfill { background:var(--err); color:#fff; }
+    .up-btn-dangerfill:hover:not(:disabled) { background:#991B1B; }
 
-    /* ------------ Files processed --------------- */
-    .files-card {
-      background:var(--surface); border:1px solid var(--border-soft);
-      border-radius:var(--radius); padding:16px 18px;
-      box-shadow:var(--shadow-card);
+    /* ------------ Etapas ------------ */
+    .stepper {
+      list-style:none; display:grid; grid-template-columns:repeat(3,1fr); padding:6px;
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);
     }
-    .file-row {
-      display:flex; align-items:center; gap:12px;
-      padding:8px 0; border-bottom:1px solid var(--border-soft); font-size:13px;
+    .step {
+      position:relative; display:flex; align-items:center; gap:12px; padding:12px 16px;
+      border-radius:12px; cursor:pointer; transition:background .15s; outline:none;
     }
-    .file-row:last-child { border-bottom:none; }
-    .file-row i { font-size:18px; }
-    .file-row .ok i  { color:var(--success); }
-    .file-row .err i { color:var(--danger); }
-    .file-row .name { flex:1; font-weight:600; color:var(--plum); }
-    .file-row .meta { color:var(--plum-soft); font-size:12px; }
+    .step:hover, .step:focus-visible { background:var(--surface-soft); }
+    .step + .step::before { content:''; position:absolute; left:0; top:24%; bottom:24%; width:1px; background:var(--border); }
+    .step-dot {
+      width:32px; height:32px; border-radius:50%; flex-shrink:0; display:grid; place-items:center;
+      font:800 13px var(--font-body); background:var(--surface-soft); color:var(--subtle); border:1.5px solid var(--border);
+      transition:all .2s;
+    }
+    .step-title { font:700 13.5px var(--font-body); color:var(--muted); }
+    .step-sub { font-size:11.5px; font-weight:600; color:var(--subtle); margin-top:1px; }
+    .step.current { background:var(--orange-soft); }
+    .step.current::before, .step.current + .step::before { opacity:0; }
+    .step.current .step-dot { background:var(--orange); border-color:var(--orange); color:#fff; box-shadow:0 0 0 4px rgba(255,110,0,.15); }
+    .step.current .step-title { color:var(--ink); }
+    .step.current .step-sub { color:var(--orange-deep); }
+    .step.done .step-dot { background:var(--ok-soft); border-color:rgba(31,122,61,.35); color:var(--ok); }
+    .step.done .step-title { color:var(--ink); }
 
-    /* ------------ Preview --------------- */
-    .preview-card {
-      background:var(--surface); border-radius:var(--radius);
-      box-shadow:var(--shadow-card); overflow:hidden;
+    /* ------------ Cartões de etapa ------------ */
+    .up-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+      box-shadow:var(--shadow-sm); overflow:hidden; scroll-margin-top:100px;
+      animation:fadeUp .35s ease-out both;
     }
-    .preview-head {
-      display:flex; align-items:center; gap:14px; flex-wrap:wrap;
-      padding:18px 20px; border-bottom:1px solid var(--border-soft);
+    .up-card-head { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:18px 22px; border-bottom:1px solid var(--border-soft); }
+    .up-num {
+      width:28px; height:28px; border-radius:8px; flex-shrink:0; display:grid; place-items:center;
+      background:var(--plum); color:#fff; font:800 13px var(--font-body);
     }
-    .preview-head h3 {
-      margin:0; font-family:var(--font-display); font-weight:500;
-      font-size:18px; display:flex; align-items:center; gap:9px;
-    }
-    .preview-head h3 i { color:var(--orange); font-size:17px; }
-    .preview-head .sub { color:var(--plum-soft); font-size:12.5px; margin:0; }
-    .preview-search {
-      position:relative; margin-left:auto; flex:1 1 220px; max-width:340px;
-    }
-    .preview-search i {
-      position:absolute; left:12px; top:50%; transform:translateY(-50%);
-      color:var(--plum-soft); font-size:14px;
-    }
-    .preview-search input {
-      width:100%; padding:9px 12px 9px 34px;
-      background:var(--surface-soft); border:1px solid var(--border);
-      border-radius:10px; font-family:inherit; font-size:13px; color:var(--plum-deep);
-      transition:all .15s;
-    }
-    .preview-search input:focus {
-      outline:none; border-color:var(--orange); background:var(--surface);
-    }
+    .up-card-head > div:not(.head-tools) { flex:1 1 220px; min-width:0; }
+    .up-card-head h2 { font-family:var(--font-display); font-size:18px; font-weight:600; letter-spacing:-.01em; }
+    .up-card-head p { font-size:12.5px; font-weight:600; color:var(--muted); margin-top:2px; }
+    .head-tools { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 
-    .preview-warn {
-      padding:12px 20px; background:#FEF3C7; border-bottom:1px solid #FDE68A;
-      font-size:12.5px; color:#92400E;
-      display:flex; align-items:flex-start; gap:9px;
+    /* ------------ 1 · Arquivo ------------ */
+    .dropzone {
+      margin:22px; padding:38px 24px; text-align:center; cursor:pointer;
+      background:var(--bg); border:2px dashed var(--border); border-radius:14px; transition:all .2s; outline:none;
     }
-    .preview-warn i { font-size:16px; flex-shrink:0; }
-    .preview-warn strong { font-weight:700; }
+    .dropzone:hover, .dropzone.drag, .dropzone:focus-visible { border-color:var(--orange); background:var(--orange-soft); }
+    .dz-icon {
+      width:64px; height:64px; margin:0 auto 14px; border-radius:18px; display:grid; place-items:center;
+      background:var(--orange-soft); color:var(--orange); font-size:32px; transition:background .2s;
+    }
+    .dropzone:hover .dz-icon, .dropzone.drag .dz-icon { background:#fff; }
+    .dz-title { font-family:var(--font-display); font-size:20px; font-weight:600; color:var(--ink); }
+    .dz-sub { font-size:13px; color:var(--muted); margin:4px 0 18px; }
+    .dz-ext { display:block; margin-top:12px; font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--subtle); }
 
-    .preview-list {
-      list-style:none; margin:0; padding:0;
-      max-height:480px; overflow-y:auto;
+    .file-chip {
+      display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:22px; padding:14px 16px;
+      background:var(--bg); border:1px solid var(--border); border-radius:12px; transition:all .2s;
     }
-    .preview-row {
-      display:grid; grid-template-columns: 24px 1fr 1.4fr 0.9fr 1.1fr 28px;
-      gap:12px; align-items:center;
-      padding:11px 20px; border-bottom:1px solid var(--border-soft);
-      font-size:12.5px; transition:background .12s;
-    }
-    .preview-row:hover { background:var(--surface-soft); }
-    .preview-row .num { font-family:var(--font-mono); font-weight:600; color:var(--plum); }
-    .preview-row .orgao { color:var(--plum-soft); }
-    .preview-row .status {
-      display:inline-block; padding:2px 8px; border-radius:999px;
-      background:var(--orange-soft); color:var(--orange-deep);
-      font-size:11px; font-weight:700; text-transform:uppercase;
-      letter-spacing:.04em;
-    }
-    .preview-row .status.quit  { background:#D1FAE5; color:#065F46; }
-    .preview-row .status.atras { background:#FEE2E2; color:#991B1B; }
-    .preview-row .status.enc   { background:#E5E7EB; color:#374151; }
-    .preview-row .valor {
-      font-family:var(--font-mono); font-weight:700; text-align:right;
-      color:var(--plum-deep);
-    }
-    .preview-row input[type="checkbox"] { width:16px; height:16px; cursor:pointer; accent-color:var(--orange); }
-    .preview-row .trash {
-      background:none; border:none; cursor:pointer; padding:4px;
-      color:var(--plum-soft); transition:color .15s; font-size:15px;
-    }
-    .preview-row .trash:hover { color:var(--danger); }
-    .preview-empty {
-      padding:36px 20px; text-align:center; color:var(--plum-soft);
-      font-size:13px;
-    }
+    .file-chip.drag { border-color:var(--orange); background:var(--orange-soft); }
+    .fc-icon { width:44px; height:44px; border-radius:12px; flex-shrink:0; display:grid; place-items:center; font-size:24px; background:var(--ok-soft); color:var(--ok); }
+    .file-chip.err .fc-icon { background:var(--err-soft); color:var(--err); }
+    .fc-info { min-width:0; flex:1 1 260px; }
+    .fc-name { font-weight:700; font-size:14px; color:var(--ink); overflow-wrap:anywhere; }
+    .fc-meta { font-size:12px; font-weight:600; color:var(--muted); margin-top:2px; }
+    .file-chip.err .fc-meta { color:var(--err); }
+    .fc-actions { display:flex; gap:6px; margin-left:auto; }
 
-    .preview-foot {
-      display:flex; align-items:center; justify-content:space-between;
-      padding:14px 20px; border-top:1px solid var(--border-soft);
-      background:var(--surface-soft); font-size:13px;
+    .cols-help { margin:0 22px 20px; padding-top:14px; border-top:1px dashed var(--border); }
+    .cols-help summary {
+      display:inline-flex; align-items:center; gap:6px; cursor:pointer; list-style:none;
+      font-size:12.5px; font-weight:700; color:var(--muted);
     }
-    .preview-foot .count { color:var(--plum-soft); }
-    .preview-foot .total {
-      font-family:var(--font-mono); font-weight:800;
-      font-size:15px; color:var(--plum-deep);
+    .cols-help summary::-webkit-details-marker { display:none; }
+    .cols-help summary:hover { color:var(--ink); }
+    .cols-help summary .caret { transition:transform .15s; }
+    .cols-help[open] summary .caret { transform:rotate(90deg); }
+    .cols-list { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 10px; }
+    .col-chip {
+      display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:7px;
+      font:600 11.5px var(--font-mono); background:var(--surface-soft); border:1px solid var(--border-soft); color:var(--ink);
     }
+    .col-chip.found { background:var(--ok-soft); border-color:rgba(31,122,61,.2); color:var(--ok); }
+    .col-chip.missing { background:var(--err-soft); border-color:rgba(185,28,28,.25); color:var(--err); }
+    .cols-note { font-size:12px; color:var(--muted); line-height:1.5; }
+    .link-btn { background:none; border:none; padding:0; cursor:pointer; font:700 12px var(--font-body); color:var(--orange-deep); text-decoration:underline; }
 
-    /* ------------ Actions --------------- */
-    .actions {
-      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-      padding:18px 20px; background:var(--surface);
-      border:1px solid var(--border-soft); border-radius:var(--radius);
-      box-shadow:var(--shadow-card);
+    /* ------------ 2 · Conferir ------------ */
+    .tools-search { position:relative; width:260px; }
+    .tools-search i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); pointer-events:none; }
+    .tools-search input { padding-left:34px; height:40px; }
+    .tools-select {
+      width:auto; height:40px; min-width:170px; padding-right:34px; cursor:pointer;
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 256 256" fill="%23A89CB0"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></svg>');
+      background-repeat:no-repeat; background-position:right 12px center;
     }
-    .btn {
-      display:inline-flex; align-items:center; gap:8px;
-      padding:10px 18px; border-radius:10px;
-      font-family:inherit; font-weight:600; font-size:13px;
-      border:1px solid transparent; cursor:pointer; transition:all .15s;
+    .warn-bar {
+      display:flex; align-items:flex-start; gap:10px; padding:12px 22px;
+      background:#FFF8E6; border-bottom:1px solid #F6E3B4; color:#6B4700; font-size:12.5px; line-height:1.45;
     }
-    .btn:disabled { opacity:0.45; cursor:not-allowed; }
-    .btn-primary {
-      background:var(--orange); color:#fff; border-color:var(--orange);
-      box-shadow:0 6px 18px -8px rgba(255,110,0,0.55);
+    .warn-bar i { font-size:16px; color:var(--warn); flex-shrink:0; margin-top:1px; }
+    .table-scroll { max-height:540px; overflow:auto; }
+    #tbl th { cursor:default; }
+    #tbl td { padding-top:9px; padding-bottom:9px; }
+    #tbl th:hover { background:var(--surface-soft); color:var(--muted); }
+    #tbl .c-check { width:46px; padding-right:0; }
+    #tbl input[type="checkbox"] { width:16px; height:16px; accent-color:var(--orange); cursor:pointer; vertical-align:middle; }
+    #tbl .c-valor { text-align:right; }
+    #tbl .c-acao { width:52px; padding-left:0; text-align:center; }
+    #tbl td.c-org { font-family:var(--font-body); font-weight:600; }
+    #tbl .org-nat { display:block; font-size:11px; font-weight:500; color:var(--muted); margin-top:1px; }
+    #tbl tr.off td:not(.c-check) { opacity:.45; }
+    #tbl tr.off td.c-valor { text-decoration:line-through; }
+    #tbl .trash {
+      width:30px; height:30px; border:none; border-radius:8px; background:none; cursor:pointer;
+      color:var(--subtle); font-size:15px; transition:all .15s;
     }
-    .btn-primary:hover:not(:disabled) { background:var(--orange-deep); border-color:var(--orange-deep); transform:translateY(-1px); }
-    .btn-ghost {
-      background:var(--surface); color:var(--plum); border-color:var(--border);
+    #tbl .trash:hover { background:var(--err-soft); color:var(--err); }
+    #tbl .empty-row td { padding:44px 20px; text-align:center; font-family:var(--font-body); color:var(--muted); }
+    .conf-foot {
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      padding:13px 22px; border-top:1px solid var(--border); background:var(--surface-soft);
     }
-    .btn-ghost:hover:not(:disabled) { background:var(--surface-soft); }
-    .btn-danger {
-      background:var(--surface); color:var(--danger); border-color:var(--danger-soft);
-    }
-    .btn-danger:hover:not(:disabled) { background:var(--danger-soft); border-color:var(--danger); }
-    .btn-link {
-      background:none; color:var(--plum-soft); border:none; padding:8px 4px;
-    }
-    .btn-link:hover { color:var(--plum-deep); }
-    .actions .hint {
-      margin-left:auto; color:var(--plum-soft); font-size:12.5px;
-    }
+    .conf-count { font-size:13px; font-weight:600; color:var(--muted); }
+    .conf-total { display:flex; align-items:baseline; gap:8px; }
+    .conf-total small { font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+    .conf-total span { font:700 15px var(--font-mono); color:var(--ink); }
 
-    /* ------------ Steps (help) --------------- */
-    .steps {
-      background:var(--surface); border:1px solid var(--border-soft);
-      border-radius:var(--radius); padding:20px 22px;
-      box-shadow:var(--shadow-card);
+    /* ------------ 3 · Enviar ------------ */
+    .send-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:22px 22px 14px; }
+    .send-opt {
+      display:flex; align-items:flex-start; gap:14px; padding:18px; text-align:left; cursor:pointer;
+      background:var(--surface); border:1.5px solid var(--border); border-radius:14px;
+      font-family:var(--font-body); color:var(--ink); transition:all .15s;
     }
-    .steps h3 {
-      font-family:var(--font-display); font-weight:500;
-      font-size:17px; margin:0 0 12px;
-      display:flex; align-items:center; gap:8px;
-    }
-    .steps h3 i { color:var(--orange); }
-    .steps ol { margin:0; padding-left:22px; font-size:13px; line-height:1.6; color:var(--plum); }
-    .steps li { margin-bottom:6px; }
-    .steps strong { color:var(--plum-deep); }
-    .steps code {
-      font-family:var(--font-mono); font-size:12px;
-      background:var(--surface-soft); padding:1px 6px; border-radius:4px;
-      color:var(--plum-deep);
-    }
+    .send-opt:hover:not(:disabled), .send-opt:focus-visible { border-color:var(--orange); background:var(--orange-soft); transform:translateY(-1px); box-shadow:var(--shadow-md); outline:none; }
+    .send-opt:disabled { opacity:.5; cursor:not-allowed; }
+    .so-icon { width:42px; height:42px; border-radius:12px; flex-shrink:0; display:grid; place-items:center; font-size:21px; background:var(--orange-soft); color:var(--orange-deep); }
+    .send-opt.alt .so-icon { background:var(--surface-soft); color:var(--plum); }
+    .so-title { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14.5px; font-weight:800; }
+    .so-tag { padding:2px 7px; border-radius:6px; background:var(--orange); color:#fff; font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .so-desc { display:block; margin-top:4px; font-size:12.5px; font-weight:500; line-height:1.45; color:var(--muted); }
+    .so-go { display:inline-flex; align-items:center; gap:5px; margin-top:10px; font-size:12.5px; font-weight:800; color:var(--orange-deep); }
+    .send-hint { display:flex; align-items:center; gap:7px; padding:0 22px 20px; font-size:12.5px; font-weight:600; color:var(--muted); }
+    .send-hint i { font-size:15px; color:var(--orange); }
 
-    /* ------------ Toast --------------- */
+    /* ------------ Resultado ------------ */
+    .result { display:flex; align-items:flex-start; gap:16px; padding:24px 22px; }
+    .r-icon { width:52px; height:52px; border-radius:50%; flex-shrink:0; display:grid; place-items:center; font-size:28px; }
+    #sec-resultado.ok   { border-color:rgba(31,122,61,.3); }
+    #sec-resultado.ok .r-icon   { background:var(--ok-soft); color:var(--ok); }
+    #sec-resultado.pend { border-color:rgba(199,119,0,.35); }
+    #sec-resultado.pend .r-icon { background:#FFF4DC; color:var(--warn); }
+    #sec-resultado.erro { border-color:rgba(185,28,28,.3); }
+    #sec-resultado.erro .r-icon { background:var(--err-soft); color:var(--err); }
+    .r-title { font-family:var(--font-display); font-size:20px; font-weight:600; color:var(--ink); }
+    .r-text { margin:4px 0 14px; font-size:13px; font-weight:500; line-height:1.55; color:var(--muted); max-width:720px; }
+    .r-actions { display:flex; gap:10px; flex-wrap:wrap; }
+
+    /* ------------ Zona de perigo ------------ */
+    .danger-zone {
+      display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:18px; padding:18px 22px;
+      background:var(--surface); border:1px dashed rgba(185,28,28,.35); border-radius:var(--radius-lg);
+    }
+    .dg-t { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:800; color:var(--err); }
+    .dg-d { margin-top:3px; font-size:12.5px; font-weight:500; line-height:1.45; color:var(--muted); max-width:640px; }
+    .danger-zone .up-btn { margin-left:auto; }
+
+    /* ------------ Modal de confirmação ------------ */
+    .md-overlay {
+      position:fixed; inset:0; z-index:1800; display:flex; align-items:center; justify-content:center; padding:20px;
+      background:rgba(26,15,26,.55); backdrop-filter:blur(3px);
+    }
+    .md {
+      display:flex; flex-direction:column; width:100%; max-width:540px; max-height:calc(100vh - 40px);
+      background:var(--surface); border-radius:18px; overflow:hidden; box-shadow:0 24px 60px rgba(26,15,26,.4);
+      animation:mdIn .18s ease-out;
+    }
+    @keyframes mdIn { from { opacity:0; transform:translateY(8px) scale(.98); } to { opacity:1; transform:none; } }
+    .md-body { padding:22px 24px 10px; overflow:auto; }
+    .md-title { display:flex; align-items:center; gap:12px; font-family:var(--font-display); font-size:20px; font-weight:600; color:var(--ink); }
+    .md-ic { width:40px; height:40px; border-radius:12px; flex-shrink:0; display:grid; place-items:center; font-size:21px; background:var(--orange-soft); color:var(--orange-deep); }
+    .md.danger .md-ic { background:var(--err-soft); color:var(--err); }
+    .md-lead { margin:12px 0 16px; font-size:13px; font-weight:500; line-height:1.5; color:var(--muted); }
+    .cmp { border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+    .cmp th, .cmp td { position:static; padding:10px 14px; font-size:12.5px; }
+    .cmp th { cursor:default; text-align:right; background:var(--surface-soft); }
+    .cmp th:hover { background:var(--surface-soft); color:var(--muted); }
+    .cmp td { text-align:right; }
+    .cmp th:first-child, .cmp td:first-child { text-align:left; font-family:var(--font-body); font-weight:700; color:var(--muted); }
+    .cmp td.depois { font-weight:700; color:var(--ink); }
+    .cmp .dif { display:block; font-size:10.5px; font-weight:600; color:var(--muted); }
+    .cmp tr:last-child td { border-bottom:none; }
+    .cmp tr:hover td { background:none; }
+    .md-notes { display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+    .md-note {
+      display:flex; align-items:flex-start; gap:9px; padding:10px 12px; border-radius:10px;
+      font-size:12.5px; line-height:1.45; background:var(--surface-soft); color:var(--ink);
+    }
+    .md-note i { font-size:16px; flex-shrink:0; margin-top:1px; color:var(--muted); }
+    .md-note.ok i { color:var(--ok); }
+    .md-note.warn { background:#FFF8E6; color:#6B4700; }
+    .md-note.warn i { color:var(--warn); }
+    .md-note .nums { display:block; margin-top:3px; font:500 11.5px var(--font-mono); color:var(--muted); overflow-wrap:anywhere; }
+    .md-check {
+      display:flex; align-items:flex-start; gap:10px; margin-top:14px; padding:12px 14px; cursor:pointer;
+      border:1px solid var(--border); border-radius:10px; font-size:13px; font-weight:600;
+    }
+    .md-check input { width:16px; height:16px; margin-top:1px; accent-color:var(--err); }
+    .md-foot { display:flex; justify-content:flex-end; gap:10px; padding:16px 24px; margin-top:12px; border-top:1px solid var(--border-soft); background:var(--surface-soft); }
+
+    /* ------------ Carregando / aviso ------------ */
+    .ov { position:fixed; inset:0; z-index:2000; display:flex; align-items:center; justify-content:center; background:rgba(26,15,26,.6); backdrop-filter:blur(4px); }
+    .ov-box { display:flex; align-items:center; gap:16px; min-width:300px; padding:22px 28px; border-radius:16px; background:var(--surface); box-shadow:0 20px 60px -20px rgba(0,0,0,.5); }
+    .ov-spin { width:26px; height:26px; flex-shrink:0; border:3px solid var(--border); border-top-color:var(--orange); border-radius:50%; animation:spin .7s linear infinite; }
+    .ov-t { font-size:14px; font-weight:700; color:var(--ink); }
+    .ov-s { margin-top:2px; font-size:12px; font-weight:600; color:var(--muted); }
     .toast {
-      position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
-      background:var(--plum-deep); color:#fff;
-      padding:13px 22px; border-radius:10px; font-size:13px; font-weight:600;
-      box-shadow:0 12px 32px -8px rgba(45,27,45,0.4);
+      position:fixed; bottom:24px; left:50%; z-index:2100; max-width:90vw; transform:translateX(-50%) translateY(20px);
+      padding:13px 22px; border-radius:10px; background:var(--plum-deep); color:#fff; text-align:center;
+      font-size:13px; font-weight:600; box-shadow:0 12px 32px -8px rgba(45,27,45,.4);
       opacity:0; pointer-events:none; transition:all .25s;
-      z-index:2000;
     }
     .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
-    /* ------------ Overlay (loading) --------------- */
-    .overlay {
-      position:fixed; inset:0; background:rgba(26,15,26,0.65);
-      backdrop-filter:blur(4px);
-      display:flex; align-items:center; justify-content:center;
-      z-index:1500;
-      opacity:0; pointer-events:none; transition:opacity .15s;
+    /* ------------ Responsivo ------------ */
+    @media (max-width: 860px) {
+      .send-grid { grid-template-columns:1fr; }
     }
-    .overlay.show { opacity:1; pointer-events:auto; }
-    .overlay-box {
-      background:var(--surface); padding:24px 30px; border-radius:14px;
-      display:flex; align-items:center; gap:14px;
-      box-shadow:0 20px 60px -20px rgba(0,0,0,0.5);
-    }
-    .spinner {
-      width:22px; height:22px; border:3px solid var(--border);
-      border-top-color:var(--orange); border-radius:50%;
-      animation:spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform:rotate(360deg); } }
-
-    /* ------------ Confirm modal --------------- */
-    .cf-overlay {
-      position:fixed; inset:0; background:rgba(26,15,26,0.55);
-      backdrop-filter:blur(4px);
-      display:none; align-items:center; justify-content:center;
-      padding:20px; z-index:1800;
-    }
-    .cf-overlay.show { display:flex; }
-    .cf-modal {
-      background:var(--surface); border-radius:16px; width:100%; max-width:440px;
-      box-shadow:0 24px 60px rgba(26,15,26,0.4); overflow:hidden;
-      animation:in .2s ease-out;
-    }
-    @keyframes in { from { opacity:0; transform:translateY(10px) scale(.97); } to { opacity:1; transform:none; } }
-    .cf-body { padding:22px 24px 18px; }
-    .cf-title {
-      font-family:var(--font-display); font-weight:500; font-size:19px;
-      margin:0 0 8px; display:flex; align-items:center; gap:10px; color:var(--plum-deep);
-    }
-    .cf-title i { color:var(--orange); }
-    .cf-text { margin:0 0 12px; font-size:13.5px; color:var(--plum-soft); line-height:1.5; }
-    .cf-opts { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
-    .cf-opt {
-      display:flex; align-items:flex-start; gap:10px;
-      padding:11px 14px; background:var(--surface-soft);
-      border:1px solid var(--border); border-radius:10px;
-      cursor:pointer; transition:all .12s;
-    }
-    .cf-opt:hover { border-color:var(--orange); background:var(--orange-soft); }
-    .cf-opt input { margin-top:3px; accent-color:var(--orange); }
-    .cf-opt .opt-title { font-weight:700; color:var(--plum-deep); font-size:13px; }
-    .cf-opt .opt-sub { color:var(--plum-soft); font-size:12px; }
-    .cf-foot {
-      padding:14px 20px; background:var(--surface-soft);
-      border-top:1px solid var(--border-soft);
-      display:flex; justify-content:flex-end; gap:10px;
-    }
-
-    /* ------------ Responsive --------------- */
-    @media (max-width:720px) {
-      .page-header { padding:20px 18px; }
-      .page-header h1 { font-size:21px; }
-      main { padding:18px 14px 60px; }
-      .dropzone { padding:32px 18px; }
-      .preview-row {
-        grid-template-columns: 22px 1fr 1fr 24px;
-        font-size:11.5px;
-      }
-      .preview-row .orgao, .preview-row .status { display:none; }
+    @media (max-width: 720px) {
+      .content-area.up-area { padding-top:18px; gap:16px; }
+      .stepper { padding:4px; }
+      .step { flex-direction:column; gap:6px; padding:10px 4px; text-align:center; }
+      .step-sub { display:none; }
+      .step + .step::before { display:none; }
+      .up-card-head { padding:16px; }
+      .head-tools { margin-left:0; width:100%; }
+      .tools-search { width:auto; flex:1 1 100%; }
+      .tools-select { flex:1 1 100%; }
+      .dropzone, .file-chip { margin:16px; }
+      .cols-help { margin:0 16px 16px; }
+      .fc-actions { margin-left:0; width:100%; }
+      .fc-actions .up-btn { flex:1; }
+      #tbl .c-org, #tbl .c-status { display:none; }
+      .send-grid { padding:16px 16px 10px; }
+      .send-hint { padding:0 16px 16px; }
+      .danger-zone .up-btn { margin-left:0; width:100%; }
+      #main-header .up-btn .lbl { display:none; }
+      #main-header .up-btn { width:40px; padding:0; }
+      .md-foot .up-btn { flex:1; }
     }
   </style>
 </head>
 <body>
 
-<header class="page-header">
-  <div class="head-text">
-    <h1><i class="ph-fill ph-cloud-arrow-up" style="margin-right:8px;color:var(--orange)"></i>Atualizar Parcelamentos</h1>
-    <p>Suba a planilha do Excel — os dados do dashboard são substituídos pelo conteúdo do arquivo.</p>
+<div class="sidebar-overlay" id="sidebarOverlay" role="presentation"></div>
+
+<aside class="sidebar" id="sidebar" role="navigation" aria-label="Menu principal">
+  <div class="logo">
+    <div class="logo-mark">
+      <img src="../logo-mascote.jpg" alt="Mascote" onerror="this.style.display='none'; this.parentNode.textContent='ON';">
+    </div>
+    <div class="logo-text">
+      <span>ONTIME</span>
+      <span>Parcelamentos</span>
+    </div>
   </div>
-  <div class="head-right">
-    <div class="status-pill" id="status-pill" title="Status do Sheets">
-      <span class="dot off" id="status-dot"></span>
-      <span id="status-text">verificando…</span>
+
+  <nav class="sidebar-nav" aria-label="Páginas">
+    <a class="nav-item" href="./"><i class="ph-fill ph-chart-pie-slice"></i> Dashboard</a>
+    <a class="nav-item active" href="./atualizar.html" aria-current="page"><i class="ph-fill ph-cloud-arrow-up"></i> Atualizar base</a>
+  </nav>
+
+  <div class="sidebar-summary" aria-label="Base atual" aria-live="polite">
+    <div class="ss-title"><i class="ph-fill ph-database" aria-hidden="true"></i> Base atual</div>
+    <div class="ss-item">
+      <span class="ss-label">Registros</span>
+      <span class="ss-value" id="ss-registros">—</span>
     </div>
-    <a class="btn-back" href="./"><i class="ph-bold ph-arrow-left"></i> Dashboard</a>
+    <div class="ss-item">
+      <span class="ss-label">Contratos</span>
+      <span class="ss-value" id="ss-contratos">—</span>
+    </div>
+    <div class="ss-item">
+      <span class="ss-label">Soma das parcelas</span>
+      <span class="ss-value" id="ss-soma">—</span>
+    </div>
+    <div class="ss-sync" title="Última gravação na planilha">
+      <span class="ss-dot off" id="ss-dot" aria-hidden="true"></span>
+      <span id="ss-sync">consultando…</span>
+    </div>
   </div>
-</header>
 
-<main>
-
-  <section class="dropzone" id="dz" tabindex="0" role="button" aria-label="Arraste o arquivo ou clique para escolher">
-    <i class="ph-bold ph-cloud-arrow-up icon-up"></i>
-    <h3 class="dz-title">Arraste a planilha aqui</h3>
-    <p class="dz-sub">ou clique pra escolher o arquivo no computador</p>
-    <button class="btn-pick" id="btn-pick" type="button">
-      <i class="ph-bold ph-folder-open" style="margin-right:6px"></i>Escolher arquivo
-    </button>
-    <input type="file" id="file-input" hidden accept=".xlsx,.xls">
-    <div class="dz-extensions">aceita .xlsx · .xls</div>
-  </section>
-
-  <section class="files-card" id="files-wrap" hidden></section>
-
-  <section class="preview-card" id="preview-wrap" hidden>
-    <div class="preview-head">
-      <div>
-        <h3><i class="ph-fill ph-list-checks"></i> Conferir registros</h3>
-        <p class="sub">Desmarque para excluir do envio · lixeira remove da lista.</p>
-      </div>
-      <div class="preview-search">
-        <i class="ph ph-magnifying-glass"></i>
-        <input id="preview-search" type="text" placeholder="Buscar número, órgão, natureza…" autocomplete="off">
-      </div>
-    </div>
-    <div class="preview-warn" id="preview-warn" hidden></div>
-    <ul class="preview-list" id="preview-list"></ul>
-    <div class="preview-foot">
-      <span class="count" id="preview-count">0 de 0 selecionados</span>
-      <span class="total" id="preview-total">R$ 0,00</span>
-    </div>
-  </section>
-
-  <section class="actions" id="actions-wrap" hidden>
-    <button class="btn btn-primary" id="btn-enviar">
-      <i class="ph-bold ph-cloud-arrow-up"></i> Enviar (substitui tudo)
-    </button>
-    <button class="btn btn-ghost" id="btn-anexar">
-      <i class="ph ph-plus"></i> Anexar
-    </button>
-    <button class="btn btn-danger" id="btn-limpar">
-      <i class="ph ph-eraser"></i> Limpar dados
-    </button>
-    <button class="btn btn-link" id="btn-reset">
-      <i class="ph ph-arrow-counter-clockwise"></i> Recomeçar
-    </button>
-    <span class="hint" id="hint"></span>
-  </section>
-
-  <section class="steps">
-    <h3><i class="ph-fill ph-list-numbers"></i> Como usar</h3>
-    <ol>
-      <li><strong>Arraste a planilha</strong> com as colunas esperadas (<code>Data</code>, <code>Negociação</code>, <code>Órgão</code>, <code>Natureza</code>, <code>Tributo</code>, <code>Número</code>, <code>Valor Original</code>, <code>Principal</code>, <code>Multa</code>, <code>Juros</code>, <code>Encargos Honorários</code>, <code>Saldo Devedor</code>, <code>Status</code>, <code>ATIVO</code>, <code>QTD</code>).</li>
-      <li><strong>Confira a lista</strong> — desmarque ou remova linhas que não devem ir.</li>
-      <li><strong>Enviar (substitui tudo)</strong>: zera a aba do Sheets e regrava com os registros desta planilha. <strong>Anexar</strong>: mantém os atuais e adiciona estes ao final.</li>
-      <li>Volte ao <a href="./">dashboard</a> — os números atualizam (cache de 5min).</li>
-    </ol>
-  </section>
-
-</main>
-
-<div class="overlay" id="overlay">
-  <div class="overlay-box">
-    <div class="spinner"></div>
-    <div id="overlay-text">Enviando…</div>
+  <div class="sidebar-footer" id="sidebar-footer" hidden>
+    <a id="btn-hub" class="btn-hub" href="../" rel="noopener">
+      <i class="ph ph-arrow-left"></i>
+      Voltar ao Hub
+    </a>
   </div>
-</div>
+</aside>
 
-<div class="cf-overlay" id="modal-limpar">
-  <div class="cf-modal" role="dialog" aria-modal="true">
-    <div class="cf-body">
-      <h3 class="cf-title"><i class="ph-fill ph-eraser"></i> Limpar dados do Sheets</h3>
-      <p class="cf-text">Essa ação apaga TODOS os registros da aba Parcelamentos. Não tem desfazer.</p>
-      <div class="cf-opts">
-        <label class="cf-opt">
-          <input type="checkbox" id="ml-confirm-check">
-          <div>
-            <div class="opt-title">Entendi que isso apaga tudo</div>
-            <div class="opt-sub">Vou perder os {{N}} registros que estão no Sheets agora.</div>
-          </div>
-        </label>
-      </div>
+<main class="main-content" id="scroll-container" role="main">
+  <header id="main-header">
+    <div class="header-left">
+      <button class="hamburger" id="btnHamburger" aria-label="Abrir menu lateral">
+        <i class="ph-bold ph-list"></i>
+      </button>
+      <div class="page-title"><i class="ph-fill ph-cloud-arrow-up"></i> Atualizar base</div>
     </div>
-    <div class="cf-foot">
-      <button class="btn btn-ghost" id="ml-cancel">Cancelar</button>
-      <button class="btn btn-danger" id="ml-do" disabled>
-        <i class="ph ph-trash"></i> Limpar tudo
+    <div class="header-right">
+      <button class="up-btn up-btn-ghost" id="btn-modelo" type="button" title="Baixar planilha modelo">
+        <i class="ph-bold ph-file-xls"></i><span class="lbl">Baixar planilha modelo</span>
       </button>
     </div>
+  </header>
+
+  <div class="content-area up-area">
+
+    <ol class="stepper" aria-label="Etapas">
+      <li class="step current" data-step="1" tabindex="0" role="button">
+        <span class="step-dot">1</span>
+        <div><div class="step-title">Arquivo</div><div class="step-sub">Suba a planilha do Excel</div></div>
+      </li>
+      <li class="step" data-step="2" tabindex="0" role="button">
+        <span class="step-dot">2</span>
+        <div><div class="step-title">Conferir</div><div class="step-sub">Desmarque o que não vai</div></div>
+      </li>
+      <li class="step" data-step="3" tabindex="0" role="button">
+        <span class="step-dot">3</span>
+        <div><div class="step-title">Enviar</div><div class="step-sub">Substituir ou anexar</div></div>
+      </li>
+    </ol>
+
+    <!-- 1 · Arquivo -->
+    <section class="up-card" id="sec-arquivo" aria-labelledby="h-arquivo">
+      <div class="up-card-head">
+        <span class="up-num">1</span>
+        <div>
+          <h2 id="h-arquivo">Arquivo</h2>
+          <p>Planilha .xlsx ou .xls com as colunas de parcelamentos</p>
+        </div>
+      </div>
+
+      <div class="dropzone" id="dz" tabindex="0" role="button" aria-label="Arraste a planilha ou clique para escolher o arquivo">
+        <div class="dz-icon"><i class="ph-bold ph-cloud-arrow-up"></i></div>
+        <div class="dz-title">Arraste a planilha aqui</div>
+        <p class="dz-sub">ou clique para escolher o arquivo no computador</p>
+        <span class="up-btn up-btn-ghost"><i class="ph-bold ph-folder-open"></i> Escolher arquivo</span>
+        <span class="dz-ext">aceita .xlsx · .xls</span>
+      </div>
+
+      <div class="file-chip" id="file-chip" hidden>
+        <div class="fc-icon" id="fc-icon"></div>
+        <div class="fc-info">
+          <div class="fc-name" id="fc-name"></div>
+          <div class="fc-meta" id="fc-meta"></div>
+        </div>
+        <div class="fc-actions">
+          <button class="up-btn up-btn-ghost" type="button" id="btn-trocar"><i class="ph-bold ph-swap"></i> Trocar arquivo</button>
+          <button class="up-btn up-btn-plain" type="button" id="btn-recomecar"><i class="ph-bold ph-x"></i> Recomeçar</button>
+        </div>
+      </div>
+
+      <input type="file" id="file-input" hidden accept=".xlsx,.xls">
+
+      <details class="cols-help" id="cols-help">
+        <summary><i class="ph-bold ph-caret-right caret"></i> Colunas esperadas (15)</summary>
+        <div class="cols-list" id="cols-list"></div>
+        <p class="cols-note">
+          O nome não precisa ser idêntico: maiúsculas, acentos e espaços são ignorados, e o cabeçalho
+          pode estar em qualquer uma das 15 primeiras linhas. Coluna que faltar vai em branco.
+          <button type="button" class="link-btn" id="btn-modelo-2">Baixar planilha modelo</button>
+        </p>
+      </details>
+    </section>
+
+    <!-- 2 · Conferir -->
+    <section class="up-card" id="sec-conferir" aria-labelledby="h-conferir" hidden>
+      <div class="up-card-head">
+        <span class="up-num">2</span>
+        <div>
+          <h2 id="h-conferir">Conferir registros</h2>
+          <p>Desmarque o que não deve ir · a lixeira tira da lista</p>
+        </div>
+        <div class="head-tools">
+          <div class="tools-search">
+            <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+            <input id="busca" class="filter-input" type="search" placeholder="Número, órgão, natureza…" autocomplete="off" aria-label="Buscar registros">
+          </div>
+          <select id="filtro-status" class="filter-input tools-select" aria-label="Filtrar por status"></select>
+        </div>
+      </div>
+
+      <div class="warn-bar" id="warn-bar" hidden>
+        <i class="ph-fill ph-warning" aria-hidden="true"></i>
+        <div id="warn-text"></div>
+      </div>
+
+      <div class="table-scroll">
+        <table id="tbl" aria-label="Registros da planilha">
+          <thead>
+            <tr>
+              <th class="c-check"><input type="checkbox" id="sel-todos" aria-label="Selecionar todos os registros do filtro"></th>
+              <th>Vencimento</th>
+              <th>Número</th>
+              <th class="c-org">Órgão · Natureza</th>
+              <th class="c-status">Status</th>
+              <th class="c-valor">Saldo devedor</th>
+              <th class="c-acao"><span class="sr-only">Remover</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination" id="paginacao" hidden></div>
+
+      <div class="conf-foot">
+        <span class="conf-count" id="conf-count"></span>
+        <span class="conf-total"><small>Total selecionado</small> <span id="conf-total">R$ 0,00</span></span>
+      </div>
+    </section>
+
+    <!-- 3 · Enviar -->
+    <section class="up-card" id="sec-enviar" aria-labelledby="h-enviar" hidden>
+      <div class="up-card-head">
+        <span class="up-num">3</span>
+        <div>
+          <h2 id="h-enviar">Enviar</h2>
+          <p>Escolha como gravar — você revisa um resumo antes de confirmar</p>
+        </div>
+      </div>
+      <div class="send-grid">
+        <button class="send-opt" type="button" id="btn-substituir">
+          <span class="so-icon"><i class="ph-bold ph-arrows-clockwise"></i></span>
+          <span>
+            <span class="so-title">Substituir a base <span class="so-tag">Padrão</span></span>
+            <span class="so-desc">Troca tudo o que está na planilha pelos registros selecionados. Use quando o arquivo é a base completa.</span>
+            <span class="so-go">Revisar e substituir <i class="ph-bold ph-arrow-right"></i></span>
+          </span>
+        </button>
+        <button class="send-opt alt" type="button" id="btn-anexar">
+          <span class="so-icon"><i class="ph-bold ph-plus"></i></span>
+          <span>
+            <span class="so-title">Anexar ao final</span>
+            <span class="so-desc">Mantém a base atual e acrescenta os registros selecionados. Use só para parcelamentos novos.</span>
+            <span class="so-go">Revisar e anexar <i class="ph-bold ph-arrow-right"></i></span>
+          </span>
+        </button>
+      </div>
+      <p class="send-hint" id="send-hint"></p>
+    </section>
+
+    <!-- Resultado do envio -->
+    <section class="up-card" id="sec-resultado" aria-live="polite" hidden></section>
+
+    <!-- Zona de perigo: longe dos botões de envio de propósito -->
+    <section class="danger-zone" aria-labelledby="h-perigo">
+      <div>
+        <div class="dg-t" id="h-perigo"><i class="ph-fill ph-warning-octagon"></i> Zona de perigo</div>
+        <p class="dg-d">Apaga todos os registros da base. O dashboard fica vazio até um novo envio; um backup fica salvo na planilha.</p>
+      </div>
+      <button class="up-btn up-btn-danger" type="button" id="btn-limpar"><i class="ph-bold ph-trash"></i> Limpar base</button>
+    </section>
+
+  </div>
+</main>
+
+<div class="md-overlay" id="md-overlay" hidden>
+  <div class="md" id="md" role="dialog" aria-modal="true" aria-labelledby="md-title">
+    <div class="md-body">
+      <div class="md-title"><span class="md-ic" id="md-ic"></span><span id="md-title"></span></div>
+      <p class="md-lead" id="md-lead"></p>
+      <div id="md-table"></div>
+      <div class="md-notes" id="md-notes"></div>
+      <label class="md-check" id="md-check" hidden>
+        <input type="checkbox" id="md-check-input">
+        <span id="md-check-text"></span>
+      </label>
+    </div>
+    <div class="md-foot">
+      <button class="up-btn up-btn-ghost" type="button" id="md-cancel">Cancelar</button>
+      <button class="up-btn up-btn-primary" type="button" id="md-ok"></button>
+    </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="ov" id="ov" hidden>
+  <div class="ov-box" role="status">
+    <div class="ov-spin" aria-hidden="true"></div>
+    <div><div class="ov-t" id="ov-t"></div><div class="ov-s" id="ov-s"></div></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* ============================================================
-   CONFIG — cole aqui a URL /exec do seu App Script de Parcelamentos.
+   CONFIG — URL /exec do App Script de Parcelamentos.
+   Precisa ser a MESMA do app.js (Config.APP_SCRIPT_URL): é o script
+   da planilha "Parcelamentos — Controladoria". O endereço antigo
+   (AKfycbwpOV…) era o da planilha anterior, de antes de 01/09/2026.
    ============================================================ */
 const CONFIG = {
-  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwpOVWCs2Fad2a5B8E5UaVrpJweHEtL7uSB9AfBfQKWZmZgKz_kYgsHmPIB-pPuWVPksw/exec',
+  APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxH_wgQAaUif1nohXLzcAHqnYDW1m7ICbFd_6Xn5YU1cve-66EvOGGetrHbsXILRHR0MQ/exec',
 };
 
 /* ============================================================
@@ -474,15 +571,22 @@ const COLUNAS = [
 ];
 const COLUNAS_NUM  = ['Valor Original','Principal','Multa','Juros','Encargos Honorários','Saldo Devedor','QTD'];
 const COLUNAS_DATA = ['Data'];
+const POR_PAGINA = 50;
+const LIMITE_CONFIRMACAO_MS = 120000;   // quanto esperar a planilha confirmar a gravação
 
 /* ============================================================
    Helpers
    ============================================================ */
 const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
 
 function normHdr(s) {
   return String(s || '').toLowerCase().normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 }
 
 function safeStr(x) { return x === null || x === undefined ? '' : String(x).trim(); }
@@ -519,39 +623,74 @@ function parseBRDate(x) {
   return null;
 }
 
-function fmtBR(n) {
-  return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
-}
+const fmtInt   = n => (Number(n) || 0).toLocaleString('pt-BR');
+const fmtMoeda = n => new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(Number(n) || 0);
+const fmtMoedaD = n => new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL', maximumFractionDigits:0 }).format(Number(n) || 0);
+
 function fmtDataPt(iso) {
   if (!iso) return '';
   const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso);
 }
-function statusClass(s) {
+
+function statusBadge(s) {
   const n = normHdr(s);
-  if (n.indexOf('quit') >= 0) return 'quit';
-  if (n.indexOf('atras') >= 0) return 'atras';
-  if (n.indexOf('encerr') >= 0 || n.indexOf('cancel') >= 0) return 'enc';
+  if (n.indexOf('quit') >= 0) return 'status-quitada';
+  if (n.indexOf('atras') >= 0) return 'status-atraso';
+  if (n.indexOf('vencer') >= 0) return 'status-vencer';
+  return 'status-default';
+}
+
+/* Número do contrato e competência (AAAA-MM) — servem para comparar o arquivo
+   com a base: contratos que entram/saem e registros repetidos ao anexar. */
+const numeroDe = r => safeStr(r['Número'] || r['Negociação']);
+function competencia(v) {
+  const s = String(v == null ? '' : v).trim();
+  let m = s.match(/^(\d{4})-(\d{2})/);
+  if (m) return m[1] + '-' + m[2];
+  m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return m[3] + '-' + m[2];
   return '';
 }
+const chaveDe = r => numeroDe(r) + '|' + competencia(r['Data']);
+
+const urlOk = () => !!CONFIG.APP_SCRIPT_URL && !CONFIG.APP_SCRIPT_URL.includes('COLE_A_URL');
+
+/* Quem está logado, segundo o Cloudflare Access (vai para o Log da planilha).
+   Fora do Access o endereço não existe e o autor sai vazio. */
+const IDENTIDADE = (async () => {
+  try {
+    const r = await fetch('/cdn-cgi/access/get-identity', { credentials: 'include' });
+    if (!r.ok) return '';
+    const d = await r.json();
+    return String((d && (d.email || d.name)) || '').trim();
+  } catch (e) { return ''; }
+})();
 
 /* ============================================================
    Estado
    ============================================================ */
 const state = {
   file: null,
-  sheetName: null,
-  headerMap: {},
-  faltando: [],
-  registros: [],            // [{...}]
-  removidos: new Set(),     // índices removidos da lista
-  selecionados: new Set(),  // por padrão, TODOS selecionados (índices)
-  filter: '',
-  sheetCount: 0,            // quantos registros já estão no Sheets
+  parsed: null,             // { sheetName, headerMap, faltando, registros }
+  registros: [],
+  removidos: new Set(),     // índices tirados da lista
+  selecionados: new Set(),  // por padrão, todos
+  filtro: '',
+  status: '',
+  pagina: 1,
+  pendente: null,           // envio sem confirmação: { acao, anterior, inicio }
+  enviando: false,
+  base: {
+    ok: false,              // conseguiu falar com a planilha
+    lida: false,            // conseguiu ler os registros (não só o contador)
+    registros: null, contratos: null, soma: null,
+    numeros: new Set(), chaves: new Set(), lastUpdate: null,
+  },
 };
 
 /* ============================================================
-   Parsing
+   Leitura do Excel
    ============================================================ */
 function findHeaderIdx(headers, target) {
   const t = normHdr(target);
@@ -619,225 +758,552 @@ async function parseFile(file) {
 }
 
 /* ============================================================
-   UI: arquivos
+   Base atual (planilha)
    ============================================================ */
-function renderFiles(file, parsed) {
-  const wrap = $('files-wrap');
-  wrap.innerHTML = '';
-  wrap.hidden = false;
-  const row = document.createElement('div');
-  row.className = 'file-row';
-  if (parsed) {
-    row.classList.add('ok');
-    const sizeKb = (file.size / 1024).toFixed(1);
-    row.innerHTML = `
-      <i class="ph-fill ph-check-circle"></i>
-      <div class="name">${file.name}</div>
-      <div class="meta">${sizeKb} KB · aba "${parsed.sheetName}" · ${parsed.registros.length} registro(s)</div>
-    `;
-  } else {
-    row.classList.add('err');
-    row.innerHTML = `
-      <i class="ph-fill ph-x-circle"></i>
-      <div class="name">${file.name}</div>
-      <div class="meta" style="color:var(--danger)">Nenhuma aba parece ser da Parcelamentos. Verifique se as colunas estão lá.</div>
-    `;
+async function getJSON(url, timeoutMs) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, { signal: ctl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+const consultarCheck = () => getJSON(CONFIG.APP_SCRIPT_URL + '?check=1&v=' + Date.now(), 15000);
+
+async function carregarBase() {
+  const b = state.base;
+  if (!urlOk()) { setSync('URL não configurada', 'warn'); return; }
+  const [chk, rows] = await Promise.allSettled([
+    consultarCheck(),
+    getJSON(CONFIG.APP_SCRIPT_URL + '?v=' + Date.now(), 45000),
+  ]);
+
+  b.ok = false;
+  if (chk.status === 'fulfilled' && chk.value && chk.value.ok) {
+    b.ok = true;
+    b.lastUpdate = chk.value.last_update || null;
+    b.registros = chk.value.count || 0;
   }
-  wrap.appendChild(row);
+  if (rows.status === 'fulfilled' && Array.isArray(rows.value)) {
+    const lista = rows.value;
+    b.ok = true;
+    b.lida = true;
+    b.registros = lista.length;
+    b.soma = lista.reduce((s, r) => s + parseBRNumber(r['Saldo Devedor']), 0);
+    b.numeros = new Set(lista.map(numeroDe).filter(Boolean));
+    b.contratos = b.numeros.size;
+    b.chaves = new Set(lista.map(chaveDe));
+  } else {
+    b.lida = false;
+  }
+  renderBase();
+}
+
+function quando(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return `em ${d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' })} às ${d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' })}`;
+}
+
+function setSync(txt, cls) {
+  $('ss-sync').textContent = txt;
+  $('ss-dot').className = 'ss-dot' + (cls ? ' ' + cls : '');
+}
+
+function renderBase() {
+  const b = state.base;
+  $('ss-registros').textContent = b.registros == null ? '—' : fmtInt(b.registros);
+  $('ss-contratos').textContent = b.contratos == null ? '—' : fmtInt(b.contratos);
+  $('ss-soma').textContent = b.soma == null ? '—' : fmtMoedaD(b.soma);
+  if (!b.ok) setSync('falha ao consultar', 'warn');
+  else if (b.lastUpdate) setSync('Atualizada ' + quando(b.lastUpdate), '');
+  else setSync('nunca atualizada', 'off');
 }
 
 /* ============================================================
-   UI: preview
+   Etapas
    ============================================================ */
-function selectedRegistros() {
-  return state.registros.filter((_, i) => !state.removidos.has(i) && state.selecionados.has(i));
+function renderStepper(fase /* 1 | 2 | 3 | 'fim' */) {
+  document.querySelectorAll('.step').forEach(li => {
+    const n = Number(li.dataset.step);
+    const done = fase === 'fim' || n < fase;
+    const cur = fase !== 'fim' && n === fase;
+    li.classList.toggle('done', done);
+    li.classList.toggle('current', cur);
+    li.querySelector('.step-dot').innerHTML = done ? '<i class="ph-bold ph-check"></i>' : String(n);
+    if (cur) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+  });
 }
 
-function visibleRegistros() {
-  const f = normHdr(state.filter);
-  return state.registros.map((r, i) => ({ r, i }))
-    .filter(({ r, i }) => {
-      if (state.removidos.has(i)) return false;
-      if (!f) return true;
-      const probe = [r['Número'], r['Órgão'], r['Natureza'], r['Tributo'], r['Negociação']]
-        .map(v => normHdr(v)).join('|');
-      return probe.indexOf(f) >= 0;
-    });
+function irParaEtapa(n) {
+  const alvo = { 1: 'sec-arquivo', 2: 'sec-conferir', 3: 'sec-enviar' }[n];
+  const el = $(alvo);
+  (el && !el.hidden ? el : $('sec-arquivo')).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function renderPreview() {
-  const wrap = $('preview-wrap');
-  if (state.registros.length === 0) { wrap.hidden = true; return; }
-  wrap.hidden = false;
+/* ============================================================
+   1 · Arquivo
+   ============================================================ */
+function renderArquivo(erro) {
+  const tem = !!state.file;
+  $('dz').hidden = tem;
+  $('file-chip').hidden = !tem;
 
-  // warning sobre colunas faltando
-  const warn = $('preview-warn');
-  if (state.faltando.length > 0) {
-    warn.hidden = false;
-    warn.innerHTML = `
-      <i class="ph-fill ph-warning"></i>
-      <div><strong>Atenção:</strong> não encontrei as colunas <strong>${state.faltando.join(', ')}</strong> na sua planilha. Os registros serão gravados com essas colunas em branco.</div>
-    `;
-  } else {
-    warn.hidden = true;
+  if (tem) {
+    const p = state.parsed, ok = !!(p && p.registros.length);
+    $('file-chip').classList.toggle('err', !ok);
+    $('fc-icon').innerHTML = ok ? '<i class="ph-fill ph-microsoft-excel-logo"></i>' : '<i class="ph-fill ph-warning-circle"></i>';
+    $('fc-name').textContent = state.file.name;
+    if (ok) {
+      const kb = (state.file.size / 1024).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+      $('fc-meta').textContent = `${kb} KB · aba "${p.sheetName}" · ${fmtInt(p.registros.length)} registro(s) · ` +
+        (p.faltando.length ? `${p.faltando.length} coluna(s) não encontrada(s)` : 'todas as colunas encontradas');
+    } else {
+      $('fc-meta').textContent = erro
+        ? `Não consegui ler o arquivo: ${erro.message || erro}`
+        : 'Nenhuma aba tem as colunas de parcelamentos. Confira os nomes das colunas abaixo.';
+    }
   }
 
-  // lista
-  const list = $('preview-list');
-  list.innerHTML = '';
-  const vis = visibleRegistros();
+  const p = state.parsed;
+  $('cols-list').innerHTML = COLUNAS.map(c => {
+    if (!p) return `<span class="col-chip">${esc(c)}</span>`;
+    const falta = p.faltando.indexOf(c) >= 0;
+    return `<span class="col-chip ${falta ? 'missing' : 'found'}"><i class="ph-bold ${falta ? 'ph-x' : 'ph-check'}"></i>${esc(c)}</span>`;
+  }).join('');
+  if (tem && !(p && p.registros.length)) $('cols-help').open = true;
+}
 
-  if (state.registros.length === 0) {
-    list.innerHTML = `<div class="preview-empty">Nenhum registro encontrado.</div>`;
-  } else if (vis.length === 0) {
-    list.innerHTML = `<div class="preview-empty">Nenhum resultado para "${state.filter}".</div>`;
-  } else {
-    vis.forEach(({ r, i }) => {
-      const li = document.createElement('li');
-      li.className = 'preview-row';
-      const sel = state.selecionados.has(i);
-      const stCls = statusClass(r['Status']);
-      li.innerHTML = `
-        <input type="checkbox" ${sel ? 'checked' : ''} data-idx="${i}">
-        <div class="num">${r['Número'] || '—'}</div>
-        <div class="orgao">${r['Órgão'] || '—'}<br><span style="font-size:11px;color:var(--plum-soft)">${r['Natureza'] || ''}</span></div>
-        <div>${r['Status'] ? `<span class="status ${stCls}">${r['Status']}</span>` : '—'}</div>
-        <div class="valor">R$ ${fmtBR(r['Saldo Devedor'])}</div>
-        <button class="trash" data-trash="${i}" title="Remover da lista"><i class="ph ph-trash"></i></button>
-      `;
-      list.appendChild(li);
-    });
-  }
+async function processarArquivo(file) {
+  if (!file) return;
+  if (!/\.(xlsx|xls)$/i.test(file.name)) { toast('Use um arquivo .xlsx ou .xls.'); return; }
 
-  // contador + total
-  let totalSel = 0, totalAll = 0, qtdSel = 0;
+  mostrarOverlay('Lendo planilha…', file.name);
+  let parsed = null, erro = null;
+  try { parsed = await parseFile(file); }
+  catch (e) { erro = e; console.error('[parse] erro:', e); }
+  esconderOverlay();
+
+  state.file = file;
+  state.parsed = parsed;
+  state.registros = parsed ? parsed.registros : [];
+  state.removidos = new Set();
+  state.selecionados = new Set(state.registros.map((_, i) => i));
+  state.filtro = ''; state.status = ''; state.pagina = 1;
+  $('busca').value = '';
+  limparResultado();
+
+  renderArquivo(erro);
+  preencherFiltroStatus();
+  renderConferir();
+  renderStepper(state.registros.length ? 2 : 1);
+  if (state.registros.length) setTimeout(() => irParaEtapa(2), 60);
+}
+
+function baixarModelo() {
+  if (typeof XLSX === 'undefined') { toast('A biblioteca do Excel ainda está carregando…'); return; }
+  // meio-dia: à meia-noite o arredondamento de fuso do Excel joga a data para o dia anterior
+  const exemplo = [new Date(2026, 0, 20, 12), '000123', 'RFB', 'Previdenciário', 'INSS', '10123.456789/2024-00',
+                   2450, 1900, 300, 200, 50, 2450, 'A Vencer', 'Sim', 60];
+  const ws = XLSX.utils.aoa_to_sheet([COLUNAS, exemplo], { cellDates: true, dateNF: 'dd/mm/yyyy' });
+  ws['!cols'] = COLUNAS.map(c => ({ wch: Math.max(12, c.length + 3) }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Parcelamentos');
+  XLSX.writeFile(wb, 'Modelo_Parcelamentos.xlsx');
+  toast('Modelo baixado. A linha 2 é só um exemplo: apague antes de preencher.');
+}
+
+/* ============================================================
+   2 · Conferir
+   ============================================================ */
+const selecionados = () => state.registros.filter((_, i) => !state.removidos.has(i) && state.selecionados.has(i));
+
+function visiveis() {
+  const f = normHdr(state.filtro), st = state.status, out = [];
   state.registros.forEach((r, i) => {
     if (state.removidos.has(i)) return;
-    const v = Number(r['Saldo Devedor']) || 0;
-    totalAll++;
-    if (state.selecionados.has(i)) { totalSel += v; qtdSel++; }
+    if (st && normHdr(r['Status']) !== st) return;
+    if (f) {
+      const probe = [r['Número'], r['Órgão'], r['Natureza'], r['Tributo'], r['Negociação'], r['Status']].map(normHdr).join('|');
+      if (probe.indexOf(f) < 0) return;
+    }
+    out.push(i);
   });
-  let countTxt = `${qtdSel} de ${totalAll} selecionados`;
-  if (state.filter) countTxt += ` · mostrando ${vis.length}`;
-  $('preview-count').textContent = countTxt;
-  $('preview-total').textContent = `R$ ${fmtBR(totalSel)}`;
+  return out;
+}
 
-  // actions visibility + hint
-  $('actions-wrap').hidden = false;
-  const hasSel = qtdSel > 0;
-  $('btn-enviar').disabled = !hasSel;
-  $('btn-anexar').disabled = !hasSel;
-  const hint = $('hint');
-  if (hasSel) {
-    hint.textContent = state.faltando.length
-      ? `${state.faltando.length} coluna(s) sem mapping — vai gravar vazio.`
-      : 'Tudo pronto pra enviar.';
-  } else {
-    hint.textContent = 'Selecione pelo menos um registro pra enviar.';
+function preencherFiltroStatus() {
+  const vistos = new Map();
+  state.registros.forEach(r => {
+    const s = safeStr(r['Status']);
+    if (s && !vistos.has(normHdr(s))) vistos.set(normHdr(s), s);
+  });
+  $('filtro-status').innerHTML = '<option value="">Todos os status</option>' +
+    [...vistos].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'))
+      .map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('');
+}
+
+function renderConferir() {
+  const temRegs = state.registros.length > 0;
+  $('sec-conferir').hidden = !temRegs;
+  $('sec-enviar').hidden = !temRegs;
+  if (!temRegs) return;
+
+  const falt = state.parsed ? state.parsed.faltando : [];
+  $('warn-bar').hidden = !falt.length;
+  if (falt.length) {
+    $('warn-text').innerHTML = `<strong>Colunas não encontradas:</strong> ${falt.map(esc).join(', ')}. Esses campos vão em branco para a planilha.`;
   }
+
+  const vis = visiveis();
+  const paginas = Math.max(1, Math.ceil(vis.length / POR_PAGINA));
+  state.pagina = Math.min(state.pagina, paginas);
+  const ini = (state.pagina - 1) * POR_PAGINA;
+  const fatia = vis.slice(ini, ini + POR_PAGINA);
+
+  $('tbody').innerHTML = fatia.length ? fatia.map(i => {
+    const r = state.registros[i], on = state.selecionados.has(i);
+    return `<tr class="${on ? '' : 'off'}">
+      <td class="c-check"><input type="checkbox" data-idx="${i}" ${on ? 'checked' : ''} aria-label="Incluir ${esc(r['Número'] || 'registro')}"></td>
+      <td>${esc(fmtDataPt(r['Data']) || '—')}</td>
+      <td><strong>${esc(r['Número'] || '—')}</strong></td>
+      <td class="c-org">${esc(r['Órgão'] || '—')}<span class="org-nat">${esc(r['Natureza'] || '')}</span></td>
+      <td class="c-status">${r['Status'] ? `<span class="status-badge ${statusBadge(r['Status'])}">${esc(r['Status'])}</span>` : '—'}</td>
+      <td class="c-valor">${fmtMoeda(r['Saldo Devedor'])}</td>
+      <td class="c-acao"><button class="trash" type="button" data-trash="${i}" title="Remover da lista" aria-label="Remover da lista"><i class="ph ph-trash"></i></button></td>
+    </tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="7">${state.filtro || state.status ? 'Nenhum registro com esse filtro.' : 'Todos os registros foram tirados da lista.'}</td></tr>`;
+
+  // "selecionar todos" vale para o que o filtro mostra (todas as páginas)
+  const nSelVis = vis.filter(i => state.selecionados.has(i)).length;
+  const todos = $('sel-todos');
+  todos.disabled = !vis.length;
+  todos.checked = vis.length > 0 && nSelVis === vis.length;
+  todos.indeterminate = nSelVis > 0 && nSelVis < vis.length;
+
+  renderPaginacao(vis.length, paginas);
+
+  let qtd = 0, total = 0, naLista = 0;
+  state.registros.forEach((r, i) => {
+    if (state.removidos.has(i)) return;
+    naLista++;
+    if (state.selecionados.has(i)) { qtd++; total += Number(r['Saldo Devedor']) || 0; }
+  });
+  $('conf-count').textContent = `${fmtInt(qtd)} de ${fmtInt(naLista)} selecionados` +
+    (state.filtro || state.status ? ` · ${fmtInt(vis.length)} no filtro` : '');
+  $('conf-total').textContent = fmtMoeda(total);
+
+  const pode = qtd > 0;
+  $('btn-substituir').disabled = !pode;
+  $('btn-anexar').disabled = !pode;
+  $('send-hint').innerHTML = pode
+    ? `<i class="ph-fill ph-info"></i> Vão ${fmtInt(qtd)} registro(s), somando ${fmtMoeda(total)}.`
+    : `<i class="ph-fill ph-warning"></i> Selecione pelo menos um registro na etapa 2.`;
+}
+
+function renderPaginacao(total, paginas) {
+  const c = $('paginacao'), p = state.pagina;
+  if (total <= POR_PAGINA) { c.hidden = true; c.innerHTML = ''; return; }
+  c.hidden = false;
+  const s = (p - 1) * POR_PAGINA + 1, e = Math.min(p * POR_PAGINA, total);
+  let sp = Math.max(1, p - 2), ep = Math.min(paginas, sp + 4);
+  if (ep - sp < 4) sp = Math.max(1, ep - 4);
+  let btns = `<button type="button" data-pg="${p - 1}" ${p <= 1 ? 'disabled' : ''} aria-label="Página anterior"><i class="ph-bold ph-caret-left"></i></button>`;
+  for (let i = sp; i <= ep; i++) btns += `<button type="button" data-pg="${i}" class="${i === p ? 'active' : ''}">${i}</button>`;
+  btns += `<button type="button" data-pg="${p + 1}" ${p >= paginas ? 'disabled' : ''} aria-label="Próxima página"><i class="ph-bold ph-caret-right"></i></button>`;
+  c.innerHTML = `<span>${fmtInt(s)}–${fmtInt(e)} de ${fmtInt(total)} registros</span><div class="pagination-btns">${btns}</div>`;
 }
 
 /* ============================================================
-   Network — status + enviar + limpar
+   3 · Enviar — resumo antes de confirmar
    ============================================================ */
-async function fetchStatus() {
-  const dot = $('status-dot'); const txt = $('status-text');
-  const url = CONFIG.APP_SCRIPT_URL;
-  if (!url || url.includes('COLE_A_URL')) {
-    dot.className = 'dot warn'; txt.textContent = 'URL não configurada';
-    return;
-  }
-  try {
-    const r = await fetch(url + '?check=1&v=' + Date.now());
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const j = await r.json();
-    state.sheetCount = j.count || 0;
-    if (j.last_update) {
-      const dt = new Date(j.last_update);
-      const dia = String(dt.getDate()).padStart(2,'0');
-      const mes = String(dt.getMonth()+1).padStart(2,'0');
-      const hh  = String(dt.getHours()).padStart(2,'0');
-      const mm  = String(dt.getMinutes()).padStart(2,'0');
-      dot.className = 'dot';
-      txt.textContent = `${j.count} registros · atualizado ${dia}/${mes} às ${hh}:${mm}`;
-    } else {
-      dot.className = 'dot off';
-      txt.textContent = `${j.count} registros · nunca atualizado`;
+function resumoArquivo(regs) {
+  const numeros = new Set(regs.map(numeroDe).filter(Boolean));
+  return { registros: regs.length, contratos: numeros.size, soma: regs.reduce((s, r) => s + (Number(r['Saldo Devedor']) || 0), 0), numeros };
+}
+
+function listaCurta(arr, max = 6) {
+  const v = arr.slice(0, max).map(esc).join(', ');
+  return arr.length > max ? `${v} e mais ${fmtInt(arr.length - max)}` : v;
+}
+
+/* linhas: [rótulo, hoje, depois, formatador]. Sem "hoje" (base não lida),
+   mostra só o que vai ser enviado. */
+function tabelaCmp(linhas, comHoje) {
+  const head = comHoje ? '<tr><th></th><th>Hoje</th><th>Depois</th></tr>' : '<tr><th></th><th>Vai enviar</th></tr>';
+  const body = linhas.map(([rot, hoje, depois, fmt]) => {
+    if (!comHoje) return `<tr><td>${rot}</td><td class="depois">${fmt(depois)}</td></tr>`;
+    const d = depois - hoje;
+    const dif = Math.abs(d) < 0.005 ? 'sem mudança' : `${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}`;
+    return `<tr><td>${rot}</td><td>${fmt(hoje)}</td><td class="depois">${fmt(depois)}<span class="dif">${dif}</span></td></tr>`;
+  }).join('');
+  return `<table class="cmp"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+function abrirConfirmacaoEnvio(acao) {
+  const sel = selecionados();
+  if (!sel.length) { toast('Selecione pelo menos um registro.'); return; }
+  renderStepper(3);
+
+  const b = state.base, novo = resumoArquivo(sel), notas = [];
+  let tabela;
+
+  if (acao === 'substituir') {
+    tabela = b.lida
+      ? tabelaCmp([
+          ['Registros', b.registros, novo.registros, fmtInt],
+          ['Contratos', b.contratos, novo.contratos, fmtInt],
+          ['Soma das parcelas', b.soma, novo.soma, fmtMoedaD],
+        ], true)
+      : tabelaCmp([['Registros', null, novo.registros, fmtInt], ['Contratos', null, novo.contratos, fmtInt], ['Soma das parcelas', null, novo.soma, fmtMoedaD]], false);
+
+    if (b.lida) {
+      const entram = [...novo.numeros].filter(n => !b.numeros.has(n));
+      const saem = [...b.numeros].filter(n => !novo.numeros.has(n));
+      if (entram.length) notas.push(['ok', 'ph-plus-circle', `<strong>${fmtInt(entram.length)} contrato(s) novo(s)</strong><span class="nums">${listaCurta(entram)}</span>`]);
+      if (saem.length) notas.push(['warn', 'ph-warning', `<strong>${fmtInt(saem.length)} contrato(s) saem da base</strong> — estão na planilha hoje, mas não neste arquivo.<span class="nums">${listaCurta(saem)}</span>`]);
+      if (!entram.length && !saem.length) notas.push(['ok', 'ph-equals', 'Mesmos contratos da base atual: só valores e status mudam.']);
     }
-  } catch (err) {
-    dot.className = 'dot warn';
-    txt.textContent = 'falha ao consultar';
-    console.error('[status] erro:', err);
+    notas.push(['', 'ph-shield-check', 'Um backup da base atual é salvo na planilha antes de substituir.']);
+  } else {
+    tabela = b.lida
+      ? tabelaCmp([
+          ['Registros', b.registros, b.registros + novo.registros, fmtInt],
+          ['Contratos', b.contratos, new Set([...b.numeros, ...novo.numeros]).size, fmtInt],
+          ['Soma das parcelas', b.soma, b.soma + novo.soma, fmtMoedaD],
+        ], true)
+      : tabelaCmp([['Registros', null, novo.registros, fmtInt], ['Contratos', null, novo.contratos, fmtInt], ['Soma das parcelas', null, novo.soma, fmtMoedaD]], false);
+
+    if (b.lida) {
+      const repetidos = sel.filter(r => b.chaves.has(chaveDe(r))).length;
+      if (repetidos) {
+        notas.push(['warn', 'ph-copy', `<strong>${fmtInt(repetidos)} registro(s) parecem já estar na base</strong> (mesmo número e mês de vencimento). Anexar vai duplicá-los — se o arquivo é a base completa, use "Substituir".`]);
+      } else {
+        notas.push(['ok', 'ph-check-circle', 'Nenhum registro repetido: nada no arquivo tem o mesmo número e mês de vencimento de algo que já está na base.']);
+      }
+    }
   }
+
+  if (!b.lida) notas.unshift(['warn', 'ph-cloud-slash', 'Não consegui ler a base atual, então não dá para comparar. O envio funciona normalmente.']);
+
+  abrirModal({
+    tipo: 'normal',
+    icone: acao === 'substituir' ? 'ph-arrows-clockwise' : 'ph-plus-circle',
+    titulo: acao === 'substituir' ? 'Substituir a base?' : 'Anexar à base?',
+    lead: acao === 'substituir'
+      ? `Tudo o que está na planilha hoje dá lugar aos ${fmtInt(novo.registros)} registro(s) selecionado(s).`
+      : `Os ${fmtInt(novo.registros)} registro(s) selecionado(s) entram no final da base atual.`,
+    tabela, notas,
+    confirmar: acao === 'substituir' ? 'Substituir base' : 'Anexar registros',
+    onConfirmar: () => enviar(acao, sel),
+  });
 }
 
-/* ====== senha de edição (segredo nas gravações) ======
-   Mesma chave de sessão do dashboard; some quando a aba fecha. */
-function getEditToken(){ try { return sessionStorage.getItem('parcel_edit_token') || ''; } catch(e){ return ''; } }
-function ensureEditToken(){
-  let t = getEditToken();
-  if (!t) {
-    t = window.prompt('Senha de edição (para atualizar a base):');
-    if (t == null || t.trim() === '') return '';
-    t = t.trim();
-    try { sessionStorage.setItem('parcel_edit_token', t); } catch(e){}
-  }
-  return t;
+function abrirLimpar() {
+  const b = state.base;
+  abrirModal({
+    tipo: 'danger',
+    icone: 'ph-trash',
+    titulo: 'Limpar toda a base?',
+    lead: 'Todos os registros da aba Parcelamentos são apagados e o dashboard fica vazio até um novo envio.',
+    tabela: b.lida ? tabelaCmp([
+      ['Registros', b.registros, 0, fmtInt],
+      ['Contratos', b.contratos, 0, fmtInt],
+      ['Soma das parcelas', b.soma, 0, fmtMoedaD],
+    ], true) : '',
+    notas: [['', 'ph-shield-check', 'Um backup fica salvo na planilha (aba oculta "bkp_…"), então dá para recuperar pelo Google Sheets.']],
+    checkbox: 'Entendi que o dashboard vai ficar vazio',
+    confirmar: 'Limpar base',
+    onConfirmar: () => enviar('limpar', null),
+  });
 }
-function clearEditToken(){ try { sessionStorage.removeItem('parcel_edit_token'); } catch(e){} }
 
-async function enviarRegistros(acao /* 'substituir' | 'anexar' */) {
-  const url = CONFIG.APP_SCRIPT_URL;
-  if (!url || url.includes('COLE_A_URL')) {
-    toast('⚠️ URL do App Script não configurada no código!');
-    return;
+/* ============================================================
+   Modal
+   ============================================================ */
+let acaoModal = null;
+
+function abrirModal({ tipo, icone, titulo, lead, tabela, notas = [], checkbox, confirmar, onConfirmar }) {
+  $('md').classList.toggle('danger', tipo === 'danger');
+  $('md-ic').innerHTML = `<i class="ph-fill ${icone}"></i>`;
+  $('md-title').textContent = titulo;
+  $('md-lead').textContent = lead;
+  $('md-table').innerHTML = tabela || '';
+  $('md-table').hidden = !tabela;
+  $('md-notes').innerHTML = notas.map(([cls, ic, html]) =>
+    `<div class="md-note ${cls}"><i class="ph-fill ${ic}"></i><div>${html}</div></div>`).join('');
+
+  const ok = $('md-ok');
+  ok.className = 'up-btn ' + (tipo === 'danger' ? 'up-btn-dangerfill' : 'up-btn-primary');
+  ok.innerHTML = `<i class="ph-bold ${tipo === 'danger' ? 'ph-trash' : 'ph-check'}"></i> ${esc(confirmar)}`;
+
+  $('md-check').hidden = !checkbox;
+  if (checkbox) {
+    $('md-check-text').textContent = checkbox;
+    $('md-check-input').checked = false;
+    ok.disabled = true;
+  } else {
+    ok.disabled = false;
   }
-  const registros = selectedRegistros();
-  if (registros.length === 0) { toast('Nenhum registro selecionado.'); return; }
 
-  const token = ensureEditToken();
-  if (!token) { toast('Ação cancelada (sem senha de edição).'); return; }
+  acaoModal = onConfirmar;
+  $('md-overlay').hidden = false;
+  (ok.disabled ? $('md-cancel') : ok).focus();
+}
 
-  showOverlay(true, acao === 'anexar' ? 'Anexando…' : 'Substituindo…');
+function fecharModal() {
+  $('md-overlay').hidden = true;
+  acaoModal = null;
+}
+
+/* ============================================================
+   Envio + confirmação
+   ------------------------------------------------------------
+   A gravação vai em no-cors: o navegador não deixa ler a resposta.
+   Então, em vez de dizer "confira o contador", a página consulta a
+   planilha até a data da última gravação mudar.
+   ============================================================ */
+async function aguardarGravacao(anterior, inicio, onTick) {
+  while (Date.now() - inicio < LIMITE_CONFIRMACAO_MS) {
+    await sleep(2500);
+    if (onTick) onTick(Math.round((Date.now() - inicio) / 1000));
+    try {
+      const j = await consultarCheck();
+      if (j && j.last_update && gravouDepois(j.last_update, anterior, inicio)) return j;
+    } catch (e) { /* tenta de novo */ }
+  }
+  return null;
+}
+
+function gravouDepois(lastUpdate, anterior, inicio) {
+  if (anterior) return lastUpdate !== anterior;
+  // sem a data anterior, aceita gravação recente (margem para relógios diferentes)
+  return new Date(lastUpdate).getTime() > inicio - 60000;
+}
+
+async function enviar(acao, registros) {
+  fecharModal();
+  if (!urlOk()) { toast('URL do App Script não configurada no código.'); return; }
+
+  const rotulo = { substituir: 'Substituindo a base…', anexar: 'Anexando registros…', limpar: 'Limpando a base…' }[acao];
+  mostrarOverlay(rotulo, 'Preparando envio');
+  state.enviando = true;
+
+  let anterior = null;
+  try { const j = await consultarCheck(); anterior = j && j.last_update; } catch (e) {}
+  const inicio = Date.now();
+
   try {
-    const body = acao === 'anexar' ? { acao:'anexar', registros, token } : { registros, token };
-    await fetch(url, {
+    mostrarOverlay(rotulo, 'Enviando para a planilha');
+    const usuario = await IDENTIDADE;
+    const body = acao === 'substituir' ? { registros, usuario }
+               : acao === 'anexar'     ? { acao: 'anexar', registros, usuario }
+               :                         { acao: 'limpar', usuario };
+    await fetch(CONFIG.APP_SCRIPT_URL, {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    toast(`✅ ${registros.length} enviado(s) — confira o contador acima.`);
-    setTimeout(fetchStatus, 1500);
   } catch (err) {
-    toast('❌ Erro ao enviar: ' + (err.message || err));
-  } finally {
-    showOverlay(false);
-  }
-}
-
-async function limparTudo() {
-  const url = CONFIG.APP_SCRIPT_URL;
-  if (!url || url.includes('COLE_A_URL')) {
-    toast('⚠️ URL do App Script não configurada no código!');
+    state.enviando = false;
+    esconderOverlay();
+    mostrarResultado('erro', acao, { msg: err.message || String(err) });
     return;
   }
-  const token = ensureEditToken();
-  if (!token) { toast('Ação cancelada (sem senha de edição).'); return; }
-  fecharLimpar();
-  showOverlay(true, 'Limpando…');
-  try {
-    await fetch(url, {
-      method: 'POST', mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'limpar', token }),
-    });
-    toast('🧹 Enviado — confira o contador acima.');
-    setTimeout(fetchStatus, 1500);
-  } catch (err) {
-    toast('❌ Erro ao limpar: ' + (err.message || err));
-  } finally {
-    showOverlay(false);
+
+  const conf = await aguardarGravacao(anterior, inicio, s => mostrarOverlay(rotulo, `Confirmando com a planilha… ${s}s`));
+  state.enviando = false;
+  mostrarOverlay(rotulo, 'Lendo a base atualizada');
+  await carregarBase();
+  esconderOverlay();
+
+  if (conf) mostrarResultado('ok', acao, { check: conf });
+  else mostrarResultado('pend', acao, { anterior, inicio });
+}
+
+function mostrarResultado(tipo, acao, info = {}) {
+  const sec = $('sec-resultado');
+  const b = state.base;
+  let icone, titulo, texto, botoes = '';
+
+  if (tipo === 'ok') {
+    state.pendente = null;
+    icone = 'ph-check-circle';
+    titulo = { substituir: 'Base substituída', anexar: 'Registros anexados', limpar: 'Base limpa' }[acao];
+    const hora = info.check && info.check.last_update
+      ? new Date(info.check.last_update).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+    const qtd = b.registros != null ? b.registros : (info.check ? info.check.count : null);
+    texto = `A planilha confirmou a gravação${hora ? ' às ' + hora : ''}` +
+      (qtd != null ? ` e agora tem ${fmtInt(qtd)} registro(s).` : '.') +
+      (acao === 'limpar' ? '' : ' Abra o dashboard para conferir os números.');
+    botoes = `<a class="up-btn up-btn-primary" href="./"><i class="ph-bold ph-chart-pie-slice"></i> Ver no dashboard</a>`;
+    if (acao !== 'limpar') {
+      botoes += `<button class="up-btn up-btn-ghost" type="button" data-res="recomecar"><i class="ph-bold ph-upload-simple"></i> Enviar outro arquivo</button>`;
+      $('sec-conferir').hidden = true;
+      $('sec-enviar').hidden = true;
+      renderStepper('fim');
+    }
+  } else if (tipo === 'pend') {
+    state.pendente = { acao, anterior: info.anterior, inicio: info.inicio };
+    icone = 'ph-hourglass-medium';
+    titulo = 'Enviado, mas ainda não confirmado';
+    texto = 'A planilha não confirmou a gravação em 2 minutos — com arquivos grandes isso acontece. ' +
+            'Espere um pouco e verifique de novo antes de enviar outra vez, para não gravar em dobro.';
+    botoes = `<button class="up-btn up-btn-primary" type="button" data-res="verificar"><i class="ph-bold ph-arrows-clockwise"></i> Verificar de novo</button>` +
+             `<button class="up-btn up-btn-ghost" type="button" data-res="recomecar">Recomeçar</button>`;
+    if (acao !== 'limpar') { $('sec-conferir').hidden = true; $('sec-enviar').hidden = true; }
+  } else {
+    icone = 'ph-x-circle';
+    titulo = 'Não foi possível enviar';
+    texto = `O navegador não conseguiu falar com a planilha (${esc(info.msg || 'erro de rede')}). ` +
+            'Confira a conexão e tente de novo.';
+    botoes = `<button class="up-btn up-btn-ghost" type="button" data-res="fechar">Entendi</button>`;
   }
+
+  sec.className = 'up-card ' + tipo;
+  sec.innerHTML = `<div class="result">
+      <div class="r-icon"><i class="ph-fill ${icone}"></i></div>
+      <div>
+        <div class="r-title">${titulo}</div>
+        <p class="r-text">${texto}</p>
+        <div class="r-actions">${botoes}</div>
+      </div>
+    </div>`;
+  sec.hidden = false;
+  setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+}
+
+async function verificarPendente() {
+  const p = state.pendente;
+  if (!p) return;
+  mostrarOverlay('Verificando…', 'Consultando a planilha');
+  let j = null;
+  try { j = await consultarCheck(); } catch (e) {}
+  const gravou = !!(j && j.last_update && gravouDepois(j.last_update, p.anterior, p.inicio));
+  await carregarBase();
+  esconderOverlay();
+  if (gravou) mostrarResultado('ok', p.acao, { check: j });
+  else toast('Ainda não apareceu na planilha. Tente de novo em instantes.');
+}
+
+function limparResultado() {
+  $('sec-resultado').hidden = true;
+  state.pendente = null;
+}
+
+function recomecar() {
+  state.file = null; state.parsed = null; state.registros = [];
+  state.removidos = new Set(); state.selecionados = new Set();
+  state.filtro = ''; state.status = ''; state.pagina = 1;
+  $('file-input').value = '';
+  $('busca').value = '';
+  limparResultado();
+  renderArquivo();
+  renderConferir();
+  renderStepper(1);
+  irParaEtapa(1);
 }
 
 /* ============================================================
@@ -848,125 +1314,113 @@ function toast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => el.classList.remove('show'), 3000);
+  toast._t = setTimeout(() => el.classList.remove('show'), 3800);
 }
 
-function showOverlay(on, text) {
-  const el = $('overlay');
-  if (text) $('overlay-text').textContent = text;
-  el.classList.toggle('show', !!on);
+function mostrarOverlay(titulo, sub) {
+  $('ov-t').textContent = titulo;
+  $('ov-s').textContent = sub || '';
+  $('ov').hidden = false;
 }
+function esconderOverlay() { $('ov').hidden = true; }
 
-function abrirLimpar() {
-  const m = $('modal-limpar');
-  const optSub = m.querySelector('.opt-sub');
-  optSub.textContent = `Vou perder os ${state.sheetCount} registro(s) que estão no Sheets agora.`;
-  $('ml-confirm-check').checked = false;
-  $('ml-do').disabled = true;
-  m.classList.add('show');
-}
-function fecharLimpar() { $('modal-limpar').classList.remove('show'); }
-
-/* ============================================================
-   Fluxo principal
-   ============================================================ */
-async function processFile(file) {
-  if (!file) return;
-  state.file = file;
-  state.registros = [];
-  state.removidos = new Set();
-  state.selecionados = new Set();
-  showOverlay(true, 'Lendo planilha…');
-  try {
-    const parsed = await parseFile(file);
-    renderFiles(file, parsed);
-    if (parsed) {
-      state.sheetName = parsed.sheetName;
-      state.headerMap = parsed.headerMap;
-      state.faltando  = parsed.faltando;
-      state.registros = parsed.registros;
-      // por padrão, todos selecionados
-      parsed.registros.forEach((_, i) => state.selecionados.add(i));
-    } else {
-      toast('Não achei nenhuma aba com colunas de Parcelamentos.');
-    }
-  } catch (err) {
-    console.error('[parse] erro:', err);
-    toast('Erro ao ler: ' + (err.message || err));
-    renderFiles(file, null);
-  } finally {
-    showOverlay(false);
-    renderPreview();
-  }
-}
-
-function resetTudo() {
-  state.file = null;
-  state.registros = [];
-  state.removidos = new Set();
-  state.selecionados = new Set();
-  state.filter = '';
-  $('files-wrap').hidden = true;
-  $('preview-wrap').hidden = true;
-  $('actions-wrap').hidden = true;
-  $('file-input').value = '';
-  const ps = $('preview-search'); if (ps) ps.value = '';
-  toast('Recomeçando');
+function toggleSidebar() {
+  $('sidebar').classList.toggle('open');
+  $('sidebarOverlay').classList.toggle('visible');
 }
 
 /* ============================================================
-   Event wiring
+   Eventos
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  const dz = $('dz');
-  const input = $('file-input');
+  // Botão do hub: mesma sessão do dashboard (quem chegou aqui veio de lá)
+  let veioDoHub = false;
+  try { veioDoHub = sessionStorage.getItem('came_from_hub_parcelamentos') === '1' || new URLSearchParams(location.search).has('from'); } catch (e) {}
+  $('sidebar-footer').hidden = !veioDoHub;
 
-  $('btn-pick').addEventListener('click', e => { e.stopPropagation(); input.click(); });
-  dz.addEventListener('click', () => input.click());
-  dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
-  input.addEventListener('change', e => processFile(e.target.files[0]));
-  ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('drag'); }));
-  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('drag'); }));
-  dz.addEventListener('drop', e => processFile(e.dataTransfer.files[0]));
+  $('btnHamburger').addEventListener('click', toggleSidebar);
+  $('sidebarOverlay').addEventListener('click', toggleSidebar);
 
-  $('preview-search').addEventListener('input', e => {
-    state.filter = e.target.value;
-    renderPreview();
+  // etapas
+  document.querySelectorAll('.step').forEach(li => {
+    li.addEventListener('click', () => irParaEtapa(Number(li.dataset.step)));
+    li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); irParaEtapa(Number(li.dataset.step)); } });
   });
 
-  // delegação: checkboxes + lixeiras
-  $('preview-list').addEventListener('change', e => {
-    if (e.target.matches('input[type="checkbox"][data-idx]')) {
-      const i = parseInt(e.target.dataset.idx, 10);
-      if (e.target.checked) state.selecionados.add(i);
-      else state.selecionados.delete(i);
-      renderPreview();
-    }
+  // arquivo
+  const input = $('file-input'), dz = $('dz'), secArq = $('sec-arquivo');
+  const escolher = () => input.click();
+  dz.addEventListener('click', escolher);
+  dz.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); escolher(); } });
+  $('btn-trocar').addEventListener('click', escolher);
+  $('btn-recomecar').addEventListener('click', recomecar);
+  input.addEventListener('change', e => processarArquivo(e.target.files[0]));
+  const marcarDrag = on => { dz.classList.toggle('drag', on); $('file-chip').classList.toggle('drag', on); };
+  ['dragenter', 'dragover'].forEach(ev => secArq.addEventListener(ev, e => { e.preventDefault(); marcarDrag(true); }));
+  ['dragleave', 'drop'].forEach(ev => secArq.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || !secArq.contains(e.relatedTarget)) marcarDrag(false); }));
+  secArq.addEventListener('drop', e => processarArquivo(e.dataTransfer.files[0]));
+  $('btn-modelo').addEventListener('click', baixarModelo);
+  $('btn-modelo-2').addEventListener('click', baixarModelo);
+
+  // conferir
+  let tBusca = null;
+  $('busca').addEventListener('input', e => {
+    clearTimeout(tBusca);
+    tBusca = setTimeout(() => { state.filtro = e.target.value; state.pagina = 1; renderConferir(); }, 200);
   });
-  $('preview-list').addEventListener('click', e => {
-    const trash = e.target.closest('[data-trash]');
-    if (trash) {
-      const i = parseInt(trash.dataset.trash, 10);
-      state.removidos.add(i);
-      state.selecionados.delete(i);
-      renderPreview();
-    }
+  $('filtro-status').addEventListener('change', e => { state.status = e.target.value; state.pagina = 1; renderConferir(); });
+  $('sel-todos').addEventListener('change', e => {
+    visiveis().forEach(i => { if (e.target.checked) state.selecionados.add(i); else state.selecionados.delete(i); });
+    renderConferir();
+  });
+  $('tbody').addEventListener('change', e => {
+    if (!e.target.matches('input[type="checkbox"][data-idx]')) return;
+    const i = Number(e.target.dataset.idx);
+    if (e.target.checked) state.selecionados.add(i); else state.selecionados.delete(i);
+    renderConferir();
+  });
+  $('tbody').addEventListener('click', e => {
+    const t = e.target.closest('[data-trash]');
+    if (!t) return;
+    const i = Number(t.dataset.trash);
+    state.removidos.add(i);
+    state.selecionados.delete(i);
+    renderConferir();
+  });
+  $('paginacao').addEventListener('click', e => {
+    const b = e.target.closest('button[data-pg]');
+    if (!b || b.disabled) return;
+    state.pagina = Number(b.dataset.pg);
+    renderConferir();
+    $('sec-conferir').querySelector('.table-scroll').scrollTop = 0;
   });
 
-  $('btn-enviar').addEventListener('click', () => enviarRegistros('substituir'));
-  $('btn-anexar').addEventListener('click', () => enviarRegistros('anexar'));
+  // enviar
+  $('btn-substituir').addEventListener('click', () => abrirConfirmacaoEnvio('substituir'));
+  $('btn-anexar').addEventListener('click', () => abrirConfirmacaoEnvio('anexar'));
   $('btn-limpar').addEventListener('click', abrirLimpar);
-  $('btn-reset').addEventListener('click', resetTudo);
 
-  // confirm modal
-  $('ml-cancel').addEventListener('click', fecharLimpar);
-  $('modal-limpar').addEventListener('click', e => { if (e.target === $('modal-limpar')) fecharLimpar(); });
-  $('ml-confirm-check').addEventListener('change', e => { $('ml-do').disabled = !e.target.checked; });
-  $('ml-do').addEventListener('click', limparTudo);
+  // resultado
+  $('sec-resultado').addEventListener('click', e => {
+    const b = e.target.closest('[data-res]');
+    if (!b) return;
+    if (b.dataset.res === 'recomecar') recomecar();
+    if (b.dataset.res === 'verificar') verificarPendente();
+    if (b.dataset.res === 'fechar') limparResultado();
+  });
 
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') fecharLimpar(); });
+  // modal
+  $('md-cancel').addEventListener('click', () => { fecharModal(); renderStepper(state.registros.length ? 2 : 1); });
+  $('md-overlay').addEventListener('click', e => { if (e.target === $('md-overlay')) $('md-cancel').click(); });
+  $('md-check-input').addEventListener('change', e => { $('md-ok').disabled = !e.target.checked; });
+  $('md-ok').addEventListener('click', () => { const f = acaoModal; if (f) f(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('md-overlay').hidden) $('md-cancel').click(); });
 
-  fetchStatus();
+  // não deixa fechar a aba no meio de uma gravação
+  window.addEventListener('beforeunload', e => { if (state.enviando) { e.preventDefault(); e.returnValue = ''; } });
+
+  renderArquivo();
+  carregarBase();
 });
 </script>
 </body>

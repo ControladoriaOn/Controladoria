@@ -183,9 +183,6 @@
         <button class="nav-item" data-target="detalhado">
             <i class="ph-fill ph-table"></i> Detalhamento
         </button>
-        <a id="link-atualizar" class="nav-item nav-item-link" href="./atualizar.html" hidden>
-            <i class="ph ph-upload-simple"></i> Atualizar
-        </a>
     </nav>
 
     <div class="sidebar-summary" aria-label="Resumo rápido">
@@ -205,6 +202,10 @@
     </div>
 
     <div class="sidebar-footer">
+        <a id="link-atualizar" class="btn-side" href="./atualizar.html" hidden>
+            <i class="ph-bold ph-upload-simple"></i>
+            Atualizar base
+        </a>
         <a id="btn-hub" class="btn-hub" href="../" rel="noopener" hidden>
             <i class="ph ph-arrow-left"></i>
             Voltar ao Hub
@@ -265,6 +266,7 @@
                 <div class="sk-bloco sk-grafico"></div>
             </div>
             <div class="sk-bloco sk-grafico-largo"></div>
+            <div class="sk-bloco sk-grafico-largo"></div>
             <div class="sk-linha sk-titulo curto"></div>
             <div class="sk-bloco sk-tabela"></div>
         </div>
@@ -314,6 +316,24 @@
                         <div class="chart-title">Quitação Prevista</div>
                         <div class="chart-subtitle">Saldo restante após pagamentos de cada ano</div>
                         <div class="chart-container"><canvas id="chartQuitacao" role="img" aria-label="Gráfico de quitação prevista"></canvas></div>
+                    </div>
+                    <div class="chart-card chart-full" id="cardAnual">
+                        <div class="anual-head">
+                            <div>
+                                <div class="chart-title" id="anualTitle">Comparativo Anual</div>
+                                <div class="chart-subtitle" id="anualSubtitle">Pagamentos mensais das parcelas</div>
+                                <div class="seg" id="anualModo" role="radiogroup" aria-label="Critério do comparativo">
+                                    <button type="button" class="seg-btn active" data-modo="vencimento" role="radio" aria-checked="true" title="Parcelas com vencimento no mês (mesma regra do A Vencer no Mês), com os meses seguintes como previsto">
+                                        <i class="ph-bold ph-calendar-dots" aria-hidden="true"></i> Por vencimento
+                                    </button>
+                                    <button type="button" class="seg-btn" data-modo="quitadas" role="radio" aria-checked="false" title="Só parcelas com status Quitada">
+                                        <i class="ph-bold ph-check-circle" aria-hidden="true"></i> Só quitadas
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="anual-stats" id="anualStats" aria-live="polite"></div>
+                        </div>
+                        <div class="chart-container chart-container-anual"><canvas id="chartAnual" role="img" aria-label="Gráfico comparativo anual de pagamentos mensais"></canvas></div>
                     </div>
                 </div>
             </div>

@@ -231,6 +231,33 @@ body {
     box-shadow: 0 6px 18px -8px rgba(255,110,0,0.55);
 }
 .btn-hub[hidden] { display: none; }
+
+/* Ação secundária do rodapé (Atualizar base): mesmo tamanho do "Voltar ao
+   Hub", mas translúcida, para o laranja continuar sendo o destaque. */
+.btn-side {
+    padding: 11px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.92);
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    border-radius: 10px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.15s;
+}
+.btn-side i { font-size: 15px; }
+.btn-side[hidden] { display: none; }
+.btn-side:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.32);
+    color: #FFFFFF;
+    transform: translateY(-1px);
+}
 .btn-hub:hover {
     background: var(--orange-deep);
     border-color: var(--orange-deep);
@@ -281,6 +308,9 @@ header {
     z-index: 50;
     gap: 16px;
     flex-wrap: wrap;
+    /* dentro do .main-content (flex em coluna) o topo encolhia no celular e
+       os controles de data-base/exportar vazavam por cima do conteúdo */
+    flex-shrink: 0;
 }
 
 .header-left { display: flex; align-items: center; gap: 16px; }
@@ -421,6 +451,7 @@ header {
     padding: 24px;
     box-shadow: var(--shadow-sm);
     transition: border-color 0.3s;
+    min-width: 0;   /* deixa o grid encolher o card (e o gráfico) ao diminuir a janela */
 }
 
 .chart-title {
@@ -440,6 +471,66 @@ header {
 }
 
 .chart-container { position: relative; height: 300px; width: 100%; }
+.chart-container-anual { height: 340px; }
+
+/* ---- Comparativo anual: título à esquerda, totais à direita ---- */
+.anual-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 16px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--border-soft);
+}
+.anual-head .chart-subtitle { margin-bottom: 0; }
+.anual-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.anual-stat {
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 9px 14px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    min-width: 132px;
+}
+.anual-stat-label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10.5px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
+}
+.anual-stat-label .sw { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.anual-stat-label .sw-atual    { background: var(--orange); }
+.anual-stat-label .sw-anterior { background: #CFC7CF; }
+.anual-stat-label .sw-previsto {
+    background: repeating-linear-gradient(-45deg, rgba(255,110,0,0.6) 0 1.5px, var(--orange-soft) 1.5px 4px);
+    box-shadow: inset 0 0 0 1px var(--orange);
+}
+.anual-stat-note { font-size: 11px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+
+/* Seletor de critério (Por vencimento / Só quitadas) */
+.seg {
+    display: inline-flex; gap: 2px; margin-top: 12px; padding: 3px;
+    background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: 10px;
+}
+.seg-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border: none; border-radius: 8px; background: none; cursor: pointer;
+    font: 700 12px var(--font-body); color: var(--muted); transition: all .15s;
+}
+.seg-btn i { font-size: 14px; }
+.seg-btn:hover { color: var(--ink); }
+.seg-btn.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm), 0 0 0 1px var(--border); }
+.seg-btn.active i { color: var(--orange); }
+.seg-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 1px; }
+.anual-stat-value {
+    font-family: var(--font-mono); font-size: 15px; font-weight: 600;
+    color: var(--ink); white-space: nowrap;
+}
+/* Variação fica em tinta neutra: pagar mais que no ano anterior não é, por
+   si só, bom nem ruim — a seta diz a direção, a cor não julga. */
+.anual-stat.delta .anual-stat-value { display: flex; align-items: center; gap: 4px; }
+.anual-stat.delta .anual-stat-value i { font-size: 13px; color: var(--orange-deep); }
 
 /* ============================================================
    FILTROS & BADGES
@@ -808,6 +899,9 @@ tfoot td {
     .kpi-value { font-size: 24px; }
     .chart-card { padding: 18px 16px; }
     .chart-container { height: 240px; }
+    .chart-container-anual { height: 280px; }
+    .anual-stats { width: 100%; }
+    .anual-stat { flex: 1 1 calc(50% - 5px); min-width: 0; }
     .filter-bar { padding: 16px; }
     .filter-input { font-size: 16px; } /* evita o zoom automático do iOS ao tocar no campo */
     .table-bar { padding: 14px 16px; }
