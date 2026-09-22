@@ -176,6 +176,31 @@
   .chip.t-ciot{background:#F0EAE2; border-color:#E0D4C4; color:#7A5A2E}
   .chip.t-adi,.chip.t-res{background:#F3E8F3; border-color:#E5D2E5; color:#7A2E7A}
   .chip.active[class*="t-"]{background:var(--plum-deep); border-color:var(--plum-deep); color:#fff}
+
+  /* ===================== falta aprovar: quem segura o quê ===================== */
+  .apr-resumo{flex:0 0 auto; padding:10px 22px 12px; border-bottom:1px solid var(--border);
+    background:var(--surface-soft); max-height:204px; overflow:auto}
+  .apr-topo{display:flex; align-items:baseline; gap:12px; margin-bottom:8px; flex-wrap:wrap}
+  .apr-titulo{font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--plum-soft)}
+  .apr-conta{font-size:12px; color:var(--plum-soft)}
+  .apr-conta b{font-family:var(--font-mono); color:var(--plum-deep)}
+  .apr-topo button{margin-left:auto; border:none; background:none; padding:0; cursor:pointer;
+    font-family:inherit; font-size:12px; font-weight:700; color:var(--orange-deep)}
+  .apr-topo button:hover{text-decoration:underline}
+  .apr-grade{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr)); gap:8px}
+  .apr-card{display:flex; flex-direction:column; gap:4px; text-align:left; padding:9px 12px 10px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+    cursor:pointer; font-family:inherit; transition:border-color .14s, box-shadow .14s}
+  .apr-card:hover{border-color:var(--orange)}
+  .apr-card.on{border-color:var(--plum-deep); box-shadow:inset 0 0 0 1px var(--plum-deep)}
+  .apr-nome{font-size:12.5px; font-weight:800; color:var(--plum-deep);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .apr-nums{display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+    font-size:11.5px; color:var(--plum-soft)}
+  .apr-nums b{font-family:var(--font-mono); font-size:12.5px; color:var(--plum-deep)}
+  .apr-barra{display:block; height:3px; border-radius:2px; background:var(--border-soft); overflow:hidden}
+  .apr-barra span{display:block; height:100%; background:var(--orange)}
   .barra .direita{margin-left:auto; display:flex; align-items:center; gap:10px;
     font-size:11.5px; color:var(--plum-soft)}
   .seletor-dens{display:flex; gap:4px; align-items:center}
@@ -244,9 +269,9 @@
   .lista-wrap{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; background:var(--surface)}
   .grade-cab, .lin{
     display:grid; align-items:center;
-    /* A última coluna cabe os três botões de um lançamento próprio (editar,
-       ocultar, excluir). Com 92px o "editar" ficava cortado à esquerda. */
-    grid-template-columns:30px 64px 96px minmax(200px,1.5fr) minmax(110px,1fr) 86px 88px 112px 152px 24px 140px;
+    /* A última coluna cabe três botões — editar, desfazer, excluir, o trio mais
+       largo, que na Manrope pede 130px. Com 92px o "editar" ficava cortado. */
+    grid-template-columns:30px 64px 96px minmax(200px,1.5fr) minmax(110px,1fr) 86px 88px 112px 152px 24px 152px;
     gap:0;
   }
   .grade-cab{
@@ -261,7 +286,7 @@
   .vp-janela{position:absolute; left:0; right:0; top:0}
   .lin{
     padding:0 22px; height:var(--lin-h); border-bottom:1px solid var(--border-soft);
-    cursor:default; background:var(--surface);
+    cursor:pointer; background:var(--surface);
   }
   body.confortavel{--lin-h:46px}
   .lin:nth-child(even){background:#FDFCFD}
@@ -583,7 +608,8 @@
     <div class="cf-body">
       <h3 class="cf-title"><i class="fa-solid fa-eraser"></i> Limpar a base de operação</h3>
       <p class="cf-text">
-        Apaga a posição atual (títulos do Totvs e solicitações do Fluig) da planilha de operação.
+        Apaga a posição atual da planilha de operação: títulos do Totvs, solicitações do Fluig,
+        lançamentos próprios (CIOT e títulos lançados à mão) e as devoluções do banco.
         O <strong>histórico de pagamentos não é tocado</strong> — ele fica em outra planilha e nunca é apagado por aqui.
       </p>
       <label class="cf-opt">
@@ -1387,6 +1413,8 @@ const state = {
   pendentesConfirmar: [], confirmados: 0,
   diagRetornos: null, semParNoRelatorio: [],
   retornosDispensados: {},     // devoluções desfeitas nesta sessão, por chave
+  filtroAprovador: null,       // no Falta aprovar: só os títulos de um aprovador
+  ancoraSel: null, ordemGrade: [],   // seleção com Shift: onde começou e a ordem da lista
   chave: '', exigeChave: false,
   files: [],                 // [{nome, tipo, count, ok, err}]
   store: { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[], retornos:[] },
@@ -1571,7 +1599,7 @@ function renderTrilho(){
     ]);
     const ir = () => {
       if (state.aba === c.k) return;
-      state.aba = c.k; state.filtroTipo = ''; state.selecao = {};
+      state.aba = c.k; state.filtroTipo = ''; state.filtroAprovador = null; state.ancoraSel = null; state.selecao = {};
       renderTrilho(); renderConferencia();
     };
     card.addEventListener('click', ir);
@@ -1770,8 +1798,12 @@ function renderConferencia(){
   const L = listas[state.aba] || listas[abaPadrao()];
   montarBarra(L, listas);
 
-  const filtradas = filtrarLinhas(L.linhas, !!L.totvs, !!L.unificada);
+  const ehAprovacao = state.aba === 'faltaAprovar';
+  let filtradas = filtrarLinhas(L.linhas, !!L.totvs, !!L.unificada);
+  if (ehAprovacao && state.filtroAprovador !== null)
+    filtradas = filtradas.filter(x => chaveAprovador(x) === state.filtroAprovador);
   const wrap = el('lista-wrap'); wrap.textContent = '';
+  if (ehAprovacao){ const r = resumoAprovadores(L.linhas); if (r) wrap.appendChild(r); }
 
   if (!filtradas.length){
     wrap.appendChild(h('div', { class:'empty',
@@ -1790,6 +1822,71 @@ function renderConferencia(){
 
   renderSelBarra(filtradas, L);
   renderTotal(filtradas, L);
+}
+
+/* ----------------------------------------------------------------------------
+   FALTA APROVAR — QUEM SEGURA O QUÊ
+   O cartão existe para conferir e cobrar: a pergunta é com quem está a caneta
+   e quanto dinheiro espera por ele. Um quadro por aprovador, do maior valor
+   para o menor; clicar mostra na lista só os títulos daquele aprovador. O que
+   está oculto fica de fora da conta, como no total da lista.
+   -------------------------------------------------------------------------- */
+const chaveAprovador = x => norm(aprovadorDe(x));
+
+function resumoAprovadores(linhas){
+  const grupos = {};
+  (linhas || []).filter(x => !x.oculto).forEach(x => {
+    const k = chaveAprovador(x);
+    const g = grupos[k] || (grupos[k] = { k: k, nome: aprovadorDe(x) || 'Sem aprovador no Fluig',
+                                           qtd: 0, valor: 0 });
+    g.qtd++; g.valor += Number(x.valor) || 0;
+  });
+  const lista = Object.keys(grupos).map(k => grupos[k])
+    .sort((a, b) => (b.valor - a.valor) || (b.qtd - a.qtd));
+  if (!lista.length) return null;
+  const total = lista.reduce((s2, g) => s2 + g.valor, 0);
+  const qtd = lista.reduce((s2, g) => s2 + g.qtd, 0);
+
+  const box = h('div', { class:'apr-resumo' });
+  const topo = h('div', { class:'apr-topo' }, [
+    h('span', { class:'apr-titulo', text:'Quem falta aprovar' }),
+    h('span', { class:'apr-conta' }, [
+      lista.length + (lista.length === 1 ? ' aprovador · ' : ' aprovadores · ') +
+      qtd + (qtd === 1 ? ' título · ' : ' títulos · '),
+      h('b', { text:'R$ ' + fmtBR(total) }),
+    ]),
+  ]);
+  if (state.filtroAprovador !== null){
+    const todos = h('button', { type:'button', text:'mostrar todos' });
+    todos.addEventListener('click', () => {
+      state.filtroAprovador = null; state.selecao = {}; state.ancoraSel = null; renderConferencia();
+    });
+    topo.appendChild(todos);
+  }
+  box.appendChild(topo);
+
+  const grade = h('div', { class:'apr-grade' });
+  lista.forEach(g => {
+    const on = state.filtroAprovador === g.k;
+    const parte = total ? Math.max(2, Math.round(100 * g.valor / total)) : 0;
+    const card = h('button', { type:'button', class:'apr-card' + (on ? ' on' : ''),
+      title: on ? 'Voltar a mostrar todos' : ('Mostrar só os títulos de ' + g.nome) }, [
+      h('span', { class:'apr-nome', text: g.nome }),
+      h('span', { class:'apr-nums' }, [
+        h('span', { text: g.qtd + (g.qtd === 1 ? ' título' : ' títulos') }),
+        h('b', { text:'R$ ' + fmtBR(g.valor) }),
+      ]),
+      h('span', { class:'apr-barra' }, [ h('span', { style:'width:' + parte + '%' }) ]),
+    ]);
+    card.addEventListener('click', () => {
+      state.filtroAprovador = on ? null : g.k;
+      state.selecao = {}; state.ancoraSel = null; state.pagina = 1;
+      renderConferencia();
+    });
+    grade.appendChild(card);
+  });
+  box.appendChild(grade);
+  return box;
 }
 
 /* ------------------------------------------------------- roteiro (faixa) */
@@ -1827,7 +1924,7 @@ function montarRoteiro(){
     if (pt.aba && (state.listas||{})[pt.aba]){
       const ir = h('button', { class:'btn btn-ghost btn-sm', type:'button', text:'ver' });
       ir.addEventListener('click', () => {
-        state.aba = pt.aba; state.filtroTipo = ''; state.selecao = {};
+        state.aba = pt.aba; state.filtroTipo = ''; state.filtroAprovador = null; state.ancoraSel = null; state.selecao = {};
         state.roteiroAberto = false;
         renderTrilho(); renderConferencia();
       });
@@ -1908,7 +2005,7 @@ function montarBarra(L, listas){
         h('span', { class:'cnt', text: String(listas[k].linhas.length) }),
       ]);
       b.addEventListener('click', () => {
-        state.aba = k; state.filtroTipo = ''; state.selecao = {};
+        state.aba = k; state.filtroTipo = ''; state.filtroAprovador = null; state.ancoraSel = null; state.selecao = {};
         menu.classList.remove('aberto');
         renderTrilho(); renderConferencia();
       });
@@ -1938,6 +2035,7 @@ function alturaLinha(){ return state.confortavel ? 46 : 34; }
 
 function gradeUnificada(linhas, L, wrap){
   const ehPago = !!L.pago;
+  state.ordemGrade = linhas;
 
   // cabeçalho
   const cab = h('div', { class:'grade-cab' });
@@ -1989,15 +2087,25 @@ function linhaGrade(x, ehPago){
     + (x.oculto ? ' oculta' : '')
     + (x.editado ? ' editada' : '') });
 
-  // 1. seleção
+  // 1. seleção — pela caixinha ou por qualquer parte da linha que não edita
   const cb = h('input', { type:'checkbox' });
   cb.checked = !!state.selecao[x.chave];
-  cb.addEventListener('change', () => {
-    if (cb.checked) state.selecao[x.chave] = x; else delete state.selecao[x.chave];
-    lin.classList.toggle('sel', cb.checked);
-    renderSelBarra();
-  });
+  let comShift = false;
+  cb.addEventListener('click', e => { comShift = e.shiftKey; });
+  cb.addEventListener('change', () => { marcar(x, cb.checked, comShift); comShift = false; });
   lin.appendChild(h('div', {}, [ cb ]));
+
+  /* A caixinha é pequena demais para quem confere sessenta títulos seguidos:
+     clicar na linha também marca. Fica de fora o que já tem clique próprio —
+     célula que edita, botão, o sinal de atenção — e o clique que termina um
+     arrasto para copiar texto. Com Shift, o navegador tentaria estender uma
+     seleção de texto; por isso o mousedown com Shift é barrado. */
+  lin.addEventListener('mousedown', e => { if (e.shiftKey) e.preventDefault(); });
+  lin.addEventListener('click', e => {
+    if (e.target.closest('input, button, a, .editavel, .sinal')) return;
+    if (!e.shiftKey && window.getSelection && String(window.getSelection())) return;
+    marcar(x, !state.selecao[x.chave], e.shiftKey);
+  });
 
   // 2. tipo — editável
   const tipo = safeStr(x.tipo) || '—';
@@ -2082,9 +2190,12 @@ function linhaGrade(x, ehPago){
           title: l.oculto ? 'Trazer de volta para os totais' : 'Tirar dos totais e do relatório' });
     bOc.addEventListener('click', () => l.devolvido ? desfazerDevolucao(l) : alternarOculto(l));
     acoes.appendChild(bOc);
-    if (ehLancamentoProprio(l.titulo)){
-      const bEx = h('button', { type:'button', class:'fraco', text:'excluir' });
-      bEx.addEventListener('click', () => excluirManual(l));
+    const doRelatorio = ehDoRelatorio(l.titulo);
+    if (doRelatorio || ehLancamentoProprio(l.titulo)){
+      const bEx = h('button', { type:'button', class:'fraco', text:'excluir',
+        title: doRelatorio ? 'Tirar este título de tudo: lista, totais, painel e relatório'
+                           : 'Apagar este lançamento' });
+      bEx.addEventListener('click', () => doRelatorio ? excluirTitulos([l]) : excluirManual(l));
       acoes.appendChild(bEx);
     }
   }
@@ -2197,6 +2308,7 @@ function renderSelBarra(filtradas, L){
   };
   acao('ocultar', () => loteOcultar(linhas, true));
   acao('trazer de volta', () => loteOcultar(linhas, false));
+  acao('excluir', () => excluirTitulos(linhas));
   acao('mudar vencimento', () => loteCampo(linhas, 'vencimento'));
   acao('mudar tipo', () => loteCampo(linhas, 'tipo'));
   acao('mudar natureza', () => loteCampo(linhas, 'natureza'));
@@ -2320,6 +2432,21 @@ function linhaDoTitulo(t){
   };
 }
 
+/* Marca ou desmarca uma linha. Com Shift, leva junto todas as linhas entre a
+   última clicada e esta, no estado desta — vinte seguidas em dois cliques. */
+function marcar(x, on, intervalo){
+  const ordem = state.ordemGrade || [];
+  const a = (intervalo && state.ancoraSel) ? ordem.indexOf(state.ancoraSel) : -1;
+  const b = ordem.indexOf(x);
+  const alvo = (a >= 0 && b >= 0) ? ordem.slice(Math.min(a, b), Math.max(a, b) + 1) : [x];
+  alvo.forEach(y => { if (on) state.selecao[y.chave] = y; else delete state.selecao[y.chave]; });
+  state.ancoraSel = x;
+  if (state.redesenhar) state.redesenhar();
+  const todos = document.querySelector('.grade-cab input[type=checkbox]');
+  if (todos) todos.checked = ordem.length > 0 && ordem.every(y => state.selecao[y.chave]);
+  renderSelBarra();
+}
+
 /* Dois tipos de linha carregam código próprio (id_manual), e só um deles é do
    usuário. O lançamento próprio — CIOT, título lançado à mão — mora numa aba
    que só esta tela escreve, e ali apagar é apagar. A linha do relatório do
@@ -2340,7 +2467,7 @@ function ehLancamentoProprio(t){
    depois — e desfazer só a última deixaria a outra valendo. */
 function marcasDeDevolucao(chave){
   return (state.ajustes || []).filter(a => a && !a.desfeito &&
-    safeStr(a.alvo) === chave && safeStr(a.campo) === Conc.CAMPO_OCULTO &&
+    (chave === undefined || safeStr(a.alvo) === chave) && safeStr(a.campo) === Conc.CAMPO_OCULTO &&
     safeStr(a.valor_novo) !== '0' && Conc.ehDevolvido({ ocultoInfo: a }));
 }
 
@@ -2361,10 +2488,12 @@ function acoesLinha(l){
         [ h('i', { class:'fa-solid ' + (l.oculto ? 'fa-eye' : 'fa-eye-slash') }) ]);
   bOc.addEventListener('click', () => l.devolvido ? desfazerDevolucao(l) : alternarOculto(l));
   box.appendChild(bOc);
-  if (manual){
-    const bEx = h('button', { class:'btn-icon perigo', type:'button', title:'Excluir este lançamento' },
+  const doRelatorio = ehDoRelatorio(l.titulo);
+  if (manual || doRelatorio){
+    const bEx = h('button', { class:'btn-icon perigo', type:'button',
+      title: doRelatorio ? 'Excluir este título de tudo' : 'Excluir este lançamento' },
       [ h('i', { class:'fa-solid fa-trash' }) ]);
-    bEx.addEventListener('click', () => excluirManual(l));
+    bEx.addEventListener('click', () => doRelatorio ? excluirTitulos([l]) : excluirManual(l));
     box.appendChild(bEx);
   }
   return box;
@@ -3167,6 +3296,53 @@ async function excluirManual(linha){
   await gravarAjuste({ acao:'excluir_manual', id_manual: id }, 'Lançamento excluído.');
 }
 
+/* Excluir linhas do relatório do dia — e, se vierem na seleção, lançamentos
+   próprios. A linha do relatório não é apagada da base: ganha uma marca de
+   exclusão, e a regra comum às duas telas tira o título de tudo — lista,
+   totais, cartões, painel e relatório. Apagar da base não bastaria: a linha
+   voltaria com o relatório, se ele fosse subido de novo, ou com o arquivo que
+   ainda estivesse aberto na tela. A marca segue a identidade da linha e vale
+   para sempre. Título do Totvs fica de fora: voltaria no dia seguinte, e a
+   marca esconderia junto o pagamento dele quando saísse.
+
+   Se a linha estava devolvida, a marca da devolução é desfeita junto: o
+   resumo por e-mail procura devoluções nas marcas, e continuaria listando. */
+async function excluirTitulos(xs){
+  const todos = (xs || []).filter(Boolean);
+  const doRel = todos.filter(x => ehDoRelatorio(x.titulo));
+  const proprios = todos.filter(x => ehLancamentoProprio(x.titulo));
+  const fora = todos.length - doRel.length - proprios.length;
+  if (!doRel.length && !proprios.length){
+    toast('Título do Totvs não se exclui: ele voltaria no próximo relatório. Use ocultar.', true);
+    return;
+  }
+  const n = doRel.length + proprios.length;
+  const um = n === 1 ? (doRel[0] || proprios[0]) : null;
+  const t = um && um.titulo;
+  const ok = confirm((um
+      ? ('Excluir este título?\n\n' + safeStr(t.fornecedor) + '\nR$ ' +
+         fmtBR(Number(t.valor_liquido) || Number(t.valor_rs) || 0) + ' · ' +
+         fmtData(t.dt_baixa || t.vencimento))
+      : ('Excluir ' + n + ' títulos?')) +
+    '\n\nSome da lista, dos totais, do painel e do relatório, e não volta' +
+    ' mesmo que o relatório seja subido de novo.' +
+    (fora ? ('\n\n' + fora + ' título(s) do Totvs ficam de fora: esses só podem ser ocultados.') : ''));
+  if (!ok) return;
+
+  const envios = [];
+  doRel.filter(x => x.devolvido).forEach(x => {
+    state.retornosDispensados[x.chave] = true;
+    marcasDeDevolucao(x.chave).forEach(m => envios.push({ acao:'desfazer', id: safeStr(m.id) }));
+  });
+  if (doRel.length) envios.push({ acao:'ajuste', ajustes: doRel.map(x => ({
+    alvo: x.chave, campo: Conc.CAMPO_EXCLUIDO, valor_novo:'1', valor_antigo:'',
+    autor: state.autor, motivo:'excluído na conferência',
+  })) });
+  proprios.forEach(x => envios.push({ acao:'excluir_manual', id_manual: safeStr(x.titulo.id_manual) }));
+  state.selecao = {}; state.ancoraSel = null;
+  await gravarEConferir(envios, n === 1 ? 'Título excluído.' : (n + ' títulos excluídos.'));
+}
+
 /* Desfazer a devolução é apagar a marca que o arquivo do banco deixou, e não
    escondê-la atrás de outra. O "voltar" gravava um mostrar por cima: a linha
    voltava, mas a marca seguia na planilha — e, com o arquivo do banco ainda
@@ -3280,15 +3456,44 @@ async function limparBase(){
        tela, e a lista seguia igualzinha — parecia que a limpeza não tinha
        feito nada, mesmo quando tinha. */
     zerarTela();
-    const releu = await carregarBase();
+    const semReler = 'Pedido de limpeza enviado, mas não consegui reler a base para conferir. Aperte F5.';
+    if (!(await carregarBase())){ toast(semReler, true); return; }
     fetchStatus();
-    const b = state.base || {};
-    const sobrou = ['titulos', 'baixas', 'nf_servico', 'nf_titulo', 'reembolso']
-      .reduce((n, k) => n + ((b[k] || []).length), 0);
-    if (!releu) toast('Pedido de limpeza enviado, mas não consegui reler a base para conferir. Aperte F5.', true);
-    else if (sobrou) await avisarQueNaoGravou('A limpeza não chegou à planilha: a base ainda tem ' +
-                                              sobrou + ' registro(s).');
-    else toast('Base de operação limpa. O histórico continua intacto.');
+    /* Conta só o que o limpar apaga com certeza. Os lançamentos próprios ficam
+       de fora da conta: se o script um dia passar a guardá-los, isso não vira
+       falso alarme de limpeza que não chegou. */
+    const sobrou = () => {
+      const b = state.base || {};
+      return (b.titulos || []).filter(t => !(t.manual || t.id_manual)).length +
+        ['baixas', 'nf_servico', 'nf_titulo', 'reembolso'].reduce((n, k) => n + ((b[k] || []).length), 0);
+    };
+    if (sobrou()){
+      await avisarQueNaoGravou('A limpeza não chegou à planilha: a base ainda tem ' + sobrou() + ' registro(s).');
+      return;
+    }
+
+    /* As devoluções moram à parte, nas marcas, e o limpar do script não mexe
+       nelas. Sem isto, o relatório subido de novo trazia os pagamentos já
+       marcados, e eles voltavam ao cartão de devolvidos e à aba Retorno. Uma
+       de cada vez, como no resto: o script regrava a aba inteira a cada
+       pedido, e dois juntos podiam se atropelar. */
+    const devolucoes = marcasDeDevolucao();
+    for (let i = 0; i < devolucoes.length; i++){
+      el('overlay-text').textContent = 'Limpando as devoluções · ' + (i + 1) + ' de ' + devolucoes.length + '…';
+      await postar({ acao:'desfazer', id: safeStr(devolucoes[i].id) });
+    }
+    if (devolucoes.length){
+      await new Promise(r => setTimeout(r, 1800));
+      if (!(await carregarBase())){ toast(semReler, true); return; }
+      const restam = marcasDeDevolucao().length;
+      if (restam){
+        await avisarQueNaoGravou('A base foi limpa, mas ' + restam + ' devolução(ões) continuam marcadas.');
+        return;
+      }
+    }
+    toast('Base de operação limpa' +
+      (devolucoes.length ? (', com ' + devolucoes.length + ' devolução(ões)') : '') +
+      '. O histórico continua intacto.');
   } catch (e){
     toast('Erro ao limpar: ' + (e.message || e), true);
   } finally { showOverlay(false); render(); }

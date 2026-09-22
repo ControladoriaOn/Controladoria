@@ -234,6 +234,13 @@ const aguardandoSit = s => s === 'sem_titulo_pendente' || s === 'em_aberto_pende
    é isso que impede a planilha de acumular mentira com o tempo.
    ============================================================================ */
 const CAMPO_OCULTO = 'oculto';
+/* Excluir é mais que ocultar: o título sai de tudo — lista, totais, cartões,
+   painel e relatório —, e não só da soma. A tela só oferece isso para a linha
+   do relatório do dia: título do Totvs voltaria no dia seguinte, e a marca,
+   que segue a identidade dele, esconderia junto o pagamento quando saísse. É
+   por seguir a identidade que ela vale mesmo que o relatório seja subido de
+   novo. */
+const CAMPO_EXCLUIDO = 'excluido';
 const CAMPOS_DATA = ['vencimento','dt_baixa','dt_emissao'];
 /* 'valor_confirmado' não vem do Totvs: é o valor que alguém escolheu na tela
    quando Fluig e Totvs discordam (retenção de imposto, natureza lançada
@@ -273,6 +280,11 @@ function aplicarAjustes(titulos, ajustes){
       .forEach(a => {
         const campo = safeStr(a.campo);
         if (!campo) return;
+        if (campo === CAMPO_EXCLUIDO){
+          // o último manda: uma marca "0" depois devolve o título
+          novo._excluido = safeStr(a.valor_novo) !== '0' && safeStr(a.valor_novo) !== '';
+          return;
+        }
         // o dado original já diz o que o ajuste dizia → absorvido
         if (campo !== CAMPO_OCULTO && valorIgual(campo, t[campo], a.valor_novo)){
           novo._edicoes[campo] = { id: a.id, autor: a.autor, quando: a.quando,
@@ -312,7 +324,10 @@ function aplicarAjustes(titulos, ajustes){
     porAlvo[alvo].forEach(a => orfaos.push(a));
   });
 
-  return { titulos: saida, orfaos: orfaos };
+  /* O excluído sai aqui, antes de tudo: nem conciliação, nem soma, nem lista,
+     nem relatório chegam a vê-lo. Os ajustes dele não viram órfãos — o título
+     existe, só não aparece. */
+  return { titulos: saida.filter(t => !t._excluido), orfaos: orfaos };
 }
 
 /* ============================================================================
@@ -1050,7 +1065,7 @@ raiz.Conc = {
   casarRelatorio, ehDevolvido, motivoRetorno, PREFIXO_RETORNO,
   aplicarAjustes, conciliar, resumir, montarLinhas, montarHistorico,
   exportarRelatorio, linhaRelatorio, nomeBanco, COLUNAS_RELATORIO, serieDiaria,
-  MODELO_CIOT, novoCiot, CAMPO_OCULTO,
+  MODELO_CIOT, novoCiot, CAMPO_OCULTO, CAMPO_EXCLUIDO,
   CAMPOS_DATA, CAMPOS_NUM,
 };
 
