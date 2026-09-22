@@ -244,7 +244,9 @@
   .lista-wrap{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; background:var(--surface)}
   .grade-cab, .lin{
     display:grid; align-items:center;
-    grid-template-columns:30px 64px 96px minmax(200px,1.5fr) minmax(110px,1fr) 86px 88px 112px 152px 24px 92px;
+    /* A última coluna cabe os três botões de um lançamento próprio (editar,
+       ocultar, excluir). Com 92px o "editar" ficava cortado à esquerda. */
+    grid-template-columns:30px 64px 96px minmax(200px,1.5fr) minmax(110px,1fr) 86px 88px 112px 152px 24px 140px;
     gap:0;
   }
   .grade-cab{
@@ -431,6 +433,7 @@
     opacity:0; pointer-events:none; transition:all .25s; z-index:2000;
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  .toast.erro{background:var(--danger)}
   .cf-overlay{
     position:fixed; inset:0; background:rgba(26,15,26,.55); backdrop-filter:blur(4px);
     display:none; align-items:center; justify-content:center; padding:20px; z-index:1800;
@@ -1383,6 +1386,7 @@ async function parseNaturezas(file){
 const state = {
   pendentesConfirmar: [], confirmados: 0,
   diagRetornos: null, semParNoRelatorio: [],
+  retornosDispensados: {},     // devoluções desfeitas nesta sessão, por chave
   chave: '', exigeChave: false,
   files: [],                 // [{nome, tipo, count, ok, err}]
   store: { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[], retornos:[] },
@@ -1415,9 +1419,13 @@ const TIPO_ROTULO = {
   desconhecido: ['Não reconhecido','err'],
 };
 
-function toast(msg){
+/* O vermelho é só para o que não deu certo, e fica mais tempo na tela: é o
+   aviso que a pessoa não pode perder. */
+function toast(msg, erro){
   const t = el('toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 3000);
+  t.classList.toggle('erro', !!erro);
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), erro ? 8000 : 3000);
 }
 function showOverlay(on, txt){
   if (txt) el('overlay-text').textContent = txt;
@@ -2064,12 +2072,17 @@ function linhaGrade(x, ehPago){
     const bEd = h('button', { type:'button', title:'Abrir todos os campos', text:'editar' });
     bEd.addEventListener('click', () => abrirEdicao(l));
     acoes.appendChild(bEd);
-    const bOc = h('button', { type:'button', class:'fraco',
-      text: l.oculto ? 'voltar' : 'ocultar',
-      title: l.oculto ? 'Trazer de volta para os totais' : 'Tirar dos totais e do relatório' });
-    bOc.addEventListener('click', () => alternarOculto(l));
+    /* Devolvido pelo banco não "volta": desfaz. O "voltar" gravava um mostrar
+       por cima da marca do banco, e a marca continuava lá embaixo. */
+    const bOc = l.devolvido
+      ? h('button', { type:'button', class:'fraco', text:'desfazer',
+          title:'Desfazer a devolução do banco: o pagamento volta a contar' })
+      : h('button', { type:'button', class:'fraco',
+          text: l.oculto ? 'voltar' : 'ocultar',
+          title: l.oculto ? 'Trazer de volta para os totais' : 'Tirar dos totais e do relatório' });
+    bOc.addEventListener('click', () => l.devolvido ? desfazerDevolucao(l) : alternarOculto(l));
     acoes.appendChild(bOc);
-    if (l.titulo && l.titulo.id_manual){
+    if (ehLancamentoProprio(l.titulo)){
       const bEx = h('button', { type:'button', class:'fraco', text:'excluir' });
       bEx.addEventListener('click', () => excluirManual(l));
       acoes.appendChild(bEx);
@@ -2238,13 +2251,24 @@ async function loteOcultar(linhas, ocultar){
     if (r === null) return;
     motivo = safeStr(r);
   }
-  const ajustes = alvos.map(x => ({
+  /* Trazer de volta um devolvido pelo banco é desfazer a marca dele, não
+     gravar outra por cima — o mesmo que o botão da linha faz. */
+  const devolvidos = ocultar ? [] : alvos.filter(x => x.devolvido);
+  const comuns = alvos.filter(x => devolvidos.indexOf(x) < 0);
+  const envios = [];
+  if (comuns.length) envios.push({ acao:'ajuste', ajustes: comuns.map(x => ({
     alvo: x.chave, campo:'oculto', valor_novo: ocultar ? '1' : '0',
     valor_antigo: ocultar ? '0' : '1', autor: state.autor, motivo: motivo,
-  }));
+  })) });
+  devolvidos.forEach(x => {
+    state.retornosDispensados[x.chave] = true;
+    marcasDeDevolucao(x.chave).forEach(m => envios.push({ acao:'desfazer', id: safeStr(m.id) }));
+  });
+  if (!envios.length){ toast('Nada a mudar nesses títulos.'); return; }
   state.selecao = {};
-  await gravarAjuste({ acao:'ajuste', ajustes: ajustes },
-    alvos.length + (ocultar ? ' título(s) ocultado(s).' : ' título(s) de volta.'));
+  await gravarEConferir(envios,
+    alvos.length + (ocultar ? ' título(s) ocultado(s).' : ' título(s) de volta.') +
+    (devolvidos.length ? (' ' + devolvidos.length + ' devolução(ões) desfeita(s).') : ''));
 }
 
 async function loteCampo(linhas, campo){
@@ -2292,21 +2316,50 @@ function linhaDoTitulo(t){
     numero: t.numero + (t.parcela ? ('/' + t.parcela) : ''),
     fornecedor: t.fornecedor, id_fluig: t.id_fluig,
     editado: !!t._editado, edicoes: t._edicoes || null, oculto: !!t._oculto,
+    devolvido: Conc.ehDevolvido(t),
   };
+}
+
+/* Dois tipos de linha carregam código próprio (id_manual), e só um deles é do
+   usuário. O lançamento próprio — CIOT, título lançado à mão — mora numa aba
+   que só esta tela escreve, e ali apagar é apagar. A linha do relatório do
+   dia ganha o código só para não se confundir com uma vizinha idêntica: ela
+   mora nas baixas e volta com o relatório. O "excluir" aparecia nela por
+   engano, e o script, que procura na aba dos lançamentos próprios, não achava
+   nada — e a tela dizia "excluído" mesmo assim. */
+function ehDoRelatorio(t){
+  return !!t && (safeStr(t.origem_manual) === 'relatorio' ||
+                 safeStr(t.id_manual).indexOf('REL~') === 0);
+}
+function ehLancamentoProprio(t){
+  return !!t && !!safeStr(t.id_manual) && !ehDoRelatorio(t);
+}
+
+/* As marcas de devolução em vigor num título. Em geral é uma; são duas quando
+   alguém trouxe o pagamento de volta e o arquivo do banco foi aplicado de novo
+   depois — e desfazer só a última deixaria a outra valendo. */
+function marcasDeDevolucao(chave){
+  return (state.ajustes || []).filter(a => a && !a.desfeito &&
+    safeStr(a.alvo) === chave && safeStr(a.campo) === Conc.CAMPO_OCULTO &&
+    safeStr(a.valor_novo) !== '0' && Conc.ehDevolvido({ ocultoInfo: a }));
 }
 
 function acoesLinha(l){
   const box = h('div', { class:'acoes-linha' });
   if (!l) return box;
-  const manual = !!(l.titulo && l.titulo.id_manual);
+  const manual = ehLancamentoProprio(l.titulo);
   const bEd = h('button', { class:'btn-icon', type:'button', title:'Editar este título' },
     [ h('i', { class:'fa-solid fa-pen' }) ]);
   bEd.addEventListener('click', () => abrirEdicao(l));
   box.appendChild(bEd);
-  const bOc = h('button', { class:'btn-icon', type:'button',
-    title: l.oculto ? 'Trazer de volta' : 'Ocultar dos totais e do relatório' },
-    [ h('i', { class:'fa-solid ' + (l.oculto ? 'fa-eye' : 'fa-eye-slash') }) ]);
-  bOc.addEventListener('click', () => alternarOculto(l));
+  const bOc = l.devolvido
+    ? h('button', { class:'btn-icon', type:'button',
+        title:'Desfazer a devolução do banco: o pagamento volta a contar' },
+        [ h('i', { class:'fa-solid fa-rotate-left' }) ])
+    : h('button', { class:'btn-icon', type:'button',
+        title: l.oculto ? 'Trazer de volta' : 'Ocultar dos totais e do relatório' },
+        [ h('i', { class:'fa-solid ' + (l.oculto ? 'fa-eye' : 'fa-eye-slash') }) ]);
+  bOc.addEventListener('click', () => l.devolvido ? desfazerDevolucao(l) : alternarOculto(l));
   box.appendChild(bOc);
   if (manual){
     const bEx = h('button', { class:'btn-icon perigo', type:'button', title:'Excluir este lançamento' },
@@ -2634,7 +2687,11 @@ async function aplicarRetornos(){
   };
 
   // o que já está oculto pelo mesmo motivo não precisa ser gravado de novo
-  const novos = r.casados.filter(c => !Conc.ehDevolvido(c.titulo));
+  /* ...e o que a pessoa desfez nesta sessão também não: o arquivo do banco
+     continua na memória da tela, e sem isto a devolução voltaria no próximo
+     arquivo arrastado. */
+  const novos = r.casados.filter(c => !Conc.ehDevolvido(c.titulo) &&
+                                      !state.retornosDispensados[chaveTitulo(c.titulo)]);
   if (!novos.length) return;
   if (!(await Auth.pedir())) return;
 
@@ -2904,8 +2961,10 @@ async function abrirNovo(modelo){
 /* Traz o que já está na base para a tela. É isto que permite abrir a
    conferência no meio da tarde, ver o dia como o painel está mostrando e
    corrigir algo sem precisar subir arquivo de novo. */
+/* Devolve se conseguiu reler: quem acabou de gravar precisa saber se o que vê
+   na tela é a base nova ou ainda a de antes. */
 async function carregarBase(){
-  if (!CONFIG.APP_SCRIPT_URL) return;
+  if (!CONFIG.APP_SCRIPT_URL) return false;
   const fio = el('fio');
   if (fio) fio.classList.add('ativo');
   try {
@@ -2935,8 +2994,10 @@ async function carregarBase(){
     if (d.naturezas && !state.naturezas) state.naturezas = d.naturezas;
     recalcular();
     render();
+    return true;
   } catch(e){
     // a tela funciona sem a base; é só não ter o que corrigir
+    return false;
   } finally {
     if (fio) fio.classList.remove('ativo');
   }
@@ -2957,17 +3018,90 @@ async function postar(payload){
 }
 
 async function gravarAjuste(payload, textoOk){
-  if (!(await Auth.pedir())) return;
+  return gravarEConferir([payload], textoOk);
+}
+
+/* Grava e confere. O comentário lá de cima sempre prometeu que a confirmação
+   vinha dos dados, mas a tela relia a base e anunciava o sucesso sem olhar
+   para ela: "Lançamento excluído" saía mesmo quando o script tinha recusado —
+   senha errada, ou um lançamento que não estava onde ele procurou. Agora a
+   base relida é comparada com o que acabou de ser pedido. */
+async function gravarEConferir(envios, textoOk){
+  if (!(await Auth.pedir())) return false;
+  const confere = conferenciaDe(envios);        // a foto do antes sai aqui
   showOverlay(true, 'Salvando…');
   try {
-    await postar(payload);
+    /* Um de cada vez: o script lê a aba, muda e regrava a aba inteira, e dois
+       envios juntos podiam se atropelar e um apagar o outro. */
+    for (let i = 0; i < envios.length; i++){
+      if (envios.length > 1) el('overlay-text').textContent =
+        'Salvando ' + (i + 1) + ' de ' + envios.length + '…';
+      await postar(envios[i]);
+    }
     await new Promise(r => setTimeout(r, 1800));
-    await carregarBase();
+    if (!(await carregarBase())){
+      toast('Enviado, mas não consegui reler a base para conferir. Aperte F5 para ver como ficou.', true);
+      return false;
+    }
+    if (!confere()){ await avisarQueNaoGravou(); return false; }
     toast(textoOk);
+    return true;
   } catch(e){
-    toast('Erro ao salvar: ' + (e.message || e));
+    toast('Erro ao salvar: ' + (e.message || e), true);
+    return false;
   } finally {
     showOverlay(false);
+  }
+}
+
+/* O que cada envio deixa na base, para ser procurado depois da releitura. O
+   ajuste não tem id conhecido — quem o cria é o script —, então a conferência
+   é que o número de ajustes em vigor naquele título e campo subiu. Por isso a
+   foto do antes é tirada antes do envio. */
+function conferenciaDe(envios){
+  const vigentes = () => (state.ajustes || []).filter(a => a && !a.desfeito);
+  const chaveAj = a => safeStr(a.alvo) + '\u0001' + safeStr(a.campo);
+  const contar = () => {
+    const c = {};
+    vigentes().forEach(a => { const k = chaveAj(a); c[k] = (c[k] || 0) + 1; });
+    return c;
+  };
+  const antes = contar();
+  const somam = {}, somem = [], saem = [], entram = [];
+  (envios || []).forEach(p => {
+    if (!p) return;
+    if (p.acao === 'ajuste') (p.ajustes || []).forEach(a => {
+      if (a && a.alvo && a.campo){ const k = chaveAj(a); somam[k] = (somam[k] || 0) + 1; }
+    });
+    else if (p.acao === 'desfazer') somem.push(safeStr(p.id));
+    else if (p.acao === 'excluir_manual') saem.push(safeStr(p.id_manual));
+    else if (p.acao === 'titulo_manual') entram.push(safeStr(p.titulo && p.titulo.id_manual));
+  });
+  return () => {
+    const depois = contar(), emVigor = vigentes();
+    const ids = new Set((state.store.manuais || []).map(t => safeStr(t.id_manual)));
+    return Object.keys(somam).every(k => (depois[k] || 0) >= (antes[k] || 0) + somam[k])
+      && somem.every(id => !emVigor.some(a => id.indexOf('alvo:') === 0
+            ? safeStr(a.alvo) === id.slice(5) : safeStr(a.id) === id))
+      && saem.every(id => !ids.has(id))
+      && entram.every(id => !id || ids.has(id));
+  };
+}
+
+/* Quando a base relida não tem o que foi pedido, quase sempre é a senha: a
+   guardada pode ter mudado, ou a gravação saiu antes de a tela saber que o
+   script pede senha. A consulta de status esclarece as duas — esquece a senha
+   que não vale e passa a pedir —, e o aviso diz qual foi. */
+async function avisarQueNaoGravou(oQue){
+  const tinhaSenha = !!state.chave;
+  try { await fetchStatus(); } catch(e){}
+  const inicio = (oQue || 'A alteração não chegou à planilha.') + ' ';
+  if (state.exigeChave && !state.chave){
+    toast(inicio + (tinhaSenha
+      ? 'A senha de gravação guardada não vale mais: tente de novo, que a tela pede a nova.'
+      : 'Ela saiu sem a senha de gravação: tente de novo, que agora a tela pede.'), true);
+  } else {
+    toast(inicio + 'Tente de novo em alguns segundos; se repetir, recarregue a página.', true);
   }
 }
 
@@ -3023,7 +3157,7 @@ async function desfazerEdicoes(){
 async function excluirManual(linha){
   const t = linha.titulo;
   const id = safeStr(t && t.id_manual);
-  if (!id) return;
+  if (!id || !ehLancamentoProprio(t)) return;
   const ok = confirm('Excluir este lançamento?\n\n' +
     safeStr(t.tipo) + ' · ' + safeStr(t.fornecedor) + '\n' +
     'R$ ' + fmtBR(t.valor_rs) + ' · ' + fmtData(t.vencimento) +
@@ -3031,6 +3165,28 @@ async function excluirManual(linha){
   if (!ok) return;
   if (!(await Auth.pedir())) return;
   await gravarAjuste({ acao:'excluir_manual', id_manual: id }, 'Lançamento excluído.');
+}
+
+/* Desfazer a devolução é apagar a marca que o arquivo do banco deixou, e não
+   escondê-la atrás de outra. O "voltar" gravava um mostrar por cima: a linha
+   voltava, mas a marca seguia na planilha — e, com o arquivo do banco ainda
+   aberto na tela, era reaplicada no próximo arquivo arrastado. */
+async function desfazerDevolucao(linha){
+  const t = linha.titulo;
+  const marcas = marcasDeDevolucao(linha.chave);
+  if (!marcas.length){
+    toast('Não achei a marca de devolução deste pagamento. Aperte F5 e tente de novo.', true);
+    return;
+  }
+  const ok = confirm('Desfazer a devolução do banco?\n\n' +
+    safeStr(t.fornecedor) + '\n' +
+    'R$ ' + fmtBR(Number(t.valor_liquido) || Number(t.valor_rs) || 0) +
+    ' · ' + fmtData(t.dt_baixa || t.vencimento) +
+    '\n\nO pagamento volta a contar no Pago do dia.');
+  if (!ok) return;
+  state.retornosDispensados[linha.chave] = true;
+  await gravarEConferir(marcas.map(m => ({ acao:'desfazer', id: safeStr(m.id) })),
+    'Devolução desfeita: o pagamento voltou a contar.');
 }
 
 /* Ocultar não apaga: o título continua na base e volta com um clique. Apagar de
@@ -3119,11 +3275,23 @@ async function limparBase(){
   showOverlay(true, 'Limpando…');
   try {
     await postar({ acao:'limpar', alvo:'tudo' });
-    toast('Base de operação limpa. O histórico continua intacto.');
-    setTimeout(fetchStatus, 1800);
+    await new Promise(r => setTimeout(r, 1800));
+    /* Recomeça do zero. Os arquivos arrastados antes continuavam na memória da
+       tela, e a lista seguia igualzinha — parecia que a limpeza não tinha
+       feito nada, mesmo quando tinha. */
+    zerarTela();
+    const releu = await carregarBase();
+    fetchStatus();
+    const b = state.base || {};
+    const sobrou = ['titulos', 'baixas', 'nf_servico', 'nf_titulo', 'reembolso']
+      .reduce((n, k) => n + ((b[k] || []).length), 0);
+    if (!releu) toast('Pedido de limpeza enviado, mas não consegui reler a base para conferir. Aperte F5.', true);
+    else if (sobrou) await avisarQueNaoGravou('A limpeza não chegou à planilha: a base ainda tem ' +
+                                              sobrou + ' registro(s).');
+    else toast('Base de operação limpa. O histórico continua intacto.');
   } catch (e){
-    toast('Erro ao limpar: ' + (e.message || e));
-  } finally { showOverlay(false); }
+    toast('Erro ao limpar: ' + (e.message || e), true);
+  } finally { showOverlay(false); render(); }
 }
 
 /* Exporta o recorte que está na tela no formato do relatório que a
@@ -3220,14 +3388,17 @@ async function fetchStatus(){
   }
 }
 
-function resetTudo(){
+function zerarTela(){
   state.files = [];
   state.store = { totvs:[], baixas:[], relatorio:[], manuais:[], nf_servico:[], nf_titulo:[], reembolso:[], retornos:[] };
   state.naturezas = null; state.colunasAusentes = [];
   state.diagBaixas = null; state.diagPrevisto = null; state.diagRelatorio = null; state.diagRetornos = null;
   state.conc = null; state.resumo = null; state.aba = 'aPagarHoje';
-  state.listas = {}; state.selecao = {};
+  state.listas = {}; state.selecao = {}; state.retornosDispensados = {};
   el('file-input').value = '';
+}
+function resetTudo(){
+  zerarTela();
   render();
   toast('Recomeçando');
 }
