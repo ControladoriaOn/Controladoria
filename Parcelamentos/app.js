@@ -78,7 +78,11 @@ const IDENTIDADE = identidadeAccess().catch(() => '');
    Configuração centralizada — Atualizado p/ Modo Claro (V8)
    ================================================================= */
 const Config = Object.freeze({
-    API_URL: 'https://calm-queen-1204.controladoriaontimegestao.workers.dev',
+    /* A leitura vai direto ao Apps Script. Passava por um Worker na conta
+       pessoal do Cloudflare que só repassava a resposta: um endereço a mais,
+       fora do login do hub, e uma peça a mais para cair — sem ganhar um
+       segundo sequer. */
+    API_URL: 'https://script.google.com/macros/s/AKfycbxH_wgQAaUif1nohXLzcAHqnYDW1m7ICbFd_6Xn5YU1cve-66EvOGGetrHbsXILRHR0MQ/exec',
     APP_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxH_wgQAaUif1nohXLzcAHqnYDW1m7ICbFd_6Xn5YU1cve-66EvOGGetrHbsXILRHR0MQ/exec',
     CAIXA_JAN_2023: 421634,
     ROWS_PER_PAGE_SINT: 20,
@@ -447,6 +451,55 @@ const Utils = (() => {
 /* =================================================================
    DataService — fetch, normalização, indexação
    ================================================================= */
+/* =================================================================
+   CÓPIA DA BASE NESTE NAVEGADOR
+   -----------------------------------------------------------------
+   O Apps Script leva de 3 a 40 segundos para responder, e a tela
+   passava esse tempo todo no esqueleto. Agora ela abre na hora com a
+   última base que chegou inteira e busca a nova por trás.
+
+   A cópia vai comprimida — os 530 KB da base viram menos de 60 —,
+   porque o armazenamento do navegador é um só para todas as
+   ferramentas do hub, e o Fluxo já guarda o ano dele ali. Navegador
+   sem compressão, ou sem espaço, só fica sem o atalho: a tela abre
+   como antes.
+   ================================================================= */
+const CopiaBase = (() => {
+    const K = 'parc_base_v1';
+    const pode = () => typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
+    const paraTexto = (u8) => {
+        let s = '';
+        for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+        return btoa(s);
+    };
+    const deTexto = (b64) => {
+        const s = atob(b64), u8 = new Uint8Array(s.length);
+        for (let i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i);
+        return u8;
+    };
+    const guardar = async (texto) => {
+        if (!pode()) return;
+        try {
+            const fluxo = new Blob([texto]).stream().pipeThrough(new CompressionStream('gzip'));
+            const z = paraTexto(new Uint8Array(await new Response(fluxo).arrayBuffer()));
+            localStorage.setItem(K, JSON.stringify({ quando: Date.now(), z }));
+        } catch (e) { /* sem espaço: segue sem cópia */ }
+    };
+    const ler = async () => {
+        if (!pode()) return null;
+        try {
+            const bruto = localStorage.getItem(K);
+            if (!bruto) return null;
+            const c = JSON.parse(bruto);
+            if (!c || !c.z || !c.quando) return null;
+            const fluxo = new Blob([deTexto(c.z)]).stream().pipeThrough(new DecompressionStream('gzip'));
+            return { quando: c.quando, texto: await new Response(fluxo).text() };
+        } catch (e) { return null; }
+    };
+    const esquecer = () => { try { localStorage.removeItem(K); } catch (e) {} };
+    return { guardar, ler, esquecer };
+})();
+
 const DataService = (() => {
     let rawData = [];
     let consolidatedData = [];
@@ -612,18 +665,40 @@ const DataService = (() => {
         consolidationCache.set(cacheKey, consolidatedData);
     };
 
-    const load = async () => {
-        const url = Config.API_URL + (Config.API_URL.includes('?') ? '&' : '?') + 'v=' + Date.now();
-        const json = await fetchWithRetry(url);
+    /* Uma porta só para os dados entrarem, venham da base ou da cópia. A
+       consolidação guardada por mês é jogada fora aqui: ela era da base de
+       antes, e a tela continuaria mostrando os números velhos. */
+    const aplicar = (json) => {
+        if (!Array.isArray(json)) throw new Error((json && json.error) || 'a base respondeu num formato inesperado');
         rawData = json
             .map(normalizeKeys)
             .filter(r => r['Número'] || r['Negociação']);
+        consolidationCache.clear();
         buildLifeCycleMaps();
         buildIndexes();
     };
 
+    /* Devolve a hora em que a base chegou. */
+    const load = async () => {
+        const url = Config.API_URL + (Config.API_URL.includes('?') ? '&' : '?') + 'v=' + Date.now();
+        const json = await fetchWithRetry(url);
+        aplicar(json);
+        CopiaBase.guardar(JSON.stringify(json));
+        return Date.now();
+    };
+
+    /* Devolve a hora em que a cópia foi guardada, ou null sem cópia boa. */
+    const loadCopia = async () => {
+        const c = await CopiaBase.ler();
+        if (!c) return null;
+        try { aplicar(JSON.parse(c.texto)); }
+        catch (e) { CopiaBase.esquecer(); return null; }
+        return c.quando;
+    };
+
     return {
         load,
+        loadCopia,
         processConsolidation,
         clearCache: () => consolidationCache.clear(),
         getRawData: () => rawData,
@@ -1143,9 +1218,10 @@ const App = (() => {
     };
 
     const reloadData = async () => {
-        await DataService.load();
+        const quando = await DataService.load();
         DataService.processConsolidation(currYear, currMonth);
         reRenderTables();
+        marcarBase(quando, 'nova');
     };
 
     const setOrgaoFilter = (orgao) => {
@@ -1848,13 +1924,97 @@ const App = (() => {
         loader.appendChild(btnRetry);
     };
 
+    /* O rodapé do menu diz de quando é a base na tela e se a nova já chegou.
+       Mostrar a cópia sem dizer que é cópia seria vender número velho como
+       novo. */
+    let quandoNaTela = null;
+    const marcarBase = (quando, estado) => {
+        quandoNaTela = quando;
+        const d = new Date(quando);
+        const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const dia = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        const deHoje = d.toDateString() === new Date().toDateString();
+        const txt = $('lastSync'), caixa = txt && txt.parentNode, ponto = caixa && caixa.querySelector('.ss-dot');
+        if (!txt) return;
+        if (estado === 'nova') {
+            txt.textContent = dia + ' ' + hora;
+            if (caixa) caixa.title = 'Base atualizada às ' + hora;
+        } else {
+            txt.textContent = 'cópia de ' + (deHoje ? hora : (dia + ' ' + hora)) +
+                              (estado === 'falhou' ? ' · sem conexão' : ' · atualizando');
+            if (caixa) caixa.title = estado === 'falhou'
+                ? 'Não consegui buscar a base agora. A tela mostra a última cópia guardada neste computador, de ' + dia + ' às ' + hora + '.'
+                : 'Mostrando a cópia guardada neste computador enquanto a base nova chega.';
+        }
+        if (ponto) {
+            ponto.classList.toggle('aguardando', estado === 'atualizando');
+            ponto.classList.toggle('falhou', estado === 'falhou');
+        }
+    };
+
+    /* A base nova chega com a tela já em uso: filtros, busca, página, órgão
+       marcado e data-base de quem está olhando ficam como estavam. */
+    const reaplicar = () => {
+        const ids = ['filterSinteticoNatureza', 'filterSinteticoOrgao', 'filterDetalhadoOrgao',
+                     'filterDetalhadoNatureza', 'filterDetalhadoAno'];
+        const antes = {};
+        ids.forEach(id => { antes[id] = $(id).value; });
+        DataService.processConsolidation(currYear, currMonth);
+        populateFilters(); populateYears();
+        ids.forEach(id => {
+            const sel = $(id);
+            if (Array.from(sel.options).some(o => o.value === antes[id])) sel.value = antes[id];
+        });
+        updateDashboard();
+        reRenderTables();
+    };
+
+    const atualizarPorTras = async () => {
+        etapa(null, 35);
+        try {
+            const quando = await DataService.load();
+            reaplicar();
+            marcarBase(quando, 'nova');
+        } catch (err) {
+            marcarBase(quandoNaTela, 'falhou');
+        } finally {
+            etapa(null, 100);
+        }
+    };
+
+    let telaMontada = false;
     const init = async () => {
+        /* Com cópia guardada, a tela nasce dela e a base nova vem por trás. Se
+           a cópia não servir para montar a tela, ela é esquecida e a abertura
+           segue o caminho de sempre. */
+        if (!telaMontada) {
+            const quandoCopia = await DataService.loadCopia();
+            if (quandoCopia) {
+                try {
+                    DataService.processConsolidation(currYear, currMonth);
+                    populateFilters(); populateYears(); initDataBaseSelector();
+                    updateDashboard(); filterSintetico();
+                    lastDetalhadoFiltered = DataService.getRawData();
+                    renderDetalhado(applySort(DataService.getRawData(), 'detalhado'));
+                    $('app-content').style.display = 'flex';
+                    const loaderEl = $('loader');
+                    loaderEl.classList.add('fade-out');
+                    setTimeout(() => { loaderEl.style.display = 'none'; }, 480);
+                    initScrollSpy();
+                    telaMontada = true;
+                    marcarBase(quandoCopia, 'atualizando');
+                    atualizarPorTras();
+                    return;
+                } catch (err) { CopiaBase.esquecer(); }
+            }
+        }
+
         etapa('Conectando ao servidor...', 8);
-        try { await DataService.load(); } catch (err) { showError('Erro ao acessar os dados.', err.message); return; }
+        let quando;
+        try { quando = await DataService.load(); } catch (err) { showError('Erro ao acessar os dados.', err.message); return; }
         etapa('Lendo a base...', 45);
         try {
-            const st = new Date();
-            $('lastSync').textContent = st.toLocaleDateString('pt-BR') + ' ' + st.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            marcarBase(quando, 'nova');
             DataService.processConsolidation(currYear, currMonth);
         } catch (err) { showError('Erro ao processar os dados.', err.message); return; }
         etapa('Cruzando os dados...', 66);
@@ -1869,7 +2029,8 @@ const App = (() => {
             const loaderEl = $('loader');
             loaderEl.classList.add('fade-out');
             setTimeout(() => { loaderEl.style.display = 'none'; }, 480);
-            initScrollSpy();
+            if (!telaMontada) initScrollSpy();
+            telaMontada = true;
         } catch (err) { showError('Erro ao renderizar o dashboard.', err.message); }
     };
 
