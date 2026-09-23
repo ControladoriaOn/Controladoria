@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fluxo de Caixa · On Time</title>
+
+<link rel="icon" type="image/png" href="../favicon.png?v=2">
+<link rel="apple-touch-icon" href="../favicon.png?v=2">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="styles.css">
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+</head>
+<body>
+
+<!-- mesmo fundo vivo das outras ferramentas do hub -->
+<div class="fundo" aria-hidden="true">
+  <span class="brilho b1"></span>
+  <span class="brilho b2"></span>
+  <span class="brilho b3"></span>
+  <span class="grao"></span>
+</div>
+
+<div class="fio" id="fio" aria-hidden="true"><span id="fio-fill"></span></div>
+
+<header>
+  <div class="marca">
+    <div class="marca-icone">
+      <img src="../logo-mascote.jpg" alt=""
+           onerror="this.style.display='none'; this.parentNode.textContent='₣';">
+    </div>
+    <div class="marca-texto">
+      <h1>Fluxo de Caixa</h1>
+      <span id="headerData"></span>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="stamp" id="stamp" role="status" aria-live="polite">
+      <span class="dot off"></span>
+      <span class="stamp-text" id="stamp-text">carregando…</span>
+    </div>
+    <button class="btn btn-ghost" id="btnRecarregar" type="button" title="Recarregar">
+      <i class="fa-solid fa-rotate"></i>
+    </button>
+    <button class="btn btn-ghost btn-sm" id="btnVisao" type="button" title="Alternar entre os dias do mês e o fechamento de cada mês">
+      <i class="fa-solid fa-calendar"></i> <span>Ver o ano</span>
+    </button>
+    <button class="btn btn-ghost btn-sm" id="btnDias" type="button" title="Mostrar ou esconder os dias sem movimento">
+      <i class="fa-solid fa-calendar-week"></i> <span>Dias úteis</span>
+    </button>
+    <button class="btn btn-ghost btn-sm" id="btnEditar" type="button"
+            title="Entrar em modo edição para lançar e importar">
+      <i class="fa-solid fa-pen"></i> <span>Editar</span>
+    </button>
+    <button class="btn btn-ghost btn-sm" id="btnImportar" type="button" hidden
+            title="Importar o relatório de contas a pagar">
+      <i class="fa-solid fa-file-import"></i> <span>Importar</span>
+    </button>
+    <button class="btn btn-ghost btn-sm" id="btnTotvs" type="button"
+            title="Conferir o fluxo com o relatório de baixas do TOTVS (FINR190)">
+      <i class="fa-solid fa-scale-balanced"></i> <span>Conferir</span>
+    </button>
+    <button class="btn btn-primary" id="btnExportar" type="button">
+      <i class="fa-solid fa-file-excel"></i> <span>Exportar</span>
+    </button>
+    <a id="btn-hub" class="btn btn-ghost" href="../" rel="noopener" hidden title="Voltar ao Hub">
+      <i class="fa-solid fa-arrow-left-long"></i>
+    </a>
+  </div>
+</header>
+
+<main class="content" id="content">
+  <!-- Esqueleto do carregamento. Não é uma tela por cima da página: é a própria
+       página vazia, com os blocos nos lugares onde a barra do mês e a tabela vão
+       nascer. O cabeçalho aparece de verdade desde o primeiro instante, e quem
+       diz o andamento é o fio laranja lá em cima. -->
+  <div id="loader" role="status" aria-live="polite" aria-label="Carregando">
+    <div class="sk-barra">
+      <div class="sk-bloco sk-botao"></div>
+      <div class="sk-bloco sk-mes"></div>
+      <div class="sk-bloco sk-botao"></div>
+      <div class="sk-espaco"></div>
+      <div class="sk-bloco sk-resumo"></div>
+    </div>
+    <div class="sk-bloco sk-tabela"></div>
+  </div>
+  <div id="painel"></div>
+</main>
+
+<!-- detalhe de uma célula: os títulos que formam aquele número -->
+<div class="modal" id="modal-detalhe">
+  <div class="modal-box">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-detalhe" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3><i class="fa-solid fa-list-ul"></i> <span id="det-titulo">Detalhe</span></h3>
+      <p id="det-sub"></p>
+    </div>
+    <div class="modal-body" id="det-corpo"></div>
+    <!-- O total e o copiar ficam no rodapé fixo, não no corpo que rola: numa
+         lista de trinta títulos eles sumiam abaixo da dobra, justamente
+         quando são mais úteis. -->
+    <div class="modal-foot">
+      <span class="det-pe" id="det-pe"></span>
+      <button class="btn btn-ghost" type="button" data-fechar="modal-detalhe">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- digitação de uma linha manual -->
+<div class="modal" id="modal-lanc">
+  <div class="modal-box sm">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-lanc" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3><i class="fa-solid fa-pen"></i> <span id="lanc-titulo">Lançar</span></h3>
+      <p id="lanc-sub"></p>
+    </div>
+    <div class="modal-body">
+      <div class="campos">
+        <div class="campo wide">
+          <label>Valor</label>
+          <input type="text" id="lanc-valor" inputmode="decimal" placeholder="0,00">
+        </div>
+        <div class="campo wide">
+          <label>Observação (opcional)</label>
+          <input type="text" id="lanc-desc" placeholder="de onde veio, para quem foi…">
+        </div>
+      </div>
+      <div class="note info" id="lanc-nota" style="margin-top:14px" hidden></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger btn-sm" type="button" id="lanc-excluir" hidden>Excluir</button>
+      <button class="btn btn-ghost" type="button" data-fechar="modal-lanc">Cancelar</button>
+      <button class="btn btn-primary" type="button" id="lanc-salvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- posição de saldos do dia: todas as contas de uma vez, que é como se digita -->
+<div class="modal" id="modal-saldos">
+  <div class="modal-box">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-saldos" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3><i class="fa-solid fa-building-columns"></i> <span id="sal-titulo">Posição de saldos</span></h3>
+      <p id="sal-sub"></p>
+    </div>
+    <div class="modal-body" id="sal-corpo"></div>
+    <div class="modal-foot">
+      <span class="sal-total" id="sal-total"></span>
+      <button class="btn btn-ghost" type="button" data-fechar="modal-saldos">Cancelar</button>
+      <button class="btn btn-primary" type="button" id="sal-salvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Importação. Duas portas na mesma tela: a de todo dia, que atualiza um dia
+     ou uma semana, e a carga do ano, escondida atrás de um link porque é usada
+     uma vez e substitui tudo. Nenhuma das duas grava sem mostrar antes. -->
+<div class="modal" id="modal-importar">
+  <div class="modal-box lg">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-importar" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3><i class="fa-solid fa-file-import"></i> <span id="imp-titulo">Atualizar um dia</span></h3>
+      <p id="imp-sub">Solte o relatório de contas a pagar. Nada é gravado antes de você conferir.</p>
+    </div>
+    <div class="modal-body" id="imp-corpo"></div>
+    <div class="modal-foot imp-foot">
+      <button class="imp-link" id="imp-alternar" type="button">carga inicial do ano</button>
+      <button class="imp-link imp-link-perigo" id="imp-limpar" type="button">limpar a base</button>
+      <span class="imp-espaco"></span>
+      <button class="btn btn-ghost" type="button" data-fechar="modal-importar">Fechar</button>
+      <button class="btn btn-primary" id="imp-confirmar" type="button" disabled>Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Conferência com o TOTVS. Solta-se o relatório de baixas (FINR190) e a tela
+     mostra o que bate, o que não bate e o que dá para fazer com cada caso.
+     Mora antes da janela da senha de propósito: entrar no modo edição daqui de
+     dentro abre a senha, e ela precisa aparecer por cima desta. -->
+<div class="modal" id="modal-totvs">
+  <div class="modal-box xl">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-totvs" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3><i class="fa-solid fa-scale-balanced"></i> Conferência com o TOTVS</h3>
+      <p>O fluxo contra o relatório de baixas: o que bate, o que não bate e se as baixas andam em dia.</p>
+    </div>
+    <div class="modal-body" id="tv-corpo"></div>
+    <div class="modal-foot">
+      <span class="tv-pe" id="tv-pe"></span>
+      <button class="imp-link" id="tv-novo" type="button" hidden>conferir outro arquivo</button>
+      <button class="btn btn-ghost" type="button" data-fechar="modal-totvs">Fechar</button>
+      <button class="btn btn-primary" id="tv-aplicar" type="button" hidden disabled>Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Senha de gravação. Antes isso era o prompt do navegador, que não diz de
+     onde vem nem o que vai acontecer, e em alguns navegadores nem aparece. -->
+<div class="modal" id="modal-senha">
+  <div class="modal-box">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-senha" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3><i class="fa-solid fa-lock"></i> Modo edição</h3>
+      <p>Digite a senha de gravação do fluxo de caixa para lançar, importar ou limpar.</p>
+    </div>
+    <div class="modal-body">
+      <div class="campo-senha">
+        <input type="password" id="senha-campo" class="imp-campo" autocomplete="off"
+               placeholder="senha de gravação">
+        <button type="button" id="senha-olho" class="olho" title="Mostrar a senha"
+                aria-label="Mostrar a senha"><i class="fa-solid fa-eye"></i></button>
+      </div>
+      <div class="note info" id="senha-caps" hidden>
+        <i class="fa-solid fa-arrow-up"></i>
+        <div>Caps Lock está ligado — a senha diferencia maiúsculas de minúsculas.</div>
+      </div>
+      <div class="note danger" id="senha-nota" hidden></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" data-fechar="modal-senha">Cancelar</button>
+      <button class="btn btn-primary" id="senha-ok" type="button">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quem está lançando. A tela tenta descobrir sozinha pelo login do hub;
+     quando esse caminho não responde, pergunta aqui — dentro da própria
+     ferramenta, e não naquela caixinha cinza do navegador, que some sem dizer
+     nada e leva o lançamento junto. O nome fica guardado neste navegador,
+     então a pergunta acontece uma vez, não a cada aba aberta. -->
+<div class="modal" id="modal-nome">
+  <div class="modal-box">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-nome" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3><i class="fa-solid fa-user-pen"></i> Quem está lançando?</h3>
+      <p>O nome fica registrado no lançamento, para depois se saber quem digitou o quê.</p>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="nome-campo" class="imp-campo" autocomplete="name"
+             placeholder="seu nome">
+      <div class="note danger" id="nome-nota" hidden></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" data-fechar="modal-nome">Cancelar</button>
+      <button class="btn btn-primary" id="nome-ok" type="button">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmar. Uma janela só para todo mundo que precisa avisar antes de
+     mexer: o texto muda, a forma não. Nasceu quando a exclusão de um título
+     entrou — dizer "tem certeza?" num confirm() do navegador não deixaria
+     explicar o que acontece com o valor da célula, que é a única coisa que a
+     pessoa precisa saber para decidir. -->
+<div class="modal" id="modal-confirma">
+  <div class="modal-box">
+    <div class="modal-head">
+      <button class="modal-x" type="button" data-fechar="modal-confirma" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <h3 id="cf-titulo"><i class="fa-solid fa-circle-question"></i> Confirmar</h3>
+    </div>
+    <div class="modal-body" id="cf-corpo"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" type="button" data-fechar="modal-confirma">Cancelar</button>
+      <button class="btn btn-primary" id="cf-ok" type="button">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Exportar. Antes o botão baixava na hora o mês que estivesse aberto, e
+     conferir um fechamento de janeiro a julho virava sete downloads e um
+     copia-e-cola. Agora ele pergunta o recorte primeiro: o período sempre
+     começa em janeiro, você escolhe onde ele termina, e diz se quer a
+     estrutura inteira ou só os totais.
+
+     O dia a dia fica com quadradinho, e não com bolinha, de propósito: ele é
+     independente do nível. Dá para pedir um dia a dia analítico e um dia a
+     dia sintético — e a forma do controle é o que conta isso antes de
+     qualquer texto explicar. -->
+<div class="modal" id="modal-exportar">
+  <div class="modal-box exp-box">
+    <div class="exp-head">
+      <div class="exp-icone"><i class="fa-solid fa-file-export"></i></div>
+      <div class="exp-titulo">
+        <h3>Exportar relatório</h3>
+        <p>O período começa sempre em janeiro. Escolha até onde ele vai.</p>
+      </div>
+      <button class="modal-x" type="button" data-fechar="modal-exportar" title="Fechar" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <div class="exp-corpo">
+      <div class="exp-secao">Período</div>
+      <div class="exp-periodo">
+        <select id="exp-ate" class="exp-select" aria-label="Até quando"></select>
+        <div class="exp-chip"><i class="fa-solid fa-calendar-days"></i><span id="exp-chip-txt">—</span></div>
+      </div>
+
+      <div class="exp-secao">Estrutura</div>
+      <label class="exp-cartao" data-cartao="dia">
+        <span class="exp-ico"><i class="fa-solid fa-table-cells"></i></span>
+        <span class="exp-txt"><b>Dia a dia</b><em>Uma coluna por dia, de 01/01 até o fim do mês escolhido</em></span>
+        <input type="checkbox" id="exp-dia" class="exp-input">
+        <span class="exp-marca exp-marca-quad"></span>
+      </label>
+      <label class="exp-cartao" data-cartao="analitico">
+        <span class="exp-ico"><i class="fa-solid fa-list-ul"></i></span>
+        <span class="exp-txt"><b>Analítico</b><em>A estrutura inteira, conta por conta</em></span>
+        <input type="radio" name="exp-nivel" value="analitico" class="exp-input" checked>
+        <span class="exp-marca"></span>
+      </label>
+      <label class="exp-cartao" data-cartao="sintetico">
+        <span class="exp-ico"><i class="fa-solid fa-layer-group"></i></span>
+        <span class="exp-txt"><b>Sintético</b><em>Saldos, os totais de entrada e saída e os grupos</em></span>
+        <input type="radio" name="exp-nivel" value="sintetico" class="exp-input">
+        <span class="exp-marca"></span>
+      </label>
+
+      <div class="exp-secao">Formato de saída</div>
+      <div class="exp-formato" role="group" aria-label="Formato de saída">
+        <button type="button" class="exp-fmt" data-fmt="pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+        <button type="button" class="exp-fmt ativo" data-fmt="xlsx"><i class="fa-solid fa-file-excel"></i> Excel</button>
+      </div>
+
+      <div class="note info" id="exp-aviso" hidden>
+        <i class="fa-solid fa-circle-info"></i>
+        <div>Dia a dia sai só em Excel: são centenas de colunas, que não cabem numa página.</div>
+      </div>
+    </div>
+
+    <div class="exp-pe">
+      <span class="exp-sumario" id="exp-sumario"></span>
+      <button class="btn btn-ghost" type="button" data-fechar="modal-exportar">Cancelar</button>
+      <button class="btn btn-primary" id="exp-gerar" type="button"><i class="fa-solid fa-download"></i> Exportar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Véu de espera. A tabela continua na tela, coberta: trocá-la por um
+     esqueleto seria uma piscada pior que a própria espera. -->
+<div class="veu" id="veu" hidden>
+  <div class="veu-caixa">
+    <div class="veu-giro"></div>
+    <span id="veu-texto">Buscando os números mais recentes…</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- A tela inteira mora aqui. (O comentário que dizia que esta linha era "de
+     teste e não existe em produção" era resto da época das duas URLs, abolida
+     faz tempo: hoje há uma URL só, escrita dentro do próprio fluxo.js. Apagar
+     esta linha deixa a ferramenta em branco.) -->
+<script src="conferencia-totvs.js"></script>
+<script src="fluxo.js"></script>
+</body>
+</html>

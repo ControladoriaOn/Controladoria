@@ -1,0 +1,5745 @@
+'use strict';
+/* ============================================================================
+   FLUXO DE CAIXA · ON TIME
+   ----------------------------------------------------------------------------
+   A conta é a mesma da planilha que a controladoria sempre usou:
+
+       saldo inicial + entradas - saídas = saldo final
+
+   O saldo inicial de um dia é o saldo final do dia anterior. As entradas são
+   digitadas aqui. As saídas vêm somadas do relatório de pagamentos que já é
+   enviado todo dia — ninguém redigita nada.
+
+   Embaixo fica a posição de saldos dos bancos, que é digitada, e a diferença
+   entre ela e o saldo final calculado. Diferença fora de zero quer dizer que
+   algum lançamento não passou por aqui: é o alarme da tela.
+
+   Dia passado mostra o que aconteceu. Dia de hoje em diante mostra o previsto,
+   porque um pagamento feito hoje só vira baixa amanhã.
+   ============================================================================ */
+
+/* ============================================================================
+   QUAL BASE ESTA CÓPIA USA
+   ----------------------------------------------------------------------------
+   Duas bases: a oficial e a de teste, cada uma com a sua planilha e o seu
+   script. Quem escolhe é a pasta em que a página está: a pasta chamada
+   exatamente "Fluxo-de-Caixa-teste" fala com o script de teste; qualquer outra
+   — a oficial, "Fluxo-de-Caixa" — fala com produção.
+
+   É isso que deixa os arquivos idênticos nas duas pastas. Testar é subir os
+   arquivos na pasta de teste; aprovar é subir OS MESMOS arquivos na pasta
+   oficial, sem trocar linha nenhuma. Nada precisa ser lembrado na hora de
+   promover — que é justamente a hora em que se esquece.
+
+   A HISTÓRIA POR TRÁS DISTO.
+
+   Já houve uma escolha por pasta antes, e ela virou armadilha: o teste era
+   qualquer pasta com "teste" no nome, e a URL escrita como produção era a do
+   PAGAMENTOS, copiada junto quando esta ferramenta nasceu dali. Renomear a
+   pasta faria o fluxo falar com o script errado, e como o envio é no-cors, a
+   tela continuaria dizendo "Salvo." sem nada gravado. Por isso ficou uma URL
+   só por um tempo.
+
+   A volta da escolha por pasta vem com as três travas que faltavam:
+     · o nome da pasta de teste é exato, não "qualquer coisa com teste";
+     · as duas URLs estão escritas aqui, uma embaixo da outra, conferidas;
+     · na base de teste a tela ganha uma faixa laranja no alto, e a memória
+       do navegador fica separada — a cópia do ano guardada por uma base
+       nunca aparece na outra.
+   ============================================================================ */
+const URL_PRODUCAO = 'https://script.google.com/macros/s/AKfycbxXdtGsm_3aDGqo52LTXjQ4CJu_zuXdivRfS9dnb6B8TYhyWY_E_rFvNYxrxO5BIfRIfA/exec';
+const URL_TESTE    = 'https://script.google.com/macros/s/AKfycbwfvfIjRzMyYy1UkD8QtVIzv7elZ-ZcBlvCarP5DI0rN34yWWf_L8nNxnCA98pi-mwI/exec';
+const PASTA_TESTE  = 'fluxo-de-caixa-teste';
+
+const EH_TESTE = (() => {
+  try {
+    return decodeURIComponent(location.pathname).toLowerCase().split('/').indexOf(PASTA_TESTE) >= 0;
+  } catch(e){ return false; }
+})();
+
+/* Base de teste sem URL de teste não cai na produção: fica sem URL, e a tela
+   para com o aviso de configuração em vez de gravar no lugar errado. */
+const URL_BASE = EH_TESTE ? URL_TESTE : URL_PRODUCAO;
+
+/* As chaves de memória do navegador que não podem ser compartilhadas entre as
+   duas bases: a cópia do ano, a senha da sessão e o registro de abertura. O
+   nome e os grupos recolhidos continuam comuns — são da pessoa, não da base. */
+const AMBIENTE = EH_TESTE ? 'teste_' : '';
+
+const CONFIG = {
+  DATA_URL: URL_BASE,
+  RETRIES: 3,
+  BACKOFF_MS: 600,
+  /* Tempo que a tela confia no carimbo. Passado isso, entrar em modo edição
+     recarrega de qualquer jeito — o carimbo não enxerga edição feita à mão
+     direto na planilha, e uma aba esquecida aberta a manhã inteira é
+     justamente o caso em que isso importa. */
+  IDADE_MAX_MS: 20 * 60 * 1000,
+};
+
+/* ------------------------------------------------------------------ DOM */
+const el = id => document.getElementById(id);
+function h(tag, attrs, filhos){
+  const e = document.createElement(tag);
+  if (attrs) for (const k in attrs){
+    if (k === 'class') e.className = attrs[k];
+    else if (k === 'text') e.textContent = attrs[k];
+    else if (k === 'html') e.innerHTML = attrs[k];
+    else if (attrs[k] !== null && attrs[k] !== undefined && attrs[k] !== false) e.setAttribute(k, attrs[k]);
+  }
+  (filhos || []).forEach(f => { if (f) e.appendChild(typeof f === 'string' ? document.createTextNode(f) : f); });
+  return e;
+}
+const icone = c => h('i', { class:'fa-solid ' + c });
+
+function toast(msg, erro){
+  const t = el('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (erro ? ' err' : '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { t.className = 'toast'; }, 3600);
+}
+
+/* -------------------------------------------------------------- números */
+const num = v => Number(v) || 0;
+
+/* Duas leituras do mesmo número. Na compacta, milhões sem centavo, para caber
+   mais dias na tela. Na exata, tudo com as duas casas, que é como se confere
+   caixa. O botão no alto troca uma pela outra, e a escolha fica guardada.
+   Sem "R$": a tela inteira é dinheiro, repetir o símbolo em cada célula só
+   rouba espaço de dígito. */
+function fmtNum(v){
+  if (v === undefined || v === null || v === '') return '';
+  const n = num(v);
+  if (!n) return '–';                      // zero contábil
+  const casas = 2;
+  return n.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+}
+const fmtGrade = fmtNum;
+const fmtExato = v => num(v).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+
+function fmtData(iso){
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? (m[3] + '/' + m[2] + '/' + m[1]) : String(iso || '');
+}
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho',
+               'julho','agosto','setembro','outubro','novembro','dezembro'];
+const DOW = ['dom','seg','ter','qua','qui','sex','sáb'];
+function maiuscula(t){ return t.charAt(0).toUpperCase() + t.slice(1); }
+function nomeMes(mes){
+  const p = String(mes).split('-');
+  return maiuscula(MESES[(+p[1]) - 1]) + ' de ' + p[0];
+}
+function mesAtual(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function addMes(mes, n){
+  const p = String(mes).split('-');
+  const d = new Date(+p[0], (+p[1]) - 1 + n, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+/* Aceita 1.234,56 e 1234.56 — quem digita vem do Excel e do banco. */
+function parseValor(txt){
+  let s = String(txt == null ? '' : txt).trim().replace(/R\$\s*/i, '').replace(/\s/g, '');
+  if (!s) return null;
+  const neg = /^\(.*\)$/.test(s) || s.charAt(0) === '-';
+  s = s.replace(/[()\-]/g, '');
+  if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s);
+  if (isNaN(n)) return null;
+  return neg ? -n : n;
+}
+
+/* ------------------------------------------------------------- estado */
+const state = {
+  mes: mesAtual(),
+  dados: null,
+  calc: null,
+  soUteis: true,        // dia sem movimento nem saldo fica escondido
+  exato: true,          // centavos sempre à mostra; o modo compacto saiu
+  visao: 'mes',         // 'mes' = dias do mês em foco; 'ano' = um mês por coluna
+  recolhidos: {},       // grupos fechados
+  autor: '',
+  primeiraPintura: true,
+  podeEditar: false,
+  chave: '',                  // senha de gravação, guardada só nesta sessão
+  edicao: null,
+  cache: {},            // meses já abertos nesta sessão
+  carregadoEm: 0,       // quando o payload em uso chegou (Date.now)
+  pendentes: {},        // células com gravação em curso: 'indo' ou 'falhou'
+};
+
+/* ------------------------------------------------ veio pelo hub? ------
+   Mesma regra das outras ferramentas: quem abre o link direto vê, mas não
+   digita. Editar é para quem entrou pelo hub. */
+const HubLink = {
+  KEY: 'came_from_hub_fluxo',
+
+  /* A pasta desta ferramenta, seja qual for o endereço em que ela esteja:
+     /Fluxo de Caixa/ no domínio do hub, /Controladoria/Fluxo/ no GitHub Pages.
+     Descobrir em vez de fixar é o que faz isto continuar certo quando o
+     endereço muda — foi exatamente assim que quebrou quando o hub saiu do
+     github.io e passou a morar na raiz de hub.ontimelogistica.com.br. */
+  pasta(){
+    return location.pathname.replace(/[^/]*$/, '');
+  },
+
+  veioDoHub(){
+    try {
+      if (document.referrer){
+        const ref = new URL(document.referrer);
+        /* Mesma origem e de fora desta pasta: isso é o hub ou outra
+           ferramenta, e o domínio inteiro está atrás do Cloudflare Access.
+           Quem chega digitando o endereço não tem referrer e fica só lendo. */
+        if (ref.origin === location.origin &&
+            ref.pathname.indexOf(this.pasta()) !== 0) return true;
+      }
+    } catch(e){}
+    try { if (new URLSearchParams(location.search).has('from')) return true; } catch(e){}
+    try { if (sessionStorage.getItem(this.KEY) === '1') return true; } catch(e){}
+    return false;
+  },
+  init(){
+    const ok = this.veioDoHub();
+    if (ok){
+      try { sessionStorage.setItem(this.KEY, '1'); } catch(e){}
+      const n = el('btn-hub'); if (n) n.hidden = false;
+    }
+    return ok;
+  },
+};
+
+/* ---------------------------------------------------------------------------
+   QUEM ESTÁ LOGADO, SEGUNDO O CLOUDFLARE ACCESS
+   ---------------------------------------------------------------------------
+   A ferramenta roda atrás do Access, que já sabe quem entrou. Este endereço é
+   servido pelo próprio Cloudflare, na mesma origem da página, e devolve o
+   e-mail da sessão — sem senha, sem configuração, sem chamada para fora.
+
+   Fora do Access ele não existe: a função devolve vazio e a tela volta a pedir
+   o nome digitado, como antes.
+
+   O que isto NÃO é: o e-mail viaja no corpo da mensagem, escrito por esta
+   página. Quem contornar o hub e postar direto no endereço do script pode
+   escrever o e-mail que quiser. Quem impede essa pessoa é a senha. Isto
+   identifica entre os autorizados, não prova.
+   ------------------------------------------------------------------------- */
+async function identidadeAccess(){
+  try {
+    const r = await fetch('/cdn-cgi/access/get-identity', { credentials:'include' });
+    if (!r.ok) return '';
+    const d = await r.json();
+    return String((d && (d.email || d.name)) || '').trim();
+  } catch(e){ return ''; }
+}
+
+/* Pergunta uma vez, no carregamento. Quem grava espera esta promessa. */
+let IDENTIDADE = null;
+
+/* O nome de quem digita fica no navegador, não na aba. Antes ficava em
+   sessionStorage: cada aba nova perguntava de novo, e a pergunta vinha na
+   caixinha do navegador — fechá-la sem querer cancelava o lançamento inteiro
+   em silêncio, que foi exatamente o que aconteceu. */
+function lembrarAutor(nome){
+  const limpo = String(nome || '').trim();
+  if (!limpo) return '';
+  state.autor = limpo;
+  try { localStorage.setItem('fluxo_autor', limpo); } catch(e){}
+  try { sessionStorage.setItem('fluxo_autor', limpo); } catch(e){}
+  return limpo;
+}
+
+function autorGuardado(){
+  try { return (localStorage.getItem('fluxo_autor') ||
+                sessionStorage.getItem('fluxo_autor') || '').trim(); } catch(e){ return ''; }
+}
+
+/* A janela do nome, dentro da ferramenta. Devolve o nome, ou vazio se a
+   pessoa desistir — e aí quem chamou avisa, em vez de sumir. */
+const Nome = {
+  pedir(){
+    return new Promise(resolve => {
+      const campo = el('nome-campo'), ok = el('nome-ok'), nota = el('nome-nota');
+      campo.value = autorGuardado();
+      nota.hidden = true;
+      mostrarModal('modal-nome');
+      setTimeout(() => { try { campo.focus(); campo.select(); } catch(e){} }, 60);
+
+      const fechar = valor => {
+        ok.onclick = null; campo.onkeydown = null;
+        document.removeEventListener('fluxo:modal-fechado', aoFechar);
+        fecharModal('modal-nome');
+        resolve(valor);
+      };
+      const aoFechar = e => { if (e.detail === 'modal-nome') fechar(''); };
+      document.addEventListener('fluxo:modal-fechado', aoFechar);
+
+      const tentar = () => {
+        const v = (campo.value || '').trim();
+        if (v.length < 2){
+          nota.hidden = false;
+          nota.textContent = 'Escreva seu nome para o lançamento ficar identificado.';
+          campo.focus();
+          return;
+        }
+        fechar(v);
+      };
+      ok.onclick = tentar;
+      campo.onkeydown = e => { if (e.key === 'Enter') tentar(); };
+    });
+  },
+};
+
+/* Quem está lançando. Nesta ordem: quem já foi identificado nesta tela, o
+   login do hub (que pode responder com atraso), o nome guardado no navegador
+   e, em último caso, a pergunta. */
+async function garantirAutor(){
+  if (state.autor) return state.autor;
+  try { await IDENTIDADE; } catch(e){}
+  if (state.autor) return state.autor;
+  const guardado = autorGuardado();
+  if (guardado) return lembrarAutor(guardado);
+  return lembrarAutor(await Nome.pedir());
+}
+
+/* ---------------------------------------------------------------------------
+   SENHA DE GRAVAÇÃO
+   ---------------------------------------------------------------------------
+   O envio é no-cors: o navegador não deixa ler a resposta do script. Por isso
+   a senha é conferida ANTES, por um GET, na hora de guardá-la. Descobrir que
+   estava errada só depois de mandar gravar seria descobrir tarde demais.
+   ------------------------------------------------------------------------- */
+const Chave = {
+  K: 'fluxo_' + AMBIENTE + 'chave',
+  exigida: false,
+
+  /* A pergunta "o script exige senha?" tem TRÊS respostas, não duas: exige,
+     não exige, e ainda não voltou. A terceira existia de fato — a consulta sai
+     no carregamento e não é esperada, para não segurar o desenho da tela — mas
+     valia como "não exige" enquanto estivesse no ar. E ela não volta rápido: o
+     Apps Script atende um pedido por vez por usuário, então ela entra na fila
+     atrás da carga do ano, que leva de quatro a trinta e cinco segundos.
+
+     Quem clicasse em "Editar" nesses segundos entrava sem senha nenhuma. A
+     tela ficava toda clicável, cada gravação saía com o campo em branco, o
+     script recusava — e a recusa não tinha como voltar, porque o envio é cego.
+     A pessoa trabalhava minutos a fio contra uma porta fechada, vendo
+     "Importação concluída" no fim. */
+  sabido: false,        // a resposta já chegou?
+  emCurso: null,        // a consulta que está a caminho
+  conferida: false,     // a senha desta sessão já foi conferida com o script
+
+  carregar(){
+    try { state.chave = sessionStorage.getItem(this.K) || ''; } catch(e){}
+  },
+
+  /* Uma consulta só, para as duas perguntas: o script exige senha, e a que
+     está guardada nesta sessão ainda vale. Vai pela rota que não abre planilha
+     nenhuma — a antiga contava seis tabelas do outro lado só para responder
+     isso, e entrava na fila do Apps Script junto com a carga do ano. */
+  async perguntar(chave){
+    const url = CONFIG.DATA_URL + '?senha=1&t=' + Date.now() +
+      (chave === undefined ? '' : ('&chave=' + encodeURIComponent(chave)));
+    const r = await fetch(url);
+    const d = await r.json();
+    /* Script antigo não conhece a rota nova e devolve outra coisa — aí a
+       pergunta vai pelo caminho de antes, que é lento mas responde. Erro
+       declarado (ok:false) não é isso: é o script dizendo que falhou, e
+       insistir por outra rota só trocaria uma falha por outra, com o risco de
+       a segunda responder por engano. */
+    if (d && d.ok === false) return d;
+    if (!d || d.exige_chave === undefined){
+      const r2 = await fetch(CONFIG.DATA_URL + '?check=1&t=' + Date.now() +
+        (chave === undefined ? '' : ('&chave=' + encodeURIComponent(chave))));
+      return await r2.json();
+    }
+    return d;
+  },
+
+  /* Guarda a própria consulta, não só o resultado: é ela que o garantir()
+     espera quando alguém chega antes da resposta. */
+  status(){
+    this.emCurso = (async () => {
+      const d = await this.perguntar(state.chave || undefined);
+      if (!d || d.ok === false) return false;
+      this.exigida = !!d.exige_chave;
+      this.sabido = true;
+      if (this.exigida && state.chave){
+        if (d.chave_ok === true) this.conferida = true;
+        else {
+          this.esquecer();
+          toast('A senha de gravação mudou. Vou pedir a nova na próxima gravação.', true);
+        }
+      }
+      return true;
+    })().catch(() => false);
+    return this.emCurso;
+  },
+
+  esquecer(){
+    state.chave = '';
+    this.conferida = false;
+    try { sessionStorage.removeItem(this.K); } catch(e){}
+  },
+
+  /* Devolve 'ok', 'errada' ou 'falhou' — três coisas diferentes que antes
+     viravam a mesma frase na tela. Dizer "senha incorreta" quando na verdade o
+     script não respondeu manda a pessoa digitar de novo o que já estava certo,
+     que foi exatamente o que aconteceu. */
+  async conferir(chave){
+    let d;
+    try { d = await this.perguntar(chave); }
+    catch(e){ return 'falhou'; }
+    if (!d || d.ok === false) return 'falhou';
+    if (!d.exige_chave) return 'ok';
+    return d.chave_ok === true ? 'ok' : 'errada';
+  },
+
+  /* Devolve true quando pode gravar — e só responde depois de saber do que
+     está falando. A versão anterior começava por "se não exige senha, pode
+     entrar", e nos primeiros segundos "não exige" não era uma resposta: era a
+     ausência dela. */
+  async garantir(){
+    if (!this.sabido && this.emCurso){ try { await this.emCurso; } catch(e){} }
+    /* Segunda chance: a primeira consulta pode ter caído na fila junto com a
+       carga do ano e morrido no caminho. Esta sai sozinha e volta rápido. */
+    if (!this.sabido){ try { await this.status(); } catch(e){} }
+    if (!this.sabido){
+      toast('Não consegui confirmar com o script se a gravação pede senha. ' +
+            'Tente de novo em alguns segundos.', true);
+      return false;
+    }
+
+    if (!this.exigida) return true;
+    if (state.chave && this.conferida) return true;
+
+    /* Senha guardada nesta sessão passa pela conferência em vez de valer só
+       por existir: guardada e certa são coisas diferentes. */
+    if (state.chave){
+      const r = await this.conferir(state.chave);
+      if (r === 'ok'){ this.conferida = true; return true; }
+      if (r === 'falhou'){
+        toast('Não consegui conferir a senha agora. Tente de novo em alguns segundos.', true);
+        return false;
+      }
+      this.esquecer();
+    }
+    return await this.pedir();
+  },
+
+  /* Pede a senha numa janela da própria ferramenta. A senha fica guardada
+     enquanto a aba estiver aberta: uma vez por sessão, não a cada gravação. */
+  pedir(nota){
+    return new Promise(resolve => {
+      const campo = el('senha-campo'), ok = el('senha-ok'), aviso = el('senha-nota');
+      const olho = el('senha-olho'), caps = el('senha-caps');
+      campo.value = '';
+      campo.type = 'password';
+      aviso.hidden = !nota;
+      if (nota) aviso.textContent = nota;
+      caps.hidden = true;
+
+      /* Ver o que se digitou. Sem isso não dá para achar o erro numa senha
+         longa — e errar sem saber onde é o que mais irrita. */
+      const olhar = mostrar => {
+        campo.type = mostrar ? 'text' : 'password';
+        olho.innerHTML = '<i class="fa-solid fa-eye' + (mostrar ? '-slash' : '') + '"></i>';
+        olho.title = mostrar ? 'Esconder a senha' : 'Mostrar a senha';
+        campo.focus();
+      };
+      olho.onclick = () => olhar(campo.type === 'password');
+      olhar(false);
+
+      /* Caps Lock ligado é a causa mais comum de errar uma senha certa. */
+      const verCaps = e => {
+        try { caps.hidden = !e.getModifierState('CapsLock'); } catch(err){}
+      };
+      campo.addEventListener('keydown', verCaps);
+      campo.addEventListener('keyup', verCaps);
+
+      mostrarModal('modal-senha');
+      setTimeout(() => { try { campo.focus(); } catch(e){} }, 60);
+
+      const fechar = valor => {
+        ok.onclick = null; campo.onkeydown = null; olho.onclick = null;
+        campo.removeEventListener('keydown', verCaps);
+        campo.removeEventListener('keyup', verCaps);
+        campo.type = 'password';
+        campo.value = '';
+        document.removeEventListener('fluxo:modal-fechado', aoFechar);
+        fecharModal('modal-senha');
+        resolve(valor);
+      };
+      const aoFechar = e => { if (e.detail === 'modal-senha') fechar(false); };
+      document.addEventListener('fluxo:modal-fechado', aoFechar);
+
+      const rotuloOk = ok.textContent;
+      const tentar = async () => {
+        const digitada = (campo.value || '').trim();
+        if (!digitada) return;
+        /* A janela ficava parada, sem dizer nada, enquanto a conferência ia e
+           voltava. Agora o botão conta o que está acontecendo. */
+        ok.disabled = true; ok.textContent = 'Conferindo…';
+        aviso.hidden = true;
+        const r = await this.conferir(digitada);
+        ok.disabled = false; ok.textContent = rotuloOk;
+
+        if (r === 'falhou'){
+          aviso.hidden = false;
+          aviso.textContent = 'Não consegui falar com o script agora — a senha não foi conferida. ' +
+                              'Tente de novo em alguns segundos.';
+          campo.focus(); campo.select();
+          return;
+        }
+        if (r === 'errada'){
+          aviso.hidden = false;
+          aviso.textContent = 'Senha incorreta. Tente de novo.';
+          campo.value = ''; campo.focus();
+          return;
+        }
+        state.chave = digitada;
+        this.conferida = true;          // acabou de vir do script
+        try { sessionStorage.setItem(this.K, digitada); } catch(e){}
+        fechar(true);
+      };
+      ok.onclick = tentar;
+      campo.onkeydown = e => { verCaps(e); if (e.key === 'Enter') tentar(); };
+    });
+  },
+};
+
+/* ------------------------------------------------------------- rede --- */
+async function buscarJson(url){
+  let erro;
+  for (let i = 1; i <= CONFIG.RETRIES; i++){
+    try {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } catch(e){
+      erro = e;
+      if (i < CONFIG.RETRIES) await new Promise(r => setTimeout(r, CONFIG.BACKOFF_MS * i));
+    }
+  }
+  throw erro;
+}
+
+/* A senha e o autor entram aqui, num lugar só, para toda gravação sair
+   assinada sem que cada botão precise lembrar disso. */
+function assinar(payload){
+  return Object.assign({}, payload, {
+    chave: state.chave || '',
+    usuario: state.autor || '',
+  });
+}
+
+async function gravar(payload, textoOk){
+  if (!(await Chave.garantir())) { toast('Gravação cancelada.', true); return false; }
+  try {
+    await fetch(CONFIG.DATA_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(assinar(payload)),
+    });
+    toast(textoOk || 'Salvo.');
+    return true;
+  } catch(e){
+    toast('Erro ao salvar: ' + (e.message || e), true);
+    return false;
+  }
+}
+
+/* ============================================================================
+   CARGA
+   ============================================================================ */
+/* O andamento da primeira carga aparece só no fio laranja do alto. O texto
+   continua chegando aqui para quem lê a tela por leitor de voz — e para não
+   ter que mudar as chamadas se um dia ele voltar a ser mostrado. */
+function etapaLoader(texto, pct){
+  const l = el('loader');
+  if (l && texto) l.setAttribute('aria-label', texto);
+  const fio = el('fio'), ff = el('fio-fill');
+  if (fio && ff){ fio.classList.toggle('ativo', pct < 100); ff.style.width = pct + '%'; }
+}
+const respira = ms => new Promise(r => setTimeout(r, ms));
+
+/* A tela busca o ANO inteiro de uma vez e guarda. Virar o mês passa a ser
+   desenhar outro pedaço do que já está na memória, e não uma nova consulta —
+   é isso que permite mostrar o fim do mês anterior junto com o começo do
+   seguinte sem pagar uma ida ao script a cada troca.
+
+   fresco=true pula o cache do lado do script. É o que o botão Atualizar manda
+   e o que o modo edição pede ao entrar: quem vai lançar precisa ver o estado
+   de agora, não a cópia guardada de horas atrás. */
+/* ----------------------------------------------------------------------------
+   O ano chega embrulhado: a lista de colunas uma vez só, as linhas como
+   valores puros e um dicionário com os textos que se repetem. Isso derrubou o
+   payload de 729 kB para 165 kB — e com ele o 404 que fazia a busca falhar
+   duas vezes antes de acertar. Aqui é onde ele volta a ser o que sempre foi;
+   do desembrulho para a frente, nenhuma outra linha da tela mudou.
+
+   Resposta no formato antigo passa reta: é o que deixa trocar o script e este
+   arquivo em ordens diferentes sem quebrar nada no meio. */
+const TABELAS_COMPACTAS = ['saldos', 'realizado', 'previsto', 'lancamentos', 'dias', 'orfaos'];
+
+function expandirTabela(t, dic){
+  if (Array.isArray(t)) return t;
+  if (!t || !Array.isArray(t.c)) return [];
+  const cols = t.c, marcadas = t.d || [], linhas = t.l || [];
+  const ehDic = cols.map((c, i) => marcadas.indexOf(i) >= 0);
+  return linhas.map(row => {
+    const o = {};
+    for (let i = 0; i < cols.length; i++){
+      const v = row[i];
+      o[cols[i]] = (ehDic[i] && v !== null && v !== undefined) ? dic[v] : v;
+    }
+    return o;
+  });
+}
+
+function expandirPayload(d){
+  if (!d || d.fmt !== 2) return d;
+  const dic = d.dic || [];
+  TABELAS_COMPACTAS.forEach(nome => {
+    if (d[nome] !== undefined) d[nome] = expandirTabela(d[nome], dic);
+  });
+  delete d.dic;
+  delete d.fmt;
+  return d;
+}
+
+/* ----------------------------------------------------------------------------
+   A CÓPIA QUE FICA NO NAVEGADOR
+   ----------------------------------------------------------------------------
+   Montar o ano do outro lado leva de quatro a trinta e cinco segundos,
+   dependendo de a resposta já estar pronta ou não. Enquanto isso a tela ficava
+   em branco, com blocos cinzas, e a pessoa só esperava.
+
+   Agora a última resposta boa fica guardada aqui. Ao abrir, a tabela aparece
+   na hora com ela — com o fio laranja avisando que o número novo está a
+   caminho — e é trocada assim que a resposta de verdade chega. Nunca se
+   digita em cima da cópia: o modo edição busca dados frescos antes de
+   liberar qualquer lançamento.
+   -------------------------------------------------------------------------- */
+const COPIA_K = 'fluxo_' + AMBIENTE + 'ano_';
+
+function guardarAno(ano, texto){
+  try { localStorage.setItem(COPIA_K + ano, texto); } catch(e){ /* sem espaço: segue sem cópia */ }
+}
+
+function lerAnoGuardado(ano){
+  try {
+    const texto = localStorage.getItem(COPIA_K + ano);
+    if (!texto) return null;
+    const d = expandirPayload(JSON.parse(texto));
+    if (!d || !Array.isArray(d.plano) || !Array.isArray(d.dias)) return null;
+    return d;
+  } catch(e){ return null; }
+}
+
+async function buscarAno(ano, fresco, semPrevisto){
+  const anterior = state.cache[ano];
+  const url = CONFIG.DATA_URL + (CONFIG.DATA_URL.indexOf('?') >= 0 ? '&' : '?') +
+              'fluxo_ano=' + ano + '&fmt=2' + (fresco ? '&fresco=1' : '') +
+              (semPrevisto ? '&sem_previsto=1' : '') + '&v=' + Date.now();
+  const bruto = await buscarJson(url);
+  /* Guardar antes de desembrulhar: expandirPayload gasta o embrulho, e é o
+     embrulho que cabe no navegador — 167 kB contra quase um mega. */
+  let texto = '';
+  try { texto = JSON.stringify(bruto); } catch(e){}
+  const d = expandirPayload(bruto);
+  /* Sem plano não é payload: é erro que passou pela guarda de ok. Barrar aqui
+     evita que ele entre no cache e contamine as trocas de mês seguintes. */
+  if (!d || d.ok === false || !Array.isArray(d.plano) || !Array.isArray(d.dias))
+    throw new Error((d && d.erro) || 'resposta incompleta do script');
+  /* A cópia sem projeção não serve para abrir a tela — entraria faltando o
+     previsto do mês corrente e assustaria quem olha. */
+  if (texto && !semPrevisto) guardarAno(ano, texto);
+  if (fresco) Titulos.esquecer();
+  /* Quando se pede a resposta sem a projeção, ela volta com a lista vazia. A
+     projeção não muda com o que se está prestes a lançar, então a que já
+     estava na mão continua valendo — sem isso o mês corrente perderia o
+     previsto ao entrar em modo edição. */
+  if (d.previsto_omitido && anterior && anterior.previsto) d.previsto = anterior.previsto;
+  state.cache[ano] = d;
+  state.carregadoEm = Date.now();
+  return d;
+}
+
+/* Mudou alguma coisa na base desde que esta tela carregou? Uma consulta de
+   bytes, que não abre planilha nenhuma do outro lado. Na dúvida — resposta
+   estranha, rede caída, tela velha demais — devolve true: recarregar à toa
+   custa tempo, não recarregar quando devia custa um lançamento em cima de
+   número errado. */
+async function baseMudou(){
+  const meu = state.dados && state.dados.carimbo;
+  if (!meu) return true;
+  if (Date.now() - (state.carregadoEm || 0) > CONFIG.IDADE_MAX_MS) return true;
+  try {
+    const r = await fetch(CONFIG.DATA_URL + '?carimbo=1&v=' + Date.now());
+    if (!r.ok) return true;
+    const d = await r.json();
+    if (!d || d.ok === false || !d.carimbo) return true;
+    return String(d.carimbo) !== String(meu);
+  } catch(e){ return true; }
+}
+
+/* Guarda os meses já abertos, mas não todos: seis é mais do que qualquer um
+   navega numa sessão, e evita a página ir engordando sozinha. */
+
+/* O fio no alto da janela basta para trocar de mês. A tela cheia de
+   carregamento é para quando a página abre, não para uma troca de coluna. */
+function fioComeca(){
+  const fio = el('fio'), ff = el('fio-fill');
+  if (!fio) return;
+  fio.classList.add('ativo');
+  ff.style.width = '35%';
+  clearTimeout(fioComeca._t);
+  fioComeca._t = setTimeout(() => { ff.style.width = '75%'; }, 260);
+}
+/* Enquanto a base não responde não existe progresso para medir — mas um fio
+   parado em 14% por cinco segundos parece travado. Ele anda até pouco mais da
+   metade e espera ali, o que é honesto: a leitura começou, falta o resto. */
+function fioPrimeiraCarga(){
+  etapaLoader('Lendo o fluxo…', 14);
+  clearTimeout(fioPrimeiraCarga._t);
+  fioPrimeiraCarga._t = setTimeout(() => etapaLoader('Lendo o fluxo…', 55), 500);
+}
+
+function fioTermina(){
+  const fio = el('fio'), ff = el('fio-fill');
+  if (!fio) return;
+  clearTimeout(fioComeca._t);
+  ff.style.width = '100%';
+  setTimeout(() => { fio.classList.remove('ativo'); ff.style.width = '0%'; }, 220);
+}
+
+async function carregar(primeira, fresco, semPrevisto){
+  if (primeira) fioPrimeiraCarga(); else fioComeca();
+  try {
+    const ano = state.mes.slice(0, 4);
+    state.dados = (!fresco && state.cache[ano]) || await buscarAno(ano, fresco, semPrevisto);
+    if (primeira){ clearTimeout(fioPrimeiraCarga._t); etapaLoader('Somando o mês…', 66); await respira(50); }
+    calcular();
+    if (primeira){ etapaLoader('Montando a tabela…', 88); await respira(50); }
+    render();
+    if (primeira){
+      etapaLoader('Pronto', 100);
+      await respira(150);
+      esconderLoader();
+    } else fioTermina();
+  } catch(e){
+    if (primeira) mostrarErro(e);
+    else { fioTermina(); toast('Não consegui abrir o mês: ' + (e.message || e), true); }
+  }
+}
+
+/* Não existe mais mês vizinho para buscar em silêncio: o ano inteiro já veio
+   na primeira consulta, e virar o mês é só redesenhar. */
+
+function esconderLoader(){
+  const l = el('loader');
+  if (l){ l.classList.add('out'); l.style.display = 'none'; }
+  const p = el('painel');
+  if (p) p.style.display = 'flex';
+}
+
+function mostrarErro(e){
+  const l = el('loader');
+  const p = el('painel');
+  if (p) p.style.display = 'none';
+  if (!l) return;
+  l.classList.remove('out');
+  l.style.display = 'flex';
+  l.innerHTML = '';
+  const caixa = h('div', { class:'erro-carga' }, [
+    h('h3', { text:'Não consegui carregar o fluxo.' }),
+    h('p',  { text: String(e && e.message || e) }),
+  ]);
+  const b = h('button', { class:'btn btn-primary' }, [icone('fa-rotate'), 'Tentar de novo']);
+  b.onclick = () => location.reload();
+  caixa.appendChild(b);
+  l.appendChild(caixa);
+  etapaLoader('Falhou', 100);
+}
+
+/* ============================================================================
+   CÁLCULO
+   ----------------------------------------------------------------------------
+   Tudo é somado uma vez, aqui, e a tela só desenha. Isso mantém a rolagem
+   leve mesmo com trinta e uma colunas na tela.
+   ============================================================================ */
+function calcular(){
+  const d = state.dados;
+  const dias = d.dias.map(x => x.data);
+  const plano = d.plano;
+  const porId = {};
+  plano.forEach(l => { porId[l.id] = l; });
+
+  const filhos = {};
+  plano.forEach(l => { if (l.pai) (filhos[l.pai] = filhos[l.pai] || []).push(l.id); });
+
+  /* valores de cada linha folha, dia a dia */
+  const val = {};
+  const ver = (id, data) => (val[id] && val[id][data]) || 0;
+  const põe = (id, data, v) => {
+    if (!val[id]) val[id] = {};
+    val[id][data] = (val[id][data] || 0) + v;
+  };
+
+  // digitado
+  const lancPorCel = {};
+  (d.lancamentos || []).forEach(l => {
+    põe(l.linha_id, l.data, num(l.valor));
+    const k = l.linha_id + '|' + l.data;
+    (lancPorCel[k] = lancPorCel[k] || []).push(l);
+  });
+
+  /* Realizado até ontem, previsto de hoje em diante: o pagamento de hoje só
+     aparece no relatório de baixas amanhã, então usar realizado no dia
+     corrente mostraria o dia vazio. */
+  const hoje = d.hoje;
+  const qtdPorCel = {}, previstoCel = {};
+  /* O que veio do relatório e o que foi digitado por cima ficam separados: a
+     célula mostra a soma, mas na hora de explicar o número é preciso saber de
+     onde veio cada parte. */
+  const autoCel = {}, ajusteCel = {};
+  (d.lancamentos || []).forEach(l => {
+    const k = l.linha_id + '|' + l.data;
+    ajusteCel[k] = (ajusteCel[k] || 0) + num(l.valor);
+  });
+  const prev = {};
+  (d.previsto || []).forEach(r => {
+    if (!r.linha_id || r.data < hoje) return;
+    prev[r.linha_id + '|' + r.data] = num(r.valor);
+  });
+  (d.realizado || []).forEach(r => {
+    const k = r.linha_id + '|' + r.data;
+    if (!r.linha_id) return;
+    if (r.data >= hoje && k in prev) return;   // o previsto já responde por este dia
+    põe(r.linha_id, r.data, num(r.valor));
+    autoCel[k] = (autoCel[k] || 0) + num(r.valor);
+    /* Somar, não substituir: várias contas de fluxo caem na mesma linha —
+       sempre é o caso de "Sem classificação", que recebe todos os códigos
+       fora do plano. Antes valia a contagem do último código lido. */
+    qtdPorCel[k] = (qtdPorCel[k] || 0) + num(r.qtd);
+  });
+  Object.keys(prev).forEach(k => {
+    const p = k.split('|');
+    põe(p[0], p[1], prev[k]);
+    autoCel[k] = (autoCel[k] || 0) + prev[k];
+    previstoCel[k] = true;
+  });
+
+  /* grupos somam os filhos, de baixo para cima */
+  const somaGrupo = (id, data) => {
+    const fs = filhos[id];
+    if (!fs) return ver(id, data);
+    let s = 0;
+    fs.forEach(f => { s += (porId[f].tipo === 'grupo') ? somaGrupo(f, data) : ver(f, data); });
+    return s;
+  };
+  plano.forEach(l => {
+    if (l.tipo !== 'grupo') return;
+    dias.forEach(data => {
+      const s = somaGrupo(l.id, data);
+      if (s){ if (!val[l.id]) val[l.id] = {}; val[l.id][data] = s; }
+    });
+  });
+
+  /* totais, saldos e a conta do dia */
+  const raizes = plano.filter(l => !l.pai);
+  const totEnt = {}, totSai = {}, sdIni = {}, sdFim = {};
+  let saldo = num(d.abertura);
+  dias.forEach(data => {
+    let e = 0, s = 0;
+    raizes.forEach(l => {
+      const v = ver(l.id, data);
+      if (!v) return;
+      if (l.secao === 'E') e += v; else s += v;
+    });
+    totEnt[data] = e; totSai[data] = s;
+    sdIni[data] = saldo;
+    saldo = saldo + e - s;
+    sdFim[data] = saldo;
+  });
+
+  /* posição de saldos: o que foi informado, por conta e por dia */
+  const contas = d.contas;
+  const contaPorId = {};
+  contas.forEach(c => { contaPorId[c.id] = c; });
+  const filhosConta = {};
+  contas.forEach(c => { if (c.pai) (filhosConta[c.pai] = filhosConta[c.pai] || []).push(c.id); });
+
+  const sal = {};
+  const temSaldo = {};
+  (d.saldos || []).forEach(s => {
+    if (!sal[s.conta_id]) sal[s.conta_id] = {};
+    sal[s.conta_id][s.data] = num(s.valor);
+    temSaldo[s.data] = true;
+  });
+  contas.forEach(c => {
+    if (c.tipo !== 'grupo') return;
+    const fs = filhosConta[c.id] || [];
+    dias.forEach(data => {
+      let s = 0, achou = false;
+      fs.forEach(f => {
+        const v = sal[f] && sal[f][data];
+        if (v !== undefined){ s += v; achou = true; }
+      });
+      if (achou){ if (!sal[c.id]) sal[c.id] = {}; sal[c.id][data] = s; }
+    });
+  });
+
+  const empresas = [];
+  contas.forEach(c => { if (empresas.indexOf(c.empresa) < 0) empresas.push(c.empresa); });
+  const totEmpresa = {}, totBancos = {};
+  empresas.forEach(emp => { totEmpresa[emp] = {}; });
+  dias.forEach(data => {
+    let geral = 0;
+    empresas.forEach(emp => {
+      let t = 0;
+      contas.forEach(c => {
+        if (c.empresa !== emp || c.tipo !== 'conta') return;
+        t += (sal[c.id] && sal[c.id][data]) || 0;
+      });
+      totEmpresa[emp][data] = t;
+      geral += t;
+    });
+    totBancos[data] = geral;
+  });
+
+  /* A diferença é o alarme: bancos menos saldo calculado. Só faz sentido no
+     dia em que alguém informou os saldos. */
+  const dif = {};
+  dias.forEach(data => {
+    if (!temSaldo[data]) return;
+    dif[data] = totBancos[data] - sdFim[data];
+  });
+
+  state.calc = {
+    dias, val, filhos, porId, totEnt, totSai, sdIni, sdFim,
+    sal, temSaldo, contaPorId, filhosConta, empresas, totEmpresa, totBancos,
+    dif, lancPorCel, qtdPorCel, previstoCel, hoje,
+    autoCel, ajusteCel,
+  };
+}
+
+/* Colunas que aparecem: dia útil sempre; fim de semana e feriado só quando
+   tiveram movimento ou saldo informado — senão a tabela vira um deserto. */
+/* Quantos dias do mês vizinho aparecem de cada lado. Cinco cobre a virada
+   inteira — inclusive quando o mês acaba numa sexta e o seguinte começa numa
+   segunda — sem alargar a tabela a ponto de atrapalhar. */
+const DIAS_EMPRESTADOS = 5;
+
+/* Os dias que a tabela desenha: o mês em foco, mais os últimos dias do mês
+   anterior e os primeiros do seguinte. Os emprestados vêm marcados com
+   fora:true — aparecem esmaecidos e ficam de fora dos totais, que continuam
+   sendo do mês. É a emenda entre meses sem confundir o fechamento. */
+function diasDaJanela(){
+  const d = state.dados;
+  if (!d || !d.dias) return [];
+  const mes = state.mes;
+  const doMes = d.dias.filter(x => x.data.slice(0, 7) === mes);
+  if (!doMes.length) return d.dias.map(x => Object.assign({}, x, { fora: false }));
+
+  const antes = d.dias.filter(x => x.data < doMes[0].data).slice(-DIAS_EMPRESTADOS);
+  const depois = d.dias.filter(x => x.data > doMes[doMes.length - 1].data).slice(0, DIAS_EMPRESTADOS);
+
+  return antes.map(x => Object.assign({}, x, { fora: true }))
+    .concat(doMes.map(x => Object.assign({}, x, { fora: false })))
+    .concat(depois.map(x => Object.assign({}, x, { fora: true })));
+}
+
+/* Fim de semana e feriado só aparecem quando têm movimento de verdade.
+
+   Antes a posição de saldos também segurava o dia na tela, e fazia sentido:
+   saldo informado num sábado era sinal de que alguém tinha trabalhado ali. Com
+   a carga do ano isso deixou de valer — a planilha repete o saldo dos bancos em
+   todos os dias do calendário, então todo sábado passou a ter saldo e o botão
+   de dias úteis parecia quebrado, sem esconder nada. */
+function diasVisiveis(){
+  const c = state.calc;
+  const janela = diasDaJanela();
+  if (!state.soUteis) return janela;
+  return janela.filter(x => x.util || c.totEnt[x.data] || c.totSai[x.data]);
+}
+
+/* ============================================================================
+   RENDER
+   ============================================================================ */
+function render(){
+  fecharBancosNaPrimeiraVez();
+  document.body.classList.toggle('exato', state.exato);
+  renderStamp();
+
+  /* Onde a pessoa estava olhando. Trocar de mês, ligar os centavos ou mostrar
+     os fins de semana refazem a tabela, e sem isto a tela saltaria para o
+     começo a cada vez. */
+  const antigo = document.querySelector('.grade-wrap');
+  const rolagem = antigo ? { x: antigo.scrollLeft, y: antigo.scrollTop } : null;
+
+  const c = el('painel');
+  c.innerHTML = '';
+  c.appendChild(barraMes());
+  const tabela = state.visao === 'ano' ? secaoTabelaAno() : secaoTabela();
+  /* A animação de troca é só para mês e visão. A cada gravação seria piscada:
+     quem acabou de digitar quer ver o número mudar, não a tabela inteira
+     reaparecer. */
+  if (state.animarTroca){ tabela.classList.add('trocou'); state.animarTroca = false; }
+  c.appendChild(tabela);
+
+  /* Células com gravação em curso: a marca vive em state, então ela sobrevive
+     ao redesenho que acontece logo depois de digitar. */
+  Object.keys(state.pendentes).forEach(k => {
+    const p = k.split('|');
+    const td = document.querySelector('td[data-linha="' + p[0] + '"][data-dia="' + p[1] + '"]');
+    if (td) td.classList.add(state.pendentes[k] === 'falhou' ? 'cel-falhou' : 'cel-indo');
+  });
+
+  /* Acende a célula que acabou de receber lançamento e esquece o pedido, para
+     não piscar de novo no próximo desenho. */
+  if (state.destacar){
+    const alvo = document.querySelector(
+      'td[data-linha="' + state.destacar.linha_id + '"][data-dia="' + state.destacar.data + '"]');
+    if (alvo){
+      alvo.classList.add('recem-mudada');
+      setTimeout(() => alvo.classList.remove('recem-mudada'), 1300);
+    }
+    state.destacar = null;
+  }
+
+  const grade = document.querySelector('.grade-wrap');
+  if (state.rolarParaMes && grade){
+    /* Ao trocar de mês, a tabela começa no dia 1: os dias emprestados ficam
+       logo atrás, a um empurrão de rolagem, sem roubar espaço de quem só quer
+       ver o mês. A rolagem vertical é preservada, para não perder o lugar na
+       lista de contas.
+
+       Feito duas vezes de propósito: no primeiro desenho as larguras ainda são
+       as da fonte de sistema, e quando a fonte da página chega tudo se desloca.
+       Sem a segunda passada, a tabela abria alguns dias adiantada. */
+    if (rolagem) grade.scrollTop = rolagem.y;
+    rolarAteOMes();
+    setTimeout(rolarAteOMes, 300);
+    state.rolarParaMes = false;
+  } else if (rolagem && grade){
+    grade.scrollLeft = rolagem.x; grade.scrollTop = rolagem.y;
+  }
+  /* A animação de entrada é para a primeira pintura. Repetida a cada
+     atualização, ela vira piscada. */
+  if (state.primeiraPintura){
+    document.body.classList.add('entrando');
+    state.primeiraPintura = false;
+    setTimeout(() => document.body.classList.remove('entrando'), 700);
+  }
+  empilharFixas();
+}
+
+/* Deixa o primeiro dia do mês encostado na coluna dos nomes. */
+function rolarAteOMes(){
+  const grade = document.querySelector('.grade-wrap');
+  if (!grade) return;
+  const primeira = grade.querySelector('th.col-dia:not(.col-fora)');
+  const nome = grade.querySelector('th.col-nome');
+  if (!primeira || !nome) return;
+  grade.scrollLeft = Math.max(0, primeira.offsetLeft - nome.offsetWidth);
+}
+
+/* Cada linha que acompanha a rolagem para logo abaixo da anterior. As alturas
+   são medidas na hora, e não escritas no estilo, porque mudam com a fonte, com
+   o zoom do navegador e com a visão de centavos ligada.
+
+   E medir uma vez não basta: a fonte da página chega depois do primeiro
+   desenho e muda a altura de todas as linhas. Quando isso acontece, o
+   empilhamento calculado antes fica defasado e a tabela aparece correndo pelos
+   vãos. Por isso, além de medir no desenho, há um observador que remede
+   sempre que qualquer uma dessas alturas mudar, seja lá por que motivo. */
+let observadorFixas = null;
+
+function medirFixas(){
+  const thead = document.querySelector('table.grade thead');
+  if (!thead) return null;
+  const fixas = document.querySelectorAll('table.grade tr.fixa');
+  let topo = thead.getBoundingClientRect().height;
+  fixas.forEach((tr, i) => {
+    tr.classList.toggle('ultima-fixa', i === fixas.length - 1);
+    tr.style.setProperty('--topo', (i ? topo - 1 : topo).toFixed(2) + 'px');
+    topo += tr.getBoundingClientRect().height - (i ? 1 : 0);
+  });
+  return { thead, fixas };
+}
+
+function empilharFixas(){
+  requestAnimationFrame(() => {
+    const alvos = medirFixas();
+    if (!alvos || typeof ResizeObserver === 'undefined') return;
+    if (observadorFixas) observadorFixas.disconnect();
+    observadorFixas = new ResizeObserver(() => medirFixas());
+    observadorFixas.observe(alvos.thead);
+    alvos.fixas.forEach(tr => observadorFixas.observe(tr));
+  });
+}
+
+function renderStamp(){
+  const d = state.dados || {};
+  const dot = el('stamp').querySelector('.dot');
+  const txt = el('stamp-text');
+  if (!d.gerado_em){ dot.className = 'dot off'; txt.textContent = 'sem dados'; return; }
+  dot.className = 'dot';
+  txt.textContent = 'fluxo de ' + fmtData(d.hoje);
+}
+
+function barraMes(){
+  const d = state.dados, c = state.calc;
+  const sec = h('div', { class:'section barra-mes' });
+
+  const nav = h('div', { class:'mes-nav' });
+  /* As setas só levam a meses que existem na lista. No último mês com dados,
+     a seta da direita fica apagada em vez de sumir: assim os outros botões não
+     pulam de lugar quando se chega na ponta. */
+  const lista = (d.meses || []).slice().sort();
+  const temMes = m => lista.indexOf(m) >= 0;
+  const mesAnterior = addMes(state.mes, -1), mesSeguinte = addMes(state.mes, 1);
+
+  const ant = h('button', { class:'btn btn-ghost btn-sm', type:'button', title:'Mês anterior' }, [icone('fa-chevron-left')]);
+  ant.disabled = !temMes(mesAnterior);
+  if (ant.disabled) ant.title = 'Não há mês anterior com dados';
+  ant.onclick = () => irPara(mesAnterior);
+  const prox = h('button', { class:'btn btn-ghost btn-sm', type:'button', title:'Próximo mês' }, [icone('fa-chevron-right')]);
+  prox.disabled = !temMes(mesSeguinte);
+  if (prox.disabled) prox.title = 'Não há mês seguinte com dados';
+  prox.onclick = () => irPara(mesSeguinte);
+  const sel = h('select', { class:'filtro' });
+  const meses = (d.meses || []).slice();
+  if (meses.indexOf(state.mes) < 0) meses.push(state.mes);
+  meses.sort().forEach(m => sel.appendChild(h('option', { value:m, text:nomeMes(m), selected: m === state.mes })));
+  sel.onchange = e => irPara(e.target.value);
+
+  nav.appendChild(ant);
+  nav.appendChild(sel);
+  nav.appendChild(prox);
+
+  const doMes = datasDoMes();
+  const ultimo = doMes[doMes.length - 1] || c.dias[c.dias.length - 1];
+  const resumo = h('div', { class:'mes-resumo' }, [
+    kpi('Saldo inicial', c.sdIni[doMes[0] || c.dias[0]], 'info'),
+    kpi('Entradas', somaMes(c.totEnt), 'ok'),
+    kpi('Saídas', somaMes(c.totSai), 'orange'),
+    kpi('Saldo final', c.sdFim[ultimo], 'plum'),
+  ]);
+
+  sec.appendChild(nav);
+  sec.appendChild(resumo);
+  return sec;
+}
+/* As datas do mês em foco. Os totais e os KPIs somam só estas: os dias
+   emprestados dos meses vizinhos estão ali para dar contexto, não para entrar
+   na conta do mês. */
+function datasDoMes(){
+  return state.calc.dias.filter(d => d.slice(0, 7) === state.mes);
+}
+
+function somaMes(mapa){
+  return datasDoMes().reduce((s, d) => s + num(mapa[d]), 0);
+}
+function kpi(rotulo, valor, classe){
+  return h('div', { class:'mini-kpi ' + (classe || '') }, [
+    h('span', { class:'mk-label', text:rotulo }),
+    h('span', { class:'mk-valor', text: fmtGrade(valor) || '0,00', title: fmtExato(valor) }),
+  ]);
+}
+
+/* Trocar de mês dentro do ano carregado não consulta nada: o cálculo já foi
+   feito para o ano inteiro, e só muda o pedaço desenhado. Trocar de ano, sim,
+   busca — e o ano visitado fica guardado. */
+function irPara(mes){
+  if (mes === state.mes) return;
+  const anoAntes = state.mes.slice(0, 4);
+  state.mes = mes;
+  state.rolarParaMes = true;
+  state.animarTroca = true;
+  if (mes.slice(0, 4) === anoAntes && state.dados){
+    render();
+    return;
+  }
+  carregar();
+}
+
+/* --------------------------------------------------------------- tabela */
+/* ============================================================================
+   VISÃO POR MÊS
+   ----------------------------------------------------------------------------
+   As mesmas linhas e os mesmos grupos, com doze colunas no lugar dos dias.
+   Movimento vira o total do mês; saldo vira o fechamento do mês. É a leitura
+   que faltava para comparar os finais de mês sem rolar 365 colunas — e ela
+   cabe inteira na tela, sem esperar nada, porque o ano já está na memória. */
+function mesesDoAno(){
+  const d = state.dados;
+  const vistos = {};
+  (d.dias || []).forEach(x => { vistos[x.data.slice(0, 7)] = true; });
+  return Object.keys(vistos).sort();
+}
+
+function secaoTabelaAno(){
+  const d = state.dados, c = state.calc;
+  const meses = mesesDoAno();
+  const datasPorMes = {};
+  meses.forEach(m => { datasPorMes[m] = c.dias.filter(x => x.slice(0, 7) === m); });
+
+  const sec = h('div', { class:'section' });
+  const card = h('div', { class:'card' });
+
+  const tudo = tudoFechado();
+  const btnTudo = h('button', { class:'btn-agrupar', type:'button',
+    title: tudo ? 'Abrir todos os grupos' : 'Fechar todos os grupos' },
+    [ icone(tudo ? 'fa-angles-down' : 'fa-angles-up') ]);
+  btnTudo.onclick = () => alternarTudo();
+
+  card.appendChild(h('div', { class:'card-bar' }, [
+    btnTudo,
+    h('div', { class:'card-bar-title' }, [ icone('fa-calendar'), 'Fechamento de ' + state.mes.slice(0, 4) ]),
+    h('div', { class:'legenda' }, [
+      h('span', { class:'leg-dica' }, [ icone('fa-hand-pointer'), 'clique num mês para abrir os dias dele' ]),
+    ]),
+  ]));
+
+  const wrap = h('div', { class:'grade-wrap' });
+  const tbl = h('table', { class:'grade' });
+
+  const thead = h('thead');
+  const tr = h('tr');
+  tr.appendChild(h('th', { class:'col-nome', text:'Descrição' }));
+  meses.forEach(m => {
+    const th = h('th', { class:'col-dia col-mes' + (m === state.mes ? ' col-foco' : ''),
+                         title:'Abrir os dias de ' + nomeMes(m) }, [
+      h('span', { class:'d-num', text: MESES_PT[Number(m.slice(5, 7)) - 1] }),
+      h('span', { class:'d-dow', text: m.slice(0, 4) }),
+    ]);
+    th.onclick = () => {
+      state.visao = 'mes'; state.rolarParaMes = true;
+      document.dispatchEvent(new CustomEvent('fluxo:visao'));
+      irOuRedesenhar(m);
+    };
+    tr.appendChild(th);
+  });
+  tr.appendChild(h('th', { class:'col-total', text:'Total do ano' }));
+  thead.appendChild(tr);
+  tbl.appendChild(thead);
+
+  const tbody = h('tbody');
+  linhasDaTela().forEach(l => tbody.appendChild(linhaTrAno(l, meses, datasPorMes)));
+  tbl.appendChild(tbody);
+
+  wrap.appendChild(tbl);
+  card.appendChild(wrap);
+  sec.appendChild(card);
+  return sec;
+}
+
+function linhaTrAno(l, meses, datasPorMes){
+  const c = state.calc;
+  if (l.kind === 'espaco'){
+    const tr = h('tr', { class:'l-espaco' });
+    tr.appendChild(h('td', { colspan: meses.length + 2 }));
+    return tr;
+  }
+  const acompanha = l.kind === 'saldo-ini' || l.kind === 'saldo-fim' || l.kind === 'total';
+  const cadeia = l.cadeia || [];
+  const tr = h('tr', { class:'l-' + l.kind + (l.nivel ? ' nivel-' + l.nivel : '') +
+                              (l.classe ? ' ' + l.classe : '') + (acompanha ? ' fixa' : '') +
+                              (cadeia.some(fechado) ? ' oculta' : '') });
+  if (cadeia.length) tr.setAttribute('data-cadeia', cadeia.join(' '));
+
+  const nome = h('td', { class:'col-nome' });
+  const box = h('div', { class:'nome-box' });
+  const chaveGrupo = l.kind === 'grupo' ? l.linha.id : (l.grupo || '');
+  if (chaveGrupo){
+    tr.setAttribute('data-grupo', chaveGrupo);
+    const estaFechado = fechado(chaveGrupo);
+    const b = h('button', { class:'toggle', type:'button', title: estaFechado ? 'abrir' : 'fechar' },
+      [ icone(estaFechado ? 'fa-chevron-right' : 'fa-chevron-down') ]);
+    b.onclick = e => {
+      e.stopPropagation();
+      state.recolhidos[chaveGrupo] = !fechado(chaveGrupo);
+      guardarGrupos();
+      aplicarGrupos();
+    };
+    box.appendChild(b);
+  }
+  if (l.codigo) box.appendChild(h('span', { class:'cod', text: l.codigo }));
+  box.appendChild(h('span', { class:'txt', text: l.label }));
+  nome.appendChild(box);
+  tr.appendChild(nome);
+
+  meses.forEach(m => {
+    const v = agregar(l, datasPorMes[m]);
+    const td = h('td', { class:'num col-mes' + (m === state.mes ? ' col-foco' : '') + classeValor(l, v) });
+    td.textContent = (v === undefined || v === null) ? '' : fmtGrade(v);
+    if (v) td.title = nomeMes(m) + ' · ' + fmtExato(v);
+    tr.appendChild(td);
+  });
+
+  /* Total do ano: a mesma regra, aplicada ao ano inteiro. */
+  const tv = agregar(l, c.dias);
+  const tdTot = h('td', { class:'col-total num' + classeValor(l, tv) });
+  tdTot.textContent = (tv === undefined || tv === null) ? '' : fmtGrade(tv);
+  if (tv) tdTot.title = fmtExato(tv);
+  tr.appendChild(tdTot);
+  return tr;
+}
+
+/* Trocar de mês estando na visão do ano não precisa buscar nada quando o mês é
+   do ano que já está carregado. */
+function irOuRedesenhar(mes){
+  if (mes === state.mes){ render(); return; }
+  irPara(mes);
+}
+
+function secaoTabela(){
+  const d = state.dados, c = state.calc;
+  const dias = diasVisiveis();
+  const sec = h('div', { class:'section' });
+
+  /* Registro cuja conta de fluxo não existe no plano. Ele agora aparece na
+     linha "Sem classificação" e entra no total — mas continuar aparecendo ali
+     em silêncio esconderia o que precisa ser resolvido, que é a conta faltando
+     no plano. Por isso o aviso, com o código na cara. */
+  const semCasa = (d.orfaos || []).filter(o => Math.abs(Number(o.valor) || 0) >= 0.005);
+  if (semCasa.length){
+    const total = semCasa.reduce((a, o) => a + (Number(o.valor) || 0), 0);
+    sec.appendChild(h('div', { class:'note danger' }, [
+      icone('fa-triangle-exclamation'),
+      h('div', { text:
+        /* O período, não o mês: os órfãos vêm do payload inteiro, que desde a
+           carga do ano é o ano todo. Dizer "deste mês" mandava a controladoria
+           procurar em março um valor que era de agosto — e o aviso ficava
+           idêntico em todos os meses, como se nada saísse do lugar. */
+        (semCasa.length === 1 ? 'Uma conta de fluxo do ano não existe no plano: '
+                              : semCasa.length + ' contas de fluxo do ano não existem no plano: ') +
+        semCasa.map(o => o.conta_fluxo + ' (' + dinheiro(o.valor) + ')').join(', ') +
+        '. Somam ' + dinheiro(total) + ' e estão na linha "Sem classificação". ' +
+        'Enquanto ficarem assim, o número aparece no total mas não tem onde ser explicado.' }),
+    ]));
+  }
+
+  const card = h('div', { class:'card' });
+
+  /* Fecha ou abre tudo de uma vez — os grupos do plano e os bancos. Fica antes
+     do nome do mês, na altura da coluna de descrição, que é a coluna a que ele
+     se refere. */
+  const tudo = tudoFechado();
+  const btnTudo = h('button', { class:'btn-agrupar', type:'button',
+    title: tudo ? 'Abrir todos os grupos' : 'Fechar todos os grupos' },
+    [ icone(tudo ? 'fa-angles-down' : 'fa-angles-up') ]);
+  btnTudo.onclick = () => alternarTudo();
+
+  const legenda = h('div', { class:'card-bar' }, [
+    btnTudo,
+    h('div', { class:'card-bar-title' }, [ icone('fa-table-columns'), nomeMes(state.mes) ]),
+    h('div', { class:'legenda' }, [
+      h('span', {}, [ h('i', { class:'leg leg-real' }), 'realizado' ]),
+      h('span', {}, [ h('i', { class:'leg leg-prev' }), 'previsto' ]),
+      h('span', {}, [ h('i', { class:'leg leg-edit' }), 'digitado' ]),
+      state.podeEditar ? h('span', { class:'leg-dica' }, [ icone('fa-hand-pointer'), 'clique numa célula para ver ou lançar' ])
+                       : h('span', { class:'leg-dica' }, [ icone('fa-eye'), 'somente leitura — clique em Editar para lançar' ]),
+    ]),
+  ]);
+  card.appendChild(legenda);
+
+  const wrap = h('div', { class:'grade-wrap' });
+  const tbl = h('table', { class:'grade' });
+
+  /* cabeçalho: cada coluna é um dia */
+  const thead = h('thead');
+  const tr = h('tr');
+  tr.appendChild(h('th', { class:'col-nome', text:'Descrição' }));
+  dias.forEach(x => {
+    const p = x.data.split('-');
+    /* O dia emprestado do mês vizinho leva o nome do mês embaixo, no lugar do
+       dia da semana: sem isso, 30 e 31 no começo da tabela passariam por dias
+       do mês que está sendo olhado. */
+    const th = h('th', { class:'col-dia' + (x.util ? '' : ' nao-util') +
+                         (x.data === c.hoje ? ' hoje' : '') + (x.fora ? ' col-fora' : ''),
+                         title: x.feriado || (x.fora ? nomeMes(x.data.slice(0, 7)) : '') }, [
+      h('span', { class:'d-num', text: p[2] + '/' + p[1] }),
+      h('span', { class:'d-dow', text: x.fora ? MESES_PT[Number(p[1]) - 1].slice(0, 3).toLowerCase()
+                                     : (x.feriado ? 'feriado' : DOW[x.dow]) }),
+    ]);
+    tr.appendChild(th);
+  });
+  tr.appendChild(h('th', { class:'col-total', text:'Total do mês' }));
+  thead.appendChild(tr);
+  tbl.appendChild(thead);
+
+  const tbody = h('tbody');
+  linhasDaTela().forEach(l => tbody.appendChild(linhaTr(l, dias)));
+  tbl.appendChild(tbody);
+
+  wrap.appendChild(tbl);
+  card.appendChild(wrap);
+  sec.appendChild(card);
+  return sec;
+}
+
+/* A ordem da tela é a ordem da planilha que a equipe já conhece: saldo
+   inicial, entradas, saídas, saldo final, posição de saldos, conferência. */
+function linhasDaTela(){
+  const d = state.dados, c = state.calc;
+  const L = [];
+
+  L.push({ kind:'saldo-ini', label:'Saldo Inicial', get: dia => c.sdIni[dia] });
+  L.push({ kind:'espaco' });
+
+  L.push({ kind:'total', label:'Total Entradas', classe:'t-ent', get: dia => c.totEnt[dia] });
+  d.plano.filter(l => l.secao === 'E').forEach(l => empilhar(L, l));
+
+  L.push({ kind:'espaco' });
+  L.push({ kind:'total', label:'Total Saídas', classe:'t-sai', get: dia => c.totSai[dia] });
+  d.plano.filter(l => l.secao === 'S').forEach(l => empilhar(L, l));
+
+  L.push({ kind:'espaco' });
+  L.push({ kind:'saldo-fim', label:'Saldo Final', get: dia => c.sdFim[dia] });
+
+  /* Posição de saldos, uma empresa por bloco. Cada banco é um grupo que abre
+     e fecha: no dia a dia o que se lê é o total do banco, e o detalhe por
+     conta só interessa na hora de digitar. Por isso nascem fechados. */
+  c.empresas.forEach(emp => {
+    L.push({ kind:'espaco', cadeia: [] });
+    const chaveEmp = 'emp:' + emp;
+    L.push({ kind:'cabec-saldo', label:'Posição de saldos · ' + emp,
+             grupo: chaveEmp, cadeia: [] });
+    d.contas.filter(x => x.empresa === emp).forEach(x => {
+      if (x.tipo === 'grupo'){
+        L.push({ kind:'saldo-grupo', conta: x, label: x.descricao,
+                 grupo: 'banco:' + x.id, cadeia: [chaveEmp],
+                 get: dia => (c.sal[x.id] && c.sal[x.id][dia]) });
+        return;
+      }
+      L.push({ kind:'saldo-conta', conta: x, label: x.descricao,
+               cadeia: ['banco:' + x.pai, chaveEmp],
+               get: dia => (c.sal[x.id] && c.sal[x.id][dia]) });
+    });
+    L.push({ kind:'saldo-total', label:'Total ' + emp,
+             get: dia => c.temSaldo[dia] ? c.totEmpresa[emp][dia] : undefined });
+  });
+
+  L.push({ kind:'espaco' });
+  L.push({ kind:'bancos', label:'Total nos bancos', get: dia => c.temSaldo[dia] ? c.totBancos[dia] : undefined });
+  L.push({ kind:'dif', label:'Diferença', get: dia => c.dif[dia] });
+  return L;
+}
+
+/* Empilha uma linha do plano. Nada é filtrado aqui: a linha vai para a tabela
+   sabendo de quem ela depende, e quem decide se aparece é o CSS. */
+function empilhar(L, l){
+  const c = state.calc;
+  L.push({
+    kind: l.tipo === 'grupo' ? 'grupo' : 'linha',
+    linha: l, label: l.descricao, codigo: l.codigo,
+    nivel: nivelDe(l),
+    cadeia: ancestrais(l.pai),
+    get: dia => (c.val[l.id] && c.val[l.id][dia]),
+  });
+}
+
+/* A cadeia de grupos acima de uma linha, do mais próximo ao mais distante. */
+function ancestrais(pai){
+  const out = [];
+  let p = pai;
+  while (p){
+    out.push(p);
+    p = state.calc.porId[p] ? state.calc.porId[p].pai : '';
+  }
+  return out;
+}
+function nivelDe(l){
+  let n = 0, p = l.pai;
+  while (p && state.calc.porId[p]){ n++; p = state.calc.porId[p].pai; }
+  return n;
+}
+function fechado(chave){ return !!state.recolhidos[chave]; }
+
+/* Abrir e fechar grupo não redesenha nada: as linhas já estão na tabela, e o
+   que muda é quais delas aparecem. Sem reconstrução não há piscada, a rolagem
+   fica onde está e a resposta é imediata. */
+function aplicarGrupos(){
+  document.querySelectorAll('table.grade tr[data-cadeia]').forEach(tr => {
+    const cadeia = tr.getAttribute('data-cadeia').split(' ');
+    const escondia = tr.classList.contains('oculta');
+    const esconde = cadeia.some(fechado);
+    tr.classList.toggle('oculta', esconde);
+    /* Linha que acabou de aparecer entra deslizando. Só a que apareceu: quem
+       já estava na tela não tem por que se mexer. */
+    if (escondia && !esconde){
+      tr.classList.remove('abrindo');
+      void tr.offsetWidth;              // reinicia a animação
+      tr.classList.add('abrindo');
+      setTimeout(() => tr.classList.remove('abrindo'), 260);
+    }
+  });
+  document.querySelectorAll('table.grade tr[data-grupo]').forEach(tr => {
+    const estaFechado = fechado(tr.getAttribute('data-grupo'));
+    const i = tr.querySelector('button.toggle i');
+    if (i) i.className = 'fa-solid ' + (estaFechado ? 'fa-chevron-right' : 'fa-chevron-down');
+    const b = tr.querySelector('button.toggle');
+    if (b) b.title = estaFechado ? 'abrir' : 'fechar';
+  });
+  const btn = document.querySelector('.btn-agrupar');
+  if (btn){
+    const tudo = tudoFechado();
+    const i = btn.querySelector('i');
+    if (i) i.className = 'fa-solid ' + (tudo ? 'fa-angles-down' : 'fa-angles-up');
+    btn.title = tudo ? 'Abrir todos os grupos' : 'Fechar todos os grupos';
+  }
+  empilharFixas();
+}
+
+function guardarGrupos(){
+  try { sessionStorage.setItem('fluxo_grupos', JSON.stringify(state.recolhidos)); } catch(e){}
+}
+function lerGrupos(){
+  try {
+    const g = sessionStorage.getItem('fluxo_grupos');
+    if (g) state.recolhidos = JSON.parse(g) || {};
+  } catch(e){}
+}
+
+/* Os bancos nascem fechados: no dia a dia o que se lê é o total de cada um, e
+   o detalhe por conta só interessa na hora de digitar. Vale uma vez por
+   sessão — depois disso manda o que a pessoa deixou aberto. */
+function fecharBancosNaPrimeiraVez(){
+  if (state.gruposIniciados) return;
+  state.gruposIniciados = true;
+  let jaTem = false;
+  Object.keys(state.recolhidos).forEach(k => { if (k.indexOf('banco:') === 0) jaTem = true; });
+  if (jaTem) return;
+  (state.dados.contas || []).forEach(c => {
+    if (c.tipo === 'grupo') state.recolhidos['banco:' + c.id] = true;
+  });
+  guardarGrupos();
+}
+
+/* Fecha ou abre tudo de uma vez: as linhas do plano e os bancos. */
+function alternarTudo(){
+  const algumAberto = state.dados.plano.some(l => l.tipo === 'grupo' && !fechado(l.id)) ||
+                      state.dados.contas.some(c => c.tipo === 'grupo' && !fechado('banco:' + c.id)) ||
+                      state.calc.empresas.some(e => !fechado('emp:' + e));
+  state.recolhidos = {};
+  if (algumAberto){
+    state.dados.plano.forEach(l => { if (l.tipo === 'grupo') state.recolhidos[l.id] = true; });
+    state.dados.contas.forEach(c => { if (c.tipo === 'grupo') state.recolhidos['banco:' + c.id] = true; });
+    state.calc.empresas.forEach(e => { state.recolhidos['emp:' + e] = true; });
+  }
+  guardarGrupos();
+  aplicarGrupos();
+  return !algumAberto;
+}
+
+/* "Tudo fechado" leva em conta as duas hierarquias, senão o ícone do botão
+   contradiz o que está na tela. */
+function tudoFechado(){
+  if (!state.dados || !state.calc) return false;
+  return !state.dados.plano.some(l => l.tipo === 'grupo' && !fechado(l.id)) &&
+         !state.dados.contas.some(c => c.tipo === 'grupo' && !fechado('banco:' + c.id)) &&
+         !state.calc.empresas.some(e => !fechado('emp:' + e));
+}
+
+
+/* O valor de uma linha para um conjunto de dias. Movimento soma; saldo mostra
+   a última foto do período, porque somar saldo não quer dizer nada. É a mesma
+   regra da coluna de total e das colunas da visão por mês — escrita uma vez
+   só, para as duas não divergirem com o tempo. */
+function agregar(l, datas){
+  const c = state.calc;
+  const pegar = l.get || (() => undefined);
+  if (!datas.length) return undefined;
+
+  if (l.kind === 'saldo-ini') return c.sdIni[datas[0]];
+
+  const foto = l.kind === 'saldo-fim' || l.kind === 'bancos' || l.kind === 'dif' ||
+               l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' || l.kind === 'saldo-total';
+  if (foto){
+    for (let i = datas.length - 1; i >= 0; i--){
+      const v = pegar(datas[i]);
+      if (v !== undefined && v !== null) return v;
+    }
+    return undefined;
+  }
+
+  let soma = 0, achou = false;
+  datas.forEach(d => {
+    const v = pegar(d);
+    if (v !== undefined && v !== null){ soma += num(v); achou = true; }
+  });
+  return achou ? soma : undefined;
+}
+
+function linhaTr(l, dias){
+  const c = state.calc;
+  if (l.kind === 'espaco'){
+    const tr = h('tr', { class:'l-espaco' });
+    tr.appendChild(h('td', { colspan: dias.length + 2 }));
+    return tr;
+  }
+
+  /* Saldo inicial, total de saídas e saldo final ficam à vista o tempo todo,
+     como o cabeçalho dos dias: são as três leituras que dão sentido a qualquer
+     linha que se esteja olhando lá embaixo. */
+  const acompanha = l.kind === 'saldo-ini' || l.kind === 'saldo-fim' || l.kind === 'total';
+  const cadeia = l.cadeia || [];
+  const tr = h('tr', { class:'l-' + l.kind + (l.nivel ? ' nivel-' + l.nivel : '') +
+                              (l.classe ? ' ' + l.classe : '') + (acompanha ? ' fixa' : '') +
+                              (cadeia.some(fechado) ? ' oculta' : '') });
+  if (cadeia.length) tr.setAttribute('data-cadeia', cadeia.join(' '));
+  if (l.grupo) tr.setAttribute('data-grupo', l.grupo);
+  const pegar = l.get || (() => undefined);
+
+  /* nome da linha, com o código e o triângulo de recolher */
+  const nome = h('td', { class:'col-nome' });
+  const box = h('div', { class:'nome-box' });
+  /* O triângulo serve às duas hierarquias: os grupos do plano de contas e os
+     bancos da posição de saldos. */
+  const chaveGrupo = l.kind === 'grupo' ? l.linha.id : (l.grupo || '');
+  if (chaveGrupo) tr.setAttribute('data-grupo', chaveGrupo);
+  if (chaveGrupo){
+    const estaFechado = fechado(chaveGrupo);
+    const b = h('button', { class:'toggle', type:'button', title: estaFechado ? 'abrir' : 'fechar' },
+      [ icone(estaFechado ? 'fa-chevron-right' : 'fa-chevron-down') ]);
+    /* O estado é lido no momento do clique, e não capturado aqui: como a
+       tabela não é mais redesenhada a cada vez, um valor guardado no botão
+       envelhece assim que outro comando mexe nos grupos. */
+    b.onclick = e => {
+      e.stopPropagation();
+      state.recolhidos[chaveGrupo] = !fechado(chaveGrupo);
+      guardarGrupos();
+      aplicarGrupos();
+    };
+    box.appendChild(b);
+  }
+  if (l.codigo) box.appendChild(h('span', { class:'cod', text: l.codigo }));
+  box.appendChild(h('span', { class:'txt', text: l.label }));
+  nome.appendChild(box);
+  tr.appendChild(nome);
+
+  let total = 0;
+  dias.forEach(x => {
+    const v = pegar(x.data);
+    /* Dia emprestado do mês vizinho não entra no total: ele está na tela para
+       mostrar a emenda, não para somar no fechamento do mês. */
+    if (!x.fora && v !== undefined && v !== null) total += num(v);
+    tr.appendChild(celula(l, x, v));
+  });
+
+  /* Total do mês: soma nas linhas de movimento; nas de saldo, a última foto. */
+  const tv = agregar(l, dias.filter(x => !x.fora).map(x => x.data));
+  const tdTot = h('td', { class:'col-total num' + classeValor(l, tv) });
+  if (l.kind === 'dif' && tv !== undefined && tv !== null){
+    const z = Math.abs(num(tv)) < 0.005 ? 0 : num(tv);
+    tdTot.textContent = z.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  } else {
+    tdTot.textContent = (tv === undefined || tv === null) ? '' : fmtGrade(tv);
+  }
+  if (tv) tdTot.title = fmtExato(tv);
+  tr.appendChild(tdTot);
+  return tr;
+}
+
+function classeValor(l, v){
+  if (l.kind !== 'dif') return '';
+  if (v === undefined || v === null) return '';
+  /* Três faixas, porque um centavo de arredondamento não é a mesma coisa que
+     mil reais faltando. Fechado é verde; até um real é poeira de arredondamento
+     e fica discreto; acima disso é vermelho, que é o que pede investigação. */
+  /* Arredonda antes de comparar, senão 0,009 e 0,011 aparecem os dois como
+     "0,01" na tela e saem pintados de cores diferentes. */
+  const x = Math.round(Math.abs(num(v)) * 100) / 100;
+  if (!x)     return ' v-ok';
+  if (x <= 1) return ' v-poeira';
+  return ' v-alerta';
+}
+
+function celula(l, dia, v){
+  const c = state.calc;
+  const cls = ['num'];
+  if (dia.fora) cls.push('col-fora');
+  if (!dia.util) cls.push('nao-util');
+  if (dia.data === c.hoje) cls.push('hoje');
+  cls.push(classeValor(l, v).trim());
+
+  /* Toda linha aceita ajuste à mão, inclusive as que somam sozinhas do
+     relatório: o dinheiro que a automação não enxerga precisa caber em algum
+     lugar, e o lugar certo é a conta a que ele pertence. */
+  const editavel = state.podeEditar &&
+    (l.kind === 'linha' || l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' ||
+     l.kind === 'cabec-saldo');
+  const detalhavel = l.kind === 'linha' && num(v);
+
+  const chave = l.linha ? (l.linha.id + '|' + dia.data) : '';
+  const previsto = chave && c.previstoCel[chave];
+  const ajuste = chave ? c.ajusteCel[chave] : 0;
+  const auto = chave ? c.autoCel[chave] : 0;
+  if (previsto) cls.push('previsto');
+  if (editavel) cls.push('editavel');
+  if (detalhavel) cls.push('detalhe');
+  if (ajuste && l.kind === 'linha' && l.linha.modo === 'auto') cls.push('ajustada');
+
+  const td = h('td', { class: cls.filter(Boolean).join(' ') });
+  if (l.kind === 'linha'){ td.setAttribute('data-linha', l.linha.id); td.setAttribute('data-dia', dia.data); }
+  if (l.kind === 'dif' && v !== undefined && v !== null){
+    const z = Math.abs(num(v)) < 0.005 ? 0 : num(v);
+    td.textContent = z.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  } else {
+    td.textContent = (v === undefined || v === null) ? '' : fmtGrade(v);
+  }
+  if (ajuste && auto){
+    td.textContent = fmtGrade(v) || '0';
+    td.title = fmtExato(auto) + ' do relatório  ·  ajuste de ' + fmtExato(ajuste) +
+               '  =  ' + fmtExato(v);
+  } else if (ajuste){
+    td.title = fmtExato(v) + '  ·  lançado à mão';
+  } else if (num(v)){
+    const q = chave && c.qtdPorCel[chave];
+    td.title = fmtExato(v) + (q ? ('  ·  ' + q + ' título(s)') : '') +
+               (previsto ? '  ·  previsto' : '');
+  }
+
+  if (editavel || detalhavel){
+    td.onclick = () => abrirCelula(l, dia, v, td);
+    if (editavel && l.kind === 'linha'){
+      td.ondblclick = e => { e.preventDefault(); editarNaCelula(td, l, dia); };
+    }
+  }
+  return td;
+}
+
+/* ============================================================================
+   CLIQUE NA CÉLULA
+   ============================================================================ */
+function abrirCelula(l, dia, v, td){
+  if (l.kind === 'saldo-conta' || l.kind === 'saldo-grupo' || l.kind === 'cabec-saldo'){
+    return abrirSaldos(dia.data);
+  }
+  /* Linha digitada é para digitar: o clique abre a própria célula. A janela
+     continua ali para observação, exclusão e histórico, no duplo clique da
+     linha automática ou quando o dia tem mais de um lançamento. */
+  if (l.linha.modo === 'auto') return abrirDetalheTitulos(l, dia);
+  if (state.podeEditar) return editarNaCelula(td, l, dia);
+  return abrirLancamentos(l, dia);
+}
+
+/* ============================================================================
+   EDIÇÃO NA PRÓPRIA CÉLULA
+   ----------------------------------------------------------------------------
+   Enter salva e desce, Tab salva e anda para o dia seguinte, Esc desiste.
+   O valor entra na tela na hora e a gravação segue por baixo — quem digita uma
+   coluna inteira de recebimentos não pode esperar o servidor a cada tecla.
+   ============================================================================ */
+async function editarNaCelula(td, l, dia){
+  if (!state.podeEditar || !td || td.querySelector('input')) return;
+  const lista = state.calc.lancPorCel[l.linha.id + '|' + dia.data] || [];
+  if (lista.length > 1) return abrirLancamentos(l, dia);   // vários: pela janela
+  if (!(await garantirAutor())){ toast('Preciso do seu nome para registrar o lançamento.', true); return; }
+  if (td.querySelector('input')) return;   // a janela do nome demorou: não abre duas vezes
+
+  const lanc = lista[0] || null;
+  const antes = td.textContent;
+  td.classList.add('editando');
+  td.textContent = '';
+  const inp = h('input', { type:'text', inputmode:'decimal', class:'cel-input',
+                           value: lanc ? fmtExato(lanc.valor) : '' });
+  td.appendChild(inp);
+  inp.focus();
+  inp.select();
+
+  let encerrado = false;
+  const encerrar = (salvar, depois) => {
+    if (encerrado) return;
+    encerrado = true;
+    const texto = inp.value;
+    td.classList.remove('editando');
+    td.textContent = antes;
+    if (salvar) aplicarNaCelula(l, dia, lanc, texto);
+    if (depois) depois();
+  };
+
+  inp.onkeydown = e => {
+    if (e.key === 'Enter'){ e.preventDefault(); encerrar(true, () => andar(l, dia, 'baixo')); }
+    else if (e.key === 'Tab'){ e.preventDefault(); encerrar(true, () => andar(l, dia, e.shiftKey ? 'esq' : 'dir')); }
+    else if (e.key === 'Escape'){ e.preventDefault(); encerrar(false); }
+  };
+  inp.onblur = () => encerrar(true);
+}
+
+/* Depois de salvar a tabela é redesenhada, então a célula vizinha é procurada
+   pelo par linha+dia, não pelo elemento antigo, que já não existe. */
+function andar(l, dia, sentido){
+  const dias = diasVisiveis();
+  const iDia = dias.findIndex(x => x.data === dia.data);
+  let alvo = null;
+
+  if (sentido === 'dir' || sentido === 'esq'){
+    const j = iDia + (sentido === 'dir' ? 1 : -1);
+    if (dias[j]) alvo = { linha: l.linha.id, dia: dias[j].data };
+  } else {
+    const linhas = linhasDaTela().filter(x => x.kind === 'linha' && x.linha.secao === l.linha.secao);
+    const i = linhas.findIndex(x => x.linha.id === l.linha.id);
+    if (linhas[i + 1]) alvo = { linha: linhas[i + 1].linha.id, dia: dia.data };
+  }
+  if (!alvo) return;
+
+  setTimeout(() => {
+    const td = document.querySelector('td[data-linha="' + alvo.linha + '"][data-dia="' + alvo.dia + '"]');
+    if (!td || !td.classList.contains('editavel')) return;
+    td.scrollIntoView({ block:'nearest', inline:'nearest' });
+    const rec = linhasDaTela().find(x => x.linha && x.linha.id === alvo.linha);
+    const d = state.dados.dias.find(x => x.data === alvo.dia);
+    if (rec && d) editarNaCelula(td, rec, d);
+  }, 30);
+}
+
+/* Grava sem tirar o usuário do lugar: o número muda na tela na hora e o envio
+   acontece atrás. Se o envio falhar, a tela recarrega e o aviso aparece —
+   melhor perder a digitação do que exibir número que não foi gravado. */
+function aplicarNaCelula(l, dia, lanc, texto){
+  const v = parseValor(texto);
+  const atual = lanc ? num(lanc.valor) : null;
+  if (v === null && !lanc) return;                       // nada digitado, nada a fazer
+  if (v !== null && atual !== null && Math.abs(v - atual) < 0.005) return;   // nada mudou
+
+  const lista = state.dados.lancamentos;
+  if (v === null && lanc){                               // apagou: exclui o lançamento
+    const i = lista.findIndex(x => x.id === lanc.id);
+    if (i >= 0) lista.splice(i, 1);
+    marcarCelula(l.linha.id, dia.data, 'indo');
+    redesenhar();
+    enviarEmSilencio({ acao:'fluxo_excluir', id: lanc.id }, 'Lançamento excluído.',
+                     { linha_id: l.linha.id, data: dia.data });
+    Conferencia.marcar({ linha_id: l.linha.id, data: dia.data, excluir_id: lanc.id });
+    return;
+  }
+
+  const id = lanc ? lanc.id : ('m' + Date.now().toString(36) + Math.floor(Math.random() * 1e4));
+  if (lanc) lanc.valor = v;
+  else lista.push({ id: id, data: dia.data, linha_id: l.linha.id, valor: v,
+                    descricao: '', autor: state.autor, quando: '', desfeito: false });
+  marcarCelula(l.linha.id, dia.data, 'indo');
+  redesenhar();
+  enviarEmSilencio({ acao:'fluxo_lancamento', lancamento: {
+    id: id, data: dia.data, linha_id: l.linha.id, valor: v,
+    descricao: lanc ? (lanc.descricao || '') : '', autor: state.autor,
+  } }, null, { linha_id: l.linha.id, data: dia.data });
+  Conferencia.marcar({ linha_id: l.linha.id, data: dia.data, valor: v });
+}
+
+
+/* Digitou numa célula: o número muda na tela na hora e o envio vai atrás.
+   A linha que guardava state.cache[state.mes] saiu — era chave do cache mensal
+   antigo, que ninguém lê desde que o ano passou a vir de uma vez. */
+function redesenhar(){
+  calcular();
+  render();
+}
+
+/* ----------------------------------------------------------------------------
+   O SINAL FICA NA CÉLULA
+   ----------------------------------------------------------------------------
+   Digitou um valor: ele aparece na hora e o envio vai atrás. O único aviso de
+   que o envio ainda estava acontecendo era o fio de dois pixels no alto — longe
+   de onde a pessoa está olhando, que é a célula que ela acabou de digitar.
+
+   Agora a marca fica na própria célula: apagada enquanto vai, acesa quando
+   volta, vermelha se não foi. E fica guardada em state, não só no DOM, porque
+   qualquer redesenho perderia a classe no meio do caminho. */
+function marcarCelula(linhaId, data, estado){
+  const chave = linhaId + '|' + data;
+  if (estado) state.pendentes[chave] = estado;
+  else delete state.pendentes[chave];
+  const td = document.querySelector(
+    'td[data-linha="' + linhaId + '"][data-dia="' + data + '"]');
+  if (!td) return;
+  td.classList.remove('cel-indo', 'cel-falhou');
+  if (estado === 'indo')   td.classList.add('cel-indo');
+  if (estado === 'falhou') td.classList.add('cel-falhou');
+  if (estado === null){
+    td.classList.add('recem-mudada');
+    setTimeout(() => td.classList.remove('recem-mudada'), 1300);
+  }
+}
+
+async function enviarEmSilencio(payload, textoOk, celula){
+  if (!(await Chave.garantir())) {
+    if (celula) marcarCelula(celula.linha_id, celula.data, null);
+    toast('Gravação cancelada.', true);
+    return;
+  }
+  fioComeca();
+  try {
+    await fetch(CONFIG.DATA_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(assinar(payload)),
+    });
+    fioTermina();
+    if (celula) marcarCelula(celula.linha_id, celula.data, null);
+    if (textoOk) toast(textoOk);
+  } catch(e){
+    fioTermina();
+    if (celula) marcarCelula(celula.linha_id, celula.data, 'falhou');
+    toast('Não consegui gravar: ' + (e.message || e) + '. Recarregando…', true);
+    esquecerOAno();
+    setTimeout(() => carregar(), 1200);
+  }
+}
+
+/* ============================================================================
+   CONFERÊNCIA DO QUE FOI DIGITADO NA CÉLULA
+   ----------------------------------------------------------------------------
+   Digitar direto na célula não recarrega a tela a cada tecla — seria
+   insuportável para quem preenche uma coluna inteira. Mas o envio é cego, e
+   sem conferência a tela mostraria para sempre um número que nunca chegou à
+   planilha. Foi assim que um lançamento sumiu sem deixar rastro.
+
+   Então a conferência espera a digitação parar, busca o ano uma única vez e
+   compara. O que chegou fica; o que não chegou volta ao valor da planilha e a
+   célula fica marcada em vermelho, com um aviso dizendo quantos falharam.
+   ============================================================================ */
+const Conferencia = {
+  fila: [],
+  t: null,
+  ESPERA_MS: 6000,
+
+  marcar(item){
+    this.fila.push(item);
+    clearTimeout(this.t);
+    this.t = setTimeout(() => this.rodar(), this.ESPERA_MS);
+  },
+
+  async rodar(){
+    const itens = this.fila.splice(0);
+    if (!itens.length) return;
+    let d;
+    try {
+      esquecerOAno();
+      d = await buscarAno(state.mes.slice(0, 4), true);
+    } catch(e){ return; }          // sem resposta do script, não se acusa ninguém
+    if (!d || !Array.isArray(d.lancamentos)) return;
+    const vivos = d.lancamentos.filter(x => !x.desfeito);
+
+    const falhas = itens.filter(it => {
+      if (it.excluir_id) return vivos.some(x => x.id === it.excluir_id);
+      return !vivos.some(x =>
+        String(x.data).slice(0, 10) === it.data &&
+        String(x.linha_id) === String(it.linha_id) &&
+        Math.abs(num(x.valor) - num(it.valor)) < 0.005);
+    });
+
+    state.dados = d;
+    calcular();
+    render();
+    falhas.forEach(it => marcarCelula(it.linha_id, it.data, 'falhou'));
+    if (falhas.length){
+      toast(falhas.length === 1
+        ? 'Um lançamento não chegou à planilha — a célula ficou marcada em vermelho.'
+        : (falhas.length + ' lançamentos não chegaram à planilha — as células ficaram marcadas.'),
+        true);
+    }
+  },
+};
+
+/* --- o que forma o número: os títulos daquele dia e daquela conta --- */
+/* O bloco dos ajustes: aparece em qualquer célula, acima ou abaixo dos
+   títulos. É por aqui que entra o que a automação não enxerga.
+
+   Onde existe a tabela de títulos, os ajustes já estão nela como linhas — e aí
+   este bloco vem só com o botão. Ele era um cartão com fundo e borda próprios,
+   destacado do resto, e chamava mais atenção do que um título de quarenta mil
+   reais logo acima. Um ajuste é mais uma parcela do número da célula, não um
+   aviso; agora se parece com as outras parcelas. */
+function blocoAjustes(l, dia, semLista){
+  const c = state.calc;
+  const todos = c.lancPorCel[l.linha.id + '|' + dia.data] || [];
+  const lista = semLista ? [] : todos;
+  const box = h('div', { class:'ajustes-box' });
+
+  if (lista.length){
+    box.appendChild(h('div', { class:'ajustes-titulo', text:
+      lista.length === 1 ? 'Ajuste lançado à mão' : (lista.length + ' ajustes lançados à mão') }));
+    lista.forEach(x => {
+      const b = h('button', { class:'lanc-item', type:'button' }, [
+        h('span', { class:'li-val', text: fmtExato(x.valor) }),
+        h('span', { class:'li-desc', text: x.descricao || 'sem observação' }),
+        h('span', { class:'li-quem', text: (x.autor || '') +
+          (x.quando ? (' · ' + x.quando.slice(0,10).split('-').reverse().join('/')) : '') }),
+      ]);
+      b.onclick = () => { fecharModal('modal-detalhe'); editarLancamento(l, dia, x); };
+      box.appendChild(b);
+    });
+  }
+
+  if (state.podeEditar){
+    /* "outro" conta os que existem, não os que este bloco desenhou: quando a
+       tabela já mostra o ajuste, este bloco vem vazio e o botão mentiria. */
+    const novo = h('button', { class:'btn btn-ghost btn-sm', type:'button' },
+      [ icone('fa-plus'), todos.length ? 'Lançar outro ajuste' : 'Lançar ajuste neste dia' ]);
+    novo.onclick = () => { fecharModal('modal-detalhe'); editarLancamento(l, dia, null); };
+    box.appendChild(novo);
+    box.appendChild(h('div', { class:'ajustes-dica', text:
+      'Valor negativo tira desta conta, positivo acrescenta. Serve para o que o ' +
+      'relatório não enxerga — ou para tirar daqui o que já entrou por outro caminho.' }));
+  }
+  return box;
+}
+
+/* ============================================================================
+   OS TÍTULOS DE UMA CÉLULA
+   ----------------------------------------------------------------------------
+   Cada clique buscava uma conta de fluxo, e o script do outro lado varria as
+   cinco planilhas mensais em volta para responder. Custava o mesmo que trazer
+   o dia inteiro — então agora traz o dia inteiro, e a tela guarda. Do segundo
+   clique em diante, naquele dia, nada vai à rede.
+   ========================================================================== */
+const Titulos = {
+  porDia: {},           // data -> lista de títulos do dia, todas as contas
+  foraDoDia: {},        // data -> os que alguém tirou da lista à mão
+
+  async doDia(data){
+    if (this.porDia[data]) return this.porDia[data];
+    const url = CONFIG.DATA_URL + '?fluxo_detalhe=' + data + '&v=' + Date.now();
+    const r = await buscarJson(url);
+    if (!r || !r.ok) throw new Error((r && r.erro) || 'sem resposta');
+    this.porDia[data] = r.linhas || [];
+    this.foraDoDia[data] = r.excluidos || [];
+    return this.porDia[data];
+  },
+
+  excluidosDaLinha(data, l){
+    const fora = this.foraDoDia[data] || [];
+    const codigo = String((l.linha && l.linha.codigo) || '');
+    if (codigo) return fora.filter(x => String(x.conta_fluxo) === codigo);
+    if (l.linha && l.linha.id === 'l-s-sem-classificacao'){
+      const noPlano = {};
+      ((state.dados && state.dados.plano) || []).forEach(x => {
+        if (x.codigo) noPlano[String(x.codigo)] = true; });
+      return fora.filter(x => !noPlano[String(x.conta_fluxo)]);
+    }
+    return [];
+  },
+
+  /* Gravar muda o passado: o que estava guardado deixa de valer. */
+  esquecer(){ this.porDia = {}; this.foraDoDia = {}; },
+};
+
+/* O esqueleto é a forma da lista chegando. A caixa branca vazia que havia
+   antes não dizia se ia demorar dois segundos ou se tinha quebrado. */
+function esqueletoTitulos(){
+  const box = h('div', { class:'det-sk' });
+  box.appendChild(h('div', { class:'det-chips' }, [1,2].map(() =>
+    h('div', { class:'det-chip' }, [
+      h('div', { class:'sk sk-k' }), h('div', { class:'sk sk-v' }) ]))));
+  const larg = [[70,190,120,96],[70,150,100,78],[70,172,132,88],[70,160,110,84]];
+  larg.forEach(w => {
+    box.appendChild(h('div', { class:'det-sk-linha' }, [
+      h('div', { class:'sk', style:'width:' + w[0] + 'px' }),
+      h('div', {}, [ h('div', { class:'sk', style:'width:' + w[1] + 'px' }),
+                     h('div', { class:'sk sk-min', style:'width:' + w[2] + 'px' }) ]),
+      h('div', { class:'sk', style:'width:' + w[3] + 'px;margin-left:auto' }),
+    ]));
+  });
+  return box;
+}
+
+function chip(rotulo, valor, forte){
+  return h('div', { class:'det-chip' + (forte ? ' forte' : '') }, [
+    h('div', { class:'k', text: rotulo }),
+    h('div', { class:'v', text: valor }),
+  ]);
+}
+
+async function abrirDetalheTitulos(l, dia){
+  el('det-pe').innerHTML = '';
+  el('det-titulo').textContent = l.label;
+  el('det-sub').textContent = fmtData(dia.data) + ' · buscando os títulos…';
+  const corpo = el('det-corpo');
+  corpo.innerHTML = '';
+  mostrarModal('modal-detalhe');
+
+  if (dia.data >= state.calc.hoje){
+    el('det-sub').textContent = fmtData(dia.data) + ' · previsto, ainda não pago';
+    corpo.appendChild(h('div', { class:'empty' }, [
+      icone('fa-clock'),
+      'Este valor é previsão: são títulos em aberto com vencimento neste dia. ' +
+      'O detalhe título a título está no painel de pagamentos.',
+    ]));
+    corpo.appendChild(blocoAjustes(l, dia));
+    return;
+  }
+
+  /* Só desenha o esqueleto quando a resposta não está na mão. Piscar um
+     esqueleto por 20 milissegundos é pior que não piscar nada. */
+  const jaTem = !!Titulos.porDia[dia.data];
+  if (!jaTem) corpo.appendChild(esqueletoTitulos());
+
+  try {
+    const doDia = await Titulos.doDia(dia.data);
+    const linhas = titulosDaLinha(doDia, l);
+    const total = linhas.reduce((a, x) => a + (Number(x.valor) || 0), 0);
+    pintarTitulos(l, dia, linhas, Math.round(total * 100) / 100);
+  } catch(e){
+    el('det-sub').textContent = 'não consegui carregar o detalhe';
+    corpo.innerHTML = '';
+    corpo.appendChild(h('div', { class:'note danger' }, [
+      icone('fa-triangle-exclamation'),
+      h('span', { text: String(e.message || e) }),
+    ]));
+    corpo.appendChild(blocoAjustes(l, dia));
+  }
+}
+
+/* Quais títulos do dia pertencem a esta linha da tabela.
+   ----------------------------------------------------------------------------
+   Quase sempre é o código da conta de fluxo batendo com o do título. A exceção
+   é a linha "Sem classificação", que existe justamente para recolher os
+   códigos que o plano não conhece — e que nasce sem código nenhum. Filtrar por
+   código vazio devolvia lista vazia SEMPRE, e a tela então dizia que o valor
+   vinha da migração da planilha antiga. Dizia isso mesmo quando os títulos
+   tinham acabado de ser importados: eles estavam lá, só não eram procurados. */
+/* A lista vem do script, na chave contas_manuais da aba FluxoConfig. Se por
+   algum motivo não vier, a tela não inventa: trata como se não houvesse. */
+/* O dia está dentro do que a planilha do fluxo do ano cobre? O script guarda o
+   primeiro e o último dia daquela carga na configuração. Serve para a tela não
+   falar em "migração da planilha antiga" num dia que veio da carga do ano —
+   são coisas diferentes, e a saída de cada uma também é. */
+function diaDaCargaDoAno(data){
+  const cfg = (state.dados && state.dados.config) || {};
+  const de  = String(cfg.carga_ano_de || '');
+  const ate = String(cfg.carga_ano_ate || '');
+  return !!(de && ate && data >= de && data <= ate);
+}
+
+function contaManual(l){
+  const cod = String((l.linha && l.linha.codigo) || '');
+  if (!cod) return false;
+  return ((state.dados && state.dados.contas_manuais) || []).indexOf(cod) >= 0;
+}
+
+function titulosDaLinha(doDia, l){
+  const codigo = String((l.linha && l.linha.codigo) || '');
+  if (codigo) return doDia.filter(x => String(x.conta_fluxo) === codigo);
+  if (l.linha && l.linha.id === 'l-s-sem-classificacao'){
+    const noPlano = {};
+    (state.dados.plano || []).forEach(p => { if (p.codigo) noPlano[String(p.codigo)] = true; });
+    return doDia.filter(x => !noPlano[String(x.conta_fluxo)]);
+  }
+  return [];
+}
+
+function pintarTitulos(l, dia, linhas, total){
+  const c = state.calc, k = l.linha.id + '|' + dia.data;
+  const auto = c.autoCel[k] || 0, ajuste = c.ajusteCel[k] || 0;
+  const corpo = el('det-corpo');
+  corpo.innerHTML = '';
+
+  /* Sem título no histórico mas com valor na tela: o número veio da migração
+     da planilha antiga, que guardou só o total do dia. Dizer "nada neste dia"
+     ali seria mentira — o valor está na cara de quem pergunta. */
+  if (!linhas.length){
+    /* Há contas que nunca passam pelo relatório de contas a pagar: juros de
+       antecipação e o principal e os juros dos empréstimos, que o banco
+       desconta na própria liquidação. Nelas não existe título a mostrar, e
+       falar em migração da planilha antiga seria mentira. */
+    if (contaManual(l)){
+      el('det-sub').textContent = fmtData(dia.data) +
+        (auto ? (' · ' + fmtExato(auto)) : ' · sem valor');
+      corpo.appendChild(h('div', { class:'note info' }, [
+        icone('fa-hand'),
+        h('span', { text: 'Esta conta não vem do relatório de contas a pagar. O valor é lançado ' +
+          'à mão ou vem da planilha do fluxo de caixa — o banco desconta esses valores na própria ' +
+          'liquidação da operação, então não existe título a pagar para listar aqui.' }),
+      ]));
+      corpo.appendChild(blocoAjustes(l, dia));
+      return;
+    }
+    el('det-sub').textContent = fmtData(dia.data) +
+      (auto ? (' · ' + fmtExato(auto)) : ' · sem valor do relatório');
+    corpo.appendChild(h('div', { class:'note info' }, [
+      icone('fa-circle-info'),
+      h('span', { text: !auto
+        ? 'Nenhum título neste dia nesta conta.'
+        : diaDaCargaDoAno(dia.data)
+        ? ('Este dia veio da planilha do fluxo do ano, que guarda só o total de cada ' +
+           'conta — é a fonte que fecha com os bancos. Para ver o título a título, ' +
+           'suba a base realizada na carga inicial do ano, ou o relatório de contas a ' +
+           'pagar deste dia.')
+        : ('Este valor veio da migração da planilha antiga, que guardava só o total ' +
+           'do dia por conta de fluxo — o detalhe título a título está na base do Excel. ' +
+           'A partir do momento em que o relatório de baixas passa a alimentar o fluxo, ' +
+           'a lista aparece aqui.') }),
+    ]));
+    if (ajuste) corpo.appendChild(h('div', { class:'note warn', style:'margin-top:10px' }, [
+      icone('fa-pen'),
+      h('span', { text:'Há ajuste lançado à mão neste dia: R$ ' + fmtExato(ajuste) +
+                        '. O valor na tela é R$ ' + fmtExato(auto + ajuste) + '.' }),
+    ]));
+    const foraVazio = blocoExcluidos(l, dia);
+    if (foraVazio) corpo.appendChild(foraVazio);
+    corpo.appendChild(blocoAjustes(l, dia));
+    return;
+  }
+
+  /* No caso normal todo mundo foi baixado no próprio dia, e uma coluna que
+     repete a mesma data vinte vezes só ocupa espaço. Ela vira uma frase no
+     subtítulo, e só volta à tabela quando algum título destoa. */
+  const destoam = linhas.filter(x => String(x.dt_baixa).slice(0, 10) !== dia.data);
+  el('det-sub').textContent = fmtData(dia.data) +
+    (destoam.length
+      ? (' · ' + destoam.length + ' baixado(s) em outro dia')
+      : ' · todos baixados no mesmo dia');
+
+  /* Os ajustes entram na tabela junto com os títulos, então tudo que está
+     escrito aqui em cima passa a contar os dois. O "Total da conta" vira o
+     número que está na célula — antes era só a soma dos títulos, e quem
+     houvesse lançado um ajuste tinha de somar de cabeça para reconhecê-lo. */
+  const ajustes = c.lancPorCel[l.linha.id + '|' + dia.data] || [];
+  const naCelula = Math.round((total + ajuste) * 100) / 100;
+  const saidasDoDia = Math.abs(num(c.totSai[dia.data]) || 0);
+  const maior = linhas.reduce((a, x) => Math.max(a, Number(x.valor) || 0), 0);
+  const chips = h('div', { class:'det-chips' }, [
+    chip('Títulos', String(linhas.length)),
+    chip('Total da conta', fmtExato(naCelula), true),
+    saidasDoDia ? chip('Do total de saídas do dia',
+      (100 * Math.abs(naCelula) / saidasDoDia).toFixed(1).replace('.', ',') + '%') : null,
+    ajustes.length
+      ? chip(ajustes.length === 1 ? 'Ajuste à mão' : ajustes.length + ' ajustes à mão',
+             fmtExato(ajuste))
+      : chip('Maior título', fmtExato(maior)),
+  ].filter(Boolean));
+  corpo.appendChild(chips);
+
+  /* A lista pode não somar o valor da célula, e isso é esperado: nos dias que
+     vieram da planilha do fluxo do ano o número inclui o que o banco desconta
+     na própria liquidação, que nunca virou título a pagar. Dizer quanto falta
+     é melhor que deixar a pessoa somar a coluna na mão e achar que errou. */
+  const falta = Math.round((auto - total) * 100) / 100;   // ajuste não entra: ele não vem de título
+  if (Math.abs(falta) >= 0.01){
+    corpo.appendChild(h('div', { class:'note info', style:'margin:10px 0' }, [
+      icone('fa-circle-info'),
+      h('span', { text: falta > 0
+        ? ('A lista explica R$ ' + fmtExato(total) + ' dos R$ ' + fmtExato(auto) +
+           ' desta célula. Os R$ ' + fmtExato(falta) + ' que faltam não passaram pelo ' +
+           'contas a pagar — juros de antecipação, tarifas e o que o banco desconta na ' +
+           'liquidação. O valor da célula vem da planilha do fluxo do ano, que inclui isso.')
+        : ('A lista soma R$ ' + fmtExato(total) + ', R$ ' + fmtExato(-falta) +
+           ' a mais que os R$ ' + fmtExato(auto) + ' desta célula. Vale conferir a carga ' +
+           'deste dia: os dois números deveriam sair da mesma fonte.') }),
+    ]));
+  }
+
+  /* Filtro e ordenação só aparecem quando há lista o bastante para se perder
+     nela. Numa conta com três títulos eles seriam enfeite. */
+  const estado = { busca:'', ordem:'valor' };
+  const tabela = h('div', { class:'det-lista' });
+
+  if (linhas.length > 10){
+    const campo = h('input', { type:'search', class:'det-busca',
+      placeholder:'filtrar por favorecido, número ou histórico' });
+    const botoes = h('div', { class:'det-ord' });
+    [['valor','maior valor'], ['fornecedor','favorecido'], ['numero','número']].forEach(o => {
+      const b = h('button', { type:'button', class: o[0] === estado.ordem ? 'on' : '', text:o[1] });
+      b.onclick = () => {
+        estado.ordem = o[0];
+        botoes.querySelectorAll('button').forEach((x, i) =>
+          x.classList.toggle('on', [['valor'],['fornecedor'],['numero']][i][0] === estado.ordem));
+        desenhar();
+      };
+      botoes.appendChild(b);
+    });
+    campo.oninput = () => { estado.busca = campo.value.trim().toLowerCase(); desenhar(); };
+    corpo.appendChild(h('div', { class:'det-barra' }, [campo, botoes]));
+  }
+
+  corpo.appendChild(tabela);
+  const rodape = el('det-pe');
+
+  function desenhar(){
+    let vis = linhas;
+    if (estado.busca){
+      const t = estado.busca;
+      vis = vis.filter(x =>
+        String(x.fornecedor || '').toLowerCase().indexOf(t) >= 0 ||
+        String(x.numero || '').toLowerCase().indexOf(t) >= 0 ||
+        String(x.historico || '').toLowerCase().indexOf(t) >= 0);
+    }
+    vis = vis.slice().sort((a, b) =>
+      estado.ordem === 'valor' ? (Number(b.valor) || 0) - (Number(a.valor) || 0)
+      : estado.ordem === 'fornecedor'
+        ? String(a.fornecedor || '').localeCompare(String(b.fornecedor || ''), 'pt-BR')
+        : String(a.numero || '').localeCompare(String(b.numero || ''), 'pt-BR'));
+
+    /* Os ajustes ficam sempre no fim, e fora da ordenação: eles não são
+       títulos e não competem por "maior valor". A busca alcança os dois. */
+    let ajusVis = ajustes;
+    if (estado.busca){
+      const t = estado.busca;
+      ajusVis = ajusVis.filter(a =>
+        String(a.descricao || '').toLowerCase().indexOf(t) >= 0 ||
+        String(a.autor || '').toLowerCase().indexOf(t) >= 0 ||
+        'ajuste'.indexOf(t) >= 0);
+    }
+
+    tabela.innerHTML = '';
+    const tbl = h('table', { class:'tabela-simples det-tabela' });
+    const cab = [ h('th', { text:'Número' }), h('th', { text:'Favorecido' }) ];
+    if (destoam.length) cab.push(h('th', { text:'Baixa' }));
+    cab.push(h('th', { text:'Banco' }));
+    cab.push(h('th', { class:'num', text:'Valor' }));
+    if (state.podeEditar) cab.push(h('th', { class:'det-acao-col' }));
+    tbl.appendChild(h('thead', {}, [ h('tr', {}, cab) ]));
+
+    const tb = h('tbody');
+    const soma = vis.concat(ajusVis).reduce((a, x) => a + Math.abs(Number(x.valor) || 0), 0) || 1;
+
+    /* Uma linha só serve para os dois: o que muda é o que vai em cada coluna,
+       não a forma da linha. Era exatamente isso que faltava — o ajuste morava
+       num cartão à parte e parecia outra categoria de coisa. */
+    const linhaDa = (x, eAjuste) => {
+      const v = Number(x.valor) || 0;
+      const parte = 100 * Math.abs(v) / soma;
+      const cels = [
+        eAjuste
+          ? h('td', {}, [ h('span', { class:'det-tag', text:'ajuste' }) ])
+          : h('td', { class:'mono', text: x.numero || '—' }),
+        h('td', {}, [ h('div', { class:'forn' }, [
+          eAjuste ? (x.descricao || 'sem observação') : (x.fornecedor || '—'),
+          h('small', { text: eAjuste
+            ? ((x.autor || 'sem nome') + (x.quando
+                ? (' · ' + x.quando.slice(0, 10).split('-').reverse().join('/')) : ''))
+            : String(x.historico || '').slice(0, 70) }),
+        ])]),
+      ];
+      if (destoam.length){
+        const fora = !eAjuste && String(x.dt_baixa).slice(0, 10) !== dia.data;
+        cels.push(h('td', { class:'mono' + (fora ? ' det-fora' : ''),
+                            text: eAjuste ? '' : fmtData(x.dt_baixa) }));
+      }
+      cels.push(h('td', {}, [ (!eAjuste && x.banco)
+        ? h('span', { class:'det-banco', text: x.banco }) : '' ]));
+      cels.push(h('td', { class:'num det-val' }, [
+        h('div', { class:'n', text: fmtExato(v) }),
+        h('div', { class:'p', text: parte.toFixed(1).replace('.', ',') + '%' }),
+        h('div', { class:'det-barra-val', style:'width:' + Math.min(100, parte) + '%' }),
+      ]));
+
+      if (state.podeEditar){
+        const b = h('button', { class:'det-acao', type:'button',
+          title: eAjuste ? 'Editar este ajuste' : 'Tirar este título da lista' },
+          [ icone(eAjuste ? 'fa-pen' : 'fa-xmark') ]);
+        b.onclick = ev => {
+          ev.stopPropagation();
+          if (eAjuste){ fecharModal('modal-detalhe'); editarLancamento(l, dia, x); }
+          else pedirExclusaoTitulo(l, dia, x, naCelula);
+        };
+        cels.push(h('td', { class:'det-acao-col' }, [b]));
+      }
+
+      const tr = h('tr', { class: eAjuste ? 'tr-ajuste' : '' }, cels);
+      if (eAjuste && state.podeEditar){
+        tr.style.cursor = 'pointer';
+        tr.onclick = () => { fecharModal('modal-detalhe'); editarLancamento(l, dia, x); };
+      }
+      return tr;
+    };
+
+    vis.forEach(x => tb.appendChild(linhaDa(x, false)));
+    ajusVis.forEach(a => tb.appendChild(linhaDa(a, true)));
+    tbl.appendChild(tb);
+    tabela.appendChild(tbl);
+
+    if (!vis.length && !ajusVis.length) tabela.appendChild(h('div', { class:'empty' }, [
+      icone('fa-magnifying-glass'), 'Nenhum título com esse texto.' ]));
+
+    const somaVis = vis.concat(ajusVis).reduce((a, x) => a + (Number(x.valor) || 0), 0);
+    rodape.innerHTML = '';
+    rodape.appendChild(h('span', { class:'det-tot' }, [
+      vis.length + (vis.length === 1 ? ' título' : ' títulos') +
+      (ajusVis.length ? (ajusVis.length === 1 ? ' e 1 ajuste · ' : ' e ' + ajusVis.length + ' ajustes · ') : ' · '),
+      h('b', { text: fmtExato(somaVis) }),
+    ]));
+    const copiar = h('button', { class:'btn btn-ghost btn-sm', type:'button' },
+      [ icone('fa-copy'), 'Copiar lista' ]);
+    copiar.onclick = () => copiarTitulos(l, dia, vis, ajusVis);
+    rodape.appendChild(copiar);
+  }
+
+  desenhar();
+  const fora = blocoExcluidos(l, dia);
+  if (fora) corpo.appendChild(fora);
+  corpo.appendChild(blocoAjustes(l, dia, true));
+}
+
+/* ============================================================================
+   TIRAR UM TÍTULO DA LISTA
+   ----------------------------------------------------------------------------
+   Existe porque o relatório às vezes traz o que não deveria — uma baixa em
+   duplicidade, um título que na verdade não foi pago. Até aqui o único jeito
+   era um ajuste negativo do mesmo valor: fechava a conta e deixava as duas
+   linhas na lista, uma explicando a outra.
+
+   O aviso antes de apagar diz o que vai acontecer com o número da célula, e a
+   resposta depende de onde aquele dia nasceu. Veio do relatório de contas a
+   pagar: o valor é a soma destes títulos, então ele cai. Veio da planilha do
+   fluxo do ano: o valor nunca foi a soma deles, então não se mexe — ali sair
+   da lista é só sair da lista.
+   ========================================================================== */
+function pedirExclusaoTitulo(l, dia, t, naCelula){
+  const doAno = String(t.origem || '') === 'base_ano';
+  const v = Number(t.valor) || 0;
+  const depois = Math.round((naCelula - v) * 100) / 100;
+
+  Confirma.pedir({
+    titulo: 'Tirar este título da lista?',
+    corpo: [
+      h('div', { class:'cf-alvo' }, [
+        h('b', { text: t.fornecedor || t.numero || 'título sem nome' }),
+        h('span', { text: fmtExato(v) }),
+      ]),
+      h('p', { class:'cf-text', text: doAno
+        ? ('O valor da célula não muda: ele vem da planilha do fluxo do ano, que ' +
+           'guarda o total do dia e não a soma destes títulos. Só a lista muda. ' +
+           'Para mexer no valor, o caminho é um ajuste.')
+        : ('O valor da célula cai de ' + fmtExato(naCelula) + ' para ' +
+           fmtExato(depois) + '.') }),
+      h('p', { class:'cf-text', text:
+        'A próxima importação não traz o título de volta — e enquanto ele estiver ' +
+        'fora, esta janela mostra o caminho de volta.' }),
+    ],
+    botao: 'Tirar da lista',
+    perigo: true,
+    aoConfirmar: async () => {
+      /* titulo_chave e não chave: "chave" já é o nome da senha de gravação, que
+         assinar() escreve por cima de qualquer coisa com esse nome. */
+      if (!(await gravar({ acao:'fluxo_excluir_titulo', titulo_chave: t.chave, data: dia.data },
+                         'Título tirado da lista.'))) return;
+      await depoisDeMexerNoTitulo(l, dia);
+    },
+  });
+}
+
+function pedirVoltaTitulo(l, dia, x){
+  Confirma.pedir({
+    titulo: 'Trazer o título de volta?',
+    corpo: [
+      h('div', { class:'cf-alvo' }, [
+        h('b', { text: x.fornecedor || x.numero || 'título sem nome' }),
+        h('span', { text: fmtExato(x.valor) }),
+      ]),
+      h('p', { class:'cf-text', text:
+        'Ele volta para a lista deste dia, exatamente como estava. Se o dia vier ' +
+        'do relatório de contas a pagar, o valor da célula sobe de novo.' }),
+    ],
+    botao: 'Trazer de volta',
+    aoConfirmar: async () => {
+      if (!(await gravar({ acao:'fluxo_restaurar_titulo', titulo_chave: x.chave },
+                         'Título de volta na lista.'))) return;
+      await depoisDeMexerNoTitulo(l, dia);
+    },
+  });
+}
+
+/* O script leva um instante para gravar, e o detalhe daquele dia está guardado
+   aqui dentro. Esquecer os dois e reler é mais barato que adivinhar o que
+   mudou — e é o que garante que a tela não fique mostrando o que já não existe. */
+async function depoisDeMexerNoTitulo(l, dia){
+  fecharModal('modal-detalhe');
+  abrirVeu('Relendo os números…');
+  Titulos.esquecer();
+  esquecerOAno();
+  await new Promise(r => setTimeout(r, 1200));
+  try { await carregar(false, true); } catch(e){}
+  fecharVeu();
+  try { await abrirDetalheTitulos(l, dia); } catch(e){}
+}
+
+/* Os títulos que saíram da lista neste dia e nesta conta. Some quando não há
+   nenhum — não é um painel, é uma pendência, e pendência que não existe não
+   ocupa espaço. */
+function blocoExcluidos(l, dia){
+  const fora = Titulos.excluidosDaLinha(dia.data, l);
+  if (!fora.length) return null;
+
+  const box = h('div', { class:'ajustes-box' });
+  box.appendChild(h('div', { class:'ajustes-titulo', text:
+    fora.length === 1 ? 'Um título foi tirado desta lista'
+                      : (fora.length + ' títulos foram tirados desta lista') }));
+  fora.forEach(x => {
+    const linha = h('div', { class:'exc-item' }, [
+      h('span', { class:'li-val', text: fmtExato(x.valor) }),
+      h('span', { class:'li-desc', text: x.fornecedor || x.numero || 'sem nome' }),
+      h('span', { class:'li-quem', text: (x.quem || '') +
+        (x.quando ? (' · ' + x.quando.slice(0, 10).split('-').reverse().join('/')) : '') }),
+    ]);
+    if (state.podeEditar){
+      const b = h('button', { class:'btn btn-ghost btn-sm', type:'button' },
+        [ icone('fa-rotate-left'), 'trazer de volta' ]);
+      b.onclick = () => pedirVoltaTitulo(l, dia, x);
+      linha.appendChild(b);
+    }
+    box.appendChild(linha);
+  });
+  return box;
+}
+
+/* A janela de confirmar, uma só para tudo que pede confirmação. Sem ela cada
+   caso viraria um confirm() do navegador, que não cabe texto e não deixa
+   explicar o que vai acontecer. */
+const Confirma = {
+  pedir(op){
+    el('cf-titulo').textContent = op.titulo || 'Confirmar';
+    const corpo = el('cf-corpo');
+    corpo.innerHTML = '';
+    (op.corpo || []).forEach(x => corpo.appendChild(x));
+    const b = el('cf-ok');
+    b.textContent = op.botao || 'Confirmar';
+    b.classList.toggle('btn-danger', !!op.perigo);
+    b.classList.toggle('btn-primary', !op.perigo);
+    b.onclick = async () => {
+      fecharModal('modal-confirma');
+      try { await op.aoConfirmar(); } catch(e){ toast('Não deu certo: ' + (e.message || e), true); }
+    };
+    mostrarModal('modal-confirma');
+  },
+};
+
+/* Copia em texto separado por tabulação: cola direto numa planilha, em
+   colunas, sem ninguém precisar tratar nada. */
+function copiarTitulos(l, dia, linhas, ajustes){
+  const cab = ['Número', 'Favorecido', 'Histórico', 'Vencimento', 'Baixa', 'Banco', 'Valor'];
+  const corpo = linhas.map(x => [
+    x.numero || '', x.fornecedor || '', String(x.historico || '').replace(/\s+/g, ' '),
+    fmtData(x.vencimento), fmtData(x.dt_baixa), x.banco || '',
+    fmtExato(x.valor),
+  ].join('\t'));
+  /* O que está na tela é o que vai para a área de transferência, ajuste
+     incluído: colar uma lista que não bate com o total seria pior que nada. */
+  (ajustes || []).forEach(a => corpo.push([
+    'ajuste', a.descricao || 'sem observação',
+    (a.autor || '') + (a.quando ? (' · ' + a.quando.slice(0, 10)) : ''),
+    fmtData(dia.data), '', '', fmtExato(a.valor),
+  ].join('\t')));
+  const txt = [l.label + ' · ' + fmtData(dia.data), cab.join('\t')].concat(corpo).join('\n');
+  const quantos = linhas.length + (ajustes || []).length;
+  const pronto = () => toast(quantos + ' linha(s) copiadas. Cole numa planilha.');
+  try {
+    navigator.clipboard.writeText(txt).then(pronto, () => copiarNaMarra(txt, pronto));
+  } catch(e){ copiarNaMarra(txt, pronto); }
+}
+function copiarNaMarra(txt, pronto){
+  const ta = h('textarea', { style:'position:fixed;left:-9999px;top:0' });
+  ta.value = txt;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); pronto(); }
+  catch(e){ toast('Não consegui copiar. Selecione a lista à mão.', true); }
+  document.body.removeChild(ta);
+}
+
+/* --- linhas digitadas: um dia pode ter mais de um lançamento --- */
+function abrirLancamentos(l, dia){
+  el('det-pe').innerHTML = '';
+  const lista = state.calc.lancPorCel[l.linha.id + '|' + dia.data] || [];
+  if (!state.podeEditar && !lista.length) return;
+  if (lista.length > 1 || (!state.podeEditar && lista.length)){
+    el('det-titulo').textContent = l.label;
+    el('det-sub').textContent = fmtData(dia.data) + ' · ' + lista.length + ' lançamentos';
+    const corpo = el('det-corpo');
+    corpo.innerHTML = '';
+    lista.forEach(x => {
+      const b = h('button', { class:'lanc-item', type:'button' }, [
+        h('span', { class:'li-val', text: fmtExato(x.valor) }),
+        h('span', { class:'li-desc', text: x.descricao || 'sem observação' }),
+        h('span', { class:'li-quem', text: (x.autor || '') + (x.quando ? (' · ' + x.quando.slice(0,10).split('-').reverse().join('/')) : '') }),
+      ]);
+      b.onclick = () => { fecharModal('modal-detalhe'); editarLancamento(l, dia, x); };
+      corpo.appendChild(b);
+    });
+    if (state.podeEditar){
+      const novo = h('button', { class:'btn btn-ghost btn-sm', type:'button', style:'margin-top:12px' },
+        [ icone('fa-plus'), 'Novo lançamento neste dia' ]);
+      novo.onclick = () => { fecharModal('modal-detalhe'); editarLancamento(l, dia, null); };
+      corpo.appendChild(novo);
+    }
+    mostrarModal('modal-detalhe');
+    return;
+  }
+  editarLancamento(l, dia, lista[0] || null);
+}
+
+async function editarLancamento(l, dia, lanc){
+  if (!state.podeEditar) return;
+  if (!(await garantirAutor())){ toast('Preciso do seu nome para registrar o lançamento.', true); return; }
+  state.edicao = { linha: l.linha, data: dia.data, lanc: lanc };
+  el('lanc-titulo').textContent = l.label;
+  const auto = l.linha.modo === 'auto';
+  el('lanc-sub').textContent = fmtData(dia.data) +
+    (l.linha.secao === 'E' ? ' · entrada' : ' · saída') +
+    (auto ? ' · ajuste sobre o que veio do relatório' : '');
+  el('lanc-valor').value = lanc ? fmtExato(lanc.valor) : '';
+  el('lanc-desc').value = lanc ? (lanc.descricao || '') : '';
+  el('lanc-excluir').hidden = !lanc;
+  const nota = el('lanc-nota');
+  if (lanc && lanc.autor){
+    nota.hidden = false;
+    nota.textContent = 'lançado por ' + lanc.autor +
+      (lanc.quando ? (' em ' + lanc.quando.slice(0,10).split('-').reverse().join('/')) : '');
+  } else nota.hidden = true;
+  mostrarModal('modal-lanc');
+  setTimeout(() => el('lanc-valor').focus(), 60);
+}
+
+async function salvarLancamento(){
+  const e = state.edicao;
+  if (!e) return;
+  const v = parseValor(el('lanc-valor').value);
+  if (v === null){ toast('Valor inválido.', true); return; }
+  const payload = {
+    acao: 'fluxo_lancamento',
+    lancamento: {
+      id: e.lanc ? e.lanc.id : '',
+      data: e.data, linha_id: e.linha.id, valor: v,
+      descricao: el('lanc-desc').value, autor: state.autor,
+    },
+  };
+  fecharModal('modal-lanc');
+  /* Guarda onde o número mudou, para a tabela recarregada acender aquela
+     célula: sem isso, o valor novo aparece no meio de trinta colunas iguais e
+     quem digitou fica procurando o próprio lançamento. */
+  state.destacar = { linha_id: payload.lancamento.linha_id, data: payload.lancamento.data };
+  const alvo = { data: e.data, linha_id: e.linha.id, valor: v,
+                 descricao: el('lanc-desc').value };
+  if (await gravar(payload, 'Lançamento enviado.')){
+    aplicarLancamentoLocal(alvo, e.lanc ? e.lanc.id : '');
+    recarregarDepois(d => achouLancamento(d, alvo),
+      'O lançamento não chegou à planilha — o valor voltou ao que era. Tente de novo.');
+  }
+}
+
+async function excluirLancamento(){
+  const e = state.edicao;
+  if (!e || !e.lanc) return;
+  fecharModal('modal-lanc');
+  const id = e.lanc.id;
+  if (await gravar({ acao:'fluxo_excluir', id: id }, 'Exclusão enviada.')){
+    recarregarDepois(
+      d => !(d.lancamentos || []).some(x => x.id === id && !x.desfeito),
+      'A exclusão não chegou à planilha — o lançamento continua lá. Tente de novo.');
+  }
+}
+
+/* O Apps Script responde sem corpo (no-cors), então esperamos um instante
+   antes de reler — é o mesmo compasso da tela de envio do painel. */
+/* Depois de gravar, a tela tem que voltar da planilha, não do que ela já
+   tinha. Aqui apagava-se a chave do mês — resto da época em que se carregava
+   mês a mês. Desde que o ano inteiro passou a vir de uma vez, quem manda é a
+   chave do ano, e apagar a do mês não apagava nada: a tela recarregava do
+   cache e mostrava o número velho. */
+function esquecerOAno(){
+  delete state.cache[state.mes.slice(0, 4)];
+  delete state.cache[state.mes];          // resto do cache mensal antigo
+  Titulos.esquecer();
+}
+
+/* O envio é cego: o navegador não deixa ler a resposta do script, então
+   "enviei" nunca quis dizer "gravou". Quem chama passa um teste; depois que a
+   tela volta da planilha, o teste diz se o que se mandou está mesmo lá. Só
+   assim a ferramenta pode afirmar que salvou — e, quando não salvou, dizer
+   isso em vez de deixar o número mentir. */
+function recarregarDepois(conferir, aviso){
+  esquecerOAno();
+  fioComeca();
+  setTimeout(async () => {
+    await carregar();
+    if (typeof conferir !== 'function') return;
+    const d = state.dados;
+    if (!d || !Array.isArray(d.lancamentos)) return;   // sem resposta, não se acusa
+    if (!conferir(d)){
+      toast(aviso || 'A gravação não chegou à planilha. Tente de novo.', true);
+    }
+  }, 1500);
+}
+
+/* Achar na planilha o que se acabou de mandar. Sem id — o envio cego não
+   devolve nenhum — então o casamento é pelo conjunto: mesmo dia, mesma linha,
+   mesmo valor. */
+function achouLancamento(d, alvo){
+  return (d.lancamentos || []).some(x =>
+    !x.desfeito &&
+    String(x.data).slice(0, 10) === alvo.data &&
+    String(x.linha_id) === String(alvo.linha_id) &&
+    Math.abs(num(x.valor) - num(alvo.valor)) < 0.005);
+}
+
+/* Põe o lançamento na tela antes de a planilha confirmar. O número muda na
+   hora, como em qualquer planilha, e a conferência que vem logo atrás corrige
+   se algo tiver dado errado. */
+function aplicarLancamentoLocal(alvo, id){
+  const d = state.dados;
+  if (!d || !Array.isArray(d.lancamentos)) return;
+  const novo = { id: id || ('tmp' + Date.now().toString(36)), data: alvo.data,
+                 linha_id: alvo.linha_id, valor: alvo.valor,
+                 descricao: alvo.descricao || '', autor: state.autor,
+                 quando: '', desfeito: false };
+  const i = id ? d.lancamentos.findIndex(x => x.id === id) : -1;
+  if (i >= 0) d.lancamentos[i] = novo; else d.lancamentos.push(novo);
+  calcular();
+  render();
+}
+
+/* --- posição de saldos do dia: todas as contas de uma vez --- */
+async function abrirSaldos(data){
+  if (!state.podeEditar) return;
+  if (!(await garantirAutor())){ toast('Preciso do seu nome para registrar os saldos.', true); return; }
+  const c = state.calc, d = state.dados;
+  el('sal-titulo').textContent = 'Posição de saldos';
+  el('sal-sub').textContent = fmtData(data) + ' · informe o saldo de cada conta';
+  const corpo = el('sal-corpo');
+  corpo.innerHTML = '';
+  state.edicao = { saldosData: data };
+
+  const atualizarTotal = () => {
+    let t = 0;
+    corpo.querySelectorAll('input[data-conta]').forEach(i => { t += parseValor(i.value) || 0; });
+    el('sal-total').textContent = 'Total: ' + fmtExato(t) +
+      '  ·  saldo calculado: ' + fmtExato(c.sdFim[data]) +
+      '  ·  diferença: ' + fmtExato(t - c.sdFim[data]);
+    el('sal-total').className = 'sal-total' + (Math.abs(t - c.sdFim[data]) < 0.01 ? ' ok' : ' alerta');
+  };
+
+  c.empresas.forEach(emp => {
+    corpo.appendChild(h('div', { class:'sal-emp', text: emp }));
+    d.contas.filter(x => x.empresa === emp && x.tipo === 'conta').forEach(x => {
+      const v = c.sal[x.id] && c.sal[x.id][data];
+      const inp = h('input', { type:'text', inputmode:'decimal', 'data-conta': x.id,
+                               value: (v === undefined || v === null) ? '' : fmtExato(v) });
+      inp.oninput = atualizarTotal;
+      corpo.appendChild(h('div', { class:'sal-linha' }, [
+        h('label', { text: x.descricao }),
+        inp,
+      ]));
+    });
+  });
+  atualizarTotal();
+  mostrarModal('modal-saldos');
+}
+
+async function salvarSaldos(){
+  const data = state.edicao && state.edicao.saldosData;
+  if (!data) return;
+  const saldos = [];
+  el('sal-corpo').querySelectorAll('input[data-conta]').forEach(i => {
+    const v = parseValor(i.value);
+    if (v !== null) saldos.push({ conta_id: i.getAttribute('data-conta'), valor: v });
+  });
+  fecharModal('modal-saldos');
+  if (await gravar({ acao:'fluxo_saldo', data: data, saldos: saldos, autor: state.autor },
+                   'Saldos enviados.')){
+    recarregarDepois(
+      d => (d.saldos || []).filter(x => String(x.data).slice(0, 10) === data).length === saldos.length,
+      'A posição de saldos não chegou à planilha. Tente de novo.');
+  }
+}
+
+/* ---------------------------------------------------------------- modais */
+function mostrarModal(id){ el(id).classList.add('show'); }
+function fecharModal(id){
+  el(id).classList.remove('show');
+  document.dispatchEvent(new CustomEvent('fluxo:modal-fechado', { detail: id }));
+}
+
+/* ============================================================================
+   REGISTRO DE USO
+   ----------------------------------------------------------------------------
+   Abrir e exportar não mudam nada, então não pedem senha — mas ficam na aba
+   Log com quem, quando e o quê. Serve para enxergar depois quem andou baixando
+   o fluxo. É registro, não tranca: sem senha, vale entre quem já tem acesso.
+
+   A abertura é registrada uma vez por sessão do navegador. Sem isso, recarregar
+   a página cinco vezes viraria cinco linhas e o registro perderia a serventia.
+   ========================================================================== */
+const Registro = {
+  K: 'fluxo_' + AMBIENTE + 'abertura_registrada',
+
+  enviar(tipo, detalhe){
+    try {
+      fetch(CONFIG.DATA_URL, {
+        method:'POST', mode:'no-cors',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify({ acao:'fluxo_registro', tipo: tipo,
+                               detalhe: detalhe || '', usuario: state.autor || '' }),
+      });
+    } catch(e){ /* registro não pode atrapalhar o uso da tela */ }
+  },
+
+  async abertura(){
+    try { if (sessionStorage.getItem(this.K) === '1') return; } catch(e){}
+    /* Espera o e-mail do Access chegar: registrar sem saber quem é seria
+       uma linha inútil. */
+    try { await IDENTIDADE; } catch(e){}
+    try { sessionStorage.setItem(this.K, '1'); } catch(e){}
+    this.enviar('abertura', 'ano ' + state.mes.slice(0, 4));
+  },
+
+  /* O registro passa a dizer o recorte, não só o tamanho: saber que alguém
+     baixou "jan a jul, sintético, em PDF" explica muito mais do que "212
+     dias". */
+  exportacao(op, formato){
+    this.enviar('exportacao',
+      formato + ' · ' + rotuloPeriodo(op.ate) +
+      ' · ' + (op.nivel === 'sintetico' ? 'sintético' : 'analítico') +
+      (op.diaADia ? ' · dia a dia' : ''));
+  },
+};
+
+/* ============================================================================
+   EXPORTAÇÃO — modelo novo
+   ----------------------------------------------------------------------------
+   O arquivo antigo era a tabela crua: código, nome e números, sem hierarquia
+   visível, sem dizer de que período era nem quem gerou. Quem recebia por
+   e-mail tinha que perguntar.
+
+   Agora o arquivo se explica sozinho: cabeçalho com o período e a autoria, a
+   mesma leitura visual da tela — saldo em faixa escura, entradas em verde,
+   saídas em laranja, fim de semana em cinza — e três abas: o período que
+   está aberto, o fechamento de cada mês do ano, e a conferência do saldo
+   contra a posição dos bancos.
+   ========================================================================== */
+const COR = {
+  plum:'2D1B2D', plumTxt:'FFFFFF', laranja:'FF6E00', laranjaClaro:'FDEEE0',
+  verde:'16794A', verdeClaro:'E9F5EE', cinza:'F4F0F4', cinzaEsc:'EBE4EB',
+  borda:'E8E2E8', texto:'1A0F1A', suave:'6B5E6B', vermelho:'C0392B',
+  foraDoMes:'FAF7FA',
+};
+const FMT_NUM = '_-* #,##0.00_-;[Red]-* #,##0.00_-;_-* "–"_-;_-@_-';
+
+function estiloLinha(l){
+  const base = { alignment:{ vertical:'center' },
+                 border:{ bottom:{ style:'hair', color:{ rgb: COR.borda } } } };
+  if (l.kind === 'saldo-ini' || l.kind === 'saldo-fim')
+    return Object.assign({}, base, { font:{ bold:true, sz:10, color:{ rgb: COR.plumTxt } },
+      fill:{ patternType:'solid', fgColor:{ rgb: COR.plum } } });
+  if (l.kind === 'total'){
+    const ent = l.classe === 't-ent';
+    return Object.assign({}, base, { font:{ bold:true, sz:10, color:{ rgb: ent ? COR.verde : COR.laranja } },
+      fill:{ patternType:'solid', fgColor:{ rgb: ent ? COR.verdeClaro : COR.laranjaClaro } } });
+  }
+  if (l.kind === 'grupo' || l.kind === 'cabec-saldo' || l.kind === 'saldo-grupo' ||
+      l.kind === 'saldo-total' || l.kind === 'bancos')
+    return Object.assign({}, base, { font:{ bold:true, sz:10, color:{ rgb: COR.texto } },
+      fill:{ patternType:'solid', fgColor:{ rgb: COR.cinza } } });
+  if (l.kind === 'dif')
+    return Object.assign({}, base, { font:{ bold:true, sz:10, color:{ rgb: COR.suave } } });
+  return Object.assign({}, base, { font:{ sz:10, color:{ rgb: COR.texto } } });
+}
+
+/* Uma aba de tabela cruzada: as linhas do plano contra um conjunto de colunas.
+   Serve tanto para os dias do mês quanto para os doze meses do ano — é a
+   mesma tabela, só muda o que cada coluna representa. */
+function abaCruzada(titulo, subtitulo, linhas, colunas, rotuloTotal, valor){
+  const largura = 1 + colunas.length + 1;
+  const aoa = [];
+
+  aoa.push(['ON TIME · Fluxo de Caixa']);
+  aoa.push([titulo]);
+  aoa.push([subtitulo]);
+  aoa.push([]);
+  aoa.push(['Descrição'].concat(colunas.map(c => c.rotulo)).concat([rotuloTotal]));
+
+  const mapa = [];   // linha da planilha -> linha da tela (para o estilo)
+  linhas.forEach(l => {
+    if (l.kind === 'espaco'){ aoa.push([]); mapa.push(null); return; }
+    const nome = (l.nivel ? '    '.repeat(l.nivel) : '') + l.label;
+    const vals = colunas.map(c => {
+      const v = valor(l, c);
+      return (v === undefined || v === null) ? '' : Math.round(num(v) * 100) / 100;
+    });
+    const t = valor(l, { total:true });
+    aoa.push([nome].concat(vals)
+             .concat([(t === undefined || t === null) ? '' : Math.round(num(t) * 100) / 100]));
+    mapa.push(l);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const põe = (r, c, s) => { const a = XLSX.utils.encode_cell({ r:r, c:c }); if (ws[a]) ws[a].s = s; };
+
+  põe(0, 0, { font:{ bold:true, sz:15, color:{ rgb: COR.plum } } });
+  põe(1, 0, { font:{ bold:true, sz:12, color:{ rgb: COR.laranja } } });
+  põe(2, 0, { font:{ sz:10, color:{ rgb: COR.suave } } });
+
+  const cab = { font:{ bold:true, sz:9, color:{ rgb: COR.plumTxt } },
+                fill:{ patternType:'solid', fgColor:{ rgb: COR.plum } },
+                alignment:{ horizontal:'center', vertical:'center', wrapText:true } };
+  for (let c = 0; c < largura; c++) põe(4, c, cab);
+
+  mapa.forEach((l, i) => {
+    if (!l) return;
+    const r = 5 + i;
+    const s = estiloLinha(l);
+    põe(r, 0, Object.assign({}, s, { alignment:{ horizontal:'left', vertical:'center' } }));
+    colunas.forEach((col, j) => {
+      const sv = Object.assign({}, s, { numFmt: FMT_NUM,
+        alignment:{ horizontal:'right', vertical:'center' } });
+      if (col.fora && !s.fill) sv.fill = { patternType:'solid', fgColor:{ rgb: COR.foraDoMes } };
+      põe(r, 1 + j, sv);
+    });
+    const sT = Object.assign({}, s, { numFmt: FMT_NUM,
+      alignment:{ horizontal:'right', vertical:'center' },
+      font: Object.assign({}, s.font, { bold:true }) });
+    if (!sT.fill) sT.fill = { patternType:'solid', fgColor:{ rgb: COR.cinzaEsc } };
+    põe(r, largura - 1, sT);
+  });
+
+  ws['!cols'] = [{ wch:40 }]
+    .concat(colunas.map(() => ({ wch:14 }))).concat([{ wch:17 }]);
+  ws['!rows'] = [{ hpt:21 }, { hpt:17 }, { hpt:14 }, { hpt:6 }, { hpt:28 }];
+  const ate = Math.min(5, largura - 1);
+  ws['!merges'] = [0,1,2].map(r => ({ s:{ r:r, c:0 }, e:{ r:r, c:ate } }));
+  return ws;
+}
+
+/* ----------------------------------------------------------------------------
+   CONGELAR PAINÉIS
+   ----------------------------------------------------------------------------
+   A biblioteca que geramos aqui não escreve painel congelado: pedir ws['!freeze']
+   não dá erro nenhum e simplesmente não sai no arquivo. Na aba do dia a dia,
+   com duzentas colunas, isso significa rolar até setembro e perder de vista a
+   coluna com o nome da linha — que é justamente o que se está lendo.
+
+   Então o arquivo é gerado, aberto como o zip que ele é, e a marca do painel é
+   escrita no XML da aba antes de ir para o disco. Se qualquer parte disso não
+   existir no navegador de quem está usando, cai no caminho de sempre: arquivo
+   sem congelamento, que é o que se tinha até agora.
+   -------------------------------------------------------------------------- */
+function baixarPlanilha(wb, nome, paineis){
+  try {
+    if (!XLSX.CFB || !XLSX.CFB.read) throw new Error('sem CFB');
+    const buf = XLSX.write(wb, { type:'array', bookType:'xlsx' });
+    const cfb = XLSX.CFB.read(new Uint8Array(buf), { type:'array' });
+    let mudou = false;
+
+    cfb.FullPaths.forEach((caminho, i) => {
+      const m = /xl\/worksheets\/sheet(\d+)\.xml$/.exec(caminho);
+      if (!m) return;
+      const aba = wb.SheetNames[Number(m[1]) - 1];
+      const alvo = paineis[aba];
+      if (!alvo) return;
+      const ent = cfb.FileIndex[i];
+      let xml = '';
+      for (let k = 0; k < ent.content.length; k++) xml += String.fromCharCode(ent.content[k]);
+      const pane = '<sheetViews><sheetView workbookViewId="0"><pane' +
+        (alvo.x ? (' xSplit="' + alvo.x + '"') : '') +
+        (alvo.y ? (' ySplit="' + alvo.y + '"') : '') +
+        ' topLeftCell="' + alvo.cel + '" activePane="bottomRight" state="frozen"/>' +
+        '</sheetView></sheetViews>';
+      const novo = xml.replace(/<sheetViews>[\s\S]*?<\/sheetViews>/, pane);
+      if (novo === xml) return;
+      const bytes = new Uint8Array(novo.length);
+      for (let k = 0; k < novo.length; k++) bytes[k] = novo.charCodeAt(k) & 255;
+      ent.content = bytes; ent.size = bytes.length;
+      mudou = true;
+    });
+
+    if (!mudou) throw new Error('nada para congelar');
+    const saida = XLSX.CFB.write(cfb, { type:'array', fileType:'zip', compression:true });
+    const url = URL.createObjectURL(new Blob([saida],
+      { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = nome;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch(e){
+    XLSX.writeFile(wb, nome);
+  }
+}
+
+function abaConferencia(ate){
+  const c = state.calc;
+  const aoa = [];
+  aoa.push(['ON TIME · Fluxo de Caixa']);
+  aoa.push(['Conferência do saldo contra a posição dos bancos']);
+  aoa.push(['Cada dia com posição informada: o saldo que a conta do fluxo produz, ' +
+            'o que os bancos mostram, e a diferença entre os dois.']);
+  aoa.push([]);
+  aoa.push(['Dia', 'Saldo calculado', 'Total nos bancos', 'Diferença', 'Situação']);
+
+  const linhas = [];
+  c.dias.forEach(d => {
+    if (ate && d > ate) return;
+    if (!c.temSaldo[d]) return;
+    const calc = num(c.sdFim[d]), banco = num(c.totBancos[d]);
+    const dif = Math.round((banco - calc) * 100) / 100;
+    linhas.push([d, Math.round(calc * 100) / 100, Math.round(banco * 100) / 100, dif,
+                 !dif ? 'fecha' : (Math.abs(dif) <= 1 ? 'arredondamento' : 'CONFERIR')]);
+  });
+  linhas.forEach(l => aoa.push(l));
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const põe = (r, cc, s) => { const a = XLSX.utils.encode_cell({ r:r, c:cc }); if (ws[a]) ws[a].s = s; };
+  põe(0, 0, { font:{ bold:true, sz:15, color:{ rgb: COR.plum } } });
+  põe(1, 0, { font:{ bold:true, sz:12, color:{ rgb: COR.laranja } } });
+  põe(2, 0, { font:{ sz:10, color:{ rgb: COR.suave } } });
+  for (let cc = 0; cc < 5; cc++)
+    põe(4, cc, { font:{ bold:true, sz:9, color:{ rgb: COR.plumTxt } },
+                 fill:{ patternType:'solid', fgColor:{ rgb: COR.plum } },
+                 alignment:{ horizontal:'center', vertical:'center' } });
+
+  linhas.forEach((l, i) => {
+    const r = 5 + i;
+    const base = { border:{ bottom:{ style:'hair', color:{ rgb: COR.borda } } },
+                   alignment:{ vertical:'center' } };
+    põe(r, 0, Object.assign({}, base, { font:{ sz:10 }, alignment:{ horizontal:'center' } }));
+    for (let cc = 1; cc <= 3; cc++)
+      põe(r, cc, Object.assign({}, base, { numFmt: FMT_NUM, font:{ sz:10 },
+        alignment:{ horizontal:'right' } }));
+    const sit = l[4];
+    põe(r, 4, Object.assign({}, base, {
+      font:{ sz:10, bold: sit === 'CONFERIR',
+             color:{ rgb: sit === 'CONFERIR' ? COR.vermelho : (sit === 'fecha' ? COR.verde : COR.suave) } },
+      fill: sit === 'CONFERIR' ? { patternType:'solid', fgColor:{ rgb:'FDECEA' } } : undefined,
+      alignment:{ horizontal:'center' } }));
+  });
+  ws['!cols'] = [{ wch:12 }, { wch:20 }, { wch:20 }, { wch:14 }, { wch:18 }];
+  ws['!rows'] = [{ hpt:21 }, { hpt:17 }, { hpt:14 }, { hpt:6 }, { hpt:24 }];
+  ws['!merges'] = [0,1,2].map(r => ({ s:{ r:r, c:0 }, e:{ r:r, c:4 } }));
+  return ws;
+}
+
+/* ----------------------------------------------------------------------------
+   O RECORTE
+   ----------------------------------------------------------------------------
+   O período começa sempre em janeiro: fechamento é acumulado, e um relatório
+   que começa no meio do ano não fecha com nada. O que se escolhe é onde ele
+   termina — e é isso que decide quais colunas existem e como se chama a
+   coluna de acumulado. Nada de "Total do ano" num arquivo que vai só até
+   julho. */
+function limiteDoMes(mes){
+  const p = mes.split('-');
+  const ultimo = new Date(Number(p[0]), Number(p[1]), 0).getDate();
+  return mes + '-' + String(ultimo).padStart(2, '0');
+}
+
+function mesesAteAqui(){
+  const ano = state.mes.slice(0, 4);
+  const hoje = new Date();
+  const ultimo = (String(hoje.getFullYear()) === ano) ? (hoje.getMonth() + 1) : 12;
+  const out = [];
+  for (let m = 1; m <= ultimo; m++) out.push(ano + '-' + String(m).padStart(2, '0'));
+  return out;
+}
+
+/* O mês fechado mais recente é o anterior ao corrente. É quase sempre o que
+   se quer conferir, então é o que vem preenchido. */
+function mesPadraoExport(){
+  const lista = mesesAteAqui();
+  return lista.length > 1 ? lista[lista.length - 2] : lista[lista.length - 1];
+}
+
+function rotuloPeriodo(ate){
+  const m = Number(ate.slice(5, 7)) - 1;
+  return m === 0 ? ('janeiro de ' + ate.slice(0, 4))
+                 : ('janeiro a ' + MESES_PT_LONGO[m] + ' de ' + ate.slice(0, 4));
+}
+function rotuloAcumulado(ate){
+  const m = Number(ate.slice(5, 7)) - 1;
+  return m === 0 ? 'Total de jan' : ('Acumulado jan–' + MESES_PT[m]);
+}
+const MESES_PT_LONGO = ['janeiro','fevereiro','março','abril','maio','junho',
+                        'julho','agosto','setembro','outubro','novembro','dezembro'];
+
+/* Sintético não é um relatório diferente: é o mesmo, com as folhas podadas.
+   Ficam os saldos, os totais de cada seção e os grupos — o suficiente para
+   ver para onde o dinheiro foi sem virar uma parede de contas. Na posição de
+   saldos vale a mesma régua: o total de cada empresa fica, a conta bancária
+   individual sai. */
+const KINDS_SINTETICO = { 'saldo-ini':1, 'total':1, 'grupo':1, 'saldo-fim':1,
+                          'cabec-saldo':1, 'saldo-total':1, 'bancos':1, 'dif':1,
+                          'espaco':1 };
+function linhasDoNivel(nivel){
+  const todas = linhasDaTela();
+  if (nivel !== 'sintetico') return todas;
+  const podadas = todas.filter(l => KINDS_SINTETICO[l.kind]);
+  /* Podar deixa espaços grudados e espaço sobrando nas pontas. */
+  const out = [];
+  podadas.forEach(l => {
+    if (l.kind === 'espaco' && (!out.length || out[out.length - 1].kind === 'espaco')) return;
+    out.push(l);
+  });
+  while (out.length && out[out.length - 1].kind === 'espaco') out.pop();
+  return out;
+}
+
+function colunasMeses(ate){
+  const c = state.calc;
+  return mesesAteAqui().filter(m => m <= ate).map(m => ({
+    rotulo: MESES_PT[Number(m.slice(5, 7)) - 1] + '/' + m.slice(2, 4),
+    datas: c.dias.filter(d => d.slice(0, 7) === m), fora:false,
+  }));
+}
+function colunasDias(ate){
+  const fim = limiteDoMes(ate);
+  return state.calc.dias.filter(d => d <= fim).map(d => ({
+    rotulo: d.slice(8, 10) + '/' + d.slice(5, 7), datas:[d], fora:false,
+  }));
+}
+function datasDoPeriodo(ate){
+  const fim = limiteDoMes(ate);
+  return state.calc.dias.filter(d => d <= fim);
+}
+
+/* ----------------------------------------------------------------------------
+   A JANELA DE OPÇÕES
+   -------------------------------------------------------------------------- */
+let formatoExport = 'xlsx';
+
+function abrirExportar(){
+  const sel = el('exp-ate');
+  const lista = mesesAteAqui();
+  const escolhido = sel.value && lista.indexOf(sel.value) >= 0 ? sel.value : mesPadraoExport();
+  sel.innerHTML = '';
+  lista.forEach(m => sel.appendChild(h('option', {
+    value:m, text: nomeMes(m), selected: m === escolhido })));
+
+  sel.onchange = pintarExportar;
+  document.querySelectorAll('#modal-exportar .exp-input').forEach(i => { i.onchange = pintarExportar; });
+  document.querySelectorAll('#modal-exportar .exp-fmt').forEach(b => {
+    b.onclick = () => { if (b.disabled) return; formatoExport = b.dataset.fmt; pintarExportar(); };
+  });
+  el('exp-gerar').onclick = () => {
+    const op = opcoesExport();
+    if (op.formato === 'pdf') exportarPdf(op); else exportarExcel(op);
+  };
+
+  pintarExportar();
+  mostrarModal('modal-exportar');
+}
+
+/* Um lugar só decide como a janela fica: o que está escolhido, o que está
+   proibido e o que o rodapé promete. Antes eram três trechos combinando entre
+   si de longe, e era só questão de tempo até um deles esquecer do outro. */
+function pintarExportar(){
+  const dia = el('exp-dia').checked;
+
+  document.querySelectorAll('#modal-exportar .exp-cartao').forEach(c => {
+    const inp = c.querySelector('.exp-input');
+    c.classList.toggle('sel', !!(inp && inp.checked));
+  });
+
+  /* Dia a dia são centenas de colunas: não existe página que as receba. O
+     botão do PDF não some, fica apagado com o motivo escrito embaixo — sumir
+     deixaria a pessoa procurando o que ela viu ali um instante atrás. */
+  const btPdf = document.querySelector('#modal-exportar .exp-fmt[data-fmt="pdf"]');
+  btPdf.disabled = dia;
+  if (dia && formatoExport === 'pdf') formatoExport = 'xlsx';
+  el('exp-aviso').hidden = !dia;
+  document.querySelectorAll('#modal-exportar .exp-fmt').forEach(b => {
+    b.classList.toggle('ativo', b.dataset.fmt === formatoExport);
+  });
+
+  const op = opcoesExport();
+  const meses = colunasMeses(op.ate).length;
+  const cap = m => m.charAt(0).toUpperCase() + m.slice(1);
+  const janAte = 'Jan – ' + cap(MESES_PT[Number(op.ate.slice(5, 7)) - 1]) +
+                 '/' + op.ate.slice(0, 4);
+  el('exp-chip-txt').textContent = meses + (meses === 1 ? ' mês' : ' meses') + ' · ' + janAte;
+  el('exp-sumario').innerHTML = '';
+  el('exp-sumario').appendChild(h('span', {}, [
+    janAte + ' · ',
+    h('b', { text: op.nivel === 'sintetico' ? 'Sintético' : 'Analítico' }),
+    op.diaADia ? ' · dia a dia' : '',
+    ' · ',
+    h('b', { text: op.formato === 'pdf' ? 'PDF' : 'Excel' }),
+  ]));
+}
+
+function opcoesExport(){
+  const nivel = document.querySelector('input[name="exp-nivel"]:checked');
+  return {
+    ate: el('exp-ate').value,
+    diaADia: el('exp-dia').checked,
+    nivel: nivel ? nivel.value : 'analitico',
+    formato: (el('exp-dia').checked && formatoExport === 'pdf') ? 'xlsx' : formatoExport,
+  };
+}
+
+/* ----------------------------------------------------------------------------
+   EXCEL
+   -------------------------------------------------------------------------- */
+function exportarExcel(op){
+  if (typeof XLSX === 'undefined'){ toast('Biblioteca de planilha carregando…', true); return; }
+  const linhas = linhasDoNivel(op.nivel);
+  const doPeriodo = datasDoPeriodo(op.ate);
+  const rotTotal = rotuloAcumulado(op.ate);
+  const wb = XLSX.utils.book_new();
+
+  if (op.diaADia){
+    const cols = colunasDias(op.ate);
+    XLSX.utils.book_append_sheet(wb, abaCruzada(
+      'Dia a dia · ' + rotuloPeriodo(op.ate),
+      'Uma coluna por dia, de 01/01 até o fim do mês escolhido',
+      linhas, cols, rotTotal,
+      (l, col) => col.total ? agregar(l, doPeriodo) : agregar(l, col.datas)),
+      'Dia a dia');
+  }
+
+  const cols = colunasMeses(op.ate);
+  XLSX.utils.book_append_sheet(wb, abaCruzada(
+    'Fechamento · ' + rotuloPeriodo(op.ate),
+    'Um mês por coluna: movimento somado, saldo no fechamento do mês',
+    linhas, cols, rotTotal,
+    (l, col) => col.total ? agregar(l, doPeriodo) : agregar(l, col.datas)),
+    'Fechamento');
+
+  XLSX.utils.book_append_sheet(wb, abaConferencia(limiteDoMes(op.ate)), 'Conferência');
+
+  baixarPlanilha(wb, nomeArquivo(op, 'xlsx'), {
+    'Dia a dia':   { x:1, y:5, cel:'B6' },
+    'Fechamento':  { x:1, y:5, cel:'B6' },
+    'Conferência': { x:0, y:5, cel:'A6' },
+  });
+  fecharModal('modal-exportar');
+  Registro.exportacao(op, 'Excel');
+  toast('Planilha gerada.');
+}
+
+function nomeArquivo(op, ext){
+  const ini = 'jan', fim = MESES_PT[Number(op.ate.slice(5, 7)) - 1];
+  return 'fluxo-de-caixa-' + op.ate.slice(0, 4) + '-' + ini + '-' + fim +
+         (op.nivel === 'sintetico' ? '-sintetico' : '') +
+         (op.diaADia ? '-dia-a-dia' : '') + '.' + ext;
+}
+
+/* ----------------------------------------------------------------------------
+   PDF
+   ----------------------------------------------------------------------------
+   A biblioteca só é buscada quando alguém pede um PDF. Carregá-la na abertura
+   custaria a todo mundo, todo dia, por causa de um botão que a maioria não
+   clica.
+   -------------------------------------------------------------------------- */
+const Pdf = {
+  pronto: false,
+  FONTES: [
+    ['https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js',
+     'https://cdn.jsdelivr.net/npm/jspdf-autotable@5.0.8/dist/jspdf.plugin.autotable.min.js'],
+    ['https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js',
+     'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/5.0.8/jspdf.plugin.autotable.min.js'],
+  ],
+
+  script(url){
+    return new Promise((ok, falha) => {
+      const t = document.createElement('script');
+      t.src = url; t.async = false;
+      t.onload = ok;
+      t.onerror = () => falha(new Error('não carregou ' + url));
+      document.head.appendChild(t);
+    });
+  },
+
+  async garantir(){
+    if (this.pronto || (window.jspdf && window.jspdf.jsPDF)){ this.pronto = true; return true; }
+    for (const par of this.FONTES){
+      try {
+        await this.script(par[0]);
+        await this.script(par[1]);
+        if (window.jspdf && window.jspdf.jsPDF){ this.pronto = true; return true; }
+      } catch(e){ /* tenta a próxima origem */ }
+    }
+    return false;
+  },
+};
+
+const COR_PDF = {
+  plum:[45,27,45], branco:[255,255,255], laranja:[255,110,0], verde:[22,121,74],
+  cinza:[244,240,244], cinzaEsc:[235,228,235], texto:[26,15,26], suave:[107,94,107],
+  verdeClaro:[233,245,238], laranjaClaro:[253,238,224], linha:[232,226,232],
+};
+
+function fmtPdf(v){
+  if (v === undefined || v === null || v === '') return '';
+  /* Arredondar antes de decidir se é zero: sem isso, uma diferença de um
+     milésimo de centavo virava "-0,00" em vermelho na linha da conferência,
+     que é justamente onde um sinal de menos assusta. */
+  const n = Math.round(num(v) * 100) / 100;
+  if (!n) return '–';
+  return n.toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+
+async function exportarPdf(op){
+  const btn = el('exp-gerar');
+  btn.disabled = true;
+  const ok = await Pdf.garantir();
+  btn.disabled = false;
+  if (!ok){
+    toast('Não consegui carregar o gerador de PDF. Verifique a conexão e tente de novo.', true);
+    return;
+  }
+
+  const linhas = linhasDoNivel(op.nivel);
+  const cols = colunasMeses(op.ate);
+  const doPeriodo = datasDoPeriodo(op.ate);
+  const rotTotal = rotuloAcumulado(op.ate);
+
+  const cabecalho = ['Descrição'].concat(cols.map(c => c.rotulo)).concat([rotTotal]);
+  const corpo = [], kinds = [];
+  linhas.forEach(l => {
+    if (l.kind === 'espaco') return;                 // o PDF já respira pelo estilo
+    const nome = (l.nivel ? '   '.repeat(l.nivel) : '') + l.label;
+    corpo.push([nome]
+      .concat(cols.map(c => fmtPdf(agregar(l, c.datas))))
+      .concat([fmtPdf(agregar(l, doPeriodo))]));
+    kinds.push(l);
+  });
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'landscape', unit:'pt', format:'a4' });
+  const larg = doc.internal.pageSize.getWidth();
+
+  /* Muitos meses e a fonte encolhe sozinha, em vez de a última coluna cair
+     fora da página. */
+  const n = cabecalho.length;
+  const corpoSz = n <= 9 ? 7.5 : n <= 12 ? 6.5 : 5.8;
+
+  doc.autoTable({
+    head: [cabecalho],
+    body: corpo,
+    startY: 78,
+    margin: { top:78, left:28, right:28, bottom:34 },
+    styles: { font:'helvetica', fontSize:corpoSz, cellPadding:{ top:3, bottom:3, left:5, right:5 },
+              lineColor:COR_PDF.linha, lineWidth:.3, textColor:COR_PDF.texto,
+              overflow:'ellipsize' },
+    headStyles: { fillColor:COR_PDF.plum, textColor:COR_PDF.branco, fontSize:corpoSz,
+                  fontStyle:'bold', halign:'right', valign:'middle' },
+    columnStyles: Object.assign({ 0:{ halign:'left', cellWidth: n <= 9 ? 150 : 120 } },
+      (() => { const o = {}; for (let i = 1; i < n; i++) o[i] = { halign:'right' }; return o; })()),
+    didParseCell(dados){
+      if (dados.section === 'head'){ if (!dados.column.index) dados.cell.styles.halign = 'left'; return; }
+      const l = kinds[dados.row.index];
+      if (!l) return;
+      const ultima = dados.column.index === n - 1;
+      if (l.kind === 'saldo-ini' || l.kind === 'saldo-fim'){
+        dados.cell.styles.fillColor = COR_PDF.plum;
+        dados.cell.styles.textColor = COR_PDF.branco;
+        dados.cell.styles.fontStyle = 'bold';
+      } else if (l.kind === 'total'){
+        const ent = l.classe === 't-ent';
+        dados.cell.styles.fillColor = ent ? COR_PDF.verdeClaro : COR_PDF.laranjaClaro;
+        dados.cell.styles.textColor = ent ? COR_PDF.verde : COR_PDF.laranja;
+        dados.cell.styles.fontStyle = 'bold';
+      } else if (l.kind === 'grupo' || l.kind === 'cabec-saldo' ||
+                 l.kind === 'saldo-grupo' || l.kind === 'saldo-total' || l.kind === 'bancos'){
+        dados.cell.styles.fillColor = COR_PDF.cinza;
+        dados.cell.styles.fontStyle = 'bold';
+      } else if (l.kind === 'dif'){
+        dados.cell.styles.textColor = COR_PDF.suave;
+        dados.cell.styles.fontStyle = 'bold';
+      }
+      if (ultima && !dados.cell.styles.fillColor) dados.cell.styles.fillColor = COR_PDF.cinzaEsc;
+      if (ultima) dados.cell.styles.fontStyle = 'bold';
+      /* Negativo em vermelho, como na tela e na planilha. */
+      const txt = String(dados.cell.raw || '');
+      if (dados.column.index && txt.charAt(0) === '-' &&
+          dados.cell.styles.textColor !== COR_PDF.branco){
+        dados.cell.styles.textColor = [192, 57, 43];
+      }
+    },
+    didDrawPage(){
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+      doc.setTextColor.apply(doc, COR_PDF.plum);
+      doc.text('ON TIME · Fluxo de Caixa', 28, 36);
+      doc.setFontSize(11); doc.setTextColor.apply(doc, COR_PDF.laranja);
+      doc.text('Fechamento · ' + rotuloPeriodo(op.ate) +
+               (op.nivel === 'sintetico' ? '  ·  sintético' : ''), 28, 54);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+      doc.setTextColor.apply(doc, COR_PDF.suave);
+      doc.text('Um mês por coluna: movimento somado, saldo no fechamento do mês', 28, 68);
+
+      const p = doc.internal.getNumberOfPages();
+      doc.setFontSize(8); doc.setTextColor.apply(doc, COR_PDF.suave);
+      doc.text('página ' + p, larg - 28, doc.internal.pageSize.getHeight() - 18, { align:'right' });
+    },
+  });
+
+  doc.save(nomeArquivo(op, 'pdf'));
+  fecharModal('modal-exportar');
+  Registro.exportacao(op, 'PDF');
+  toast('PDF gerado.');
+}
+
+/* ============================================================================
+   INÍCIO
+   ============================================================================ */
+
+/* ============================================================================
+   IMPORTAÇÃO — LEITURA DA PLANILHA DO ANO
+   ----------------------------------------------------------------------------
+   Esta parte lê o "Fluxo de Caixa Realizado", aquele com os dias nas colunas e
+   o plano de contas nas linhas, e devolve tudo já organizado: plano, contas
+   bancárias, saldo de abertura, posição de saldos e entradas.
+
+   O leitor não assume onde as coisas estão. Ele procura pelos textos que
+   organizam a planilha — "Saldo Inicial", "Total Entradas", "Total Saídas",
+   "Saldo Final", "POSIÇÃO DE SALDOS" — e se orienta por eles. Assim, se alguém
+   inserir uma linha no meio do arquivo, o leitor continua funcionando.
+
+   Nada é gravado aqui. A leitura devolve o que entendeu, a tela mostra, e só
+   depois de você confirmar é que alguma coisa sai daqui.
+   ========================================================================== */
+
+function normalizar(t){
+  return String(t == null ? '' : t)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function slug(t){
+  return normalizar(t).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+}
+
+/* Data do cabeçalho. Aceita a célula de data de verdade e também a data
+   DIGITADA COMO TEXTO — "28/02/2026". Parece detalhe, mas custou caro: no
+   arquivo do ano, uma única coluna entre 365 estava assim, e como o leitor só
+   entendia célula de data, o dia 28/02 inteiro foi ignorado. Sumiram o
+   rendimento do mês, um imposto e a posição de saldos daquele dia, e o fluxo
+   passou a fechar 22.672,30 abaixo dos bancos de março em diante. */
+function dataISO(v){
+  if (v instanceof Date && !isNaN(v)){
+    const m = String(v.getMonth() + 1).padStart(2, '0');
+    const d = String(v.getDate()).padStart(2, '0');
+    return v.getFullYear() + '-' + m + '-' + d;
+  }
+  if (typeof v === 'string'){
+    const t = v.trim();
+    /* dd/mm/aaaa e dd/mm/aa, com barra, traço ou ponto. Nada de mm/dd: esta
+       planilha é brasileira, e adivinhar a ordem seria pior do que não ler. */
+    const m = t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/);
+    if (m){
+      const dia = Number(m[1]), mes = Number(m[2]);
+      let ano = Number(m[3]);
+      if (ano < 100) ano += 2000;
+      if (dia >= 1 && dia <= 31 && mes >= 1 && mes <= 12){
+        const d = new Date(ano, mes - 1, dia);
+        /* Confere se a data existe mesmo: 31/02 vira 03/03 no Date. */
+        if (d.getDate() === dia && d.getMonth() === mes - 1){
+          return ano + '-' + String(mes).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
+        }
+      }
+    }
+  }
+  return '';
+}
+
+function numero(v){
+  if (typeof v === 'number') return v;
+  if (v == null || v === '') return 0;
+  const n = parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function lerPlanilhaDoAno(wb){
+  const avisos = [];
+  let matriz = null, aba = '';
+
+  /* A aba certa é a que tem uma linha de cabeçalho com datas de verdade. */
+  for (const nome of wb.SheetNames){
+    const m = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header:1, raw:true, defval:null });
+    const temData = m.slice(0, 12).some(l => (l || []).slice(2).some(c => dataISO(c)));
+    if (temData){ matriz = m; aba = nome; break; }
+  }
+  if (!matriz) throw new Error('Não achei nenhuma aba com dias nas colunas. ' +
+    'Este leitor espera a planilha do fluxo do ano, com as datas no cabeçalho.');
+
+  /* Linha do cabeçalho e quais colunas são dias. */
+  let iCab = -1;
+  for (let i = 0; i < Math.min(matriz.length, 12); i++){
+    if ((matriz[i] || []).slice(2).some(c => dataISO(c))){ iCab = i; break; }
+  }
+  const colunas = [], ignoradas = [];
+  /* Cabeçalhos que são coluna de fechamento, não dia. Ficam de fora sem
+     alarde — o resto que ficar de fora vira aviso. */
+  const NAO_E_DIA = /^(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|total|totais|acumulado|%|descricao|descrição|media|média)$/;
+
+  (matriz[iCab] || []).forEach((c, j) => {
+    if (j < 2) return;
+    const d = dataISO(c);
+    if (d){ colunas.push({ j: j, data: d }); return; }
+    const t = normalizar(c);
+    if (!t || NAO_E_DIA.test(t)) return;
+    ignoradas.push({ j: j, texto: String(c).trim() });
+  });
+  if (!colunas.length) throw new Error('Achei a aba, mas nenhuma coluna com data.');
+
+  const plano = [], contas = [], config = [], saldos = [], entradas = [], saidas = [];
+  const saidasPorDia = {}, entradasPorDia = {};
+  const saldoIniPorDia = {}, saldoFimPorDia = {};
+  /* Os valores de cada linha ficam guardados aqui até o fim da leitura: só
+     depois de conhecer todos os códigos dá para saber quais linhas são
+     subtotais — e subtotal não pode virar lançamento, senão o valor entra
+     duas vezes. */
+  const bruto = [];
+  let secao = '';          // 'E' entradas, 'S' saídas, '' fora
+  let grupoAtual = '';     // id do grupo dentro do plano
+  let empresa = '';        // empresa do bloco de saldos
+  let bancoAtual = '';     // id do banco dentro do bloco de saldos
+  let modoSaldos = false;
+  let ordem = 0, ordemConta = 0;
+
+  for (let i = iCab + 1; i < matriz.length; i++){
+    const linha = matriz[i] || [];
+    const cod = linha[0] == null ? '' : String(linha[0]).trim();
+    const desc = linha[1] == null ? '' : String(linha[1]).trim();
+    const chave = normalizar(desc);
+    if (!cod && !desc) continue;
+
+    /* ---- marcos que organizam o arquivo ---- */
+    if (chave === 'saldo inicial'){
+      colunas.forEach(c => {
+        if (typeof linha[c.j] === 'number') saldoIniPorDia[c.data] = numero(linha[c.j]);
+      });
+      const primeira = colunas.find(c => typeof linha[c.j] === 'number');
+      if (primeira){
+        config.push({ chave:'saldo_inicial_data',  valor: primeira.data });
+        config.push({ chave:'saldo_inicial_valor', valor: String(numero(linha[primeira.j])) });
+      } else {
+        avisos.push('A linha "Saldo Inicial" não tinha nenhum valor: o saldo de abertura ficou de fora.');
+      }
+      continue;
+    }
+    if (chave === 'total entradas'){
+      colunas.forEach(c => {
+        const v = numero(linha[c.j]);
+        if (Math.abs(v) > 0.005) entradasPorDia[c.data] = v;
+      });
+      ignoradas.forEach(x => { x.movimento = (x.movimento || 0) + Math.abs(numero(linha[x.j])); });
+      secao = 'E'; grupoAtual = ''; continue;
+    }
+    if (chave === 'total saidas'){
+      /* Guardamos o total de saídas de cada dia só para a conferência: é ele
+         que vai ser comparado com a soma do relatório de contas a pagar. */
+      colunas.forEach(c => {
+        const v = numero(linha[c.j]);
+        if (Math.abs(v) > 0.005) saidasPorDia[c.data] = v;
+      });
+      ignoradas.forEach(x => { x.movimento = (x.movimento || 0) + Math.abs(numero(linha[x.j])); });
+      secao = 'S'; grupoAtual = ''; continue;
+    }
+    if (chave === 'saldo final'){
+      colunas.forEach(c => {
+        if (typeof linha[c.j] === 'number') saldoFimPorDia[c.data] = numero(linha[c.j]);
+      });
+      secao = ''; continue;
+    }
+    if (chave.indexOf('posicao de saldos') === 0){
+      modoSaldos = true; secao = '';
+      empresa = String(linha[2] == null ? '' : linha[2]).trim() || 'ON TIME';
+      bancoAtual = '';
+      continue;
+    }
+    if (chave === 'total' || chave.indexOf('total ') === 0) continue;
+
+    /* ---- bloco das contas bancárias ---- */
+    if (modoSaldos){
+      /* Como distinguir o banco da conta dentro dele: a conta traz o nome do
+         banco e o tipo separados por hífen ("ITAÚ - Conta Corrente"). O banco
+         vem sozinho e em maiúsculas. A segunda regra existe por causa de
+         linhas como "Sócio", que ficam penduradas no banco anterior sem hífen
+         nenhum — sem ela, virariam um banco vazio. */
+      const soMaiusculas = desc === desc.toUpperCase();
+      const ehConta = desc.indexOf('-') >= 0 || (bancoAtual && !soMaiusculas);
+      if (!ehConta){
+        bancoAtual = 'bg-' + slug(empresa) + '-' + slug(desc);
+        contas.push({ ordem: ++ordemConta, id: bancoAtual, empresa: empresa,
+                      descricao: desc, pai: '', tipo: 'grupo', disponivel: '' });
+        continue;
+      }
+      const idConta = 'bc-' + slug(empresa) + '-' + slug(desc);
+      contas.push({ ordem: ++ordemConta, id: idConta, empresa: empresa,
+                    descricao: desc, pai: bancoAtual, tipo: 'conta', disponivel: 'sim' });
+      colunas.forEach(c => {
+        if (typeof linha[c.j] !== 'number') return;
+        saldos.push({ data: c.data, conta_id: idConta, valor: numero(linha[c.j]) });
+      });
+      continue;
+    }
+
+    /* ---- plano de contas ---- */
+    if (!secao) continue;
+
+    if (!cod){
+      grupoAtual = 'g-' + secao.toLowerCase() + '-' + slug(desc);
+      plano.push({ ordem: ++ordem, id: grupoAtual, codigo: '', descricao: desc,
+                   secao: secao, pai: '', tipo: 'grupo', modo: '' });
+      continue;
+    }
+
+    const idLinha = 'l-' + secao.toLowerCase() + '-' + slug(cod + '-' + desc);
+    plano.push({
+      ordem: ++ordem, id: idLinha, codigo: cod, descricao: desc,
+      secao: secao, pai: grupoAtual, tipo: 'linha',
+      /* 'auto' significa alimentada pelo código da conta de fluxo, que é como
+         as saídas chegam do relatório de contas a pagar. As entradas são
+         digitadas, então não são automáticas. */
+      modo: secao === 'S' ? 'auto' : 'manual',
+    });
+
+    colunas.forEach(c => {
+      const v = numero(linha[c.j]);
+      if (Math.abs(v) < 0.005) return;
+      bruto.push({ data: c.data, id: idLinha, codigo: cod, secao: secao, valor: v });
+    });
+  }
+
+  /* ---- subtotais ----------------------------------------------------------
+     A planilha usa códigos encaixados: 2300401 é o guarda-chuva e 230040103 é
+     o detalhe dentro dele, e a linha de cima repete a soma da de baixo. Lidas
+     como se fossem duas contas, os Juros de Antecipação entravam duas vezes —
+     eram vinte mil a mais só em 07/01.
+
+     Quem tem outro código começando pelo seu vira grupo: não lança valor, e a
+     tela passa a somar os filhos, que é o que a planilha mostra. */
+  const codigos = {};
+  plano.forEach(l => { if (l.codigo) codigos[l.secao + '|' + l.codigo] = l.id; });
+
+  const ehSubtotal = {};
+  plano.forEach(l => {
+    if (!l.codigo) return;
+    const meu = l.secao + '|' + l.codigo;
+    const temFilho = Object.keys(codigos).some(k =>
+      k !== meu && k.indexOf(meu) === 0 && k.length > meu.length);
+    if (temFilho){ ehSubtotal[l.id] = true; l.tipo = 'grupo'; l.modo = ''; }
+  });
+
+  /* Com os subtotais promovidos a grupo, cada linha passa a pendurar no
+     subtotal mais próximo — o código mais longo que seja começo do seu. Sem
+     isso a soma do grupo ficaria vazia e a hierarquia da tela, errada. */
+  plano.forEach(l => {
+    if (!l.codigo) return;
+    let melhor = '', paiId = '';
+    Object.keys(codigos).forEach(k => {
+      const parts = k.split('|');
+      if (parts[0] !== l.secao) return;
+      const c = parts[1];
+      if (c === l.codigo || l.codigo.indexOf(c) !== 0) return;
+      if (!ehSubtotal[codigos[k]]) return;
+      if (c.length > melhor.length){ melhor = c; paiId = codigos[k]; }
+    });
+    if (paiId) l.pai = paiId;
+  });
+
+  bruto.forEach(x => {
+    if (ehSubtotal[x.id]) return;                 // o valor dele é a soma dos filhos
+    if (x.secao === 'E') entradas.push({ data: x.data, linha_id: x.id, valor: x.valor });
+    /* A saída viaja pelo CÓDIGO da conta de fluxo, não pelo id da linha: é
+       assim que o realizado é guardado, e é o que faz o total da planilha do
+       ano e o detalhe do relatório caírem na mesma linha. */
+    else saidas.push({ data: x.data, conta_fluxo: x.codigo, valor: x.valor });
+  });
+
+  /* ---- conferência contra os totais da própria planilha -------------------
+     Ler linha a linha e comparar com a linha de total do arquivo é a maneira
+     mais direta de perceber que algo foi contado a mais ou a menos. */
+  /* Coluna com movimento que não virou dia. Antes isso passava em silêncio e
+     o buraco só aparecia semanas depois, como saldo que não emenda. */
+  ignoradas.filter(x => (x.movimento || 0) > 0.005).forEach(x => {
+    avisos.push('A coluna "' + x.texto + '" tem movimento, mas o cabeçalho dela não é ' +
+      'uma data que eu saiba ler, então ela ficou de fora. Se for um dia, escreva a ' +
+      'data na primeira linha dessa coluna no formato 28/02/2026 e importe de novo.');
+  });
+
+  conferirTotais_(entradas, entradasPorDia, 'entradas', avisos);
+  conferirTotais_(saidas, saidasPorDia, 'saídas', avisos);
+
+  /* ---- degraus de saldo -------------------------------------------------
+     Dia cujo saldo inicial não é o saldo final da véspera. A planilha fecha
+     com os bancos assim mesmo, porque o ajuste foi feito direto no saldo —
+     mas a ferramenta refaz a conta somando entradas e saídas, e sem esse
+     lançamento a linha Diferença passa a mostrar o degrau todos os dias
+     seguintes. Melhor a pessoa saber disso antes de importar. */
+  const degraus = [];
+  const ultimoMovimento = [].concat(
+    Object.keys(entradasPorDia), Object.keys(saidasPorDia)).sort().pop() || '';
+  let anterior = null;
+  colunas.forEach(c => {
+    const ini = saldoIniPorDia[c.data], fim = saldoFimPorDia[c.data];
+    if (ini === undefined || fim === undefined) return;
+    if (anterior !== null && c.data <= ultimoMovimento){
+      const d = Math.round((ini - anterior) * 100) / 100;
+      if (Math.abs(d) >= 0.01) degraus.push({ data: c.data, valor: d });
+    }
+    anterior = fim;
+  });
+
+  if (!plano.length) avisos.push('Não encontrei nenhuma linha de plano de contas.');
+  if (!contas.length) avisos.push('Não encontrei o bloco de POSIÇÃO DE SALDOS: as contas bancárias ficaram de fora.');
+
+  return { aba, colunas, plano, contas, config, saldos, entradas, saidas,
+           saidasPorDia, entradasPorDia, degraus, avisos };
+}
+
+/* Soma o que foi lido linha a linha e compara com a linha de total do arquivo,
+   dia a dia. Diferença aqui é erro de leitura, não de dado — e é melhor
+   aparecer como aviso na tela do que virar um saldo torto três meses depois. */
+function conferirTotais_(lista, totalPorDia, nome, avisos){
+  const lido = {};
+  lista.forEach(x => { lido[x.data] = (lido[x.data] || 0) + x.valor; });
+
+  const dias = {};
+  Object.keys(lido).forEach(d => { dias[d] = true; });
+  Object.keys(totalPorDia).forEach(d => { dias[d] = true; });
+
+  let fora = 0, maior = 0, diaMaior = '';
+  Object.keys(dias).forEach(d => {
+    const dif = Math.round(((lido[d] || 0) - (totalPorDia[d] || 0)) * 100) / 100;
+    if (Math.abs(dif) < 0.01) return;
+    fora++;
+    if (Math.abs(dif) > Math.abs(maior)){ maior = dif; diaMaior = d; }
+  });
+
+  if (fora){
+    avisos.push('As ' + nome + ' que li não fecham com a linha de total da planilha em ' +
+      fora + ' dia(s). A maior diferença é de ' + maior.toLocaleString('pt-BR',
+      { minimumFractionDigits:2, maximumFractionDigits:2 }) + ' em ' + dataBR(diaMaior) + '.');
+  }
+}
+
+
+/* ============================================================================
+   O TEXTO QUE VEM TORTO DO TOTVS
+   ----------------------------------------------------------------------------
+   No relatório e na base realizada, "SERVIÇOS" chega escrito "SERVIA‡OS" e
+   "VEÍCULOS" vira "VEA" mais um caractere de controle e "CULOS". Não é defeito
+   da leitura: está assim dentro do arquivo. O caminho que o texto fez é
+   conhecido — foi gravado em UTF-8, lido como Windows-1252, e o acento do
+   primeiro byte foi raspado, virando um "A".
+
+   Dá para desfazer exatamente, porque o par que sobrou é sempre o mesmo: um
+   "A" seguido de um caractere que nenhum texto de verdade usa. Só esse par é
+   tocado. Um "A" seguido de letra, número, espaço ou pontuação normal fica
+   onde está — "CASA DA AGUA" continua "CASA DA AGUA".
+   ========================================================================== */
+/* Os 32 caracteres que o Windows-1252 usa para os bytes 0x80 a 0x9F. Onde o
+   1252 não define nada, fica o próprio caractere de controle, que é o que os
+   leitores de planilha costumam devolver. */
+const CP1252_ALTO =
+  '€‚ƒ„…†‡ˆ‰Š‹ŒŽ' +
+  '‘’“”•–—˜™š›œžŸ';
+
+/* caractere -> byte que ele representava. Acima de 0x9F o 1252 é igual ao
+   Latin-1, então o próprio código do caractere já é o byte. */
+const BYTE_DE = (() => {
+  const m = {};
+  for (let i = 0; i < 32; i++) m[CP1252_ALTO[i]] = 0x80 + i;
+  for (let b = 0xA0; b <= 0xBF; b++) m[String.fromCharCode(b)] = b;
+  return m;
+})();
+
+function arrumarTexto(v){
+  const s = (v === null || v === undefined) ? '' : String(v);
+  if (s.indexOf('A') < 0 && s.indexOf('Ã') < 0 && s.indexOf('Â') < 0) return s.trim();
+
+  const out = [];
+  for (let i = 0; i < s.length; i++){
+    const c = s[i];
+    const b1 = BYTE_DE[s[i + 1]];
+
+    /* Três caracteres: travessão, aspas curvas, reticências — tudo que nasceu
+       em U+20xx e ocupava três bytes. */
+    if (c === 'A' && s[i + 1] === '€' && BYTE_DE[s[i + 2]] !== undefined){
+      out.push(String.fromCharCode(0x2000 + (BYTE_DE[s[i + 2]] - 0x80)));
+      i += 2; continue;
+    }
+    /* Dois caracteres: as maiúsculas acentuadas, que é o caso de quase tudo. */
+    if (c === 'A' && b1 !== undefined && b1 <= 0x9F){
+      out.push(String.fromCharCode(0xC0 + (b1 - 0x80)));
+      i += 1; continue;
+    }
+    /* Texto que já vinha torto de antes e quebrou duas vezes: o "A" cola no
+       caractere que acabou de ser remontado. */
+    const ult = out.length ? out[out.length - 1] : '';
+    if (c === 'A' && (ult === 'Ã' || ult === 'Â') && b1 !== undefined && b1 >= 0xA0){
+      const lead = ult === 'Ã' ? 0xC3 : 0xC2;
+      out[out.length - 1] = String.fromCharCode(((lead & 0x1F) << 6) | (b1 & 0x3F));
+      i += 1; continue;
+    }
+    out.push(c);
+  }
+  return out.join('').trim();
+}
+
+/* ============================================================================
+   IMPORTAÇÃO — LEITURA DO RELATÓRIO DE CONTAS A PAGAR
+   ----------------------------------------------------------------------------
+   O mesmo leitor serve para dois arquivos que só parecem diferentes: a base do
+   ano inteiro, com o cabeçalho na primeira linha, e o relatório de um dia, que
+   tem título em cima e o cabeçalho na quarta. Em vez de assumir onde está o
+   cabeçalho, ele procura a linha que traz "Vencto Real" e "Fluxo Caixa" e se
+   orienta por ela.
+
+   A leitura para no primeiro "TOTAL A PAGAR". Isso descarta de uma vez os
+   totais do rodapé e o bloco de TRANSFERÊNCIA INTERCOMPANY, que vem depois e
+   não é pagamento a fornecedor.
+
+   O que aproveitamos de cada linha: a data do Vencto Real, o código da Conta
+   Fluxo C e o valor da coluna Saldo. O resto vai junto para o detalhe.
+   ========================================================================== */
+
+const COLUNAS_RELATORIO = {
+  banco:       ['banco'],
+  numero:      ['no. titulo', 'no titulo', 'numero', 'no. título'],
+  tipo:        ['tipo'],
+  natureza:    ['natureza'],
+  conta_fluxo: ['conta fluxo c', 'conta fluxo', 'conta fluxo c.'],
+  fluxo_caixa: ['fluxo caixa'],
+  fornecedor:  ['nome fornece', 'fornecedor', 'nome fornecedor'],
+  data:        ['vencto real', 'vencimento real', 'vencto. real'],
+  valor_titulo:['vlr.titulo', 'vlr titulo', 'valor titulo', 'vlr.título'],
+  historico:   ['historico', 'histórico'],
+  saldo:       ['saldo'],
+  bordero:     ['bordero', 'borderô', 'num bordero'],
+};
+
+function acharColunas_(linha){
+  const mapa = {};
+  (linha || []).forEach((c, j) => {
+    const t = normalizar(c);
+    if (!t) return;
+    Object.keys(COLUNAS_RELATORIO).forEach(campo => {
+      if (mapa[campo] === undefined && COLUNAS_RELATORIO[campo].indexOf(t) >= 0) mapa[campo] = j;
+    });
+  });
+  return mapa;
+}
+
+function lerRelatorio(wb){
+  const avisos = [];
+  let matriz = null, aba = '', cols = null, iCab = -1;
+
+  for (const nome of wb.SheetNames){
+    const m = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header:1, raw:true, defval:null });
+    for (let i = 0; i < Math.min(m.length, 15); i++){
+      const c = acharColunas_(m[i]);
+      if (c.data !== undefined && c.conta_fluxo !== undefined){
+        matriz = m; aba = nome; cols = c; iCab = i; break;
+      }
+    }
+    if (matriz) break;
+  }
+  if (!matriz) throw new Error('Não achei o cabeçalho do relatório. ' +
+    'Esperava uma linha com as colunas "Vencto Real" e "Conta Fluxo C".');
+
+  if (cols.saldo === undefined){
+    avisos.push('A coluna "Saldo" não existe neste arquivo: usei o "Vlr.Titulo" como valor pago.');
+  }
+
+  const titulos = [];
+  const porDia = {};
+  const contas = {};
+  let semData = 0, semConta = 0, parouEm = 0;
+  const vistos = {};   // para dar sequência a títulos idênticos no mesmo dia
+
+  for (let i = iCab + 1; i < matriz.length; i++){
+    const l = matriz[i] || [];
+    const texto = l.map(c => normalizar(c)).join(' ');
+
+    /* Fim da parte que interessa. O que vem depois é total e intercompany. */
+    if (texto.indexOf('total a pagar') >= 0 || texto.indexOf('total movimenta') >= 0){
+      parouEm = i + 1; break;
+    }
+
+    const data = dataISO(l[cols.data]);
+    const banco = l[cols.banco] == null ? '' : String(l[cols.banco]).trim();
+    if (!data){
+      if (banco || (l[cols.numero] != null && String(l[cols.numero]).trim())) semData++;
+      continue;
+    }
+
+    const conta = l[cols.conta_fluxo] == null ? '' : String(l[cols.conta_fluxo]).trim();
+    if (!conta){ semConta++; continue; }
+
+    const valor = numero(cols.saldo !== undefined ? l[cols.saldo] : l[cols.valor_titulo]);
+    const numeroTit = l[cols.numero] == null ? '' : String(l[cols.numero]).trim();
+    const forn = arrumarTexto(l[cols.fornecedor]);
+
+    /* No mesmo dia aparecem títulos idênticos de verdade — treze boletos de
+       IPVA com o mesmo número, fornecedor e valor. O contador no fim da chave
+       impede que um apague o outro, e é estável: relendo o mesmo arquivo, a
+       ordem é a mesma. */
+    const base = data + '|' + numeroTit + '|' + normalizar(l[cols.tipo]) + '|' +
+                 normalizar(forn) + '|' + valor.toFixed(2);
+    vistos[base] = (vistos[base] || 0) + 1;
+
+    titulos.push({
+      chave: base + '|' + vistos[base],
+      dt_baixa: data, vencimento: data,
+      numero: numeroTit,
+      tipo: arrumarTexto(l[cols.tipo]),
+      natureza: l[cols.natureza] == null ? '' : String(l[cols.natureza]).trim(),
+      conta_fluxo: conta,
+      fluxo_caixa: arrumarTexto(l[cols.fluxo_caixa]),
+      fornecedor: forn,
+      valor_pago: valor,
+      valor_titulo: numero(l[cols.valor_titulo]),
+      historico: arrumarTexto(l[cols.historico]),
+      banco: banco,
+      bordero: cols.bordero === undefined || l[cols.bordero] == null ? '' : String(l[cols.bordero]).trim(),
+      origem: 'relatorio',
+    });
+
+    const d = porDia[data] || (porDia[data] = { qtd:0, valor:0 });
+    d.qtd++; d.valor += valor;
+    contas[conta] = (contas[conta] || 0) + valor;
+  }
+
+  if (semData) avisos.push(semData + ' linha(s) sem data em "Vencto Real" ficaram de fora.');
+  if (semConta) avisos.push(semConta + ' linha(s) sem "Conta Fluxo C" ficaram de fora — sem conta, não há onde somar.');
+  /* Antes isto era um erro lançado, e quem o pegava lá em cima não sabia
+     distinguir "não é o relatório" de "é o relatório e está vazio" — virava
+     "este arquivo não parece o relatório de contas a pagar", que manda a pessoa
+     procurar outro arquivo quando o arquivo está certo e o recorte é que veio
+     em branco. Agora volta vazio e a tela explica o que houve. */
+
+  const dias = Object.keys(porDia).sort();
+  return {
+    aba, titulos, dias, porDia, contas, avisos,
+    total: titulos.reduce((a, t) => a + t.valor_pago, 0),
+    parouEm,
+  };
+}
+
+
+/* Tira do relatório as contas que nunca vêm dele.
+   ----------------------------------------------------------------------------
+   Juros de antecipação e o principal e os juros dos empréstimos o banco
+   desconta na liquidação: não nasce título a pagar. Se o relatório trouxer
+   alguma linha desses códigos — acontece quando alguém classifica à mão no
+   Totvs — ela é ruído: gravada, seria ignorada na leitura de qualquer jeito, e
+   ainda apareceria no detalhe da célula como se explicasse o número.
+
+   Tirar aqui, e não no script, é o que permite dizer na tela o que foi tirado
+   antes de gravar qualquer coisa. */
+function tirarContasManuais(r){
+  const manuais = (state.dados && state.dados.contas_manuais) || [];
+  if (!manuais.length) return r;
+
+  const fora = {}, dentro = [];
+  r.titulos.forEach(t => {
+    if (manuais.indexOf(String(t.conta_fluxo)) >= 0){
+      const a = fora[t.conta_fluxo] || { qtd:0, valor:0 };
+      a.qtd++; a.valor += (Number(t.valor_pago) || 0);
+      fora[t.conta_fluxo] = a;
+      return;
+    }
+    dentro.push(t);
+  });
+  const codigos = Object.keys(fora);
+  if (!codigos.length) return r;
+
+  /* Refaz o que dependia da lista, senão o resumo mostraria um total que não
+     é o que vai ser gravado. */
+  const porDia = {}, contas = {};
+  dentro.forEach(t => {
+    const d = porDia[t.dt_baixa] || (porDia[t.dt_baixa] = { qtd:0, valor:0 });
+    d.qtd++; d.valor += t.valor_pago;
+    contas[t.conta_fluxo] = (contas[t.conta_fluxo] || 0) + t.valor_pago;
+  });
+  const soma = codigos.reduce((a, c) => a + fora[c].valor, 0);
+  const qtd  = codigos.reduce((a, c) => a + fora[c].qtd, 0);
+
+  return Object.assign({}, r, {
+    titulos: dentro, porDia: porDia, contas: contas,
+    dias: Object.keys(porDia).sort(),
+    total: dentro.reduce((a, t) => a + t.valor_pago, 0),
+    recusados: { codigos: codigos, qtd: qtd, valor: soma, porConta: fora },
+    avisos: (r.avisos || []).concat([
+      qtd + ' título(s) de contas que não vêm do relatório ficaram de fora (' +
+      codigos.join(', ') + ', somando ' + dinheiro(soma) + '). ' +
+      'O valor dessas contas vem da planilha do fluxo ou de lançamento à mão.']),
+  });
+}
+
+/* ============================================================================
+   IMPORTAÇÃO — A TELA
+   ----------------------------------------------------------------------------
+   Duas portas, porque as duas coisas não se parecem: atualizar um dia é rotina
+   e precisa ser rápido; carregar o ano é uma vez só e substitui tudo, então
+   precisa ser difícil de fazer sem querer.
+
+   A regra que vale para as duas: nada é gravado antes de a tela mostrar o que
+   entendeu do arquivo, e o botão diz exatamente o que vai acontecer — não um
+   "Importar" genérico, mas "Substituir 03/09".
+   ========================================================================== */
+
+const MESES_PT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+function dataBR(iso){
+  const p = String(iso).split('-');
+  return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : String(iso);
+}
+
+function dinheiro(v){
+  return (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+
+const Importar = {
+  modo: 'dia',        // 'dia', 'ano' ou 'limpar'
+  rel: null,          // leitura do relatório de contas a pagar
+  ano: null,          // leitura da planilha do fluxo do ano
+  ocupado: false,
+
+  abrir(){
+    this.modo = 'dia'; this.rel = null; this.ano = null; this.ocupado = false;
+    el('imp-alternar').disabled = false;
+    this.render();
+    mostrarModal('modal-importar');
+  },
+
+  /* A limpeza mora dentro do modal de importação de propósito: é aqui que se
+     está quando uma carga sai torta e se quer recomeçar. Fora daqui ela seria
+     um botão vermelho no cabeçalho, ao alcance de quem só queria olhar. */
+  abrirLimpeza(){
+    if (this.ocupado) return;
+    this.modo = 'limpar'; this.rel = null; this.ano = null;
+    this.render();
+  },
+
+  alternar(){
+    if (this.ocupado) return;
+    if (this.modo === 'limpar') this.modo = 'dia';
+    else this.modo = this.modo === 'dia' ? 'ano' : 'dia';
+    this.rel = null; this.ano = null;
+    this.render();
+  },
+
+  /* ---------------------------------------------------------------- desenho */
+  render(){
+    const corpo = el('imp-corpo');
+    const dia = this.modo === 'dia';
+    const limpando = this.modo === 'limpar';
+
+    el('imp-titulo').textContent = limpando ? 'Limpar a base do fluxo'
+                                 : dia ? 'Atualizar um dia' : 'Carga inicial do ano';
+    el('imp-sub').textContent = limpando
+      ? 'Apaga tudo que a ferramenta guarda hoje. Depois disto a tela volta vazia.'
+      : dia
+      ? 'Solte o relatório de contas a pagar. Nada é gravado antes de você conferir.'
+      : 'Solte a planilha do fluxo do ano, a base realizada, ou as duas. Cada uma faz uma coisa.';
+    el('imp-alternar').textContent = limpando ? 'voltar para a importação'
+                                  : dia ? 'carga inicial do ano' : 'voltar para atualizar um dia';
+
+    /* O link de limpar some enquanto se está limpando: sair de lá é papel do
+       "voltar", e dois caminhos para a mesma tela só confundem. */
+    const lnk = el('imp-limpar');
+    if (lnk) lnk.hidden = limpando;
+
+    corpo.textContent = '';
+
+    if (limpando){
+      corpo.appendChild(this.painelLimpeza());
+      this.atualizarBotao();
+      return;
+    }
+
+    corpo.appendChild(this.dropzone());
+
+    if (dia){
+      if (this.rel) corpo.appendChild(this.resumoRelatorio());
+      if (this.rel && this.diasCobertos().length) corpo.appendChild(this.avisoCobertura());
+    } else {
+      if (this.ano) corpo.appendChild(this.resumoAno());
+      if (this.rel) corpo.appendChild(this.resumoRelatorio());
+      if (this.ano && this.rel) corpo.appendChild(this.conferencia());
+      if (this.ano || this.rel) corpo.appendChild(this.confirmacaoAno());
+    }
+
+    this.atualizarBotao();
+  },
+
+  dropzone(){
+    const dia = this.modo === 'dia';
+    const z = h('div', { class:'imp-solta', tabindex:'0' }, [
+      h('i', { class:'fa-solid fa-cloud-arrow-up' }),
+      h('b', { text: dia ? 'Solte aqui o relatório de contas a pagar'
+                         : 'Solte aqui a planilha do fluxo do ano e a base realizada' }),
+      h('span', { text: dia ? 'um dia, uma semana ou o período que o arquivo trouxer'
+                            : 'o fluxo do ano traz os números, a base realizada traz o detalhe' }),
+    ]);
+    const input = h('input', { type:'file', accept:'.xlsx,.xls', multiple:'multiple' });
+    input.style.display = 'none';
+    z.appendChild(input);
+
+    z.onclick = () => { if (!this.ocupado) input.click(); };
+    input.onchange = e => this.receber(Array.from(e.target.files || []));
+    ['dragenter','dragover'].forEach(ev => z.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation(); z.classList.add('sobre');
+    }));
+    ['dragleave','drop'].forEach(ev => z.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation(); z.classList.remove('sobre');
+    }));
+    z.addEventListener('drop', e => this.receber(Array.from(e.dataTransfer.files || [])));
+    return z;
+  },
+
+  /* ---------------------------------------------------------------- leitura */
+  async receber(arquivos){
+    if (this.ocupado || !arquivos.length) return;
+    for (const f of arquivos){
+      try {
+        const buf = await f.arrayBuffer();
+        const wb = XLSX.read(buf, { type:'array', cellDates:true });
+
+        /* Quem decide o que o arquivo é: o próprio arquivo. O relatório tem as
+           colunas "Vencto Real" e "Conta Fluxo C"; a planilha do ano tem os
+           dias no cabeçalho. Tento o relatório primeiro, que é o mais restrito. */
+        let ehRelatorio = true, r = null;
+        try { r = lerRelatorio(wb); } catch(e){ ehRelatorio = false; }
+
+        if (ehRelatorio){
+          this.rel = tirarContasManuais(r); this.rel.arquivo = f.name;
+        } else {
+          if (this.modo === 'dia'){
+            toast('Este arquivo não parece o relatório de contas a pagar.', true);
+            continue;
+          }
+          this.ano = lerPlanilhaDoAno(wb); this.ano.arquivo = f.name;
+        }
+      } catch(err){
+        toast('Não consegui ler "' + f.name + '": ' + (err.message || err), true);
+      }
+    }
+    this.render();
+  },
+
+  /* ---------------------------------------------------------------- resumos */
+  resumoRelatorio(){
+    const r = this.rel;
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-file-invoice-dollar'),
+        (this.modo === 'ano' ? 'Detalhe título a título · ' : 'Pagamentos · ') + (r.arquivo || r.aba) ]),
+    ]);
+    c.appendChild(this.par('Títulos lidos', r.titulos.length.toLocaleString('pt-BR')));
+    c.appendChild(this.par('Contas de fluxo diferentes', String(Object.keys(r.contas).length)));
+    c.appendChild(this.par('Período', r.dias.length === 1 ? dataBR(r.dias[0])
+      : (dataBR(r.dias[0]) + ' a ' + dataBR(r.dias[r.dias.length - 1]) + '  ·  ' + r.dias.length + ' dias')));
+    c.appendChild(this.par('Total', 'R$ ' + dinheiro(r.total)));
+
+    /* Poucos dias: mostra um a um, que é o caso do dia a dia. Muitos: agrupa
+       por mês, senão a lista some da tela. */
+    const t = h('table', { class:'imp-tabela' });
+    const cab = h('tr', null, [ h('th', { text: r.dias.length <= 10 ? 'Dia' : 'Mês' }),
+                                h('th', { class:'num', text:'Títulos' }),
+                                h('th', { class:'num', text:'Valor' }) ]);
+    t.appendChild(h('thead', null, [cab]));
+    const corpo = h('tbody');
+    if (r.dias.length <= 10){
+      r.dias.forEach(d => {
+        corpo.appendChild(h('tr', null, [
+          h('td', { text: dataBR(d) }),
+          h('td', { class:'num', text: String(r.porDia[d].qtd) }),
+          h('td', { class:'num', text: dinheiro(r.porDia[d].valor) }),
+        ]));
+      });
+    } else {
+      const meses = {};
+      r.dias.forEach(d => {
+        const m = d.slice(0, 7);
+        const a = meses[m] || (meses[m] = { qtd:0, valor:0, dias:0 });
+        a.qtd += r.porDia[d].qtd; a.valor += r.porDia[d].valor; a.dias++;
+      });
+      Object.keys(meses).sort().forEach(m => {
+        const nome = MESES_PT[Number(m.slice(5, 7)) - 1] + '/' + m.slice(0, 4);
+        corpo.appendChild(h('tr', null, [
+          h('td', { text: nome + '  (' + meses[m].dias + ' dias)' }),
+          h('td', { class:'num', text: String(meses[m].qtd) }),
+          h('td', { class:'num', text: dinheiro(meses[m].valor) }),
+        ]));
+      });
+    }
+    t.appendChild(corpo);
+    c.appendChild(h('div', { class:'imp-rolagem' }, [t]));
+
+    if (!r.titulos.length){
+      c.appendChild(h('div', { class:'imp-aviso imp-perigo', text:
+        'Nenhuma linha deste arquivo tem data em "Vencto Real" e conta de fluxo ao ' +
+        'mesmo tempo — não há o que gravar. Confira se o arquivo é o certo e se o ' +
+        'período veio preenchido.' }));
+    }
+    r.avisos.forEach(a => c.appendChild(h('div', { class:'imp-aviso', text:a })));
+    return c;
+  },
+
+  resumoAno(){
+    const a = this.ano;
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-table-columns'), 'Estrutura do fluxo · ' + (a.arquivo || a.aba) ]),
+    ]);
+    c.appendChild(this.par('Linhas do plano de contas', String(a.plano.length)));
+    c.appendChild(this.par('Contas bancárias', String(a.contas.filter(x => x.tipo === 'conta').length) +
+      ' em ' + String(new Set(a.contas.map(x => x.empresa)).size) + ' empresa(s)'));
+    c.appendChild(this.par('Posições de saldo', a.saldos.length.toLocaleString('pt-BR')));
+    c.appendChild(this.par('Lançamentos de entrada', a.entradas.length.toLocaleString('pt-BR')));
+    const totSai = a.saidas.reduce((x, y) => x + y.valor, 0);
+    const diasSai = new Set(a.saidas.map(x => x.data));
+    c.appendChild(this.par('Lançamentos de saída',
+      a.saidas.length.toLocaleString('pt-BR') + '  em ' + diasSai.size + ' dias'));
+    c.appendChild(this.par('Total das saídas', 'R$ ' + dinheiro(totSai)));
+    const cfg = {};
+    a.config.forEach(x => { cfg[x.chave] = x.valor; });
+    if (cfg.saldo_inicial_data){
+      c.appendChild(this.par('Saldo de abertura',
+        'R$ ' + dinheiro(cfg.saldo_inicial_valor) + '  em ' + dataBR(cfg.saldo_inicial_data)));
+    }
+    a.avisos.forEach(x => c.appendChild(h('div', { class:'imp-aviso', text:x })));
+
+    /* Os degraus não impedem a carga, mas explicam de antemão o número que vai
+       aparecer na linha Diferença — melhor do que descobrir depois e achar que
+       a importação errou. */
+    (a.degraus || []).forEach(g => {
+      c.appendChild(h('div', { class:'imp-aviso', text:
+        'Em ' + dataBR(g.data) + ' o saldo inicial está ' +
+        (g.valor > 0 ? 'R$ ' + dinheiro(g.valor) + ' acima' : 'R$ ' + dinheiro(-g.valor) + ' abaixo') +
+        ' do saldo final da véspera, sem entrada nem saída que explique. A planilha ' +
+        'fecha com os bancos porque o ajuste foi feito direto no saldo. Aqui a conta é ' +
+        'refeita somando os lançamentos, então a linha Diferença vai mostrar esse valor ' +
+        'a partir desse dia até você lançá-lo na tela.' }));
+    });
+    return c;
+  },
+
+  /* ------------------------------------------------------------ conferência */
+  conferencia(){
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-scale-balanced'), 'Conferência entre as duas fontes' ]),
+      h('p', { class:'cf-text', text:
+        'As saídas do fluxo do ano contra a soma dos pagamentos, mês a mês. ' +
+        'Diferença aqui quer dizer saída que não passou pelo contas a pagar — ' +
+        'juros de antecipação, por exemplo, que o banco desconta direto. Quem ' +
+        'manda no valor continua sendo o fluxo do ano; a base entra ao lado, ' +
+        'como detalhe, e é essa diferença que ela não vai conseguir explicar.' }),
+    ]);
+
+    const porMes = {};
+    Object.keys(this.ano.saidasPorDia).forEach(d => {
+      const m = d.slice(0, 7);
+      porMes[m] = porMes[m] || { fluxo:0, base:0 };
+      porMes[m].fluxo += this.ano.saidasPorDia[d];
+    });
+    this.rel.dias.forEach(d => {
+      const m = d.slice(0, 7);
+      porMes[m] = porMes[m] || { fluxo:0, base:0 };
+      porMes[m].base += this.rel.porDia[d].valor;
+    });
+
+    const t = h('table', { class:'imp-tabela' });
+    t.appendChild(h('thead', null, [ h('tr', null, [
+      h('th', { text:'Mês' }), h('th', { class:'num', text:'Fluxo do ano' }),
+      h('th', { class:'num', text:'Pagamentos' }), h('th', { class:'num', text:'Diferença' }),
+    ])]));
+    const tb = h('tbody');
+    let tf = 0, tbase = 0;
+    Object.keys(porMes).sort().forEach(m => {
+      const x = porMes[m];
+      tf += x.fluxo; tbase += x.base;
+      const nome = MESES_PT[Number(m.slice(5, 7)) - 1] + '/' + m.slice(0, 4);
+      tb.appendChild(h('tr', null, [
+        h('td', { text: nome }),
+        h('td', { class:'num', text: dinheiro(x.fluxo) }),
+        h('td', { class:'num', text: dinheiro(x.base) }),
+        h('td', { class:'num', text: dinheiro(x.fluxo - x.base) }),
+      ]));
+    });
+    tb.appendChild(h('tr', null, [
+      h('td', null, [ h('b', { text:'Total' }) ]),
+      h('td', { class:'num' }, [ h('b', { text: dinheiro(tf) }) ]),
+      h('td', { class:'num' }, [ h('b', { text: dinheiro(tbase) }) ]),
+      h('td', { class:'num' }, [ h('b', { text: dinheiro(tf - tbase) }) ]),
+    ]));
+    t.appendChild(tb);
+    c.appendChild(h('div', { class:'imp-rolagem' }, [t]));
+    return c;
+  },
+
+  /* Três textos porque são três gravações diferentes, e a pessoa precisa saber
+     qual delas está confirmando. O único jeito de errar aqui seria escrever um
+     texto genérico que servisse para as três — e não avisasse de nenhuma. */
+  confirmacaoAno(){
+    const box = h('label', { class:'imp-check' });
+    const chk = h('input', { type:'checkbox', id:'imp-ciente' });
+    chk.onchange = () => this.atualizarBotao();
+    box.appendChild(chk);
+
+    const numeros =
+      'Entendi que isto substitui o plano de contas, as contas bancárias, os ' +
+      'saldos, as entradas e as saídas do período pelos números da planilha do ' +
+      'ano. O que foi digitado na tela não é apagado.';
+    const detalhe =
+      'A base realizada entra só como detalhe: os títulos aparecem na janela de ' +
+      'cada célula e não mudam valor nenhum na tela. Nos dias em que o relatório ' +
+      'de contas a pagar já foi enviado, a base não encosta — lá o detalhe já existe.';
+
+    box.appendChild(h('div', { text:
+      (this.ano && this.rel) ? (numeros + ' ' + detalhe)
+      : this.ano ? (numeros + ' Esses dias passam a mostrar o total de cada conta, ' +
+                    'sem detalhe título a título.')
+      : ('Entendi que isto grava só o detalhe. ' + detalhe) }));
+    return box;
+  },
+
+  /* ------------------------------------------------------------- limpeza */
+  painelLimpeza(){
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-triangle-exclamation'), 'Apagar tudo e recomeçar' ]),
+    ]);
+
+    c.appendChild(h('div', { class:'imp-aviso imp-perigo', text:
+      'Isto apaga o plano de contas, as contas bancárias, o saldo de abertura, ' +
+      'a posição de saldos de todos os dias, as entradas, os lançamentos ' +
+      'digitados na tela e o histórico título a título de todos os meses. ' +
+      'Não existe cópia de segurança e não há como desfazer.' }));
+
+    /* O que existe hoje, para a decisão ser tomada olhando o tamanho dela e
+       não no escuro. Vem do que a tela já carregou — não custa uma chamada. */
+    const d = state.dados;
+    if (d){
+      c.appendChild(this.par('Linhas do plano de contas', String((d.plano || []).length)));
+      c.appendChild(this.par('Contas bancárias',
+        String((d.contas || []).filter(x => x.tipo !== 'grupo').length)));
+    }
+
+    c.appendChild(h('p', { class:'cf-text', text:
+      'Para confirmar, escreva LIMPAR no campo abaixo. A senha de gravação ' +
+      'também será pedida.' }));
+
+    const inp = h('input', { type:'text', id:'imp-palavra', class:'imp-campo',
+                             placeholder:'LIMPAR', autocomplete:'off',
+                             spellcheck:'false' });
+    inp.oninput = () => this.atualizarBotao();
+    c.appendChild(inp);
+    setTimeout(() => { try { inp.focus(); } catch(e){} }, 50);
+
+    return c;
+  },
+
+  /* Os dias do relatório que já estão cobertos pela carga do ano. Trocar a
+     fonte de um desses dias é legítimo — passa a ter detalhe título a título —
+     mas leva junto o que não passa pelo contas a pagar, então não pode
+     acontecer sem a pessoa saber. */
+  diasCobertos(){
+    if (!this.rel) return [];
+    const cfg = (state.dados && state.dados.config) || {};
+    const de  = String(cfg.carga_ano_de || '');
+    const ate = String(cfg.carga_ano_ate || '');
+    if (!de || !ate) return [];
+    return this.rel.dias.filter(d => d >= de && d <= ate);
+  },
+
+  avisoCobertura(){
+    const dias = this.diasCobertos();
+    const c = h('div', { class:'imp-cartao' }, [
+      h('h4', null, [ icone('fa-triangle-exclamation'), 'Esses dias vieram da planilha do ano' ]),
+    ]);
+    c.appendChild(h('div', { class:'imp-aviso', text:
+      (dias.length === 1 ? ('O dia ' + dataBR(dias[0]) + ' já está') : ('Dos dias deste arquivo, ' + dias.length + ' já estão')) +
+      ' na base pelo total da planilha do ano, que inclui o que não passa pelo ' +
+      'contas a pagar — juros de antecipação, tarifas. Gravar o relatório faz ' +
+      'esses dias passarem a mostrar o detalhe título a título, e esses valores ' +
+      'somem do total até serem lançados na mão.' }));
+    c.appendChild(h('p', { class:'cf-text', text:
+      'O total da planilha do ano não é apagado: ele fica guardado e volta a ' +
+      'valer se o relatório desses dias for removido.' }));
+
+    const box = h('label', { class:'imp-check' });
+    const chk = h('input', { type:'checkbox', id:'imp-ciente-dia' });
+    chk.onchange = () => this.atualizarBotao();
+    box.appendChild(chk);
+    box.appendChild(h('div', { text:'Entendi, quero trocar esses dias pelo detalhe do relatório.' }));
+    c.appendChild(box);
+    return c;
+  },
+
+  par(rot, val){
+    return h('div', { class:'imp-linha' }, [
+      h('span', { class:'imp-rot', text:rot }), h('b', { text:val }),
+    ]);
+  },
+
+  /* ------------------------------------------------------------------ botão */
+  atualizarBotao(){
+    const b = el('imp-confirmar');
+    b.classList.toggle('btn-danger',  this.modo === 'limpar');
+    b.classList.toggle('btn-primary', this.modo !== 'limpar');
+    if (this.ocupado){ b.disabled = true; return; }
+
+    if (this.modo === 'limpar'){
+      const campo = el('imp-palavra');
+      const ok = campo && campo.value.trim().toUpperCase() === 'LIMPAR';
+      b.disabled = !ok;
+      b.textContent = 'Limpar tudo';
+      return;
+    }
+
+    if (this.modo === 'dia'){
+      if (!this.rel){ b.disabled = true; b.textContent = 'Confirmar'; return; }
+      /* Arquivo lido e nenhuma linha aproveitável: antes o botão liberava, o
+         envio saía vazio — quer dizer, não saía — e a tela comemorava assim
+         mesmo. Confirmar nada não é uma operação. */
+      if (!this.rel.titulos.length){
+        b.disabled = true; b.textContent = 'Nada para gravar'; return;
+      }
+      const cobertos = this.diasCobertos().length;
+      const ciente = !cobertos || (el('imp-ciente-dia') && el('imp-ciente-dia').checked);
+      b.disabled = !ciente;
+      const d = this.rel.dias;
+      b.textContent = d.length === 1 ? ('Substituir ' + dataBR(d[0]))
+                                     : ('Substituir os ' + d.length + ' dias');
+      return;
+    }
+
+    const temDetalhe = !!(this.rel && this.rel.titulos.length);
+    const pronto = (this.ano || temDetalhe) && el('imp-ciente') && el('imp-ciente').checked;
+    b.disabled = !pronto;
+    b.textContent = (this.ano && temDetalhe) ? 'Carregar o ano e o detalhe'
+                  : this.ano ? 'Carregar o ano'
+                  : temDetalhe ? 'Carregar só o detalhe'
+                  : 'Nada para gravar';
+  },
+
+  /* --------------------------------------------------------------- gravação */
+  passo(texto, pct){
+    const corpo = el('imp-corpo');
+    let barra = el('imp-progresso');
+    if (!barra){
+      corpo.textContent = '';
+      const caixa = h('div', { class:'imp-cartao' }, [
+        h('h4', null, [ icone('fa-cloud-arrow-up'), 'Gravando' ]),
+      ]);
+      barra = h('div', { class:'imp-barra', id:'imp-progresso' }, [ h('span') ]);
+      caixa.appendChild(barra);
+      caixa.appendChild(h('div', { class:'imp-passo', id:'imp-passo' }));
+      corpo.appendChild(caixa);
+    }
+    barra.firstChild.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    el('imp-passo').textContent = texto;
+  },
+
+  async enviar(payload){
+    await fetch(CONFIG.DATA_URL, {
+      method:'POST', mode:'no-cors',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(assinar(payload)),
+    });
+    /* O envio é no-cors: não dá para ler a resposta. Damos um respiro entre os
+       blocos para o Apps Script não receber tudo de uma vez e enfileirar. */
+    await new Promise(r => setTimeout(r, 900));
+  },
+
+  /* Blocos de DIAS INTEIROS. O tamanho é aproximado de propósito: o corte só
+     acontece na virada de um dia, nunca no meio dele.
+
+     Isso não é capricho. Do outro lado, o script substitui por dia: quando um
+     dia chega, ele apaga o que havia naquele dia e grava o que veio. Um bloco
+     que trouxesse metade das contas de um dia apagaria a outra metade que
+     chegou no bloco anterior — foi exatamente o que aconteceu na primeira
+     carga, em que a lista saía ordenada por conta e cada bloco derrubava o
+     anterior, sobrando só as últimas contas.
+
+     Um dia sozinho maior que o limite vai inteiro assim mesmo: parti-lo é
+     justamente o que não pode acontecer. */
+  blocosPorDia(lista, max){
+    const por = {};
+    lista.forEach(x => { (por[x.data] = por[x.data] || []).push(x); });
+
+    const blocos = [];
+    let itens = [], datas = [];
+    Object.keys(por).sort().forEach(d => {
+      if (itens.length && itens.length + por[d].length > max){
+        blocos.push({ itens: itens, datas: datas });
+        itens = []; datas = [];
+      }
+      itens = itens.concat(por[d]);
+      datas.push(d);
+    });
+    if (itens.length) blocos.push({ itens: itens, datas: datas });
+    return blocos;
+  },
+
+  /* Blocos por mês. Um envio com 28 mil títulos não passa: o Apps Script tem
+     limite de tempo e de tamanho. Por mês são uns três mil, que passam. */
+  blocosPorMes(titulos){
+    const por = {};
+    titulos.forEach(t => { (por[t.dt_baixa.slice(0, 7)] = por[t.dt_baixa.slice(0, 7)] || []).push(t); });
+    return Object.keys(por).sort().map(m => ({ mes:m, titulos:por[m] }));
+  },
+
+  async confirmar(){
+    if (this.ocupado) return;
+    /* Uma importação leva minutos e são dezenas de envios. Conferir a senha de
+       novo aqui custa uma consulta e evita descobrir no fim que nada valeu. */
+    Chave.conferida = false;
+    if (!(await Chave.garantir())){ toast('Gravação cancelada.', true); return; }
+
+    this.ocupado = true;
+    this.atualizarBotao();
+    el('imp-alternar').disabled = true;
+
+    try {
+      if (this.modo === 'limpar')   await this.limparBase();
+      else if (this.modo === 'ano') await this.gravarAno();
+      else                          await this.gravarDia();
+
+      const limpou = this.modo === 'limpar';
+      const quantos = (this.rel && this.rel.titulos) ? this.rel.titulos.length : 0;
+      const dias = (this.rel && this.rel.dias) ? this.rel.dias.length : 0;
+      /* Guardado antes da releitura, porque é com isto que ela vai ser
+         comparada: os dias que acabaram de subir. */
+      const enviados = (this.modo === 'dia' && this.rel) ? this.rel.dias.slice() : [];
+      this.passo(limpou ? 'Base apagada. Relendo…' : 'Gravado. Relendo…', 100);
+
+      /* Gravar leva segundos; reler leva mais. Antes, dessa hora em diante o
+         único sinal de que algo ainda acontecia era o fio de dois pixels no
+         alto da tela — e a tabela embaixo continuava clicável, mostrando
+         números que já não eram os da planilha. Agora a janela sai de cena e a
+         tabela fica coberta até os números novos estarem desenhados. */
+      fecharModal('modal-importar');
+      abrirVeu(limpou ? 'Base apagada. Relendo os números…' : 'Gravado. Relendo os números…');
+      /* O cache inteiro cai, não só o mês na tela: uma limpeza mexe em todos
+         os meses, e depois de uma importação o mês vizinho também pode ter
+         mudado por causa do saldo que vem arrastado. */
+      state.cache = {}; Titulos.esquecer();
+      await new Promise(r => setTimeout(r, 900));   // o script ainda está gravando
+      try { await carregar(false, true); }
+      finally { fecharVeu(); }
+
+      /* O envio é cego: o script pode ter recusado — senha errada, por exemplo —
+         e a tela não teria como saber. Saber, ela sabe: acabou de reler a base.
+         Um dia que subiu e voltou sem título nenhum não chegou lá. */
+      const faltaram = enviados.filter(d => !diaTemTitulo(d));
+      if (faltaram.length){
+        toast('A gravação não chegou à planilha: ' +
+              (faltaram.length === 1
+                ? ('o dia ' + dataBR(faltaram[0]) + ' continua sem título.')
+                : (faltaram.length + ' dias continuam sem título.')) +
+              ' Confira a senha de gravação e tente de novo.', true);
+        return;
+      }
+
+      toast(limpou ? 'Base do fluxo apagada.'
+                   : !quantos ? 'Importação concluída.'
+                   : ('Importação concluída · ' + quantos.toLocaleString('pt-BR') +
+                      (this.modo === 'ano' ? ' título(s) de detalhe em ' : ' título(s) em ') +
+                      dias + ' dia(s).'));
+    } catch(err){
+      toast('Falhou no meio: ' + (err.message || err), true);
+      this.ocupado = false;
+      /* Sem isto o link da carga do ano ficava desabilitado para sempre — e
+         sem estilo de desabilitado, então parecia clicável e não era. */
+      el('imp-alternar').disabled = false;
+      this.render();
+    }
+  },
+
+  /* Uma chamada só, com a palavra digitada indo junto: o script confere a
+     senha e a palavra antes de apagar qualquer coisa. Como o envio é no-cors
+     e não dá para ler a resposta, quem diz se funcionou é a tela recarregada
+     logo depois — e a aba Log da planilha, que registra quem apagou. */
+  async limparBase(){
+    const palavra = (el('imp-palavra') || {}).value || '';
+    this.passo('Apagando a base…', 40);
+    await this.enviar({ acao:'fluxo_limpar', confirmar: palavra.trim().toUpperCase() });
+    this.passo('Conferindo…', 80);
+    await new Promise(r => setTimeout(r, 1200));
+  },
+
+  async gravarDia(){
+    const blocos = this.blocosPorMes(this.rel.titulos);
+    for (let i = 0; i < blocos.length; i++){
+      const b = blocos[i];
+      this.passo('Gravando ' + MESES_PT[Number(b.mes.slice(5,7)) - 1] + '/' + b.mes.slice(0,4) +
+                 '  (' + (i + 1) + ' de ' + blocos.length + ')', (i / blocos.length) * 100);
+      await this.enviar({ acao:'fluxo_historico_lote', titulos:b.titulos,
+                          datas:this.rel.dias.filter(d => d.slice(0,7) === b.mes) });
+    }
+  },
+
+  /* A carga do ano tem dois lados, e os dois são opcionais.
+
+     A planilha do fluxo grava os NÚMEROS: estrutura, saldos, entradas e saídas,
+     total por conta em cada dia. É ela que fecha com os bancos, porque inclui o
+     que não passa pelo contas a pagar — juros de antecipação, tarifas.
+
+     A base realizada grava o DETALHE: o título a título que a janela de cada
+     célula mostra. Ela vai por uma ação própria do script, que escreve os
+     títulos sem refazer o somatório do dia. É o que permite as duas conviverem:
+     a lista explica o número sem tomar o lugar dele. */
+  async gravarAno(){
+    const a = this.ano;
+    const blocosSaldo = a ? this.blocosPorDia(a.saldos, 800) : [];
+    const blocosEnt   = a ? this.blocosPorDia(a.entradas, 800) : [];
+    const blocosSai   = a ? this.blocosPorDia(a.saidas, 800) : [];
+    const blocosDet   = this.rel ? this.blocosPorMes(this.rel.titulos) : [];
+
+    let feito = 0;
+    const total = (a ? 1 : 0) + blocosSaldo.length + blocosEnt.length +
+                  blocosSai.length + blocosDet.length;
+    const anda = txt => { this.passo(txt, (feito / total) * 100); feito++; };
+
+    if (a){
+      anda('Plano de contas e contas bancárias…');
+      await this.enviar({ acao:'fluxo_estrutura', plano:a.plano, contas:a.contas, config:a.config });
+    }
+
+    /* Os saldos são a maior lista depois dos títulos: uns três mil registros,
+       catorze contas por dia. Cada bloco leva dias completos e diz quais são,
+       para o script poder limpar o dia inteiro antes de gravar. */
+    for (let i = 0; i < blocosSaldo.length; i++){
+      const b = blocosSaldo[i];
+      anda('Posição de saldos  (' + (i + 1) + ' de ' + blocosSaldo.length + ')');
+      await this.enviar({ acao:'fluxo_saldos_lote', saldos:b.itens, datas:b.datas });
+    }
+
+    for (let i = 0; i < blocosEnt.length; i++){
+      const b = blocosEnt[i];
+      anda(blocosEnt.length > 1 ? ('Entradas  (' + (i + 1) + ' de ' + blocosEnt.length + ')') : 'Entradas…');
+      await this.enviar({ acao:'fluxo_entradas_lote', entradas:b.itens, datas:b.datas });
+    }
+
+    for (let i = 0; i < blocosSai.length; i++){
+      const b = blocosSai[i];
+      anda('Saídas  (' + (i + 1) + ' de ' + blocosSai.length + ')');
+      await this.enviar({ acao:'fluxo_saidas_lote', saidas:b.itens, datas:b.datas });
+    }
+
+    /* Por mês, como o relatório: são quase trinta mil títulos, e num envio só
+       o script estoura o tempo. Cada bloco diz quais dias cobre, para o mês
+       poder ser reenviado sem duplicar nada. */
+    for (let i = 0; i < blocosDet.length; i++){
+      const b = blocosDet[i];
+      anda('Detalhe de ' + MESES_PT[Number(b.mes.slice(5,7)) - 1] + '/' + b.mes.slice(0,4) +
+           '  (' + (i + 1) + ' de ' + blocosDet.length + ')');
+      await this.enviar({ acao:'fluxo_detalhe_lote', titulos:b.titulos,
+                          datas:this.rel.dias.filter(d => d.slice(0,7) === b.mes) });
+    }
+  },
+};
+
+/* Aquele dia tem título vindo do relatório? A contagem vem junto do realizado:
+   quem nasce da planilha do ano vem com zero, quem nasce do relatório vem com
+   o número de títulos somados. Sem base para julgar, não acusa ninguém. */
+function diaTemTitulo(data){
+  const d = state.dados;
+  if (!d || !Array.isArray(d.realizado)) return true;
+  return d.realizado.some(r => String(r.data).slice(0, 10) === data && (Number(r.qtd) || 0) > 0);
+}
+
+/* A tela continua à vista, coberta por um véu, enquanto algo demora. Trocar a
+   tabela por um esqueleto nessas horas seria pior que a espera: some o número
+   que a pessoa estava olhando. */
+function abrirVeu(texto){
+  const v = el('veu');
+  if (!v) return;
+  el('veu-texto').textContent = texto || 'Um instante…';
+  v.hidden = false;
+}
+function fecharVeu(){
+  const v = el('veu');
+  if (v) v.hidden = true;
+}
+
+/* ============================================================================
+   CONFERÊNCIA COM O TOTVS — A TELA
+   ----------------------------------------------------------------------------
+   Solta-se o relatório de baixas do TOTVS (FINR190) e a tela responde três
+   perguntas: o que o fluxo mostra bate com o que foi pago? O que não bate, o
+   que se faz com cada caso? E as baixas andam em dia?
+
+   A regra da casa vale aqui também: nada é gravado antes de a pessoa ver e
+   decidir. Cada divergência traz o que dá para fazer com ela; a escolha fica
+   marcada na tela e só vai para a planilha no "Aplicar", de uma vez. Depois do
+   envio a tela relê a base e confere se cada decisão chegou — o envio é cego,
+   e "enviei" nunca quis dizer "gravou".
+
+   O miolo (ler, casar, medir) mora em conferencia-totvs.js. Aqui é só tela.
+   ========================================================================== */
+const LINHA_JUROS = { id: 'l-s-conf-juros', codigo: '25015',
+                      descricao: 'Juros, multas e descontos', depois_de: '25007' };
+
+const Totvs = {
+  leitura: null,        // o relatório lido
+  dados: null,          // o que o script devolveu para o período
+  analise: null,
+  escolhas: {},         // chave do item -> { acao, linha }
+  aba: 'divergencias',
+  ocupado: false,
+  passoAtual: null,     // { texto, pct } enquanto algo demora
+  resumoGravado: '',    // o resumo desta leitura já foi registrado?
+  foraHoje: 0,
+
+  abrir(){
+    mostrarModal('modal-totvs');
+    /* Reabrir com um relatório já lido relê o fluxo: entre uma vez e outra
+       alguém pode ter importado o dia, lançado à mão ou saído do modo
+       edição — e é isso que decide o que bate e quais botões ficam ativos. */
+    if (this.leitura && !this.ocupado) return this.atualizar();
+    this.render();
+  },
+
+  async atualizar(){
+    if (this.ocupado || !this.leitura) return;
+    this.ocupado = true;
+    try { await this.buscarFluxo(); }
+    catch(e){ toast('Não consegui reler o fluxo: ' + (e.message || e), true); }
+    finally { this.ocupado = false; this.passoAtual = null; this.render(); }
+    this.registrarResumo();
+  },
+
+  novo(){
+    if (this.ocupado) return;
+    this.leitura = null; this.dados = null; this.analise = null;
+    this.escolhas = {}; this.aba = 'divergencias'; this.resumoGravado = '';
+    this.render();
+  },
+
+  /* ---------------------------------------------------------------- leitura */
+  async receber(arquivos){
+    if (this.ocupado || !arquivos || !arquivos.length) return;
+    const f = arquivos[0];
+    /* O miolo mora em conferencia-totvs.js. Se ele não subiu junto com esta
+       tela, é melhor dizer isso do que falhar com um erro de programa. */
+    if (typeof ConfTotvsCore === 'undefined'){
+      toast('Falta o arquivo conferencia-totvs.js na pasta do fluxo no site. Suba-o junto com o fluxo.js.', true);
+      return;
+    }
+    this.ocupado = true;
+    this.passo('Lendo ' + f.name + '…', 12);
+    try {
+      const buf = await f.arrayBuffer();
+      const wb = XLSX.read(buf, { type:'array', cellDates:true });
+      let r = null;
+      for (const nome of wb.SheetNames){
+        const m = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header:1, raw:true, defval:null });
+        r = ConfTotvsCore.lerMatriz(m, arrumarTexto);
+        if (r) break;
+      }
+      if (!r) throw new Error('não achei as colunas do relatório de baixas ("Dt Baixa" e "Total Baixado"). ' +
+                              'Confira se o arquivo é o FINR190, Relação de Baixas.');
+      if (!r.titulos.length) throw new Error('o relatório não tem nenhuma baixa.');
+      /* O mesmo relatório sai para o contas a receber. A conferência das
+         entradas é a próxima etapa; casar recebimento com pagamento só
+         produziria divergência falsa. */
+      if (r.carteira === 'receber'){
+        throw new Error('este relatório é de contas a receber. Por enquanto a conferência é das ' +
+                        'saídas — a das entradas vem na próxima etapa.');
+      }
+      r.arquivo = f.name;
+      this.leitura = r;
+      this.escolhas = {};
+      this.aba = 'divergencias';
+      this.resumoGravado = '';
+      await this.buscarFluxo();
+    } catch(e){
+      this.leitura = null; this.analise = null;
+      toast('Não consegui conferir "' + f.name + '": ' + (e.message || e), true);
+    } finally {
+      this.ocupado = false; this.passoAtual = null;
+      this.render();
+    }
+    this.registrarResumo();
+  },
+
+  async buscarFluxo(){
+    const r = this.leitura;
+    this.passo('Buscando o fluxo de ' + dataBR(r.de) + ' a ' + dataBR(r.ate) + '…', 45);
+    const d = await buscarJson(CONFIG.DATA_URL + '?fluxo_totvs=1&de=' + r.de + '&ate=' + r.ate + '&v=' + Date.now());
+    /* Script antigo não conhece a rota e devolve outra coisa — o painel de
+       pagamentos inteiro, por exemplo. Sem o ok e a versão, não é resposta. */
+    if (!d || d.ok !== true || d.versao !== 1 || !Array.isArray(d.titulos)){
+      throw new Error((d && d.ok === false && d.erro) ? d.erro :
+        'o script do fluxo ainda não tem a conferência com o TOTVS. Cole a versão nova do ' +
+        'script no Apps Script e implante uma nova versão.');
+    }
+    this.dados = d;
+    this.passo('Casando as baixas com os títulos do fluxo…', 80);
+    await respira(30);
+    this.analisar();
+  },
+
+  analisar(){
+    const r = this.leitura, d = this.dados;
+    if (!r || !d) return;
+    /* Dia de hoje em diante, no fluxo, ainda é previsão: o pagamento de hoje
+       só vira título amanhã. Conferir contra isso só daria divergência falsa. */
+    const hoje = d.hoje || (state.calc && state.calc.hoje) || '9999-12-31';
+    const titulos = r.titulos.filter(t => t.baixa < hoje);
+    this.foraHoje = r.titulos.length - titulos.length;
+    const soma = l => Math.round(l.reduce((a, t) => a + t.total, 0) * 100) / 100;
+    const leitura = Object.assign({}, r, {
+      titulos: titulos,
+      comBanco: { qtd: titulos.filter(t => !t.semBanco).length, total: soma(titulos.filter(t => !t.semBanco)) },
+      semBanco: { qtd: titulos.filter(t => t.semBanco).length, total: soma(titulos.filter(t => t.semBanco)) },
+    });
+    if (titulos.length){
+      const datas = titulos.map(t => t.baixa).sort();
+      leitura.de = datas[0]; leitura.ate = datas[datas.length - 1];
+    }
+
+    const plano = (state.dados && state.dados.plano) || [];
+    const linhaPorConta = {};
+    plano.forEach(l => {
+      if (l.secao === 'S' && l.codigo && l.tipo !== 'grupo') linhaPorConta[String(l.codigo)] = l.id;
+    });
+    /* Dia sem registro no somatório ainda pode ter lista: a origem dos
+       títulos diz de onde ele veio. */
+    const fontes = Object.assign({}, d.fontes || {});
+    (d.titulos || []).forEach(t => {
+      if (!fontes[t.data]) fontes[t.data] = t.origem === 'base_ano' ? 'ano' : 'relatorio';
+    });
+    const utilDe = {};
+    ((state.dados && state.dados.dias) || []).forEach(x => { utilDe[x.data] = !!x.util; });
+    const ehUtil = iso => (iso in utilDe) ? utilDe[iso]
+      : [0, 6].indexOf(new Date(iso + 'T12:00:00').getDay()) < 0;
+
+    this.linhaJurosId = d.linha_juros ? d.linha_juros.id : LINHA_JUROS.id;
+    this.analise = ConfTotvsCore.analisar(leitura, d.titulos || [], {
+      fontes: fontes,
+      podeEditar: state.podeEditar,
+      decisoes: d.decisoes || [],
+      linhaDaConta: c => linhaPorConta[String(c)] || '',
+      linhaJuros: this.linhaJurosId,
+      contaDaNatureza: ConfTotvsCore.mapaDeNaturezas(d.titulos || [], d.naturezas || {}),
+      tiposProprios: String(d.tipos_proprios || 'TX, CIOT').split(/[,;\s]+/).filter(Boolean),
+      lancamentosConferencia: d.lancamentos_conferencia || [],
+      ehUtil: ehUtil,
+    });
+
+    /* Escolha que perdeu o sentido — o item foi decidido, ou a ação travou —
+       sai da lista, para o botão de aplicar não prometer o que não vai fazer. */
+    Object.keys(this.escolhas).forEach(k => {
+      const e = this.escolhas[k];
+      if (e.acao === 'reabrir') return;
+      const it = this.analise.itens.find(x => x.chave === k);
+      const ac = it && !it.decisao && it.acoes.find(x => x.id === e.acao);
+      if (!ac || !ac.habilitada) delete this.escolhas[k];
+    });
+  },
+
+  /* O resumo de cada conferência vai para a planilha: é dele que sai o
+     histórico de como as baixas andam, mês a mês. Só no modo edição, que é
+     quando a gravação tem senha. */
+  registrarResumo(forcar){
+    const a = this.analise, r = this.leitura;
+    if (!a || !r || !state.podeEditar) return;
+    const s = a.resumo;
+    const id = [r.de, r.ate, r.titulos.length, r.comBanco.total.toFixed(2)].join('|');
+    if (!forcar && this.resumoGravado === id) return;
+    this.resumoGravado = id;
+    const resumo = Object.assign({}, s, { id: id, arquivo: r.arquivo || '' });
+    try {
+      fetch(CONFIG.DATA_URL, {
+        method:'POST', mode:'no-cors',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify(assinar({ acao:'fluxo_totvs_aplicar', resumo: resumo })),
+      });
+    } catch(e){ /* o resumo é registro: não pode atrapalhar a conferência */ }
+  },
+
+  /* ---------------------------------------------------------------- escolhas */
+  escolher(it, acaoId){
+    const atual = this.escolhas[it.chave];
+    if (atual && atual.acao === acaoId) delete this.escolhas[it.chave];
+    else this.escolhas[it.chave] = { acao: acaoId, linha: (atual && atual.linha) || '' };
+    this.render();
+  },
+
+  quantas(){
+    return Object.keys(this.escolhas).filter(k => {
+      const e = this.escolhas[k];
+      if (e.acao === 'reabrir') return true;
+      const it = this.analise && this.analise.itens.find(x => x.chave === k);
+      const ac = it && it.acoes.find(x => x.id === e.acao);
+      return ac && ac.habilitada && !(ac.escolherLinha && !e.linha);
+    }).length;
+  },
+
+  faltaLinha(){
+    return Object.keys(this.escolhas).some(k => {
+      const e = this.escolhas[k];
+      const it = this.analise && this.analise.itens.find(x => x.chave === k);
+      const ac = it && it.acoes.find(x => x.id === e.acao);
+      return ac && ac.escolherLinha && !e.linha;
+    });
+  },
+
+  /* O lote que vai para o script: exatamente o que a tela mostrou. */
+  montarLote(){
+    const a = this.analise, d = this.dados;
+    const lancamentos = [], excluir = [], decisoes = [], reabrir = [], desfazer = [];
+    let precisaLinha = false;
+    const base = 'ct' + Date.now().toString(36);
+    let seq = 0;
+    const plano = (state.dados && state.dados.plano) || [];
+    Object.keys(this.escolhas).forEach(chave => {
+      const e = this.escolhas[chave];
+      if (e.acao === 'reabrir'){ reabrir.push(chave); return; }
+      const it = a.itens.find(x => x.chave === chave);
+      if (!it || it.decisao) return;
+      const ac = it.acoes.find(x => x.id === e.acao);
+      if (!ac || !ac.habilitada) return;
+      if (ac.escolherLinha && !e.linha) return;
+      const ids = [];
+      (ac.ops.lancamentos || []).forEach(l => {
+        const c = Object.assign({}, l, { id: base + '-' + (seq++) });
+        if (ac.escolherLinha) c.linha_id = e.linha;
+        if (c.linha_id === this.linhaJurosId && !d.linha_juros) precisaLinha = true;
+        ids.push(c.id);
+        lancamentos.push(c);
+      });
+      (ac.ops.excluir || []).forEach(x => excluir.push(x));
+      (ac.ops.desfazer || []).forEach(x => desfazer.push(x));
+      /* Desfazer o lançamento em dobro encerra também a decisão que o criou. */
+      if (ac.id === 'desfazer' && it.origem) reabrir.push(it.origem.chave);
+      const t = it.totvs, f = it.fluxo;
+      const linhaEscolhida = e.linha ? (plano.find(l => l.id === e.linha) || {}).descricao : '';
+      decisoes.push({
+        chave: chave, categoria: it.categoria, decisao: e.acao, data: it.data, valor: it.valorRef,
+        fornecedor: (t && t.nome) || (f && f.fornecedor) || '',
+        numero: t ? (t.tipo + ' ' + t.numero) : (f ? (f.tipo + ' ' + f.numero) : ''),
+        detalhe: ac.rotulo + (linhaEscolhida ? (' · ' + linhaEscolhida) : ''),
+        lancs: ids, titulos: (ac.ops.excluir || []).map(x => x.chave),
+      });
+    });
+    const corpo = { acao:'fluxo_totvs_aplicar', lancamentos: lancamentos, excluir: excluir,
+                    decisoes: decisoes, reabrir: reabrir, desfazer: desfazer };
+    if (precisaLinha) corpo.linha_juros = LINHA_JUROS;
+    return { corpo: corpo, n: decisoes.length + reabrir.filter(k => this.escolhas[k]).length,
+             decisoes: decisoes, reabrir: reabrir.filter(k => this.escolhas[k]) };
+  },
+
+  async aplicar(){
+    if (this.ocupado || !this.analise) return;
+    if (this.faltaLinha()){ toast('Escolha a linha do fluxo para o que vai ser incluído.', true); return; }
+    const lote = this.montarLote();
+    if (!lote.n) return;
+    if (!(await Chave.garantir())){ toast('Gravação cancelada.', true); return; }
+    if (!(await garantirAutor())){ toast('Preciso do seu nome para registrar as decisões.', true); return; }
+
+    this.ocupado = true;
+    this.passo('Gravando ' + (lote.n === 1 ? 'a decisão' : (lote.n + ' decisões')) + '…', 30);
+    try {
+      try {
+        await fetch(CONFIG.DATA_URL, {
+          method:'POST', mode:'no-cors',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify(assinar(lote.corpo)),
+        });
+      } catch(e){ throw new Error('não consegui enviar — ' + (e.message || e) + '. Nada foi gravado.'); }
+      this.passo('Conferindo se chegou à planilha…', 65);
+      await respira(1500);
+      const r = this.leitura;
+      /* Enviado e não conferido é diferente de não enviado: dizer "não
+         gravou" aqui mandaria a pessoa aplicar de novo o que talvez já esteja
+         lá. As escolhas ficam marcadas até a releitura confirmar. */
+      let d;
+      try { d = await buscarJson(CONFIG.DATA_URL + '?fluxo_totvs=1&de=' + r.de + '&ate=' + r.ate + '&v=' + Date.now()); }
+      catch(e){ d = null; }
+      if (!d || d.ok !== true){
+        throw new Error('enviei, mas não consegui conferir se chegou. Feche e abra a conferência de novo ' +
+                        'para reler — o que chegou aparece em "Já decididos".');
+      }
+
+      /* Chegou é: a decisão está lá e o que ela fez continua de pé. */
+      const naPlanilha = {};
+      (d.decisoes || []).forEach(x => { naPlanilha[x.chave] = x; });
+      const faltam = lote.decisoes.filter(x => !naPlanilha[x.chave] || naPlanilha[x.chave].vivo === false);
+      const naoReabriu = lote.reabrir.filter(k => naPlanilha[k]);
+
+      this.dados = d;
+      const pendentes = {};
+      faltam.forEach(x => { if (this.escolhas[x.chave]) pendentes[x.chave] = this.escolhas[x.chave]; });
+      naoReabriu.forEach(k => { pendentes[k] = { acao:'reabrir' }; });
+      this.escolhas = pendentes;
+      this.analisar();
+
+      if (faltam.length || naoReabriu.length){
+        const n = faltam.length + naoReabriu.length;
+        toast((n === 1 ? 'Uma decisão não chegou à planilha e ficou marcada.'
+                       : (n + ' decisões não chegaram à planilha e ficaram marcadas.')) +
+              ' Confira a senha de gravação e tente de novo.', true);
+      } else {
+        toast(lote.n === 1 ? 'Decisão gravada e conferida.' : (lote.n + ' decisões gravadas e conferidas.'));
+      }
+      this.registrarResumo(true);
+
+      /* A tabela de trás também mudou: lançamentos novos, títulos que saíram. */
+      state.cache = {}; Titulos.esquecer();
+      carregar(false, true).catch(() => {});
+    } catch(e){
+      toast('Aplicar: ' + (e.message || e), true);
+    } finally {
+      this.ocupado = false; this.passoAtual = null;
+      this.render();
+    }
+  },
+
+  async entrarEmEdicao(){
+    await Edicao.alternar();
+    if (state.podeEditar) await this.atualizar();
+  },
+
+  /* ---------------------------------------------------------------- desenho */
+  passo(texto, pct){
+    this.passoAtual = { texto: texto, pct: pct };
+    this.render();
+  },
+
+  render(){
+    const corpo = el('tv-corpo');
+    if (!corpo) return;
+    corpo.textContent = '';
+    if (this.passoAtual){
+      const caixa = h('div', { class:'imp-cartao tv-espera' }, [
+        h('h4', null, [ icone('fa-scale-balanced'), 'Conferindo' ]) ]);
+      const barra = h('div', { class:'imp-barra' }, [ h('span') ]);
+      barra.firstChild.style.width = Math.max(0, Math.min(100, this.passoAtual.pct)) + '%';
+      caixa.appendChild(barra);
+      caixa.appendChild(h('div', { class:'imp-passo', text: this.passoAtual.texto }));
+      corpo.appendChild(caixa);
+    } else if (!this.analise){
+      corpo.appendChild(this.inicio());
+    } else {
+      corpo.appendChild(this.resultado());
+    }
+    this.pintarPe();
+  },
+
+  pintarPe(){
+    const b = el('tv-aplicar'), pe = el('tv-pe'), novo = el('tv-novo');
+    if (!b) return;
+    const n = this.analise ? this.quantas() : 0;
+    const falta = this.analise ? this.faltaLinha() : false;
+    b.hidden = !state.podeEditar || !this.analise;
+    b.disabled = this.ocupado || !n || falta;
+    b.textContent = n ? ('Aplicar ' + (n === 1 ? '1 decisão' : (n + ' decisões'))) : 'Aplicar';
+    if (novo) novo.hidden = !this.analise || this.ocupado;
+    pe.textContent = '';
+    if (!this.analise) return;
+    if (!state.podeEditar){ pe.textContent = 'Modo leitura: dá para ver tudo; resolver pede o modo edição.'; return; }
+    if (falta){ pe.appendChild(h('span', { class:'tv-falta', text:'Escolha a linha do fluxo para o que vai ser incluído.' })); return; }
+    if (n) pe.appendChild(h('span', null, [ h('b', { text: String(n) }),
+      n === 1 ? ' decisão marcada. Nada foi gravado ainda.' : ' decisões marcadas. Nada foi gravado ainda.' ]));
+  },
+
+  inicio(){
+    const box = h('div');
+    const z = h('div', { class:'imp-solta', tabindex:'0' }, [
+      h('i', { class:'fa-solid fa-cloud-arrow-up' }),
+      h('b', { text:'Solte aqui o relatório de baixas do TOTVS' }),
+      h('span', { text:'FINR190 · Relação de Baixas, contas a pagar — o arquivo XML do jeito que sai do TOTVS' }),
+    ]);
+    const input = h('input', { type:'file', accept:'.xml,.xls,.xlsx' });
+    input.style.display = 'none';
+    z.appendChild(input);
+    z.onclick = () => { if (!this.ocupado) input.click(); };
+    z.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); input.click(); } };
+    input.onchange = e => this.receber(Array.from(e.target.files || []));
+    ['dragenter','dragover'].forEach(ev => z.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation(); z.classList.add('sobre'); }));
+    ['dragleave','drop'].forEach(ev => z.addEventListener(ev, e => {
+      e.preventDefault(); e.stopPropagation(); z.classList.remove('sobre'); }));
+    z.addEventListener('drop', e => this.receber(Array.from(e.dataTransfer.files || [])));
+    box.appendChild(z);
+
+    const c = h('div', { class:'imp-cartao tv-como' }, [
+      h('h4', null, [ icone('fa-circle-info'), 'O que a conferência faz' ]) ]);
+    [
+      'Casa cada baixa do TOTVS com o título que o fluxo mostra: pelo número, pelo valor e fornecedor ' +
+      'quando o número muda, e pela soma do dia quando vários pagamentos viram uma linha só (a conta frota).',
+      'Aponta o que não bate — pago e fora do fluxo, no fluxo e sem baixa, data ou valor diferente — e ' +
+      'deixa você decidir o que fazer com cada caso. Nada é gravado antes do "Aplicar".',
+      'Separa juros, multas e descontos numa linha própria e mede se as baixas andam em dia: pagamento ' +
+      'no vencimento e baixa lançada no TOTVS até o dia seguinte.',
+    ].forEach(t => c.appendChild(h('p', { class:'cf-text', text: t })));
+    box.appendChild(c);
+    return box;
+  },
+
+  resultado(){
+    const a = this.analise, r = this.leitura;
+    const box = h('div', { class:'tv' });
+
+    /* O arquivo, e se a leitura fecha com o total do próprio relatório. */
+    const faixa = h('div', { class:'tv-arquivo' }, [
+      icone('fa-file-lines'),
+      h('b', { text: r.arquivo || 'relatório' }),
+      h('span', { text: (r.info.emissao ? ('emitido em ' + dataBR(r.info.emissao) + ' · ') : '') +
+        'baixas de ' + dataBR(r.de) + ' a ' + dataBR(r.ate) }),
+    ]);
+    if (r.confere) faixa.appendChild(h('span', { class:'tv-selo ok',
+      title:'A soma das baixas lidas é igual ao Total Geral impresso no relatório — nenhuma linha ficou para trás.' },
+      [ icone('fa-check'), 'leitura fecha com o total do relatório' ]));
+    else if (r.conferencia.length) faixa.appendChild(h('span', { class:'tv-selo alerta',
+      title: r.conferencia.map(c => c.rotulo + ': lido ' + dinheiro(c.lido) + ' · relatório ' + dinheiro(c.relatorio)).join('\n') },
+      [ icone('fa-triangle-exclamation'), 'a leitura não fecha com o total do relatório' ]));
+    box.appendChild(faixa);
+
+    const s = a.resumo;
+    const pct = v => (v === null || v === undefined) ? '—' :
+      (Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%');
+    box.appendChild(h('div', { class:'det-chips' }, [
+      chip('Pago no TOTVS · ' + s.com_banco + ' baixas', dinheiro(s.total_banco)),
+      chip('Batem com o fluxo', pct(s.bateram_pct)),
+      chip('Divergências abertas', s.abertas ? (s.abertas + ' · ' + dinheiro(s.valor_aberto)) : 'nenhuma', !!s.abertas),
+      chip('Juros e descontos', dinheiro(s.juros_total)),
+      chip('Pagos no prazo', pct(s.pagos_no_prazo_pct)),
+      chip('Baixa lançada até D+1', pct(s.digitadas_em_dia_pct)),
+    ]));
+
+    if (!state.podeEditar){
+      const n = h('div', { class:'note info tv-nota' }, [ icone('fa-lock'),
+        h('div', null, [ 'Você está no modo leitura: dá para ver tudo, mas resolver pede o modo edição. ',
+          (() => { const b = h('button', { class:'imp-link', type:'button', text:'Entrar no modo edição' });
+                   b.onclick = () => this.entrarEmEdicao(); return b; })() ]) ]);
+      box.appendChild(n);
+    }
+    if (this.foraHoje){
+      box.appendChild(h('div', { class:'note info tv-nota' }, [ icone('fa-clock'),
+        h('div', { text: this.foraHoje + ' baixa(s) de hoje ou depois ficaram de fora: no fluxo esses dias ainda são previsão.' }) ]));
+    }
+
+    const abas = [
+      ['divergencias', 'Divergências', a.divergencias.filter(it => !it.decisao).length],
+      ['juros', 'Juros e descontos', a.juros.filter(it => !it.decisao).length],
+      ['dias', 'Dia a dia', a.dias.length],
+      ['pontualidade', 'Pontualidade', null],
+      ['reconhecidos', 'Reconhecidos', a.reconhecidos.numero.length + a.reconhecidos.soma.length +
+        a.reconhecidos.compensacoes.length + a.reconhecidos.proprios.length],
+    ];
+    const barra = h('div', { class:'tv-abas', role:'tablist' });
+    abas.forEach(([id, rot, n]) => {
+      const b = h('button', { type:'button', role:'tab', class: this.aba === id ? 'on' : '' }, [ rot,
+        n !== null ? h('span', { class:'n', text: String(n) }) : null ]);
+      b.onclick = () => { this.aba = id; this.render(); };
+      barra.appendChild(b);
+    });
+    box.appendChild(barra);
+
+    const conteudo = { divergencias: () => this.abaDivergencias(), juros: () => this.abaJuros(),
+                       dias: () => this.abaDias(), pontualidade: () => this.abaPontualidade(),
+                       reconhecidos: () => this.abaReconhecidos() }[this.aba];
+    box.appendChild(conteudo ? conteudo() : this.abaDivergencias());
+    return box;
+  },
+
+  /* -------------------------------------------------------------- divergências */
+  abaDivergencias(){
+    const a = this.analise;
+    const abertas = a.divergencias.filter(it => !it.decisao);
+    const decididas = a.divergencias.filter(it => it.decisao);
+    const box = h('div');
+    if (!abertas.length){
+      box.appendChild(h('div', { class:'tv-tudo-certo' }, [ icone('fa-circle-check'),
+        h('div', null, [ h('b', { text:'Nenhuma divergência aberta.' }),
+          h('span', { text: decididas.length
+            ? 'O que não batia já foi decidido — está logo abaixo.'
+            : 'Tudo que o TOTVS baixou nesse período está no fluxo, e tudo que o fluxo mostra tem baixa.' }) ]) ]));
+    }
+    const grupos = [
+      ['fora', 'Pago no TOTVS, fora do fluxo',
+       'A baixa existe no TOTVS e não aparece em nenhum título do fluxo.'],
+      ['sem_baixa', 'No fluxo, sem baixa no TOTVS',
+       'O fluxo conta este pagamento, mas o TOTVS não tem a baixa no período do relatório. Se o pagamento ' +
+       'saiu mesmo, é baixa atrasada: vale cobrar quem lança.'],
+      ['data', 'Data diferente', 'O mesmo título está no fluxo num dia e foi baixado em outro.'],
+      ['valor', 'Valor diferente',
+       'O título casou, mas o valor do fluxo não é o que o banco pagou — e juros ou desconto não explicam a diferença.'],
+      ['compensacao', 'Compensação lançada como saída',
+       'No TOTVS esta baixa foi compensação, sem dinheiro saindo do banco; no fluxo ela está como saída.'],
+      ['sobra', 'Lançado aqui e agora em dobro',
+       'A conferência tinha lançado esta baixa (ou este ajuste) à mão. Depois disso o relatório do dia foi ' +
+       'importado de novo e já trouxe o título certo — então o título e o lançamento estão contando os dois.'],
+    ];
+    grupos.forEach(([cat, titulo, texto]) => {
+      const lista = abertas.filter(it => it.categoria === cat);
+      if (!lista.length) return;
+      box.appendChild(h('div', { class:'tv-grupo' }, [
+        h('h4', null, [ titulo, h('span', { class:'tv-conta', text: String(lista.length) }) ]),
+        h('p', { class:'tv-expl', text: texto }) ]));
+      lista.forEach(it => box.appendChild(this.linhaItem(it)));
+    });
+    if (decididas.length) box.appendChild(this.blocoDecididos(decididas, 'Já decididos'));
+    return box;
+  },
+
+  linhaItem(it){
+    const t = it.totvs, f = it.fluxo;
+    const escolha = this.escolhas[it.chave];
+    const nome = (t && t.nome) || (f && f.fornecedor) || '(sem nome)';
+    const doc = t ? (t.tipo + ' ' + ConfTotvsCore.numeroN(t.numero)) : (f ? (f.tipo + ' ' + ConfTotvsCore.numeroN(f.numero)) : '');
+    const info = [doc];
+    if (t && t.natureza) info.push('natureza ' + t.natureza);
+    if (t && t.banco) info.push('banco ' + t.banco);
+    if (f && f.conta_fluxo) info.push('conta ' + f.conta_fluxo);
+    if (it.categoria === 'fora' && it.conta) info.push('conta sugerida ' + it.conta);
+    const hist = (t && t.historico) || (f && f.historico) || '';
+
+    const vals = h('div', { class:'tv-vals' });
+    const val = (k, v, cls) => h('div', { class:'tv-val' + (cls ? ' ' + cls : '') }, [
+      h('div', { class:'k', text: k }), h('div', { class:'v', text: v }) ]);
+    if (it.categoria === 'fora'){
+      vals.appendChild(val('TOTVS', dinheiro(t.total)));
+      vals.appendChild(val('Fluxo', '—', 'vazio'));
+    } else if (it.categoria === 'sem_baixa'){
+      vals.appendChild(val('TOTVS', '—', 'vazio'));
+      vals.appendChild(val('Fluxo', dinheiro(f.valor)));
+    } else if (it.categoria === 'data'){
+      vals.appendChild(val('Fluxo em ' + dataBR(f.data).slice(0, 5), dinheiro(f.valor)));
+      vals.appendChild(val('Baixa em ' + dataBR(t.baixa).slice(0, 5), dinheiro(t.total)));
+    } else if (it.categoria === 'valor'){
+      vals.appendChild(val('TOTVS', dinheiro(it.somaT)));
+      vals.appendChild(val('Fluxo', dinheiro(it.somaF)));
+      vals.appendChild(val('Diferença', dinheiro(it.diferenca), 'dif'));
+    } else if (it.categoria === 'compensacao'){
+      vals.appendChild(val('TOTVS · compensação', dinheiro(t.total)));
+      vals.appendChild(val('Fluxo', dinheiro(f.valor)));
+    } else if (it.categoria === 'sobra'){
+      vals.appendChild(val('Lançado em ' + String(it.origem.quando || '').slice(0, 10).split('-').reverse().join('/'),
+                           dinheiro(it.valorRef), 'dif'));
+    }
+
+    const linha = h('div', { class:'tv-item' + (escolha ? ' escolhido' : '') }, [
+      h('div', { class:'tv-dia' }, [ dataBR(it.data).slice(0, 5),
+        it.fonte && it.fonte !== 'relatorio' ? h('small', { text: it.fonte === 'ano' ? 'plan. do ano'
+          : it.fonte === 'importado' ? 'plan. antiga' : 'sem relatório' }) : null ]),
+      h('div', { class:'tv-quem' }, [ h('b', { text: nome, title: nome }),
+        h('span', { text: info.filter(Boolean).join(' · '), title: hist || '' }) ]),
+      vals,
+    ]);
+
+    if (state.podeEditar){
+      const ops = h('div', { class:'tv-ops' });
+      it.acoes.forEach(ac => {
+        const b = h('button', { type:'button', class:'tv-op' + (escolha && escolha.acao === ac.id ? ' on' : ''),
+                                title: ac.trava || '' }, [ ac.rotulo ]);
+        b.disabled = !ac.habilitada || this.ocupado;
+        b.onclick = () => this.escolher(it, ac.id);
+        ops.appendChild(b);
+      });
+      const acIncluir = it.acoes.find(ac => ac.escolherLinha);
+      if (acIncluir && escolha && escolha.acao === acIncluir.id) ops.appendChild(this.seletorLinha(it));
+      linha.appendChild(ops);
+      const travada = it.acoes.find(ac => ac.id !== 'manter' && !ac.habilitada && ac.trava);
+      if (travada) linha.appendChild(h('div', { class:'tv-trava' }, [ icone('fa-lock'), h('span', { text: travada.trava }) ]));
+    }
+    if (it.categoria === 'sem_baixa' && it.perto_do_fim){
+      linha.appendChild(h('div', { class:'tv-trava' }, [ icone('fa-hourglass-half'),
+        h('span', { text: 'Está nos últimos dias do relatório: a baixa pode ter caído depois de ' +
+                          dataBR(this.leitura.ate) + '. Tire um relatório que vá além para ter certeza.' }) ]));
+    }
+    if (it.decisaoCaiu){
+      const d = it.decisaoCaiu;
+      linha.appendChild(h('div', { class:'tv-caiu' }, [ icone('fa-rotate-left'),
+        h('span', { text: 'Decisão anterior (' + (d.detalhe || d.decisao) + (d.quem ? (', por ' + d.quem) : '') +
+          ') deixou de valer: o que ela lançou foi desfeito, ou o valor mudou. Decida de novo.' }) ]));
+    }
+    return linha;
+  },
+
+  /* Natureza que o fluxo não conhece: quem decide a linha é a pessoa. As
+     linhas de saída do plano, agrupadas como na tabela. */
+  seletorLinha(it){
+    const plano = (state.dados && state.dados.plano) || [];
+    const escolha = this.escolhas[it.chave];
+    const sel = h('select', { class:'tv-linha', 'aria-label':'Linha do fluxo' });
+    sel.appendChild(h('option', { value:'', text:'Em que linha do fluxo?' }));
+    const nomeGrupo = {};
+    plano.forEach(l => { if (l.tipo === 'grupo') nomeGrupo[l.id] = l.descricao; });
+    let grupoAtual = null, og = null;
+    plano.filter(l => l.secao === 'S' && l.tipo !== 'grupo' && l.id !== 'l-s-sem-classificacao').forEach(l => {
+      if (l.pai !== grupoAtual){
+        grupoAtual = l.pai;
+        og = h('optgroup', { label: nomeGrupo[l.pai] || 'Saídas' });
+        sel.appendChild(og);
+      }
+      const o = h('option', { value: l.id, text: (l.codigo ? (l.codigo + ' · ') : '') + l.descricao });
+      if (escolha && escolha.linha === l.id) o.selected = true;
+      (og || sel).appendChild(o);
+    });
+    sel.onchange = () => { if (this.escolhas[it.chave]) this.escolhas[it.chave].linha = sel.value; this.render(); };
+    return sel;
+  },
+
+  blocoDecididos(lista, titulo){
+    const det = h('details', { class:'tv-decididos' });
+    det.appendChild(h('summary', null, [ titulo + ' ', h('span', { class:'n', text: '(' + lista.length + ')' }) ]));
+    const nomes = { manter:'mantido', incluir:'incluído', tirar:'tirado do fluxo', mover:'movido',
+                    ajustar:'ajustado', juros:'levado para os juros' };
+    lista.forEach(it => {
+      const d = it.decisao, t = it.totvs, f = it.fluxo;
+      const quando = String(d.quando || '').slice(0, 10);
+      const reabrindo = this.escolhas[it.chave] && this.escolhas[it.chave].acao === 'reabrir';
+      const linha = h('div', { class:'tv-feito' + (reabrindo ? ' reabrindo' : '') }, [
+        h('span', { class:'tv-dia', text: dataBR(it.data).slice(0, 5) }),
+        h('div', { class:'tv-quem' }, [ h('b', { text: (t && t.nome) || (f && f.fornecedor) || '' }),
+          h('span', { text: (d.detalhe || '') + (d.quem ? (' · ' + d.quem) : '') + (quando ? (' · ' + dataBR(quando)) : '') }) ]),
+        h('span', { class:'tv-tag ' + (d.decisao === 'manter' ? 'manter' : 'feito'), text: nomes[d.decisao] || d.decisao }),
+      ]);
+      /* Reabrir serve para o "manter": o que foi lançado ou tirado desfaz-se
+         pelo caminho de sempre, na célula — e aí a pergunta volta sozinha. */
+      if (state.podeEditar && d.decisao === 'manter'){
+        const b = h('button', { type:'button', class:'imp-link', text: reabrindo ? 'não reabrir' : 'reabrir' });
+        b.onclick = () => {
+          if (reabrindo) delete this.escolhas[it.chave]; else this.escolhas[it.chave] = { acao:'reabrir' };
+          this.render();
+        };
+        linha.appendChild(b);
+      } else linha.appendChild(h('span'));
+      det.appendChild(linha);
+    });
+    if (lista.some(it => it.decisao.decisao !== 'manter')){
+      det.appendChild(h('p', { class:'tv-expl', text: 'Para desfazer um lançamento ou trazer de volta um título, ' +
+        'use a célula do dia na tabela do fluxo. A conferência percebe e volta a perguntar.' }));
+    }
+    return det;
+  },
+
+  /* -------------------------------------------------------------- juros */
+  abaJuros(){
+    const a = this.analise, d = this.dados;
+    const lista = a.juros;
+    const abertos = lista.filter(it => !it.decisao);
+    const box = h('div');
+    box.appendChild(h('p', { class:'tv-expl tv-expl-topo', text:
+      'O TOTVS separa, em cada baixa, o valor do título do que veio por cima — juros, multa, correção — ' +
+      'ou por baixo, o desconto. No fluxo o título aparece pelo que o banco pagou. Levar para a linha ' +
+      'própria deixa o custo financeiro à vista. Quando o título já está no fluxo com os juros dentro, o ' +
+      'total do dia não muda: o valor só troca de linha. Desconto entra negativo.' }));
+    if (!d.linha_juros && abertos.length){
+      box.appendChild(h('div', { class:'note info tv-nota' }, [ icone('fa-plus'),
+        h('div', { text: 'A linha ' + LINHA_JUROS.codigo + ' · ' + LINHA_JUROS.descricao + ' ainda não existe no plano. ' +
+          'Ela é criada ao lado de Despesas Financeiras na primeira vez que você levar juros para lá.' }) ]));
+    }
+    if (!lista.length){
+      box.appendChild(h('div', { class:'tv-tudo-certo' }, [ icone('fa-circle-check'),
+        h('div', null, [ h('b', { text:'Nenhum juro, multa ou desconto nesse período.' }) ]) ]));
+      return box;
+    }
+    if (abertos.length){
+      const podem = abertos.filter(it => it.acoes[0].habilitada);
+      const marcados = podem.filter(it => this.escolhas[it.chave]);
+      const total = abertos.reduce((s, it) => s + it.acrescimo, 0);
+      const cab = h('div', { class:'tv-juros-cab' }, [
+        h('span', { text: abertos.length + ' título(s) · ' + dinheiro(total) + ' no período' }) ]);
+      if (state.podeEditar && podem.length){
+        const todos = h('button', { type:'button', class:'imp-link',
+          text: marcados.length === podem.length ? 'desmarcar todos' : ('marcar os ' + podem.length + ' que dá para levar') });
+        todos.onclick = () => {
+          const tirar = marcados.length === podem.length;
+          podem.forEach(it => { if (tirar) delete this.escolhas[it.chave]; else this.escolhas[it.chave] = { acao:'juros' }; });
+          this.render();
+        };
+        cab.appendChild(todos);
+      }
+      box.appendChild(cab);
+      const tab = h('table', { class:'imp-tabela tv-tabela' });
+      tab.appendChild(h('thead', null, [ h('tr', null, [
+        h('th', { text: '' }), h('th', { text:'Dia' }), h('th', { text:'Fornecedor' }),
+        h('th', { class:'num', text:'Juros e multa' }), h('th', { class:'num', text:'Desconto' }),
+        h('th', { class:'num', text:'Para a linha' }), h('th', { text:'No fluxo hoje' }) ]) ]));
+      const tb = h('tbody');
+      abertos.forEach(it => {
+        const ac = it.acoes[0];
+        const marc = !!this.escolhas[it.chave];
+        const cx = h('input', { type:'checkbox', class:'tv-check', title: ac.trava || '' });
+        cx.checked = marc;
+        cx.disabled = !ac.habilitada || this.ocupado;
+        cx.onchange = () => { if (cx.checked) this.escolhas[it.chave] = { acao:'juros' }; else delete this.escolhas[it.chave]; this.render(); };
+        const tr = h('tr', { class: marc ? 'escolhido' : '' }, [
+          h('td', null, [ state.podeEditar ? cx : null ]),
+          h('td', { class:'mono', text: dataBR(it.data).slice(0, 5) }),
+          h('td', null, [ h('div', { class:'forn', text: it.totvs.nome }),
+            h('div', { class:'tv-sub', text: it.totvs.tipo + ' ' + ConfTotvsCore.numeroN(it.totvs.numero) +
+              (it.fluxo && it.fluxo.conta_fluxo ? (' · conta ' + it.fluxo.conta_fluxo) : '') }) ]),
+          h('td', { class:'num', text: it.juros ? dinheiro(it.juros) : '–' }),
+          h('td', { class:'num', text: it.desconto ? dinheiro(-it.desconto) : '–' }),
+          h('td', { class:'num forte', text: dinheiro(it.acrescimo) }),
+          h('td', null, [ h('span', { class:'tv-tag ' + it.modo,
+            text: it.modo === 'dentro' ? 'já no título' : 'faltando',
+            title: it.modo === 'dentro' ? 'O título está no fluxo pelo valor pago: o valor só troca de linha, o total do dia não muda.'
+                                        : 'O título está no fluxo sem os juros: a linha de juros acrescenta a diferença, e o dia passa a bater com o banco.' }) ]),
+        ]);
+        tb.appendChild(tr);
+        if (state.podeEditar && !ac.habilitada && ac.trava){
+          tb.appendChild(h('tr', { class:'tv-tr-trava' }, [ h('td'), h('td', { colspan:'6' }, [
+            h('div', { class:'tv-trava' }, [ icone('fa-lock'), h('span', { text: ac.trava }) ]) ]) ]));
+        }
+      });
+      tab.appendChild(tb);
+      box.appendChild(h('div', { class:'tv-rolagem' }, [ tab ]));
+    }
+    const feitos = lista.filter(it => it.decisao);
+    if (feitos.length) box.appendChild(this.blocoDecididos(feitos, 'Já decididos'));
+    return box;
+  },
+
+  /* -------------------------------------------------------------- dia a dia */
+  abaDias(){
+    const a = this.analise;
+    const box = h('div');
+    const tab = h('table', { class:'imp-tabela tv-tabela' });
+    tab.appendChild(h('thead', null, [ h('tr', null, [
+      h('th', { text:'Dia' }), h('th', { text:'Fonte do número' }),
+      h('th', { class:'num', text:'TOTVS · pago' }), h('th', { class:'num', text:'Fluxo · títulos' }),
+      h('th', { class:'num', text:'Ajustes daqui' }),
+      h('th', { class:'num', text:'Diferença' }), h('th', { class:'num', text:'Compensações' }),
+      h('th', { class:'num', text:'Tarifas e CIOT' }), h('th', { class:'num', text:'Abertas' }) ]) ]));
+    const tb = h('tbody');
+    const tot = { totvs:0, fluxo:0, aj:0, dif:0, comp:0, prop:0, ab:0 };
+    const fonte = { relatorio:'relatório do dia', ano:'planilha do ano', importado:'planilha antiga', vazio:'sem relatório' };
+    a.dias.forEach(x => {
+      const zero = Math.abs(x.diferenca) < 0.005;
+      tb.appendChild(h('tr', null, [
+        h('td', { class:'mono', text: dataBR(x.data) }),
+        h('td', { text: fonte[x.fonte] || x.fonte }),
+        h('td', { class:'num', text: x.totvs ? dinheiro(x.totvs) : '–' }),
+        h('td', { class:'num', text: x.fluxo ? dinheiro(x.fluxo) : '–' }),
+        h('td', { class:'num', text: Math.abs(x.ajustes) >= 0.005 ? dinheiro(x.ajustes) : '–' }),
+        h('td', { class:'num ' + (zero ? 'dif-ok' : 'dif-ruim'), text: zero ? '0,00' : dinheiro(x.diferenca) }),
+        h('td', { class:'num', text: x.compensacoes ? dinheiro(x.compensacoes) : '–' }),
+        h('td', { class:'num', text: x.proprios ? dinheiro(x.proprios) : '–' }),
+        h('td', { class:'num', text: x.abertas ? String(x.abertas) : '–' }),
+      ]));
+      tot.totvs += x.totvs; tot.fluxo += x.fluxo; tot.aj += x.ajustes; tot.dif += x.diferenca;
+      tot.comp += x.compensacoes; tot.prop += x.proprios; tot.ab += x.abertas;
+    });
+    tab.appendChild(tb);
+    const zeroT = Math.abs(tot.dif) < 0.005;
+    tab.appendChild(h('tfoot', null, [ h('tr', null, [
+      h('td', { text:'Período' }), h('td'),
+      h('td', { class:'num', text: dinheiro(tot.totvs) }), h('td', { class:'num', text: dinheiro(tot.fluxo) }),
+      h('td', { class:'num', text: Math.abs(tot.aj) >= 0.005 ? dinheiro(tot.aj) : '–' }),
+      h('td', { class:'num ' + (zeroT ? 'dif-ok' : 'dif-ruim'), text: zeroT ? '0,00' : dinheiro(tot.dif) }),
+      h('td', { class:'num', text: dinheiro(tot.comp) }), h('td', { class:'num', text: dinheiro(tot.prop) }),
+      h('td', { class:'num', text: String(tot.ab) }) ]) ]));
+    box.appendChild(h('div', { class:'tv-rolagem tv-rolagem-alta' }, [ tab ]));
+    box.appendChild(h('p', { class:'tv-expl', text:
+      'Fluxo · títulos é a soma dos títulos de cada dia, sem as tarifas e o CIOT, que não passam pelo contas ' +
+      'a pagar do TOTVS. Ajustes daqui são os lançamentos que esta conferência já fez — incluir, ajustar, ' +
+      'acrescentar juros. O número da célula na tabela pode ter também juros de antecipação, empréstimos e ' +
+      'ajustes lançados à mão — que ficam fora desta comparação de propósito. Compensação é baixa sem ' +
+      'dinheiro saindo do banco e também não entra.' }));
+    return box;
+  },
+
+  /* -------------------------------------------------------------- pontualidade */
+  abaPontualidade(){
+    const p = this.analise.pontualidade, d = this.dados;
+    const box = h('div');
+    const duas = h('div', { class:'tv-duas' });
+
+    const pag = p.pagamentos;
+    const c1 = h('div', { class:'imp-cartao' }, [ h('h4', null, [ icone('fa-calendar-check'), 'Pagamento no vencimento' ]),
+      h('div', { class:'tv-big' }, [ pag.noPrazo + ' de ' + pag.qtd,
+        h('small', { text: 'pagos em dia' + (p.pctNoPrazo !== null ? (' · ' + p.pctNoPrazo.toLocaleString('pt-BR') + '%') : '') }) ]),
+      h('p', { class:'cf-text', text: 'Vencimento em fim de semana ou feriado conta a partir do dia útil seguinte. ' +
+        'Compensação não entra: não é pagamento.' }) ]);
+    if (pag.atrasados.length){
+      c1.appendChild(this.tabelaCurta(['Fornecedor', 'Venceu', 'Pago', 'Dias', 'Valor'],
+        pag.atrasados.slice(0, 30).map(x => [ x.titulo.nome, dataBR(x.limite), dataBR(x.titulo.baixa),
+          String(x.dias), dinheiro(x.titulo.total) ]), [3, 4]));
+    }
+    duas.appendChild(c1);
+
+    const dig = p.digitacao;
+    const c2 = h('div', { class:'imp-cartao' }, [ h('h4', null, [ icone('fa-keyboard'), 'Baixa lançada no TOTVS' ]),
+      h('div', { class:'tv-big' }, [ (dig.noDia + dig.diaSeguinte) + ' de ' + dig.qtd,
+        h('small', { text: 'até o dia seguinte' + (p.pctDigitadaEmDia !== null ? (' · ' + p.pctDigitadaEmDia.toLocaleString('pt-BR') + '%') : '') }) ]),
+      h('p', { class:'cf-text', text: dig.noDia + ' no mesmo dia · ' + dig.diaSeguinte + ' no dia seguinte · ' +
+        dig.depois.length + ' depois disso. Conta a data de digitação contra a data da baixa, em dias úteis.' }) ]);
+    if (dig.depois.length){
+      c2.appendChild(this.tabelaCurta(['Fornecedor', 'Baixa', 'Digitada', 'Dias úteis'],
+        dig.depois.slice(0, 30).map(x => [ x.titulo.nome, dataBR(x.titulo.baixa), dataBR(x.titulo.digitacao), String(x.dias) ]), [3]));
+    }
+    const estranhas = dig.improvavel.concat(dig.antes);
+    if (estranhas.length){
+      c2.appendChild(h('p', { class:'cf-text tv-alerta', text: estranhas.length + ' baixa(s) com a data de digitação ' +
+        'antes da baixa ou longe demais dela — quase sempre erro de data no lançamento, como o ano errado:' }));
+      c2.appendChild(this.tabelaCurta(['Fornecedor', 'Baixa', 'Digitada'],
+        estranhas.slice(0, 30).map(x => [ x.titulo.nome, dataBR(x.titulo.baixa), dataBR(x.titulo.digitacao) ]), []));
+    }
+    duas.appendChild(c2);
+    box.appendChild(duas);
+
+    const hist = (d && d.historico) || [];
+    const c3 = h('div', { class:'imp-cartao' }, [ h('h4', null, [ icone('fa-clock-rotate-left'), 'Conferências anteriores' ]) ]);
+    if (!hist.length){
+      c3.appendChild(h('p', { class:'cf-text', text: 'Nenhuma conferência registrada ainda. Cada relatório conferido ' +
+        'no modo edição vira uma linha aqui — é assim que se acompanha, mês a mês, se as baixas andam em dia.' }));
+    } else {
+      const pctTxt = v => (v === null || v === undefined || v === '') ? '—' : (Number(v).toLocaleString('pt-BR') + '%');
+      c3.appendChild(this.tabelaCurta(['Quando', 'Período', 'Baixas', 'Batem', 'Abertas', 'No prazo', 'Até D+1', 'Quem'],
+        hist.map(x => [ dataBR(String(x.quando).slice(0, 10)), dataBR(x.de) + ' a ' + dataBR(x.ate), String(x.titulos || 0),
+          pctTxt(x.bateram_pct), String(x.abertas || 0), pctTxt(x.pagos_no_prazo_pct), pctTxt(x.digitadas_em_dia_pct),
+          String(x.quem || '') ]), [2, 3, 4, 5, 6]));
+    }
+    box.appendChild(c3);
+    return box;
+  },
+
+  tabelaCurta(cols, linhas, numericas){
+    const tab = h('table', { class:'imp-tabela tv-tabela' });
+    tab.appendChild(h('thead', null, [ h('tr', null, cols.map((c, i) =>
+      h('th', { class: numericas.indexOf(i) >= 0 ? 'num' : '', text: c }))) ]));
+    const tb = h('tbody');
+    linhas.forEach(l => tb.appendChild(h('tr', null, l.map((v, i) =>
+      h('td', { class: numericas.indexOf(i) >= 0 ? 'num' : '', text: v, title: i === 0 ? v : null })))));
+    tab.appendChild(tb);
+    return h('div', { class:'tv-rolagem' }, [ tab ]);
+  },
+
+  /* -------------------------------------------------------------- reconhecidos */
+  abaReconhecidos(){
+    const rc = this.analise.reconhecidos;
+    const box = h('div');
+    box.appendChild(h('p', { class:'tv-expl tv-expl-topo', text: 'O que não casou de primeira mas não é problema. ' +
+      'Fica aqui para quem quiser conferir como cada caso foi resolvido.' }));
+    const bloco = (titulo, texto, linhas, cols, numericas, aberto) => {
+      const det = h('details', { class:'tv-decididos' });
+      if (aberto) det.open = true;
+      det.appendChild(h('summary', null, [ titulo + ' ', h('span', { class:'n', text: '(' + linhas.length + ')' }) ]));
+      det.appendChild(h('p', { class:'tv-expl', text: texto }));
+      if (linhas.length) det.appendChild(this.tabelaCurta(cols, linhas, numericas));
+      box.appendChild(det);
+    };
+    bloco('Mesmo pagamento, número diferente',
+      'Mesmo dia, mesmo valor e mesmo fornecedor: um lado guardou o número do boleto, o outro o da nota.',
+      rc.numero.map(p => [ dataBR(p.totvs[0].baixa), p.totvs[0].nome, p.totvs[0].tipo + ' ' + ConfTotvsCore.numeroN(p.totvs[0].numero),
+        p.fluxo[0].tipo + ' ' + ConfTotvsCore.numeroN(p.fluxo[0].numero), dinheiro(p.totvs[0].total) ]),
+      ['Dia', 'Fornecedor', 'No TOTVS', 'No fluxo', 'Valor'], [4]);
+    bloco('Soma do dia',
+      'Vários pagamentos que no fluxo viraram uma linha só — a conta frota é o caso de sempre — ou o contrário. ' +
+      'Nenhum casa sozinho, mas a soma do dia fecha centavo a centavo.',
+      rc.soma.map(p => [ dataBR(p.fluxo[0].data),
+        p.totvs.length + ' baixa(s)' + (p.totvs.length > 1 ? (' do banco ' + p.totvs[0].banco) : (' · ' + p.totvs[0].nome)),
+        p.fluxo.length === 1 ? p.fluxo[0].fornecedor : (p.fluxo.length + ' títulos de ' + p.fluxo[0].fornecedor),
+        dinheiro(p.fluxo.reduce((s, f) => s + f.valor, 0)) ]),
+      ['Dia', 'No TOTVS', 'No fluxo', 'Valor'], [3]);
+    bloco('Compensações, sem dinheiro saindo do banco',
+      'Baixa por compensação de adiantamento ou nota de crédito: o título foi quitado, mas nenhuma conta ' +
+      'bancária se mexeu. Não é saída de caixa, e por isso não precisa estar no fluxo.',
+      rc.compensacoes.map(t => [ dataBR(t.baixa), t.nome, t.motivo || '', t.tipo + ' ' + ConfTotvsCore.numeroN(t.numero), dinheiro(t.total) ]),
+      ['Dia', 'Fornecedor', 'Motivo', 'Título', 'Valor'], [4]);
+    bloco('Lançamentos próprios do fluxo',
+      'Tarifas e CIOT entram no fluxo por fora do contas a pagar do TOTVS — não têm baixa lá, e está certo.',
+      rc.proprios.map(f => [ dataBR(f.data), f.fornecedor, f.tipo, f.conta_fluxo, dinheiro(f.valor) ]),
+      ['Dia', 'Fornecedor', 'Tipo', 'Conta', 'Valor'], [4]);
+    return box;
+  },
+};
+
+/* ============================================================================
+   MODO EDIÇÃO
+   ----------------------------------------------------------------------------
+   Antes, quem entrasse pelo hub já chegava com tudo clicável e a senha só
+   aparecia na hora de gravar. Era uma regra invisível: a mesma pessoa, com o
+   mesmo endereço, tinha ou não permissão dependendo de como tinha chegado ali.
+
+   Agora a tela abre em leitura, sempre. Para lançar, importar ou limpar,
+   entra-se em modo edição: a senha é pedida uma vez por sessão e os dados são
+   relidos na hora, para ninguém lançar em cima de uma tela velha.
+   ========================================================================== */
+const Edicao = {
+  async alternar(){
+    if (state.podeEditar){ this.sair(); return; }
+
+    if (!(await Chave.garantir())){
+      /* Quando foi a conferência que falhou, o garantir() já disse o motivo.
+         O que sobra aqui é ter fechado a janela da senha — e não fazer nada,
+         em silêncio, é indistinguível de a tela estar lenta. */
+      if (Chave.exigida && !state.chave) toast('Modo edição não ligado: falta a senha.', true);
+      return;
+    }
+
+    state.podeEditar = true;
+    this.pintar();
+
+    /* Antes, entrar em edição remontava o ano inteiro na planilha por
+       precaução — quarenta e cinco segundos parado, quase sempre para
+       descobrir que nada tinha mudado. Agora a pergunta vem primeiro, e ela é
+       barata: só se a base mudou é que vale a espera. */
+    abrirVeu('Conferindo se a base mudou…');
+    let mudou;
+    try { mudou = await baseMudou(); }
+    finally { if (!mudou) fecharVeu(); }
+
+    /* Redesenhar é obrigatório aqui: quem decide se a célula aceita clique é
+       o desenho, e a tabela na tela foi desenhada em modo leitura. Sem isto o
+       botão fica laranja, o Importar aparece, e clicar numa célula não faz
+       nada — só no caminho em que a base mudou, porque lá o carregar()
+       redesenha por tabela. */
+    if (!mudou){ render(); toast('Modo edição ligado.'); return; }
+
+    /* Recarga sem a projeção: é a leitura mais pesada do outro lado e não
+       muda nada do que se vai lançar. A projeção que já está na tela fica. */
+    abrirVeu('A base mudou — buscando os números mais recentes…');
+    try { await carregar(false, true, true); }
+    finally { fecharVeu(); }
+    toast('Modo edição ligado.');
+  },
+
+  sair(){
+    state.podeEditar = false;
+    this.pintar();
+    render();
+    toast('Modo leitura.');
+  },
+
+  pintar(){
+    const b = el('btnEditar');
+    if (!b) return;
+    b.querySelector('span').textContent = state.podeEditar ? 'Editando' : 'Editar';
+    b.classList.toggle('ligado', state.podeEditar);
+    b.title = state.podeEditar ? 'Sair do modo edição' : 'Entrar em modo edição para lançar e importar';
+    const imp = el('btnImportar');
+    if (imp) imp.hidden = !state.podeEditar;
+  },
+};
+
+/* A faixa do ambiente de teste. Fica no alto de tudo, antes do cabeçalho, e
+   não some: quem está no teste precisa saber disso o tempo todo — é a única
+   defesa contra digitar no lugar errado achando que está no certo. */
+function marcarAmbienteDeTeste(){
+  document.body.classList.add('ambiente-teste');
+  const faixa = h('div', { class:'faixa-teste', role:'status' }, [
+    icone('fa-flask'),
+    h('b', { text:'Ambiente de teste' }),
+    h('span', { text:'planilha de teste — nada do que acontece aqui mexe no fluxo oficial' }),
+  ]);
+  document.body.insertBefore(faixa, document.body.firstChild);
+  document.title = 'TESTE · ' + document.title;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (EH_TESTE) marcarAmbienteDeTeste();
+
+  /* O hub continua servindo para mostrar o botão de voltar, mas não decide
+     mais quem pode editar: isso agora é o modo edição, com senha. */
+  HubLink.init();
+
+  /* Quem está logado, e se o script exige senha. As duas coisas em paralelo,
+     sem segurar o desenho da tela. */
+  Chave.carregar();
+  IDENTIDADE = identidadeAccess().then(quem => { if (quem) lembrarAutor(quem); });
+  Chave.status();
+
+  const dt = new Date();
+  el('headerData').textContent = maiuscula(dt.toLocaleDateString('pt-BR',
+    { weekday:'long', day:'numeric', month:'long' }));
+
+  /* Sem URL configurada, a tela para aqui com o motivo na cara, em vez de
+     tentar carregar e falhar de um jeito que não explica nada. */
+  if (!CONFIG.DATA_URL || CONFIG.DATA_URL.indexOf('COLE_A_URL') === 0){
+    mostrarErro(new Error('Falta configurar o endereço do script do fluxo. ' +
+      'No topo do fluxo.js, substitua o valor de URL_BASE pela URL /exec da ' +
+      'implantação do script desta ferramenta.'));
+    return;
+  }
+  el('btnImportar').onclick = () => Importar.abrir();
+  el('btnTotvs').onclick = () => Totvs.abrir();
+  el('tv-aplicar').onclick = () => Totvs.aplicar();
+  el('tv-novo').onclick = () => Totvs.novo();
+  el('imp-alternar').onclick = () => Importar.alternar();
+  el('imp-limpar').onclick = () => Importar.abrirLimpeza();
+  el('imp-confirmar').onclick = () => Importar.confirmar();
+  el('btnEditar').onclick = () => Edicao.alternar();
+  Edicao.pintar();
+
+  /* Recarregar não volta ao esqueleto: a tabela já está na tela e trocá-la por
+     blocos cinzas seria piscada. Quem avisa que algo está acontecendo é o fio,
+     como na troca de mês. E agora ele pede dados frescos de verdade: antes
+     podia devolver a mesma cópia guardada e parecer que nada tinha mudado. */
+  el('btnRecarregar').onclick = async () => {
+    abrirVeu('Buscando os números mais recentes…');
+    try { await carregar(false, true); } finally { fecharVeu(); }
+  };
+  el('btnExportar').onclick = abrirExportar;
+
+  /* Alterna entre os dias do mês e o fechamento de cada mês do ano. O botão de
+     dias úteis some na visão do ano: lá não há dia para esconder. */
+  const pintarVisao = () => {
+    const b = el('btnVisao');
+    const noAno = state.visao === 'ano';
+    b.querySelector('span').textContent = noAno ? 'Ver o mês' : 'Ver o ano';
+    b.classList.toggle('ligado', noAno);
+    el('btnDias').hidden = noAno;
+  };
+  pintarVisao();
+  el('btnVisao').onclick = () => {
+    state.visao = state.visao === 'ano' ? 'mes' : 'ano';
+    pintarVisao();
+    state.rolarParaMes = state.visao === 'mes';
+    state.animarTroca = true;
+    render();
+  };
+  document.addEventListener('fluxo:visao', pintarVisao);
+  el('btnDias').onclick = () => {
+    state.soUteis = !state.soUteis;
+    el('btnDias').querySelector('span').textContent = state.soUteis ? 'Dias úteis' : 'Todos os dias';
+    render();
+  };
+  el('lanc-salvar').onclick = salvarLancamento;
+  el('lanc-excluir').onclick = excluirLancamento;
+  el('sal-salvar').onclick = salvarSaldos;
+  document.querySelectorAll('[data-fechar]').forEach(b => {
+    b.onclick = () => fecharModal(b.getAttribute('data-fechar'));
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal.show')
+      .forEach(m => fecharModal(m.id));
+    if (e.key === 'Enter' && el('modal-lanc').classList.contains('show')) salvarLancamento();
+  });
+  /* Clicar fora não fecha mais. Fechava até quando não se queria: arrastar
+     para selecionar um número e soltar o botão fora da caixa contava como
+     clique no fundo, e o que estava digitado ia embora. Agora fecham o X, o
+     Cancelar e o Esc — os três de propósito. */
+
+  lerGrupos();
+  window.addEventListener('resize', () => empilharFixas());
+  if (document.fonts && document.fonts.ready){
+    document.fonts.ready.then(() => empilharFixas()).catch(() => {});
+  }
+
+  try {
+    const p = new URLSearchParams(location.search).get('mes');
+    if (p && /^\d{4}-\d{2}$/.test(p)) state.mes = p;
+  } catch(e){}
+
+  state.rolarParaMes = true;
+
+  /* Abre com a cópia guardada, se houver, e busca o número de agora por baixo.
+     Qualquer tropeço aqui cai no caminho de sempre: a cópia é conforto, não
+     pode ser motivo de a tela não abrir. */
+  const anoBoot = state.mes.slice(0, 4);
+  const copia = lerAnoGuardado(anoBoot);
+  let abriuComCopia = false;
+  if (copia){
+    try {
+      state.dados = copia;
+      calcular();
+      render();
+      esconderLoader();
+      fioComeca();
+      abriuComCopia = true;
+    } catch(e){ abriuComCopia = false; }
+  }
+
+  if (abriuComCopia){
+    carregar(false).then(() => Registro.abertura());
+  } else {
+    carregar(true).then(() => Registro.abertura());
+  }
+});
