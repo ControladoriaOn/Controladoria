@@ -18,6 +18,10 @@
   a faixa listrada no alto, para ninguém confundir o que está em teste com o
   que está valendo.
 
+  As ferramentas aparecem como um registro: uma linha por ferramenta, com o
+  número, a fase, as datas e o que testar. A busca e os filtros por fase só
+  aparecem quando a lista crescer (a partir de 7 ferramentas).
+
   Para pôr uma ferramenta aqui, acrescente uma linha na lista FERRAMENTAS, lá
   embaixo, no começo do script. Para tirar, apague a linha.
 -->
@@ -26,7 +30,7 @@
   --orange: #FF6E00; --orange-light: #fff3e8; --orange-mid: #ff8c33; --orange-deep: #C45100;
   --purple: #3C003C; --purple-mid: #5a005a; --purple-deep: #1a001a;
   --bg: #FAF7F5; --surface: #ffffff;
-  --text-1: #1a1a2e; --text-2: #6b7280; --text-3: #9ca3af; --border: #e5e7eb;
+  --text-1: #1a1a2e; --text-2: #6b7280; --text-3: #9ca3af; --border: #ece7ea;
   --teste: #B45309; --teste-soft: #FEF3C7;
   --obra: #5a005a; --obra-soft: #f5edf5;
   --quase: #15803d; --quase-soft: #f0fdf4;
@@ -34,8 +38,9 @@
   --font-body: 'Manrope', system-ui, sans-serif;
   --radius-lg: 18px;
   --shadow-sm: 0 1px 4px rgba(60,0,60,0.06), 0 4px 12px rgba(60,0,60,0.04);
-  --shadow-lg: 0 16px 40px rgba(60,0,60,0.14);
-  --shadow-orange: 0 8px 32px rgba(255,110,0,0.25);
+  --suave: cubic-bezier(.22,1,.36,1);
+  /* As colunas do registro: Nº, ferramenta, fase, datas, acesso. */
+  --colunas: 52px minmax(0, 1fr) 150px 150px 158px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--text-1); font-family: var(--font-body);
@@ -72,7 +77,14 @@ header { position: relative; z-index: 100; display: flex; align-items: center; j
 .ir-hub:hover { color: #fff; border-color: rgba(255,110,0,.55); background: rgba(255,255,255,.06); }
 .topo-direita { display: flex; align-items: center; gap: 12px; }
 
-.abertura { position: relative; z-index: 10; max-width: 1200px; width: 100%; margin: 0 auto; padding: 52px 48px 8px; }
+/* ---------- abertura ---------- */
+.abertura { position: relative; z-index: 10; }
+/* O brilho laranja que acompanha o mouse. Some embaixo, para não ter borda. */
+.brilho { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(440px circle at var(--gx, 22%) var(--gy, 45%), rgba(255,110,0,.10), transparent 65%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent);
+          mask-image: linear-gradient(to bottom, #000 60%, transparent); }
+.abertura-miolo { position: relative; max-width: 1200px; width: 100%; margin: 0 auto; padding: 52px 48px 8px; }
 .rotulo { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700;
   letter-spacing: 2px; text-transform: uppercase; color: var(--orange-deep);
   background: var(--orange-light); border: 1px solid rgba(255,110,0,.3); padding: 6px 14px; border-radius: 20px; }
@@ -86,62 +98,156 @@ header { position: relative; z-index: 100; display: flex; align-items: center; j
 .contagem b { font-family: var(--font-display); font-size: 16px; color: var(--purple); }
 
 main { position: relative; z-index: 10; flex: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 30px 48px 80px; }
-.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 24px; }
 
-.card { --mx: 50%; --my: 50%; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 14px;
-  padding: 28px; border-radius: var(--radius-lg); text-decoration: none; color: inherit;
-  background: rgba(255,255,255,.78); border: 1px solid rgba(255,255,255,.6); box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2);
-  transition: transform .35s cubic-bezier(.34,1.56,.64,1), box-shadow .35s ease, border-color .3s ease;
-  animation: entra .5s ease both; }
-.card::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .35s;
-  background: radial-gradient(320px circle at var(--mx) var(--my), rgba(255,110,0,0.09), transparent 65%); }
-.card:hover::before { opacity: 1; }
-.card > * { position: relative; }
-.card:hover { transform: translateY(-5px); box-shadow: var(--shadow-orange), var(--shadow-lg); border-color: rgba(255,110,0,.35); }
-.card:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
-/* A listra no pé do card lembra, também aqui, que isto não é a versão oficial. */
-.card::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px;
-  background: repeating-linear-gradient(135deg, #A34300 0 10px, var(--orange-deep) 10px 20px); opacity: .85; }
-.card-topo { display: flex; align-items: center; gap: 14px; }
-.card-icone { width: 54px; height: 54px; border-radius: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  font-size: 26px; color: var(--orange); background: linear-gradient(135deg, var(--orange-light) 0%, #ffe4cc 100%);
+/* ---------- busca e filtros (só com a lista grande) ---------- */
+.barra { display: flex; align-items: center; justify-content: space-between; gap: 14px 18px; flex-wrap: wrap; margin-bottom: 18px; }
+.barra[hidden] { display: none; }
+.busca { position: relative; flex: 1; min-width: 220px; max-width: 380px; }
+.busca i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-3); font-size: 16px; pointer-events: none; }
+.busca input { width: 100%; font: inherit; font-size: 14px; color: var(--text-1); outline: none;
+  background: rgba(255,255,255,.9); border: 1px solid var(--border); border-radius: 999px; padding: 10px 16px 10px 40px;
+  transition: border-color .18s, box-shadow .18s; }
+.busca input::placeholder { color: var(--text-3); }
+.busca input:focus { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(255,110,0,.15); }
+.filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.filtro { font: inherit; font-size: 11.5px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
+  color: var(--text-2); background: rgba(255,255,255,.8); border: 1px solid var(--border); border-radius: 999px;
+  padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  transition: background .18s, color .18s, border-color .18s, transform .18s; }
+.filtro:hover { color: var(--purple); border-color: rgba(60,0,60,.35); transform: translateY(-1px); }
+.filtro.ativo { background: var(--purple); border-color: var(--purple); color: #fff; }
+.filtro i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block; }
+.filtro[data-fase="teste"] i { color: var(--teste); }
+.filtro[data-fase="quase"] i { color: var(--quase); }
+.filtro[data-fase="construcao"] i { color: var(--obra); }
+.filtro.ativo i { color: var(--orange-mid); }
+.filtro small { font-size: 11px; opacity: .7; }
+
+/* ---------- o registro ---------- */
+.registro { position: relative; overflow: hidden; border-radius: var(--radius-lg); padding-bottom: 4px;
+  background: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.7); box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2); }
+/* A listra no pé lembra, também aqui, que isto não é a versão oficial. */
+.registro::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; opacity: .85;
+  background: repeating-linear-gradient(135deg, #A34300 0 10px, var(--orange-deep) 10px 20px); }
+.registro-cab { display: grid; grid-template-columns: var(--colunas); gap: 20px; padding: 14px 28px;
+  font-size: 10.5px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--text-3);
+  border-bottom: 1px solid var(--border); }
+.registro-cab span:last-child { text-align: right; }
+
+.linha { position: relative; isolation: isolate; display: grid; grid-template-columns: var(--colunas); gap: 20px;
+  align-items: start; padding: 26px 28px; border-bottom: 1px solid var(--border); }
+/* As colunas se alinham pela linha do nome (o ícone tem 38px de altura). */
+.linha > .idx { margin-top: 9px; }
+.linha > .fase { margin-top: 8px; }
+.linha > .datas { margin-top: 11px; }
+.linha > .acesso { margin-top: 10px; }
+.linha:last-child { border-bottom: 0; }
+.linha.entra { animation: entra .5s ease both; }
+/* Ao passar o mouse: o fundo enche da esquerda e aparece a barra laranja. */
+.linha::before { content: ''; position: absolute; inset: 0; z-index: -1; transform: scaleX(0); transform-origin: left;
+  background: linear-gradient(90deg, var(--orange-light) 0%, rgba(255,243,232,.45) 100%);
+  transition: transform .35s var(--suave); }
+.linha:hover::before { transform: scaleX(1); }
+.linha::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; z-index: -1;
+  background: var(--orange); transform: scaleY(0); transform-origin: top; transition: transform .35s var(--suave) .05s; }
+.linha:hover::after { transform: scaleY(1); }
+
+.idx { font-family: var(--font-display); font-size: 15px; font-weight: 700; color: var(--text-3);
+  font-variant-numeric: tabular-nums; display: inline-block; transition: color .2s, transform .3s var(--suave); }
+.linha:hover .idx { color: var(--orange-deep); transform: translateX(4px); }
+
+.info { min-width: 0; }
+.nome-linha { display: flex; align-items: center; gap: 12px; }
+.nome-bloco { min-width: 0; }
+.icone { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+  font-size: 19px; color: var(--orange); background: linear-gradient(135deg, var(--orange-light) 0%, #ffe4cc 100%);
   transition: transform .4s cubic-bezier(.34,1.56,.64,1); }
-.card:hover .card-icone { transform: scale(1.06) rotate(-5deg); }
-.fase { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 800;
+.linha:hover .icone { transform: scale(1.06) rotate(-5deg); }
+/* O nome é o link; a camada dele cobre a linha inteira, então clicar em qualquer ponto abre a ferramenta. */
+.nome { font-family: var(--font-display); font-size: 21px; font-weight: 700; line-height: 1.25;
+  color: var(--purple); text-decoration: none; outline: none; transition: color .2s; }
+.nome::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: inherit; }
+.nome:focus-visible::after { outline: 3px solid var(--orange); outline-offset: -3px; }
+.nome-txt { background: linear-gradient(var(--orange), var(--orange)) no-repeat 0 100% / 0 2px;
+  padding-bottom: 2px; transition: background-size .35s var(--suave); }
+.linha:hover .nome { color: var(--orange-deep); }
+.linha:hover .nome-txt { background-size: 100% 2px; }
+.novo { display: inline-block; margin-left: 8px; vertical-align: 4px; font-size: 10px; font-weight: 800; letter-spacing: 1.2px;
+  line-height: 1.5; text-transform: uppercase; color: #fff; background: var(--orange); padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+.desc { display: block; font-size: 14px; color: var(--text-2); line-height: 1.65; margin-top: 8px; max-width: 640px; }
+.testar { display: inline-block; font-size: 13px; color: var(--text-1); line-height: 1.55; margin-top: 12px;
+  padding: 9px 12px; border-radius: 10px; background: var(--bg); border: 1px dashed #e3d7e3;
+  transition: background .2s, border-color .2s; }
+.testar b { color: var(--purple); }
+.linha:hover .testar { background: rgba(255,255,255,.85); border-color: rgba(255,110,0,.4); }
+
+.fase { justify-self: start; display: inline-flex; align-items: center; gap: 7px; font-size: 10.5px; font-weight: 800;
   letter-spacing: 1.2px; text-transform: uppercase; padding: 5px 11px; border-radius: 20px; white-space: nowrap; }
-.fase i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: currentColor; }
+.fase i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: currentColor; flex-shrink: 0; }
 .fase.teste { color: var(--teste); background: var(--teste-soft); }
+.fase.teste i { animation: pulso 1.6s ease-in-out infinite; }
 .fase.construcao { color: var(--obra); background: var(--obra-soft); }
 .fase.quase { color: var(--quase); background: var(--quase-soft); }
-.card h3 { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--purple); line-height: 1.25; }
-.card:hover h3 { color: var(--orange-deep); }
-.card p { font-size: 14px; color: var(--text-2); line-height: 1.65; }
-.testar { font-size: 13px; color: var(--text-1); line-height: 1.55; padding: 10px 12px; border-radius: 10px;
-  background: var(--bg); border: 1px dashed #e3d7e3; }
-.testar strong { color: var(--purple); }
-.card-pe { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding-top: 14px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-3); }
-.acessar { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--orange-deep); transition: gap .3s; }
-.card:hover .acessar { gap: 10px; }
 
-.vazio { text-align: center; padding: 60px 20px; color: var(--text-2); font-size: 14px; line-height: 1.7;
-  border: 2px dashed var(--border); border-radius: var(--radius-lg); background: rgba(255,255,255,.5); }
+.datas { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.datas b { font-weight: 700; color: var(--text-2); }
+
+.acesso { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.abrir { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 800; color: var(--purple);
+  letter-spacing: .3px; transition: color .2s; }
+.abrir i { transition: transform .25s var(--suave); }
+.linha:hover .abrir { color: var(--orange-deep); }
+.linha:hover .abrir i { transform: translate(3px, -3px); }
+/* O aviso de problema fica por cima da camada do link, para ser clicável sozinho. */
+.problema { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+  color: var(--text-3); text-decoration: none; padding: 4px 8px; margin: -4px -8px; border-radius: 8px; transition: color .2s, background .2s; }
+.problema:hover, .problema:focus-visible { color: var(--orange-deep); background: rgba(255,110,0,.1); }
+.problema:focus-visible { outline: 2px solid var(--orange); outline-offset: 1px; }
+
+.vazio { text-align: center; padding: 60px 20px; color: var(--text-2); font-size: 14px; line-height: 1.7; }
 .vazio i { font-size: 34px; color: var(--text-3); display: block; margin-bottom: 10px; }
+.vazio b { display: block; font-family: var(--font-display); font-size: 19px; color: var(--purple); margin-bottom: 2px; }
+.vazio button { margin-top: 14px; font: inherit; font-size: 13px; font-weight: 700; color: var(--orange-deep); cursor: pointer;
+  background: var(--orange-light); border: 1px solid rgba(255,110,0,.35); border-radius: 999px; padding: 8px 16px; }
+.vazio button:hover { background: #ffe4cc; }
+.vazio-solto { border: 2px dashed var(--border); border-radius: var(--radius-lg); background: rgba(255,255,255,.5); }
 
 footer { position: relative; z-index: 10; padding: 22px 48px; display: flex; justify-content: space-between; gap: 12px;
   flex-wrap: wrap; background: rgba(60,0,60,.94); color: rgba(255,255,255,.55); font-size: 12px; }
 footer i { color: var(--orange); }
 
 @keyframes entra { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes pulso { 0%, 100% { box-shadow: 0 0 0 0 rgba(180,83,9,.45); } 50% { box-shadow: 0 0 0 5px rgba(180,83,9,0); } }
+
+@media (max-width: 900px) {
+  .registro-cab { display: none; }
+  .linha { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "info fase" "datas acesso";
+    row-gap: 16px; padding: 22px 22px; }
+  .linha > .idx { display: none; }
+  .info { grid-area: info; }
+  .linha > .fase { grid-area: fase; margin-top: 8px; }
+  .linha > .datas { grid-area: datas; flex-direction: row; flex-wrap: wrap; gap: 4px 14px; align-self: center; margin-top: 0; }
+  .linha > .acesso { grid-area: acesso; flex-direction: row; align-items: center; gap: 18px; margin-top: 0; }
+}
 @media (max-width: 760px) {
   header { padding: 0 18px; }
   .ir-hub span { display: none; }
-  .abertura { padding: 36px 20px 4px; }
+  .abertura-miolo { padding: 36px 20px 4px; }
   main { padding: 24px 20px 64px; }
-  .grade { grid-template-columns: 1fr; }
   footer { padding: 18px 20px; }
   .faixa span { display: none; }
+}
+@media (max-width: 420px) {
+  /* Na tela estreita a pílula sai: a faixa lá em cima já diz "Laboratório". */
+  .pilula { display: none; }
+}
+@media (max-width: 560px) {
+  .linha { grid-template-columns: minmax(0, 1fr); grid-template-areas: "fase" "info" "datas" "acesso"; row-gap: 12px; padding: 20px 18px; }
+  .linha > .fase { margin-top: 0; }
+  .acesso { justify-content: space-between; }
+  .nome { font-size: 19px; }
+  .icone { width: 34px; height: 34px; font-size: 17px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -169,16 +275,26 @@ footer i { color: var(--orange); }
   </div>
 </header>
 
-<section class="abertura">
-  <span class="rotulo"><i class="ph-fill ph-wrench"></i> Em desenvolvimento</span>
-  <h1>Laboratório de <em>ferramentas</em></h1>
-  <p>O que ainda está sendo construído ou testado antes de ir para o hub oficial. As ferramentas daqui podem
-     estar ligadas a planilhas de teste e mudar a qualquer momento — para o trabalho do dia a dia, use o hub oficial.</p>
-  <div class="contagem" id="contagem"></div>
+<section class="abertura" id="abertura">
+  <div class="brilho" id="brilho" aria-hidden="true"></div>
+  <div class="abertura-miolo">
+    <span class="rotulo"><i class="ph-fill ph-wrench"></i> Em desenvolvimento</span>
+    <h1 id="titulo">Laboratório de <em>ferramentas</em></h1>
+    <p>O que ainda está sendo construído ou testado antes de ir para o hub oficial. As ferramentas daqui podem
+       estar ligadas a planilhas de teste e mudar a qualquer momento — para o trabalho do dia a dia, use o hub oficial.</p>
+    <div class="contagem" id="contagem"></div>
+  </div>
 </section>
 
 <main>
-  <div class="grade" id="grade"></div>
+  <div class="barra" id="barra" hidden>
+    <label class="busca">
+      <i class="ph ph-magnifying-glass"></i>
+      <input id="busca" type="search" placeholder="Buscar ferramenta…" aria-label="Buscar ferramenta" autocomplete="off">
+    </label>
+    <div class="filtros" id="filtros" role="group" aria-label="Filtrar por fase"></div>
+  </div>
+  <div id="lista"></div>
 </main>
 
 <footer>
@@ -191,71 +307,247 @@ footer i { color: var(--orange); }
    AS FERRAMENTAS DO LABORATÓRIO
    ----------------------------------------------------------------------------
    Uma linha por ferramenta. Para acrescentar, copie a linha do fluxo e troque:
-     href    — a pasta da ferramenta, começando com ../
-     icone   — o nome de um ícone do Phosphor (phosphoricons.com), ex. ph-wallet
-     fase    — 'construcao', 'teste' ou 'quase'
-     titulo, descricao, testar — os textos do card
-     desde   — desde quando está aqui
+     href       — a pasta da ferramenta, começando com ../
+     icone      — o nome de um ícone do Phosphor (phosphoricons.com), ex. ph-wallet
+     fase       — 'construcao', 'teste' ou 'quase'
+     titulo, descricao, testar — os textos da linha
+     desde      — desde quando está aqui (dd/mm/aaaa)
+     atualizada — quando mudou pela última vez (dd/mm/aaaa). Nos 7 dias
+                  seguintes a linha ganha o selo "novo". Pode deixar em branco.
+   A lista se organiza sozinha: primeiro o que está em teste, depois o que
+   está quase pronto, por último o que está em construção.
    ========================================================================== */
 const FERRAMENTAS = [
   { href: '../Fluxo-de-Caixa-teste/', icone: 'ph-arrows-down-up', fase: 'teste',
     titulo: 'Fluxo de Caixa · Teste',
     descricao: 'Cópia do fluxo de caixa ligada à planilha de teste, com a conferência nova contra o relatório de baixas do TOTVS (FINR190).',
     testar: 'Clicar em Conferir, soltar o FINR190 de dias recentes, resolver as divergências e ver se a tabela acompanha.',
-    desde: '23/09/2026' },
+    desde: '23/09/2026', atualizada: '24/09/2026' },
 ];
 
+/* Para onde vai o e-mail do botão "Achei um problema". */
+const AVISOS_PARA = 'controladoriaontimegestao@gmail.com';
+
+/* A busca e os filtros aparecem a partir de quantas ferramentas. */
+const BUSCA_A_PARTIR_DE = 7;
+
+/* Por quantos dias uma ferramenta nova ou atualizada fica com o selo "novo". */
+const DIAS_DE_NOVIDADE = 7;
+
 const FASES = {
-  construcao: { nome: 'Em construção', contagem: n => 'em construção' },
   teste:      { nome: 'Em teste',      contagem: n => 'em teste' },
-  quase:      { nome: 'Quase pronto',  contagem: n => n === 1 ? 'quase pronta' : 'quase prontas' },
+  quase:      { nome: 'Quase pronta',  contagem: n => n === 1 ? 'quase pronta' : 'quase prontas' },
+  construcao: { nome: 'Em construção', contagem: n => 'em construção' },
 };
+const ORDEM = ['teste', 'quase', 'construcao'];
+
+const reduzMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let faseAtiva = 'todas';
+let termo = '';
+let primeiraVez = true;
 
 const esc = t => String(t == null ? '' : t)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const faseDe = f => FASES[f.fase] ? f.fase : 'construcao';
+/* Para a busca achar "conferência" digitando "conferencia". */
+const semAcento = t => String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-function card(f, i){
-  const fase = FASES[f.fase] || FASES.construcao;
-  const classe = FASES[f.fase] ? f.fase : 'construcao';
+/* ----------------------------- datas ------------------------------------ */
+function dataBR(t){
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(t == null ? '' : t).trim());
+  if (!m) return null;
+  const d = new Date(+m[3], +m[2] - 1, +m[1]);
+  return d.getDate() === +m[1] ? d : null;
+}
+function diasDesde(t){
+  const d = dataBR(t);
+  if (!d) return null;
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  return Math.round((hoje - d) / 864e5);
+}
+function quando(t){
+  const n = diasDesde(t);
+  if (n === 0) return 'hoje';
+  if (n === 1) return 'ontem';
+  if (n > 1 && n <= 30) return 'há ' + n + ' dias';
+  return esc(t);
+}
+function ehNovidade(f){
+  const n = diasDesde(f.atualizada || f.desde);
+  return n !== null && n >= 0 && n <= DIAS_DE_NOVIDADE;
+}
+
+/* --------------------- o e-mail de "achei um problema" -------------------- */
+function emailDeProblema(f){
+  let endereco = f.href;
+  try { endereco = new URL(f.href, location.href).href; } catch(e){}
+  const assunto = 'Laboratório · ' + f.titulo + ' — achei um problema';
+  const corpo = [
+    'Ferramenta: ' + f.titulo,
+    'Endereço: ' + endereco,
+    '',
+    'O que eu estava fazendo:',
+    '',
+    '',
+    'O que aconteceu:',
+    '',
+    '',
+    'O que eu esperava que acontecesse:',
+    '',
+    '',
+    '(Se puder, cole um print da tela.)',
+  ].join('\r\n');
+  return 'mailto:' + AVISOS_PARA + '?subject=' + encodeURIComponent(assunto) + '&body=' + encodeURIComponent(corpo);
+}
+
+/* ------------------------------ o registro ------------------------------ */
+/* Todas as ferramentas na ordem das fases, já com o número de cada uma. */
+function ordenadas(){
+  return FERRAMENTAS
+    .map((f, i) => ({ f, i }))
+    .sort((a, b) => (ORDEM.indexOf(faseDe(a.f)) - ORDEM.indexOf(faseDe(b.f))) || (a.i - b.i))
+    .map((x, k) => ({ f: x.f, n: k + 1 }));
+}
+
+function visiveis(){
+  const t = semAcento(termo.trim());
+  return ordenadas()
+    .filter(({ f }) => faseAtiva === 'todas' || faseDe(f) === faseAtiva)
+    .filter(({ f }) => !t || semAcento([f.titulo, f.descricao, f.testar, FASES[faseDe(f)].nome].join(' ')).includes(t));
+}
+
+function linha(f, n, k){
+  const fase = faseDe(f);
+  /* Só na primeira vez as linhas sobem uma a uma; ao buscar ou filtrar, aparecem direto. */
+  const entrada = primeiraVez ? `linha entra" style="animation-delay:${Math.min(k * 0.07, 0.6)}s` : 'linha';
+  const atualizada = f.atualizada && f.atualizada !== f.desde
+    ? `<span>atualizada <b>${quando(f.atualizada)}</b></span>` : '';
   return `
-    <a class="card" href="${esc(f.href)}" style="animation-delay:${Math.min(i * 0.07, 0.6)}s">
-      <div class="card-topo">
-        <div class="card-icone"><i class="ph-fill ${esc(f.icone || 'ph-wrench')}"></i></div>
-        <span class="fase ${classe}"><i></i>${fase.nome}</span>
+    <div class="${entrada}">
+      <span class="idx">${String(n).padStart(2, '0')}</span>
+      <div class="info">
+        <div class="nome-linha">
+          <span class="icone" aria-hidden="true"><i class="ph-fill ${esc(f.icone || 'ph-wrench')}"></i></span>
+          <div class="nome-bloco"><a class="nome" href="${esc(f.href)}"><span class="nome-txt">${esc(f.titulo)}</span></a>${ehNovidade(f)
+            ? `<span class="novo" title="Entrou ou mudou nos últimos ${DIAS_DE_NOVIDADE} dias">novo</span>` : ''}</div>
+        </div>
+        ${f.descricao ? `<p class="desc">${esc(f.descricao)}</p>` : ''}
+        ${f.testar ? `<div class="testar"><b>O que testar:</b> ${esc(f.testar)}</div>` : ''}
       </div>
-      <h3>${esc(f.titulo)}</h3>
-      <p>${esc(f.descricao)}</p>
-      ${f.testar ? `<div class="testar"><strong>O que testar:</strong> ${esc(f.testar)}</div>` : ''}
-      <div class="card-pe">
-        <span>${f.desde ? ('no laboratório desde ' + esc(f.desde)) : ''}</span>
-        <span class="acessar">Abrir <i class="ph-bold ph-arrow-right"></i></span>
+      <span class="fase ${fase}"><i></i>${FASES[fase].nome}</span>
+      <div class="datas">
+        <span>desde <b>${esc(f.desde || '—')}</b></span>
+        ${atualizada}
       </div>
-    </a>`;
+      <div class="acesso">
+        <span class="abrir" aria-hidden="true">Abrir <i class="ph-bold ph-arrow-up-right"></i></span>
+        <a class="problema" href="${esc(emailDeProblema(f))}" title="Abre um e-mail para a controladoria contando o problema">
+          <i class="ph ph-bug"></i> Achei um problema</a>
+      </div>
+    </div>`;
+}
+
+function desenharLinhas(){
+  const alvo = document.getElementById('lista');
+  if (!FERRAMENTAS.length){
+    alvo.innerHTML = '<div class="vazio vazio-solto"><i class="ph ph-flask"></i><b>Nada em desenvolvimento agora.</b>' +
+      'Quando uma ferramenta nova entrar em teste, ela aparece aqui.</div>';
+    return;
+  }
+  const lista = visiveis();
+  const cabecalho = '<div class="registro-cab" aria-hidden="true"><span>Nº</span><span>Ferramenta</span>' +
+    '<span>Fase</span><span>Datas</span><span>Acesso</span></div>';
+  const corpo = lista.length
+    ? lista.map(({ f, n }, k) => linha(f, n, k)).join('')
+    : '<div class="vazio"><i class="ph ph-magnifying-glass"></i><b>Nenhuma ferramenta encontrada.</b>' +
+      'Tente outra palavra ou mostre todas as fases.<br><button type="button" id="limpar">Limpar a busca</button></div>';
+  alvo.innerHTML = '<div class="registro">' + cabecalho + corpo + '</div>';
+  const limpar = document.getElementById('limpar');
+  if (limpar) limpar.addEventListener('click', () => {
+    termo = ''; faseAtiva = 'todas';
+    document.getElementById('busca').value = '';
+    desenharFiltros(); desenharLinhas();
+  });
+  primeiraVez = false;
+}
+
+function contarFases(){
+  const conta = {};
+  FERRAMENTAS.forEach(f => { const k = faseDe(f); conta[k] = (conta[k] || 0) + 1; });
+  return conta;
+}
+
+function desenharFiltros(){
+  const conta = contarFases();
+  const botoes = [{ k: 'todas', nome: 'Todas', n: FERRAMENTAS.length }]
+    .concat(ORDEM.filter(k => conta[k]).map(k => ({ k, nome: FASES[k].nome, n: conta[k] })));
+  const alvo = document.getElementById('filtros');
+  alvo.innerHTML = botoes.map(b =>
+    `<button type="button" class="filtro${b.k === faseAtiva ? ' ativo' : ''}" data-fase="${b.k}" aria-pressed="${b.k === faseAtiva}">` +
+    `${b.k === 'todas' ? '' : '<i></i>'}${b.nome} <small>${b.n}</small></button>`).join('');
+  alvo.querySelectorAll('.filtro').forEach(btn => btn.addEventListener('click', () => {
+    faseAtiva = btn.dataset.fase; desenharFiltros(); desenharLinhas();
+  }));
 }
 
 function desenhar(){
-  const grade = document.getElementById('grade');
-  if (!FERRAMENTAS.length){
-    grade.outerHTML = '<div class="vazio"><i class="ph ph-flask"></i>Nada em desenvolvimento agora.<br>' +
-      'Quando uma ferramenta nova entrar em teste, ela aparece aqui.</div>';
-  } else {
-    grade.innerHTML = FERRAMENTAS.map(card).join('');
-    /* O brilho que segue o mouse, como nos cards do hub. */
-    grade.querySelectorAll('.card').forEach(c => {
-      c.addEventListener('mousemove', e => {
-        const r = c.getBoundingClientRect();
-        c.style.setProperty('--mx', (e.clientX - r.left) + 'px');
-        c.style.setProperty('--my', (e.clientY - r.top) + 'px');
-      });
-    });
-  }
-  const conta = {};
-  FERRAMENTAS.forEach(f => { const k = FASES[f.fase] ? f.fase : 'construcao'; conta[k] = (conta[k] || 0) + 1; });
-  document.getElementById('contagem').innerHTML = Object.keys(FASES)
+  const temBusca = FERRAMENTAS.length >= BUSCA_A_PARTIR_DE;
+  document.getElementById('barra').hidden = !temBusca;
+  if (!temBusca){ termo = ''; faseAtiva = 'todas'; document.getElementById('busca').value = ''; }
+  else desenharFiltros();
+  desenharLinhas();
+  const conta = contarFases();
+  document.getElementById('contagem').innerHTML = ORDEM
     .filter(k => conta[k])
     .map(k => `<span><b>${conta[k]}</b> ${FASES[k].contagem(conta[k])}</span>`).join('');
 }
+
+document.getElementById('busca').addEventListener('input', e => { termo = e.target.value; desenharLinhas(); });
+
+/* ------------------ o título que se "decodifica" ao abrir ------------------ */
+const CARACTERES = '!#$%&*()ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+function decodificar(el, duracao){
+  if (!el || reduzMovimento) return;
+  const final = el.innerHTML;
+  /* Cada pedaço do título, lembrando qual está em itálico (<em>). */
+  const partes = Array.from(el.childNodes).map(no => [no.textContent, no.nodeName === 'EM']);
+  /* Segura a altura para o texto embaralhado não empurrar a página. */
+  el.style.minHeight = el.getBoundingClientRect().height + 'px';
+  el.setAttribute('aria-label', el.textContent);
+  const inicio = performance.now();
+  (function quadro(agora){
+    const p = Math.min((agora - inicio) / duracao, 1);
+    if (p >= 1){
+      el.innerHTML = final; el.style.minHeight = ''; el.removeAttribute('aria-label');
+      return;
+    }
+    let html = '';
+    partes.forEach(([texto, italico]) => {
+      const pronto = Math.floor(p * texto.length);
+      let s = esc(texto.slice(0, pronto));
+      for (let i = pronto; i < texto.length; i++)
+        s += /\s/.test(texto[i]) ? texto[i] : CARACTERES[Math.floor(Math.random() * CARACTERES.length)];
+      html += italico ? '<em>' + s + '</em>' : s;
+    });
+    el.innerHTML = html;
+    requestAnimationFrame(quadro);
+  })(inicio);
+}
+
+/* ------------------- o brilho que acompanha o mouse ------------------- */
+(function(){
+  const abertura = document.getElementById('abertura');
+  const brilho = document.getElementById('brilho');
+  if (reduzMovimento || !abertura || !brilho) return;
+  abertura.addEventListener('mousemove', e => {
+    const r = abertura.getBoundingClientRect();
+    brilho.style.setProperty('--gx', (e.clientX - r.left) + 'px');
+    brilho.style.setProperty('--gy', (e.clientY - r.top) + 'px');
+  });
+})();
+
 desenhar();
+decodificar(document.getElementById('titulo'), 1100);
 </script>
 </body>
 </html>
