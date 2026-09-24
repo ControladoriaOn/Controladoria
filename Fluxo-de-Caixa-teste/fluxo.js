@@ -200,11 +200,33 @@ const HubLink = {
     try { if (sessionStorage.getItem(this.KEY) === '1') return true; } catch(e){}
     return false;
   },
+  /* Quem chegou pelo Laboratório — a página das ferramentas em
+     desenvolvimento — volta para ele, e não para o hub oficial. A origem fica
+     guardada na aba, para o botão continuar certo depois de recarregar. */
+  voltarPara(){
+    const K = 'fluxo_voltar_para';
+    try {
+      if (document.referrer){
+        const ref = new URL(document.referrer);
+        if (ref.origin === location.origin && ref.pathname.indexOf(this.pasta()) !== 0){
+          const doLab = decodeURIComponent(ref.pathname).toLowerCase().indexOf('/laboratorio/') >= 0;
+          sessionStorage.setItem(K, doLab ? ref.pathname.replace(/[^/]*$/, '') : '');
+        }
+      }
+      return sessionStorage.getItem(K) || '';
+    } catch(e){ return ''; }
+  },
+
   init(){
     const ok = this.veioDoHub();
     if (ok){
       try { sessionStorage.setItem(this.KEY, '1'); } catch(e){}
-      const n = el('btn-hub'); if (n) n.hidden = false;
+      const n = el('btn-hub');
+      if (n){
+        n.hidden = false;
+        const lab = this.voltarPara();
+        if (lab){ n.setAttribute('href', lab); n.title = 'Voltar ao Laboratório'; }
+      }
     }
     return ok;
   },
